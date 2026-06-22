@@ -113,4 +113,26 @@ class AuthController extends Controller
 
         return redirect()->route('login');
     }
+
+    /**
+     * Display the Admin Dashboard with live database metrics and user logs.
+     */
+    public function showAdminDashboard()
+    {
+        // 1. Calculate live totals directly from the database table
+        $totalUsers = User::count();
+        $storeOwnersCount = User::where('role', 'store_owner')->count();
+        $farmersCount = User::where('role', 'farmer')->count();
+
+        // 2. Fetch the latest 10 profile registrations
+        $recentUsers = User::latest()->take(10)->get();
+
+        // 3. Render the administration dashboard layout view safely with variables
+        return view('dashboard.admin', compact(
+            'totalUsers', 
+            'storeOwnersCount', 
+            'farmersCount', 
+            'recentUsers'
+        ));
+    }
 }

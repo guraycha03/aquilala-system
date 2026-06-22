@@ -139,7 +139,22 @@
     .user-name { font-size: 14px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .user-role { font-size: 11px; color: #87a992; text-transform: capitalize; }
     
-    .logout-btn { background: rgba(239, 68, 68, 0.08); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.15); padding: 11px 14px; width: 100%; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; }
+    .logout-btn { 
+      background: rgba(239, 68, 68, 0.08); 
+      color: #fca5a5; 
+      border: 1px solid rgba(239, 68, 68, 0.15); 
+      padding: 11px 16px; /* Increased side padding slightly */
+      width: 100%; 
+      border-radius: 8px; 
+      font-size: 13px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: flex-start; /* Changed from center to left-aligned */
+      gap: 12px; /* Matches the gap of your main nav links */
+      transition: all 0.2s ease; 
+    }
     .logout-btn svg { width: 16px; height: 16px; stroke: #fca5a5; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .logout-btn:hover { background: #ef4444; color: #ffffff; border-color: #ef4444; }
     .logout-btn:hover svg { stroke: #ffffff; }
@@ -185,11 +200,12 @@
 
   <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
 
-  <header class="mobile-header">
+  <!-- Fixed Code (Icon on the left) -->
+  <header class="mobile-header" style="justify-content: flex-start; gap: 16px;">
+    <button class="burger-btn" onclick="toggleSidebar()">☰</button>
     <div style="font-weight: 700; font-size: 18px; letter-spacing: -0.01em;">
       Aqui<span style="color: #6aeb2f; font-weight: 800;">lala</span>
     </div>
-    <button class="burger-btn" onclick="toggleSidebar()">☰</button>
   </header>
 
   <aside class="sidebar" id="sidebar">

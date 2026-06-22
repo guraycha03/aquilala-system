@@ -38,15 +38,15 @@
   <section class="metrics-grid">
     <div class="card">
       <h3>Total Platform Users</h3>
-      <div class="val">1,248</div>
+      <div class="val">{{ number_format($totalUsers) }}</div>
     </div>
     <div class="card">
       <h3>Active Store Owners</h3>
-      <div class="val">84</div>
+      <div class="val">{{ number_format($storeOwnersCount) }}</div>
     </div>
     <div class="card">
       <h3>Registered Farmers</h3>
-      <div class="val">412</div>
+      <div class="val">{{ number_format($farmersCount) }}</div>
     </div>
   </section>
 
@@ -63,18 +63,30 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>Alice Vance</td>
-            <td>alice@example.com</td>
-            <td><span class="badge owner">Store Owner</span></td>
-            <td>Today, 2:14 PM</td>
-          </tr>
-          <tr>
-            <td>Robert Mercer</td>
-            <td>robert.m@example.com</td>
-            <td><span class="badge farmer">Farmer</span></td>
-            <td>Yesterday</td>
-          </tr>
+          @forelse($recentUsers as $user)
+            <tr>
+              <td style="font-weight: 500; color: #1e2922;">{{ $user->name }}</td>
+              <td style="color: #4a554f;">{{ $user->email }}</td>
+              <td>
+                @if($user->role === 'admin')
+                  <span class="badge admin" style="background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block;">Admin</span>
+                @elseif($user->role === 'store_owner')
+                  <span class="badge owner" style="background: #fef3c7; color: #d97706; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block;">Store Owner</span>
+                @else
+                  <span class="badge farmer" style="background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block;">Farmer</span>
+                @endif
+              </td>
+              <td style="color: #718096; font-size: 14px;">
+                {{ $user->created_at->diffForHumans() }}
+              </td>
+            </tr>
+          @empty
+            <tr>
+              <td colspan="4" style="text-align: center; color: #8a998f; padding: 32px; font-style: italic;">
+                No platform registrations recorded inside the database yet.
+              </td>
+            </tr>
+          @endforelse
         </tbody>
       </table>
     </div>

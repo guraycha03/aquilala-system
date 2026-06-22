@@ -17,28 +17,32 @@ Route::post('/register', [AuthController::class, 'signup'])->name('register.post
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function () {
-        return redirect()->route('dashboard.redirect', ['role' => auth()->user()->role]);
-    });
+    
+Route::get('/dashboard', function () {
+    return redirect()->route('dashboard.redirect', ['role' => Auth::user()->role]);
+});
 
+    // FIX: Renders the Admin dashboard through the AuthController method to load live database rows
     Route::get('/dashboard/redirect/{role}', function ($role) {
         return match ($role) {
-            'admin' => view('dashboard.admin'),
+            'admin' => app(AuthController::class)->showAdminDashboard(),
             'store_owner' => view('dashboard.store_owner'),
             default => view('dashboard.farmer'),
         };
     })->name('dashboard.redirect');
 
+    // Admin protected routes
     Route::middleware(RoleMiddleware::class.':admin')->group(function () {
-        Route::get('/dashboard/admin', fn () => view('dashboard.admin'))->name('dashboard.admin');
+        Route::get('/dashboard/admin', [AuthController::class, 'showAdminDashboard'])->name('dashboard.admin');
     });
 
+    // Store Owner protected routes
     Route::middleware(RoleMiddleware::class.':store_owner')->group(function () {
         Route::get('/dashboard/store-owner', fn () => view('dashboard.store_owner'))->name('dashboard.store_owner');
     });
 
+    // Farmer protected routes
     Route::middleware(RoleMiddleware::class.':farmer')->group(function () {
         Route::get('/dashboard/farmer', fn () => view('dashboard.farmer'))->name('dashboard.farmer');
     });
 });
-
