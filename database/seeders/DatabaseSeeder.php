@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. System Admin Profile
-        $adminEmail = 'charisse.guray@sorsu.edu.ph'; // Use a real target structure
+        $adminEmail = 'charisse.guray@sorsu.edu.ph'; 
         User::updateOrCreate(
             ['email' => $adminEmail],
             [
@@ -27,9 +27,9 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 2. Store Owner Profile
+        // 2. Store Owner Profile (We catch this instance to pass to our data seeder)
         $merchantEmail = 'guraycha@gmail.com';
-        User::updateOrCreate(
+        $storeOwner = User::updateOrCreate(
             ['email' => $merchantEmail],
             [
                 'name' => 'Cha G. Guray',
@@ -54,5 +54,10 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make(env('SEED_FARMER_PASSWORD', md5($farmerEmail . 'aquilala_secure'))),
             ]
         );
+
+        // 4. Run the operational farm management system values
+        $this->call([
+            SystemDataSeeder::class,
+        ]);
     }
 }

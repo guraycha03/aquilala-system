@@ -99,8 +99,9 @@ class AuthController extends Controller
             'password'       => Hash::make($validated['password']),
         ]);
 
-        // Automatically log in the new farmer upon registration
+        // Automatically log in the newly registered user
         Auth::login($user);
+
 
         return redirect()->route('dashboard.redirect', ['role' => $user->role]);
     }
