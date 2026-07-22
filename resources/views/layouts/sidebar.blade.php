@@ -78,11 +78,47 @@
     </div>
 
     <div class="nav-body">
+      <!-- Live Season/Climate Widget -->
+      @php $climate = $globalClimateInfo ?? App\Helpers\SeasonHelper::getClimateInfo(); @endphp
+      <div style="margin: 4px 8px 16px 8px; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #87a992; font-weight: 700;">Current Climate</span>
+          <span id="live-time" style="font-size: 10px; color: #87a992; font-family: monospace;"></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; background: {{ $climate['season'] === 'wet' ? 'rgba(14,165,233,0.2)' : 'rgba(251,191,36,0.2)' }};">
+            @if($climate['season'] === 'wet')
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="#38bdf8" stroke-width="2" fill="none"><path d="M12 2v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M20 12h2"/><path d="M19.07 4.93l-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6z"/></svg>
+            @else
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="#fbbf24" stroke-width="2" fill="none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            @endif
+          </span>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 13px; font-weight: 700; color: #ffffff;">{{ $climate['label'] }}</div>
+            <div style="font-size: 11px; color: #87a992;">
+              {{ $climate['months'] }}
+              @if(isset($climate['sub_season']))
+                <span> · {{ $climate['sub_season'] }}</span>
+              @endif
+            </div>
+          </div>
+        </div>
+        @if(isset($climate['temperature']))
+        <div style="display: flex; gap: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);">
+          <div style="font-size: 11px; color: #87a992;">
+            <span style="color: #b9cfc0;">🌡</span> {{ $climate['temperature'] }}
+          </div>
+          <div style="font-size: 11px; color: #87a992;">
+            <span style="color: #b9cfc0;">💧</span> {{ $climate['humidity'] }}
+          </div>
+        </div>
+        @endif
+      </div>
+
       <div class="menu-group-title">
         @if(auth()->user()->role === 'farmer') Farmer Hub @elseif(auth()->user()->role === 'store_owner') Merchant Hub @else Admin Control @endif
       </div>
       <ul class="nav-links">
-        
         @if(auth()->user()->role === 'farmer')
           <li>
             <a href="{{ route('dashboard.farmer') }}" class="{{ request()->routeIs('dashboard.farmer') ? 'active' : '' }}">
@@ -155,7 +191,7 @@
           <li>
             <a href="{{ route('store.storefront.index') }}" class="{{ request()->routeIs('store.storefront.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              Product Catalog front
+              Product Catalog
             </a>
           </li>
           <li>
@@ -165,7 +201,7 @@
             </a>
           </li>
 
-          @elseif(auth()->user()->role === 'admin')
+        @elseif(auth()->user()->role === 'admin')
           <li>
             <a href="{{ route('dashboard.admin') }}" class="{{ request()->routeIs('dashboard.admin') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
@@ -257,6 +293,27 @@
       document.getElementById('sidebar').classList.toggle('open');
       document.getElementById('overlay').classList.toggle('open');
     }
+
+    // Live time clock — updates every second
+    function updateLiveTime() {
+      const now = new Date();
+      const options = { 
+        timeZone: 'Asia/Manila', 
+        hour12: true, 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      };
+      const timeEl = document.getElementById('live-time');
+      if (timeEl) {
+        timeEl.textContent = now.toLocaleDateString('en-PH', options);
+      }
+    }
+    updateLiveTime();
+    setInterval(updateLiveTime, 1000);
   </script>
 </body>
 </html>
