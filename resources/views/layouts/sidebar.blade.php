@@ -51,26 +51,32 @@
     .burger-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
 
     @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); } 
-      .sidebar.open { transform: translateX(0); }
-      .main-content { margin-left: 0; padding: 88px 16px 24px 16px; }
-      .mobile-header { display: flex; }
-      .sidebar-overlay { display: none; position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.4); z-index: 95; }
-      .sidebar-overlay.open { display: block; }
+  .sidebar { transform: translateX(-100%); } 
+  .sidebar.open { transform: translateX(0); }
+  .main-content { margin-left: 0; padding: 88px 16px 24px 16px; }
+  .mobile-header { display: flex; }
+  .sidebar-overlay { display: none; position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.4); z-index: 95; }
+  .sidebar-overlay.open { display: block; }
 
-      /* Mobile: reset sidebar active state — no rounded corner cut-out effect */
-      .nav-links li a,
-      .nav-links li a.active {
-        border-radius: 12px;
-      }
-      .nav-links li a.active {
-        margin-right: 0;
-      }
-      .nav-links li:has(a.active)::before,
-      .nav-links li:has(a.active)::after {
-        display: none;
-      }
-    }
+  /* --- UPDATE HERE --- */
+  /* 1. Add right padding to nav-body so space matches the left (14px on both sides) */
+  .nav-body {
+    padding-right: 14px;
+  }
+
+  /* 2. Standardize mobile pill buttons */
+  .nav-links li a,
+  .nav-links li a.active {
+    border-radius: 12px;
+  }
+  .nav-links li a.active {
+    margin-right: 0;
+  }
+  .nav-links li:has(a.active)::before,
+  .nav-links li:has(a.active)::after {
+    display: none;
+  }
+}
   </style>
 </head>
 <body>
@@ -100,20 +106,16 @@
         $statusLabel = $isWet ? 'Rainy' : 'Dry';
         $statusPillColor = $isWet ? '#38bdf8' : '#fbbf24';
       @endphp
-      <div style="margin: 4px 8px 16px 8px; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);">
+<div style="margin: 4px 8px 16px 8px; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);">
+        @php
+          $weather = \App\Services\WeatherService::getCurrentWeather();
+        @endphp
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #87a992; font-weight: 700;">Current Climate</span>
-            <!-- Status Pill -->
-            <span style="display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; background: {{ $pillBg }}; color: {{ $statusPillColor }}; border: 1px solid {{ $pillColor }}40;">
-              <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: {{ $statusPillColor }};"></span>
-              {{ $statusLabel }}
-            </span>
-          </div>
+          <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #87a992; font-weight: 700;">Current Weather</span>
           <span id="live-time" style="font-size: 10px; color: #87a992; font-family: monospace;"></span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; background: {{ $pillBg }};">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; font-size: 14px; background: {{ $pillBg }};">
             @if($isWet)
               <svg viewBox="0 0 24 24" width="14" height="14" stroke="#38bdf8" stroke-width="2" fill="none"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/></svg>
             @else
@@ -121,40 +123,20 @@
             @endif
           </span>
           <div style="flex: 1; min-width: 0;">
-            <div style="font-size: 13px; font-weight: 700; color: #ffffff;">{{ $climate['label'] }}</div>
+            <div style="font-size: 13px; font-weight: 700; color: #ffffff;">{{ $climate['label'] }} Season</div>
             <div style="font-size: 11px; color: #87a992;">
-              {{ $climate['months'] }}
-              @if(isset($climate['sub_season']))
-                <span> · {{ $climate['sub_season'] }}</span>
-              @endif
+              {{ $weather['condition'] ?? 'Partly Cloudy' }}
             </div>
           </div>
-        </div>
-        @if(isset($climate['temperature']))
-        <div style="display: flex; gap: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);">
-          <div style="font-size: 11px; color: #87a992;">
-            <span style="color: #b9cfc0;">🌡</span> {{ $climate['temperature'] }}
-          </div>
-          <div style="font-size: 11px; color: #87a992;">
-            <span style="color: #b9cfc0;">💧</span> {{ $climate['humidity'] }}
-          </div>
-          <!-- Soil/Agronomy mini pill -->
-          @php 
-            $soil = \App\Services\SoilAgronomyService::getSoilIndicators();
-            $readinessColor = $soil['field_readiness']['color'];
-          @endphp
-          <div style="font-size: 11px; color: #87a992; margin-left: auto;">
-            <span style="display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 600; background: {{ $readinessColor }}20; color: {{ $readinessColor }};">
-              <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: {{ $readinessColor }};"></span>
-              {{ $soil['field_readiness']['label'] }}
-            </span>
+          <div style="font-size: 13px; font-weight: 700; color: #ffffff; font-family: ui-monospace, monospace;">
+            {{ $weather['temperature'] ?? '28' }}°C
           </div>
         </div>
-        @endif
       </div>
 
+
       <div class="menu-group-title">
-        @if(auth()->user()->role === 'farmer') Farmer Hub @elseif(auth()->user()->role === 'store_owner') Merchant Hub @else Admin Control @endif
+        @if(auth()->user()->role === 'farmer') Farmer Hub @elseif(auth()->user()->role === 'store_owner') My Store @else Admin Control @endif
       </div>
       <ul class="nav-links">
         @if(auth()->user()->role === 'farmer')
@@ -226,12 +208,37 @@
               Cost Quotations
             </a>
           </li>
+          
+          
           <li>
-            <a href="{{ route('store.storefront.index') }}" class="{{ request()->routeIs('store.storefront.index') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              Product Catalog
-            </a>
-          </li>
+  <a href="{{ route('store.storefront.index') }}" class="{{ request()->routeIs('store.storefront.index') ? 'active' : '' }}">
+    <svg 
+      xmlns="http://w3.org" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      stroke-width="2" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    >
+      <!-- Main Building Structure -->
+      <path d="M3 9v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9" />
+      
+      <!-- Commercial Awning / Canopy -->
+      <path d="M2 9h20l-1-4H3L2 9z" />
+      <path d="M7 9V5" />
+      <path d="M12 9V5" />
+      <path d="M17 9V5" />
+      
+      <!-- Storefront Window & Door -->
+      <path d="M6 14h4v4H6v-4z" />
+      <path d="M14 14h4v8h-4v-8z" />
+    </svg>
+    My Store
+  </a>
+</li>
+
+
           <li>
             <a href="{{ route('store.formulas.index') }}" class="{{ request()->routeIs('store.formulas.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
@@ -327,11 +334,6 @@
   </main>
 
   <script>
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('open');
-      document.getElementById('overlay').classList.toggle('open');
-    }
-
     // Live time clock — updates every second
     function updateLiveTime() {
       const now = new Date();
@@ -350,8 +352,42 @@
         timeEl.textContent = now.toLocaleDateString('en-PH', options);
       }
     }
-    updateLiveTime();
+updateLiveTime();
     setInterval(updateLiveTime, 1000);
+
+    // Auto-scroll the active nav link into the center of the scrollable sidebar
+    function centerActiveNav() {
+      const navBody = document.querySelector('.nav-body');
+      const activeLink = document.querySelector('.nav-links li a.active');
+      if (!navBody || !activeLink) return;
+
+      const navRect = navBody.getBoundingClientRect();
+      const linkRect = activeLink.getBoundingClientRect();
+
+      // If the active link is already fully visible, do nothing
+      const isVisible =
+        linkRect.top >= navRect.top &&
+        linkRect.bottom <= navRect.bottom;
+      if (isVisible) return;
+
+      // Center the active link within the scrollable area
+      const linkCenter = linkRect.top - navRect.top + activeLink.offsetHeight / 2;
+      const scrollTarget = navBody.scrollTop + linkCenter - navRect.height / 2;
+      navBody.scrollTo({ top: Math.max(0, scrollTarget), behavior: 'smooth' });
+    }
+
+    // Run on page load (after full render) and after the sidebar opens on mobile
+    window.addEventListener('load', centerActiveNav);
+    document.addEventListener('DOMContentLoaded', centerActiveNav);
+    setTimeout(centerActiveNav, 100);
+    setTimeout(centerActiveNav, 350);
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('overlay').classList.toggle('open');
+      // Re-center when the mobile sidebar is opened
+      setTimeout(centerActiveNav, 250);
+    }
   </script>
 </body>
 </html>

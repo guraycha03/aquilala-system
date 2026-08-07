@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
+use App\Models\Quotation;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -126,7 +128,7 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
-    /**
+/**
      * Display the Admin Dashboard with live database metrics and user logs.
      */
     public function showAdminDashboard()
@@ -139,12 +141,30 @@ class AuthController extends Controller
         // 2. Fetch the latest 10 profile registrations
         $recentUsers = User::latest()->take(10)->get();
 
+        // ─── Admin Dashboard Metrics ──────────────────────────────
+        // Platform catalogue & activity
+        $totalProducts = Product::count();
+        $activeProducts = Product::where('status', 'active')->count();
+        $totalQuotations = Quotation::count();
+        $pendingQuotations = Quotation::where('status', Quotation::STATUS_PENDING)->count();
+
+        // Recent platform-wide quotation activity
+        $recentPlatformQuotations = Quotation::with(['farmer', 'storeOwner'])
+            ->latest()
+            ->take(5)
+            ->get();
+
         // 3. Render the administration dashboard layout view safely with variables
         return view('dashboard.admin', compact(
-            'totalUsers', 
-            'storeOwnersCount', 
-            'farmersCount', 
-            'recentUsers'
+            'totalUsers',
+            'storeOwnersCount',
+            'farmersCount',
+            'recentUsers',
+            'totalProducts',
+            'activeProducts',
+            'totalQuotations',
+            'pendingQuotations',
+            'recentPlatformQuotations'
         ));
     }
 }

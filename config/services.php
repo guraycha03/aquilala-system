@@ -28,11 +28,27 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'slack' => [
+'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | OpenWeatherMap
+    |--------------------------------------------------------------------------
+    |
+    | Free real-time weather API. Sign up at https://openweathermap.org/api
+    | to obtain an API key, then set it in your .env file:
+    |
+    |   OPENWEATHER_API_KEY=your_api_key_here
+    |
+    */
+    'openweather' => [
+        'key' => env('OPENWEATHER_API_KEY'),
+        'url' => env('OPENWEATHER_API_URL', 'https://api.openweathermap.org/data/3.0/onecall'),
     ],
 
 ];

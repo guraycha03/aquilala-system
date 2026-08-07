@@ -313,24 +313,7 @@
         color: #be123c;
     }
 
-    .btn-quote-preview {
-        width: 100%;
-        background: #14532d;
-        color: #ffffff;
-        border: none;
-        padding: 10px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: not-allowed;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        opacity: 0.9;
-    }
-
-    /* Empty State */
+/* Empty State */
     .empty-state { 
         text-align: center; 
         padding: 80px 20px; 
@@ -359,6 +342,17 @@
         max-width: 440px;
         margin: 0 auto;
         line-height: 1.6; 
+    }
+
+    @media (max-width: 640px) {
+        .product-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+        .product-details { padding: 14px; }
+        .product-title { font-size: 14px; }
+        .product-description { font-size: 12px; }
+        .card-footer { padding-top: 12px; }
     }
 </style>
 
@@ -525,11 +519,6 @@
                         <div class="price-tag">₱{{ number_format($product->price, 2) }}</div>
                         <span class="units-count" style="color: #16a34a; font-weight: 600;">In Stock</span>
                     </div>
-
-                    <button class="btn-quote-preview" title="Preview button for farmers">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                        Request Quotation
-                    </button>
                 </div>
             </div>
         </div>

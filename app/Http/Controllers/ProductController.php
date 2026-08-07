@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\Quotation;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use Illuminate\Support\Facades\Auth;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
-    /**
+/**
      * Display a listing of the store owner's products.
      */
     public function index()
@@ -26,8 +27,40 @@ class ProductController extends Controller
             ->latest()
             ->get();
 
+        // ─── Merchant Dashboard Metrics ────────────────────────────
+        $productCount = $products->count();
+        $lowStockCount = $products->filter(fn ($p) => $p->is_low_stock)->count();
+
+        // Quotation metrics for this store
+        $pendingQuotationsCount = Quotation::where(function ($q) {
+            $q->whereNull('store_user_id')->orWhere('store_user_id', Auth::id());
+        })->where('status', Quotation::STATUS_PENDING)->count();
+
+        $dispatchedQuotationsCount = Quotation::where('store_user_id', Auth::id())
+            ->where('status', Quotation::STATUS_DISPATCHED)->count();
+
+        $acceptedQuotationsCount = Quotation::where('store_user_id', Auth::id())
+            ->where('status', Quotation::STATUS_ACCEPTED)->count();
+
+        // Recent quotation activity for this store
+        $recentStoreQuotations = Quotation::with('farmer')
+            ->where(function ($q) {
+                $q->whereNull('store_user_id')->orWhere('store_user_id', Auth::id());
+            })
+            ->latest()
+            ->take(5)
+            ->get();
+
         // Pass $products to your dashboard blade view
-        return view('dashboard.store_owner', compact('products'));
+        return view('dashboard.store_owner', compact(
+            'products',
+            'productCount',
+            'lowStockCount',
+            'pendingQuotationsCount',
+            'dispatchedQuotationsCount',
+            'acceptedQuotationsCount',
+            'recentStoreQuotations'
+        ));
     }
 
     /**

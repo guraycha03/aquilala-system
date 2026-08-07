@@ -73,6 +73,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [ProductController::class, 'index'])->name('store.products.index');
             Route::get('/create', [ProductController::class, 'create'])->name('store.products.create');
             Route::post('/', [ProductController::class, 'store'])->name('store.products.store');
+            Route::get('/{product}', [ProductController::class, 'show'])->name('store.products.show');
             Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('store.products.edit');
             Route::put('/{product}', [ProductController::class, 'update'])->name('store.products.update');
             Route::delete('/{product}', [ProductController::class, 'destroy'])->name('store.products.destroy');
@@ -83,7 +84,13 @@ Route::middleware('auth')->group(function () {
     Route::middleware(RoleMiddleware::class . ':farmer')->prefix('farmer')->group(function () {
         Route::get('/dashboard', [FarmerDashboardController::class, 'index'])->name('dashboard.farmer');
         Route::get('/crops', fn () => view('farmer.crops.index'))->name('farmer.crops.index');
-        Route::get('/recommendations', fn () => view('farmer.recommendations.index'))->name('farmer.recommendations.index');
+        Route::get('/recommendations', function () {
+            $products = \App\Models\Product::active()
+                ->with(['category', 'storeOwner', 'mainImage'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+            return view('farmer.recommendations.index', compact('products'));
+        })->name('farmer.recommendations.index');
         Route::get('/products/browse', [ProductController::class, 'browse'])->name('farmer.products.browse');
         Route::get('/products/{product}', [ProductController::class, 'show'])->name('farmer.products.show');
         Route::get('/quotations/request', [QuotationController::class, 'farmerCreate'])->name('farmer.quotations.request');
