@@ -33,7 +33,9 @@ class AuthController extends Controller
             ],
             'password' => ['required', 'string'],
         ], [
+            'email.required' => 'Please enter your email address.',
             'email.email' => 'Enter a valid email address.',
+            'password.required' => 'Please enter your password.',
         ]);
 
         if (!Auth::attempt([
@@ -71,12 +73,22 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'password_confirmation' => ['required', 'string', 'min:8'],
         ], [
+            'first_name.required' => 'Please enter your first name.',
+            'first_name.regex' => 'First name may only contain letters, spaces, and hyphens.',
+            'middle_initial.regex' => 'Middle initial may only contain letters, spaces, and periods.',
+            'last_name.required' => 'Please enter your last name.',
+            'last_name.regex' => 'Last name may only contain letters, spaces, and hyphens.',
+            'email.required' => 'Please enter your email address.',
+            'email.email' => 'Enter a valid email address.',
+            'email.unique' => 'This email is already registered. Please use a different email or log in.',
             'role.in' => 'Select a valid account role.',
-            'first_name.regex' => 'The first name field format is invalid.',
-            'last_name.regex' => 'The last name field format is invalid.',
+            'password.required' => 'Please enter a password.',
+            'password.min' => 'Password must be at least 8 characters.',
+            'password.confirmed' => 'Password confirmation does not match.',
+            'password_confirmation.required' => 'Please confirm your password.',
         ]);
 
-        // Clean and normalize human inputs (Fixed lowercase to strtolower)
+        // Clean and normalize human inputs
         $firstName = ucwords(strtolower(trim(preg_replace('/\s+/', ' ', $validated['first_name']))));
         $lastName  = ucwords(strtolower(trim(preg_replace('/\s+/', ' ', $validated['last_name']))));
         
@@ -101,7 +113,6 @@ class AuthController extends Controller
 
         // Automatically log in the newly registered user
         Auth::login($user);
-
 
         return redirect()->route('dashboard.redirect', ['role' => $user->role]);
     }
@@ -137,3 +148,4 @@ class AuthController extends Controller
         ));
     }
 }
+

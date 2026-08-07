@@ -57,6 +57,19 @@
       .mobile-header { display: flex; }
       .sidebar-overlay { display: none; position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.4); z-index: 95; }
       .sidebar-overlay.open { display: block; }
+
+      /* Mobile: reset sidebar active state — no rounded corner cut-out effect */
+      .nav-links li a,
+      .nav-links li a.active {
+        border-radius: 12px;
+      }
+      .nav-links li a.active {
+        margin-right: 0;
+      }
+      .nav-links li:has(a.active)::before,
+      .nav-links li:has(a.active)::after {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -78,17 +91,31 @@
     </div>
 
     <div class="nav-body">
-      <!-- Live Season/Climate Widget -->
-      @php $climate = $globalClimateInfo ?? App\Helpers\SeasonHelper::getClimateInfo(); @endphp
+      <!-- Live Season/Climate Widget (Refined with Color-Coded Pills) -->
+      @php 
+        $climate = $globalClimateInfo ?? App\Helpers\SeasonHelper::getClimateInfo(); 
+        $isWet = $climate['season'] === 'wet';
+        $pillColor = $isWet ? '#0284c7' : '#d97706';
+        $pillBg = $isWet ? 'rgba(14,165,233,0.15)' : 'rgba(251,191,36,0.15)';
+        $statusLabel = $isWet ? 'Rainy' : 'Dry';
+        $statusPillColor = $isWet ? '#38bdf8' : '#fbbf24';
+      @endphp
       <div style="margin: 4px 8px 16px 8px; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #87a992; font-weight: 700;">Current Climate</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #87a992; font-weight: 700;">Current Climate</span>
+            <!-- Status Pill -->
+            <span style="display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; background: {{ $pillBg }}; color: {{ $statusPillColor }}; border: 1px solid {{ $pillColor }}40;">
+              <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: {{ $statusPillColor }};"></span>
+              {{ $statusLabel }}
+            </span>
+          </div>
           <span id="live-time" style="font-size: 10px; color: #87a992; font-family: monospace;"></span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; background: {{ $climate['season'] === 'wet' ? 'rgba(14,165,233,0.2)' : 'rgba(251,191,36,0.2)' }};">
-            @if($climate['season'] === 'wet')
-              <svg viewBox="0 0 24 24" width="14" height="14" stroke="#38bdf8" stroke-width="2" fill="none"><path d="M12 2v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M20 12h2"/><path d="M19.07 4.93l-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6z"/></svg>
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; background: {{ $pillBg }};">
+            @if($isWet)
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="#38bdf8" stroke-width="2" fill="none"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/></svg>
             @else
               <svg viewBox="0 0 24 24" width="14" height="14" stroke="#fbbf24" stroke-width="2" fill="none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
             @endif
@@ -110,6 +137,17 @@
           </div>
           <div style="font-size: 11px; color: #87a992;">
             <span style="color: #b9cfc0;">💧</span> {{ $climate['humidity'] }}
+          </div>
+          <!-- Soil/Agronomy mini pill -->
+          @php 
+            $soil = \App\Services\SoilAgronomyService::getSoilIndicators();
+            $readinessColor = $soil['field_readiness']['color'];
+          @endphp
+          <div style="font-size: 11px; color: #87a992; margin-left: auto;">
+            <span style="display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; border-radius: 3px; font-size: 9px; font-weight: 600; background: {{ $readinessColor }}20; color: {{ $readinessColor }};">
+              <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: {{ $readinessColor }};"></span>
+              {{ $soil['field_readiness']['label'] }}
+            </span>
           </div>
         </div>
         @endif

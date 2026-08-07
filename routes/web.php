@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FarmerDashboardController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\StoreDirectoryController;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -79,7 +81,7 @@ Route::middleware('auth')->group(function () {
 
     // --- Farmer Space ---
     Route::middleware(RoleMiddleware::class . ':farmer')->prefix('farmer')->group(function () {
-        Route::get('/dashboard', fn () => view('dashboard.farmer'))->name('dashboard.farmer');
+        Route::get('/dashboard', [FarmerDashboardController::class, 'index'])->name('dashboard.farmer');
         Route::get('/crops', fn () => view('farmer.crops.index'))->name('farmer.crops.index');
         Route::get('/recommendations', fn () => view('farmer.recommendations.index'))->name('farmer.recommendations.index');
         Route::get('/products/browse', [ProductController::class, 'browse'])->name('farmer.products.browse');
@@ -90,7 +92,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/quotations/{quotation}', [QuotationController::class, 'farmerShow'])->name('farmer.quotations.show');
         Route::post('/quotations/{quotation}/accept', [QuotationController::class, 'acceptQuotation'])->name('farmer.quotations.accept');
         Route::post('/quotations/{quotation}/reject', [QuotationController::class, 'rejectQuotation'])->name('farmer.quotations.reject');
-        Route::get('/stores', fn () => view('farmer.stores.index'))->name('farmer.stores.index');
+        Route::get('/stores', [StoreDirectoryController::class, 'index'])->name('farmer.stores.index');
         Route::get('/notifications', fn () => view('farmer.notifications.index'))->name('farmer.notifications.index');
     });
 });
