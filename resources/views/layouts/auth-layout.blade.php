@@ -6,6 +6,8 @@
     <title>@yield('title') | Aquilala</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scrollbar-width: none; -ms-overflow-style: none; }
+        html::-webkit-scrollbar { width: 0; height: 0; display: none; }
         body { 
             font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; 
             background: #f3f6f4; 
@@ -129,17 +131,26 @@
             @yield('form-content')
         </div>
 
-        <div class="visual-pane" style="background-image: linear-gradient(135deg, rgba(51, 118, 20, 0.62), rgba(20, 61, 35, 0.55)), url('{{ asset('images/login-img.png') }}');">
+        <div class="visual-pane" data-bg="{{ asset('images/login-img.png') }}">
             <div>
                 <h2>Aqui<span>lala</span></h2>
                 <p>Irrigators Association Incorporated</p>
                 <div style="margin-top: 32px; height: 2px; width: 40px; background: #348110; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
                 <p style="margin-top: 24px; font-size: 14px; color: #ffffff; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.4);">
-                    Empowering local farmers in Bulan, Sorsogon with modern data-driven decision support tools for seasonal crop cycles.
+                    Access recommended farm inputs, compare curated store offerings, and plan your costs with guided decision support.
                 </p>
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var pane = document.querySelector('.visual-pane');
+            if (pane && pane.dataset.bg) {
+                pane.style.backgroundImage = 'linear-gradient(135deg, rgba(51, 118, 20, 0.62), rgba(20, 61, 35, 0.55)), url("' + pane.dataset.bg + '")';
+            }
+        });
+    </script>
 
     @yield('scripts')
 </body>

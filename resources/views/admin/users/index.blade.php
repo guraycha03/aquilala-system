@@ -3,49 +3,370 @@
 @section('title', 'User Management')
 
 @section('content')
-  <div class="header-panel" style="margin-bottom: 24px;">
-    <h1 style="font-size: 24px; font-weight: 700; color: #1e2922;">User Account Profiles</h1>
-    <p style="color: #606d64; font-size: 14px;">Manage system authorization, monitor users, and assign account privileges.</p>
-  </div>
+  @php
+    $totalUsers = $users->count();
+    $ownerCount = $users->where('role', 'store_owner')->count();
+    $farmerCount = $users->where('role', 'farmer')->count();
+    $adminCount = $users->where('role', 'admin')->count();
+    $verifiedCount = $users->filter(fn($u) => $u->email_verified_at)->count();
+
+    $roleMeta = [
+        'admin'       => ['Administrator', '#86799f', '#f1eef6'],
+        'store_owner' => ['Store Owner', '#a57f43', '#f6f0e6'],
+        'farmer'      => ['Farmer', '#63856c', '#eef3ef'],
+    ];
+  @endphp
 
   <style>
-    .data-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-    th { background: #fafbfa; padding: 14px; font-weight: 600; color: #4a574e; border-bottom: 1px solid #e2e8f0; }
-    td { padding: 14px; border-bottom: 1px solid #e2e8f0; color: #3d4a41; }
-    .badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .users-page { position: relative; }
+    .users-page::before,
+    .users-page::after {
+      content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
+    }
+    .users-page::before { width: 320px; height: 320px; background: rgba(16,185,129,0.16); top: -80px; right: -80px; }
+    .users-page::after { width: 280px; height: 280px; background: rgba(93,194,87,0.12); bottom: -60px; left: -60px; }
+    .users-content { position: relative; z-index: 1; }
+
+    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+    .header-row h1 { font-size: 24px; font-weight: 700; color: #1e293b; letter-spacing: 0.02em; margin: 0 0 4px 0; }
+    .header-row p { font-size: 13px; color: #64748b; margin: 0; }
+    .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-users {
+      display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+      background: rgb(172, 242, 121); border: 1px solid rgba(20,61,35,0.12);
+      color: #14532d; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 700;
+      transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(20,61,35,0.08); cursor: pointer;
+    }
+    .btn-users:hover { background: rgb(160, 232, 108); transform: translateY(-1px); }
+    .btn-users svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .btn-users.ghost { background: #ffffff; border-color: rgba(20,61,35,0.10); box-shadow: none; }
+    .btn-users.ghost:hover { background: #f0fdf4; }
+
+    .users-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .users-kpi {
+      padding: 16px 18px; border-radius: 14px; background: rgba(255,255,255,0.84);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.55); box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+    }
+    .users-kpi .uk-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: #64748b; margin-bottom: 6px; }
+    .users-kpi .uk-value { font-size: 24px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; }
+    .users-kpi .uk-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .users-kpi .uk-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+
+    .users-panel {
+      background: rgba(255,255,255,0.86); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.55); border-radius: 18px;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.05), 0 1px 4px rgba(0,0,0,0.03); overflow: hidden;
+      position: relative;
+    }
+    .users-toolbar {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 16px 20px; border-bottom: 1px solid #eef1ef;
+    }
+    .users-toolbar .search-box {
+      display: flex; align-items: center; gap: 8px; flex: 1; min-width: 200px; max-width: 340px;
+      background: #f6f8f7; border: 1px solid #e6ebe8; border-radius: 10px; padding: 8px 12px;
+    }
+    .users-toolbar .search-box svg { width: 14px; height: 14px; stroke: #94a3b8; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .users-toolbar .search-box input { border: none; background: transparent; outline: none; width: 100%; font-size: 13px; color: #334155; }
+    .users-toolbar select {
+      background: #f6f8f7; border: 1px solid #e6ebe8; border-radius: 10px;
+      padding: 8px 12px; font-size: 13px; color: #334155; outline: none; cursor: pointer;
+    }
+
+    .users-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .users-table thead tr { background: #fafbfa; }
+    .users-table th { padding: 13px 20px; color: #94a3b8; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+    .users-table td { padding: 14px 20px; color: #334155; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .users-table tbody tr { transition: background 0.15s ease; }
+    .users-table tbody tr:hover { background: #fafbfa; }
+    .users-table tbody tr:last-child td { border-bottom: none; }
+    .user-cell { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 10px; background: rgb(172, 242, 121); color: #14532d;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .user-avatar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .user-cell .u-name { font-weight: 600; color: #1e293b; white-space: nowrap; }
+    .user-cell .u-mail { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+    .role-badge { display: inline-block; padding: 3px 10px; border-radius: 7px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .verified-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .verified-pill svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .user-joined { font-size: 12px; color: #64748b; white-space: nowrap; }
+    .user-contact { font-size: 12px; color: #64748b; white-space: nowrap; }
+    .user-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+    .icon-btn {
+      width: 30px; height: 30px; border-radius: 8px; border: none; background: transparent; color: #94a3b8;
+      display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease;
+    }
+    .icon-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .icon-btn:hover { background: #eef3ef; color: #14532d; }
+
+    /* Custom overlay scrollbar moved to shared layout (.app-scrollbar) */
+
+    .users-footer {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 14px 20px; border-top: 1px solid #eef1ef;
+    }
+    .users-footer .rows-info { font-size: 12px; color: #94a3b8; }
+    .users-empty { text-align: center; padding: 48px 20px; color: #94a3b8; }
+    .users-empty svg { width: 40px; height: 40px; stroke: #cbd5e1; fill: none; stroke-width: 1.5; margin-bottom: 10px; }
+
+    /* Toast */
+    .user-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 16px);
+      background: #143d23; color: #eaf7e3; padding: 12px 20px; border-radius: 12px;
+      font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(20,61,35,0.28);
+      opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 9999;
+    }
+    .user-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 768px) {
+      .users-table th:nth-child(3), .users-table td:nth-child(3),
+      .users-table th:nth-child(5), .users-table td:nth-child(5) { display: none; }
+    }
   </style>
 
-  <div class="data-table-container">
-    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700;">Registered System Accounts</h2>
-      <button style="background: #143d23; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">+ Add New User</button>
-    </div>
-    <div style="overflow-x: auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>User Account</th>
-            <th>Email Vector</th>
-            <th>Role Assignment</th>
-            <th>Operational Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="font-weight: 600;">Juan Dela Cruz</td>
-            <td>juan.farmer@aquilala.org</td>
-            <td><span class="badge" style="background: #dcfce7; color: #15803d;">Farmer</span></td>
-            <td><button style="color: #143d23; border: none; background: none; font-weight: 600; cursor: pointer;">Edit Settings</button></td>
-          </tr>
-          <tr>
-            <td style="font-weight: 600;">Bulan Agri Supply</td>
-            <td>merchant.one@supply.ph</td>
-            <td><span class="badge" style="background: #fef3c7; color: #d97706;">Store Owner</span></td>
-            <td><button style="color: #143d23; border: none; background: none; font-weight: 600; cursor: pointer;">Edit Settings</button></td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="users-page">
+    <div class="users-content">
+      <div class="header-row">
+        <div>
+          <h1>User Account Profiles</h1>
+          <p>Manage system authorization, monitor accounts, and assign platform privileges.</p>
+        </div>
+        <div class="header-actions">
+          <button id="exportBtn" class="btn-users ghost">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+          <button id="addUserBtn" class="btn-users">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add New User
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary KPIs -->
+      <div class="users-kpis">
+        <div class="users-kpi">
+          <div class="uk-label">Total Accounts</div>
+          <div class="uk-value">{{ $totalUsers }}</div>
+          <div class="uk-sub">{{ $verifiedCount }} verified emails</div>
+        </div>
+        <div class="users-kpi">
+          <div class="uk-label"><span class="uk-dot" style="background:#63856c;"></span>Farmers</div>
+          <div class="uk-value">{{ $farmerCount }}</div>
+          <div class="uk-sub">crop producers</div>
+        </div>
+        <div class="users-kpi">
+          <div class="uk-label"><span class="uk-dot" style="background:#a57f43;"></span>Store Owners</div>
+          <div class="uk-value">{{ $ownerCount }}</div>
+          <div class="uk-sub">registered stores</div>
+        </div>
+        <div class="users-kpi">
+          <div class="uk-label"><span class="uk-dot" style="background:#86799f;"></span>Administrators</div>
+          <div class="uk-value">{{ $adminCount }}</div>
+          <div class="uk-sub">platform operators</div>
+        </div>
+      </div>
+
+      <!-- Accounts table -->
+      <div class="users-panel">
+        <div class="users-toolbar">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="searchInput" type="text" placeholder="Search by name, email, or location…">
+          </div>
+          <select id="roleFilter">
+            <option value="all">All roles</option>
+            <option value="farmer">Farmer</option>
+            <option value="store_owner">Store Owner</option>
+            <option value="admin">Administrator</option>
+          </select>
+          <select id="verifyFilter">
+            <option value="all">Any status</option>
+            <option value="verified">Verified</option>
+            <option value="pending">Unverified</option>
+          </select>
+        </div>
+
+        <div class="app-scroll-wrap" style="--sb-bottom: 18px;">
+          <div class="app-scroll" id="usersScroll">
+          @if($users->isNotEmpty())
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th>User Account</th>
+                  <th>Contact</th>
+                  <th>Role Assignment</th>
+                  <th>Status</th>
+                  <th>Joined</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersRows">
+                @foreach($users as $u)
+                  @php
+                    $role = $roleMeta[$u->role] ?? ['Member', '#64748b', '#f1f5f9'];
+                    $verified = !empty($u->email_verified_at);
+                    $location = trim(implode(', ', array_filter([$u->barangay, $u->city])));
+                    $contact = $u->contact_number ?? ($location ?: '—');
+                    $search = strtolower(($u->name ?? '') . ' ' . ($u->email ?? '') . ' ' . $location);
+                  @endphp
+                  <tr data-search="{{ $search }}" data-role="{{ $u->role }}" data-verified="{{ $verified ? '1' : '0' }}">
+                    <td>
+                      <div class="user-cell">
+                        <div class="user-avatar">
+                          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div style="min-width:0;">
+                          <div class="u-name">{{ $u->name }}</div>
+                          <div class="u-mail">{{ $u->email }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="user-contact">{{ $contact }}</div>
+                    </td>
+                    <td>
+                      <span class="role-badge" data-inline-style="background:{{ $role[2] }};color:{{ $role[1] }};">{{ $role[0] }}</span>
+                    </td>
+                    <td>
+                      @if($verified)
+                        <span class="verified-pill" style="background:#eef3ef;color:#3f7a4f;">
+                          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                          Verified
+                        </span>
+                      @else
+                        <span class="verified-pill" style="background:#f1f5f9;color:#94a3b8;">
+                          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          Unverified
+                        </span>
+                      @endif
+                    </td>
+                    <td>
+                      <span class="user-joined">{{ $u->created_at ? $u->created_at->format('M d, Y') : '—' }}</span>
+                    </td>
+                    <td>
+                      <div class="user-actions">
+                        <button class="icon-btn" title="Edit user" data-toast="Edit profile flow coming soon">
+                          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="icon-btn" title="View profile" data-toast="Profile view coming soon">
+                          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          @else
+            <div class="users-empty">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <p>No user accounts registered yet.</p>
+            </div>
+          @endif
+          </div>
+
+          @if($users->isNotEmpty())
+            <div class="app-scrollbar">
+              <div class="app-scrollbar-track"></div>
+              <div class="app-scrollbar-thumb"></div>
+            </div>
+          @endif
+        </div>
+
+        <div class="users-footer">
+          <span class="rows-info" id="rowsInfo"></span>
+          <button id="clearFiltersBtn" class="btn-users ghost">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Clear Filters
+          </button>
+        </div>
+      </div>
     </div>
   </div>
+
+  <div class="user-toast" id="userToast"></div>
+
+  <script>
+    (function () {
+      var rows = Array.prototype.slice.call(document.querySelectorAll('#usersRows tr'));
+      var searchInput = document.getElementById('searchInput');
+      var roleFilter = document.getElementById('roleFilter');
+      var verifyFilter = document.getElementById('verifyFilter');
+      var rowsInfo = document.getElementById('rowsInfo');
+      var toast = document.getElementById('userToast');
+      var toastTimer = null;
+
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 2600);
+      }
+
+      document.getElementById('addUserBtn').addEventListener('click', function () {
+        showToast('User creation form coming soon');
+      });
+      document.querySelectorAll('.icon-btn[data-toast]').forEach(function (btn) {
+        btn.addEventListener('click', function () { showToast(btn.dataset.toast); });
+      });
+
+      function applyFilters() {
+        var q = (searchInput.value || '').toLowerCase().trim();
+        var role = roleFilter.value;
+        var ver = verifyFilter.value;
+        var shown = 0;
+        rows.forEach(function (row) {
+          var ok = true;
+          if (q && row.getAttribute('data-search').indexOf(q) === -1) ok = false;
+          if (ok && role !== 'all' && row.getAttribute('data-role') !== role) ok = false;
+          if (ok && ver !== 'all' && row.getAttribute('data-verified') !== (ver === 'verified' ? '1' : '0')) ok = false;
+          row.style.display = ok ? '' : 'none';
+          if (ok) shown++;
+        });
+        rowsInfo.textContent = 'Showing ' + shown + ' of ' + rows.length + ' accounts';
+      }
+
+      searchInput.addEventListener('input', applyFilters);
+      roleFilter.addEventListener('change', applyFilters);
+      verifyFilter.addEventListener('change', applyFilters);
+      document.getElementById('clearFiltersBtn').addEventListener('click', function () {
+        searchInput.value = '';
+        roleFilter.value = 'all';
+        verifyFilter.value = 'all';
+        applyFilters();
+      });
+
+      // Export CSV
+      document.getElementById('exportBtn').addEventListener('click', function () {
+        var shown = rows.filter(function (r) { return r.style.display !== 'none'; });
+        if (shown.length === 0) { showToast('No accounts to export'); return; }
+        var lines = ['Name,Email,Role,Status,Joined'];
+        shown.forEach(function (row) {
+          var cells = row.querySelectorAll('td');
+          var name = cells[0].querySelector('.u-name').innerText;
+          var mail = cells[0].querySelector('.u-mail').innerText;
+          var role = cells[2].innerText.trim();
+          var status = cells[3].innerText.trim();
+          var joined = cells[4].innerText.trim();
+          lines.push([name, mail, role, status, joined].map(function (v) {
+            return '"' + v.replace(/"/g, '""') + '"';
+          }).join(','));
+        });
+        var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'user-accounts.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Exported ' + shown.length + ' accounts');
+      });
+
+      applyFilters();
+    })();
+  </script>
 @endsection

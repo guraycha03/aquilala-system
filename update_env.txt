@@ -1,0 +1,27 @@
+
+
+can you please update my .env file to be ready for a real world use of this system, also i actually cloned this project from my other device so evrything in env and some files are of default, so please check out my other files to update what needed after the cloning
+
+
+what should i use now, the blackbox is really usefull i just used it last week, it inlimted, i can use it daily without end, also it reads all of my files, run terminal, auto complete files, creates files with full codes and evrything, is there atlearnative that can do all of this too? without neededing to pay or card , all free 
+
+
+AQ.Ab8RN6IpvhY8K4lPif_uKhgpvuvXxrjO-l-4T8Z28aE40chHOQ
+
+
+API key details
+info
+For details on using auth keys with Gemini API, see our API key documentation.
+API Key
+AQ.Ab8RN6IpvhY8K4lPif_uKhgpvuvXxrjO-l-4T8Z28aE40chHOQ
+Name
+Gemini API VS Code Extension
+Project name
+projects/872203606703
+Project number
+872203606703
+
+
+open ai
+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
+

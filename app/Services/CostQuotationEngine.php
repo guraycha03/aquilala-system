@@ -102,7 +102,7 @@ class CostQuotationEngine
         $products = $this->resolveProducts($cropType, $season, $storeOwner->id, $selectedIds);
 
         // ─── 3. Look up DecisionFormula records for base rates ─────
-        $formulas = DecisionFormula::where('crop_type', $cropType)
+        $formulas = DecisionFormula::whereCrop($cropType)
             ->where('season', $season)
             ->get()
             ->keyBy('product_id');
@@ -311,7 +311,7 @@ class CostQuotationEngine
             $query->whereIn('id', $selectedIds);
         } else {
             // Auto-detect: find products that have DecisionFormula records for this crop+season
-            $formulaProductIds = DecisionFormula::where('crop_type', $cropType)
+            $formulaProductIds = DecisionFormula::whereCrop($cropType)
                 ->where('season', $season)
                 ->pluck('product_id')
                 ->toArray();

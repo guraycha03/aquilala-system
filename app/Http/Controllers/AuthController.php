@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\User;
@@ -135,6 +136,7 @@ class AuthController extends Controller
     {
         // 1. Calculate live totals directly from the database table
         $totalUsers = User::count();
+        $adminCount = User::where('role', 'admin')->count();
         $storeOwnersCount = User::where('role', 'store_owner')->count();
         $farmersCount = User::where('role', 'farmer')->count();
 
@@ -143,10 +145,24 @@ class AuthController extends Controller
 
         // ─── Admin Dashboard Metrics ──────────────────────────────
         // Platform catalogue & activity
+        $totalCategories = Category::count();
         $totalProducts = Product::count();
         $activeProducts = Product::where('status', 'active')->count();
+        $outOfStockProducts = Product::where('status', 'out_of_stock')
+            ->orWhere('stock_quantity', 0)
+            ->count();
+        $discontinuedProducts = Product::where('status', 'discontinued')->count();
+
         $totalQuotations = Quotation::count();
-        $pendingQuotations = Quotation::where('status', Quotation::STATUS_PENDING)->count();
+        $quotationStatusCounts = [
+            'pending'    => Quotation::where('status', Quotation::STATUS_PENDING)->count(),
+            'computed'   => Quotation::where('status', Quotation::STATUS_COMPUTED)->count(),
+            'dispatched' => Quotation::where('status', Quotation::STATUS_DISPATCHED)->count(),
+            'accepted'   => Quotation::where('status', Quotation::STATUS_ACCEPTED)->count(),
+            'rejected'   => Quotation::where('status', Quotation::STATUS_REJECTED)->count(),
+        ];
+        $pendingQuotations = $quotationStatusCounts['pending'];
+        $acceptedQuotations = $quotationStatusCounts['accepted'];
 
         // Recent platform-wide quotation activity
         $recentPlatformQuotations = Quotation::with(['farmer', 'storeOwner'])
@@ -154,17 +170,30 @@ class AuthController extends Controller
             ->take(5)
             ->get();
 
+        // Latest listings across the marketplace
+        $recentProducts = Product::with(['storeOwner', 'category'])
+            ->latest()
+            ->take(5)
+            ->get();
+
         // 3. Render the administration dashboard layout view safely with variables
         return view('dashboard.admin', compact(
             'totalUsers',
+            'adminCount',
             'storeOwnersCount',
             'farmersCount',
             'recentUsers',
+            'totalCategories',
             'totalProducts',
             'activeProducts',
+            'outOfStockProducts',
+            'discontinuedProducts',
             'totalQuotations',
+            'quotationStatusCounts',
             'pendingQuotations',
-            'recentPlatformQuotations'
+            'acceptedQuotations',
+            'recentPlatformQuotations',
+            'recentProducts'
         ));
     }
 }

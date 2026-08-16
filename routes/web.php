@@ -1,105 +1,147 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\FarmerDashboardController;
-use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\QuotationController;
-use App\Http\Controllers\StoreDirectoryController;
-use App\Http\Middleware\RoleMiddleware;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
-// --- Public Guest Access ---
+/*
+|--------------------------------------------------------------------------
+| Public & Guest Routes
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect()->route('dashboard.redirect', ['role' => Auth::user()->role]);
+    }
     return redirect()->route('login');
 })->name('home');
 
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::get('/register', [AuthController::class, 'showSignup'])->name('register');
-Route::post('/register', [AuthController::class, 'signup'])->name('register.post');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::get('/register', [AuthController::class, 'showSignup'])->name('register');
+    Route::post('/register', [AuthController::class, 'signup'])->name('register.post');
+});
 
-// --- Authenticated User Space ---
+/*
+|--------------------------------------------------------------------------
+| Authenticated User Routes (Requires Session & Active CSRF Token)
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware('auth')->group(function () {
-    // Core Entrance Hub Redirect
-    Route::get('/dashboard', function () {
-        return redirect()->route('dashboard.redirect', ['role' => Auth::user()->role]);
-    });
 
-    Route::get('/dashboard/redirect/{role}', function ($role) {
+    // Handled by AuthController@logout to invalidate sessions and prevent 419 Page Expired errors
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Centralized Dashboard Redirector
+    Route::get('/dashboard', function () {
+        $role = Auth::user()->role;
         return match ($role) {
-            'admin' => redirect()->route('dashboard.admin'),
-            'store_owner' => redirect()->route('dashboard.store_owner'),
-            default => redirect()->route('dashboard.farmer'),
+            'admin'       => redirect()->route('dashboard.admin'),
+            'store_owner' => redirect()->route('store.dashboard'),
+            'farmer'      => redirect()->route('dashboard.farmer'),
+            default       => abort(403, 'Unauthorized role access.'),
         };
     })->name('dashboard.redirect');
 
-    // --- Admin Control Panel ---
-    Route::middleware(RoleMiddleware::class . ':admin')->prefix('admin')->group(function () {
-        Route::get('/dashboard', [AuthController::class, 'showAdminDashboard'])->name('dashboard.admin');
-        Route::get('/users', fn () => view('admin.users.index'))->name('admin.users.index');
-        Route::get('/approvals', fn () => view('admin.approvals.index'))->name('admin.approvals.index');
-        Route::get('/formulas', fn () => view('admin.formulas.index'))->name('admin.formulas.index');
-        Route::get('/quotations', [QuotationController::class, 'adminIndex'])->name('admin.quotations.index');
-        Route::get('/analytics', fn () => view('admin.analytics.index'))->name('admin.analytics.index');
-        Route::get('/settings', fn () => view('admin.settings.index'))->name('admin.settings.index');
-        Route::get('/audit', fn () => view('admin.audit.index'))->name('admin.audit.index');
+    /*
+    |--------------------------------------------------------------------------
+    | Farmer Space
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('farmer')->name('farmer.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\FarmerDashboardController::class, 'index'])->name('dashboard'); // referenced as dashboard.farmer or farmer.dashboard
+
+        // Crops Management
+        Route::get('/crops', function () { return view('farmer.crops.index'); })->name('crops.index');
+
+        // Recommendations
+        Route::get('/recommendations', [App\Http\Controllers\ProductController::class, 'recommendations'])->name('recommendations.index');
+
+        // Products & Store Browsing
+        Route::get('/products/browse', function () { return view('farmer.products.browse'); })->name('products.browse');
+        Route::get('/products/{product}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
+        Route::get('/stores', [App\Http\Controllers\StoreDirectoryController::class, 'index'])->name('stores.index');
+
+        // Quotations
+        Route::get('/quotations', [App\Http\Controllers\QuotationController::class, 'farmerIndex'])->name('quotations.index');
+        Route::get('/quotations/request', [App\Http\Controllers\QuotationController::class, 'farmerCreate'])->name('quotations.request');
+        Route::get('/quotations/{quotation}', [App\Http\Controllers\QuotationController::class, 'farmerShow'])->name('quotations.show');
+        Route::post('/quotations', [App\Http\Controllers\QuotationController::class, 'farmerStore'])->name('quotations.store');
+        Route::post('/quotations/{quotation}/accept', [App\Http\Controllers\QuotationController::class, 'acceptQuotation'])->name('quotations.accept');
+        Route::post('/quotations/{quotation}/reject', [App\Http\Controllers\QuotationController::class, 'rejectQuotation'])->name('quotations.reject');
+
+        // Notifications
+        Route::get('/notifications', function () { return view('farmer.notifications.index'); })->name('notifications.index');
     });
 
-    // --- Store Owner Space (B2B Store Pipeline) ---
-    Route::middleware(RoleMiddleware::class . ':store_owner')->prefix('store')->group(function () {
-        
-        // ✅ FIXED: Point to ProductController@index instead of a raw closure
-        Route::get('/dashboard', [ProductController::class, 'index'])->name('dashboard.store_owner');
-        
-        Route::get('/inventory', [InventoryController::class, 'index'])->name('store.inventory.index');
-        Route::get('/inventory/stats', [InventoryController::class, 'stats'])->name('store.inventory.stats');
-        Route::post('/inventory/{product}/update-stock', [InventoryController::class, 'updateStock'])->name('store.inventory.update-stock');
-        // Quotation routes for store owner
-        Route::get('/quotations', [QuotationController::class, 'storeIndex'])->name('store.quotations.index');
-        Route::get('/quotations/{quotation}', [QuotationController::class, 'storeShow'])->name('store.quotations.show');
-        Route::post('/quotations/{quotation}/claim', [QuotationController::class, 'claimQuotation'])->name('store.quotations.claim');
-        Route::post('/quotations/{quotation}/compute', [QuotationController::class, 'computePrices'])->name('store.quotations.compute');
-        Route::put('/quotations/items/{item}', [QuotationController::class, 'updateItem'])->name('store.quotations.update-item');
-        Route::post('/quotations/{quotation}/dispatch', [QuotationController::class, 'dispatchQuotation'])->name('store.quotations.dispatch');
+    // Explicit fallback alias for dashboard.farmer reference in layout
+    Route::get('/farmer/dashboard', [App\Http\Controllers\FarmerDashboardController::class, 'index'])->name('dashboard.farmer');
 
-        Route::get('/storefront', [ProductController::class, 'index'])->name('store.storefront.index');
-        Route::get('/formulas', fn () => view('store.formulas.index'))->name('store.formulas.index');
+    /*
+    |--------------------------------------------------------------------------
+    | Store Owner Space
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('store')->name('store.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\ProductController::class, 'index'])->name('dashboard');
+        Route::get('/inventory', [App\Http\Controllers\InventoryController::class, 'index'])->name('inventory.index');
+        Route::post('/inventory/{product}/update-stock', [App\Http\Controllers\InventoryController::class, 'updateStock'])->name('inventory.update');
+        Route::get('/quotations', [App\Http\Controllers\QuotationController::class, 'storeIndex'])->name('quotations.index');
+        Route::get('/quotations/{quotation}', [App\Http\Controllers\QuotationController::class, 'storeShow'])->name('quotations.show');
+        Route::post('/quotations/{quotation}/claim', [App\Http\Controllers\QuotationController::class, 'claimQuotation'])->name('quotations.claim');
+        Route::post('/quotations/{quotation}/compute', [App\Http\Controllers\QuotationController::class, 'computePrices'])->name('quotations.compute');
+        Route::post('/quotations/{quotation}/dispatch', [App\Http\Controllers\QuotationController::class, 'dispatchQuotation'])->name('quotations.dispatch');
+        Route::post('/quotations/{item}/update-item', [App\Http\Controllers\QuotationController::class, 'updateItem'])->name('quotations.update-item');
+        Route::get('/storefront', [App\Http\Controllers\ProductController::class, 'storefront'])->name('storefront.index');
 
-        // Product CRUD routes
-        Route::prefix('products')->group(function () {
-            Route::get('/', [ProductController::class, 'index'])->name('store.products.index');
-            Route::get('/create', [ProductController::class, 'create'])->name('store.products.create');
-            Route::post('/', [ProductController::class, 'store'])->name('store.products.store');
-            Route::get('/{product}', [ProductController::class, 'show'])->name('store.products.show');
-            Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('store.products.edit');
-            Route::put('/{product}', [ProductController::class, 'update'])->name('store.products.update');
-            Route::delete('/{product}', [ProductController::class, 'destroy'])->name('store.products.destroy');
-        });
+        // DSS Input Formulas (rule matrix management)
+        Route::get('/formulas', [App\Http\Controllers\FormulaController::class, 'index'])->name('formulas.index');
+        Route::get('/formulas/create', [App\Http\Controllers\FormulaController::class, 'create'])->name('formulas.create');
+        Route::post('/formulas', [App\Http\Controllers\FormulaController::class, 'store'])->name('formulas.store');
+        Route::get('/formulas/{formula}/edit', [App\Http\Controllers\FormulaController::class, 'edit'])->name('formulas.edit');
+        Route::put('/formulas/{formula}', [App\Http\Controllers\FormulaController::class, 'update'])->name('formulas.update');
+        Route::delete('/formulas/{formula}', [App\Http\Controllers\FormulaController::class, 'destroy'])->name('formulas.destroy');
+    
+        // Missing product management routes
+        Route::get('/products/create', [App\Http\Controllers\ProductController::class, 'create'])->name('products.create');
+        Route::get('/products/{product}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
+        Route::get('/products/{product}/edit', [App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');
+        Route::delete('/products/{product}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');
     });
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Space
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/dashboard', [AuthController::class, 'showAdminDashboard'])->name('dashboard');
 
-    // --- Farmer Space ---
-    Route::middleware(RoleMiddleware::class . ':farmer')->prefix('farmer')->group(function () {
-        Route::get('/dashboard', [FarmerDashboardController::class, 'index'])->name('dashboard.farmer');
-        Route::get('/crops', fn () => view('farmer.crops.index'))->name('farmer.crops.index');
-        Route::get('/recommendations', function () {
-            $products = \App\Models\Product::active()
-                ->with(['category', 'storeOwner', 'mainImage'])
-                ->orderBy('created_at', 'desc')
+        Route::get('/users', function () {
+            $users = \App\Models\User::orderBy('created_at', 'desc')->get();
+            return view('admin.users.index', compact('users'));
+        })->name('users.index');
+        Route::get('/approvals', function () { return view('admin.approvals.index'); })->name('approvals.index');
+        Route::get('/quotations', [App\Http\Controllers\QuotationController::class, 'adminIndex'])->name('quotations.index');
+        Route::get('/analytics', function () {
+            $formulas = \App\Models\DecisionFormula::with('product.category')
+                ->orderBy('crop_type')
+                ->orderBy('season')
                 ->get();
-            return view('farmer.recommendations.index', compact('products'));
-        })->name('farmer.recommendations.index');
-        Route::get('/products/browse', [ProductController::class, 'browse'])->name('farmer.products.browse');
-        Route::get('/products/{product}', [ProductController::class, 'show'])->name('farmer.products.show');
-        Route::get('/quotations/request', [QuotationController::class, 'farmerCreate'])->name('farmer.quotations.request');
-        Route::post('/quotations', [QuotationController::class, 'farmerStore'])->name('farmer.quotations.store');
-        Route::get('/quotations', [QuotationController::class, 'farmerIndex'])->name('farmer.quotations.index');
-        Route::get('/quotations/{quotation}', [QuotationController::class, 'farmerShow'])->name('farmer.quotations.show');
-        Route::post('/quotations/{quotation}/accept', [QuotationController::class, 'acceptQuotation'])->name('farmer.quotations.accept');
-        Route::post('/quotations/{quotation}/reject', [QuotationController::class, 'rejectQuotation'])->name('farmer.quotations.reject');
-        Route::get('/stores', [StoreDirectoryController::class, 'index'])->name('farmer.stores.index');
-        Route::get('/notifications', fn () => view('farmer.notifications.index'))->name('farmer.notifications.index');
+
+            $grouped = $formulas->groupBy('crop_type')->map(function ($cropFormulas) {
+                return $cropFormulas->groupBy('season');
+            });
+
+            return view('admin.analytics.index', compact('formulas', 'grouped'));
+        })->name('analytics.index');
+        Route::get('/settings', function () { return view('admin.settings.index'); })->name('settings.index');
+        Route::get('/audit', function () { return view('admin.audit.index'); })->name('audit.index');
     });
+
+    // Explicit fallback alias for dashboard.admin reference in layout and AuthController
+    Route::get('/admin/dashboard', [AuthController::class, 'showAdminDashboard'])->name('dashboard.admin');
 });

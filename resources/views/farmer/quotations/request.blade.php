@@ -3,6 +3,14 @@
 @section('title', 'Request Quotation')
 
 @section('content')
+@php
+  $selSeason = old('season') ?? $globalSeason;
+  $climate = $globalClimateInfo;
+  $cardStyle = function ($season) use ($selSeason) {
+      return 'display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid ' . ($selSeason === $season ? '#143d23' : '#e2e8f0') . '; border-radius: 10px; cursor: pointer; transition: all 0.2s; background: ' . ($selSeason === $season ? '#f0fdf4' : '#ffffff') . ';';
+  };
+  $climateDotStyle = 'display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: ' . ($climate['season'] === 'wet' ? '#0284c7' : '#d97706') . ';';
+@endphp
 <style>
   .input-field {
     width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0;
@@ -106,14 +114,14 @@
       <div style="margin-bottom: 20px;">
         <label class="input-label">Farming Season</label>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <label style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid {{ (old('season') ?? $globalSeason) === 'wet' ? '#143d23' : '#e2e8f0' }}; border-radius: 10px; cursor: pointer; transition: all 0.2s; background: {{ (old('season') ?? $globalSeason) === 'wet' ? '#f0fdf4' : '#ffffff' }};">
+          <label data-inline-style="{{ $cardStyle('wet') }}">
             <input type="radio" name="season" value="wet" @checked((old('season') ?? $globalSeason) === 'wet') style="accent-color: #143d23;" required>
             <div>
               <div style="font-weight: 600; font-size: 14px; color: #1e2922;">Wet Season</div>
               <div style="font-size: 12px; color: #94a3b8;">June – October</div>
             </div>
           </label>
-          <label style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid {{ (old('season') ?? $globalSeason) === 'dry' ? '#143d23' : '#e2e8f0' }}; border-radius: 10px; cursor: pointer; transition: all 0.2s; background: {{ (old('season') ?? $globalSeason) === 'dry' ? '#f0fdf4' : '#ffffff' }};">
+          <label data-inline-style="{{ $cardStyle('dry') }}">
             <input type="radio" name="season" value="dry" @checked((old('season') ?? $globalSeason) === 'dry') style="accent-color: #143d23;" required>
             <div>
               <div style="font-weight: 600; font-size: 14px; color: #1e2922;">Dry Season</div>
@@ -122,9 +130,8 @@
           </label>
         </div>
         <div class="input-hint">
-          @php $climate = $globalClimateInfo; @endphp
           <span style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
-            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {{ $climate['season'] === 'wet' ? '#0284c7' : '#d97706' }};"></span>
+            <span data-inline-style="{{ $climateDotStyle }}"></span>
             <strong>Currently:</strong> {{ $globalSeasonLabel }} — {{ $climate['months'] }}
             @if(isset($climate['sub_season']))
               <span style="color: #64748b;">({{ $climate['sub_season'] }})</span>

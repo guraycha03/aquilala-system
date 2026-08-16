@@ -132,8 +132,9 @@
     </p>
   </div>
   <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-    <span class="badge" style="background: {{ $quotation->status_bg }}; color: {{ $quotation->status_color }};">
-      <span style="width:6px;height:6px;border-radius:50%;display:inline-block;background:{{ $quotation->status_color }};"></span>
+    @php $badgeStyle = 'background:' . $quotation->status_bg . ';color:' . $quotation->status_color . ';'; @endphp
+    <span class="badge" data-inline-style="{{ $badgeStyle }}">
+      <span style="width:6px;height:6px;border-radius:50%;display:inline-block;background:currentColor;"></span>
       {{ $quotation->status_label }}
     </span>
 
@@ -237,16 +238,17 @@
             Review and adjust quantities as needed.
           </p>
 
-          <div style="overflow-x: auto; margin-bottom: 20px;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Rate / Hectare</th>
-                  <th>Unit</th>
-                  <th>Current Price</th>
-                  <th>Calculated Quantity</th>
-                  <th>Estimated Subtotal</th>
+          <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+            <div class="app-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Rate / Hectare</th>
+                    <th>Unit</th>
+                    <th>Current Price</th>
+                    <th>Calculated Quantity</th>
+                    <th>Estimated Subtotal</th>
                 </tr>
               </thead>
               <tbody>
@@ -302,6 +304,11 @@
                 </tr>
               </tfoot>
             </table>
+            </div>
+            <div class="app-scrollbar">
+              <div class="app-scrollbar-track"></div>
+              <div class="app-scrollbar-thumb"></div>
+            </div>
           </div>
 
           <button type="submit" class="btn-primary">
@@ -338,8 +345,9 @@
     </div>
     <div class="detail-card-body" style="padding: 0;">
       @if($quotation->items->count() > 0)
-        <div style="overflow-x: auto;">
-          <table>
+        <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+          <div class="app-scroll">
+            <table>
             <thead>
               <tr>
                 <th>Product</th>
@@ -392,6 +400,11 @@
               </tr>
             </tfoot>
           </table>
+          </div>
+          <div class="app-scrollbar">
+            <div class="app-scrollbar-track"></div>
+            <div class="app-scrollbar-thumb"></div>
+          </div>
         </div>
 
         @if($quotation->status !== 'dispatched')

@@ -84,7 +84,7 @@
       <div class="stat-value">₱{{ number_format($metrics['totalValue'], 0) }}</div>
       <div class="stat-label">Total Value</div>
     </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#16a34a" stroke-width="1.5" fill="none"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#16a34a" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M8 3h6.5a4.5 4.5 0 0 1 0 9H8"/><line x1="4.5" y1="6.5" x2="21" y2="6.5" stroke-width="1.5"/><line x1="4.5" y1="9.5" x2="21" y2="9.5" stroke-width="1.5"/></svg>
   </div>
 </div>
 
@@ -92,8 +92,9 @@
   <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
     <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Global Transaction Log</h2>
   </div>
-  <div style="overflow-x: auto;">
-    <table>
+  <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+    <div class="app-scroll">
+      <table>
       <thead>
         <tr>
           <th>Reference</th>
@@ -108,6 +109,7 @@
       </thead>
       <tbody>
         @forelse($quotations as $q)
+          @php $badgeStyle = 'background:' . $q->status_bg . ';color:' . $q->status_color . ';'; @endphp
           <tr>
             <td style="font-weight: 600; color: #143d23; font-family: monospace; font-size: 13px;">{{ $q->quotation_number }}</td>
             <td>
@@ -140,8 +142,8 @@
               @endif
             </td>
             <td>
-              <span class="badge" style="background: {{ $q->status_bg }}; color: {{ $q->status_color }};">
-                <span class="badge-dot" style="background: {{ $q->status_color }};"></span>
+              <span class="badge" data-inline-style="{{ $badgeStyle }}">
+                <span class="badge-dot" style="background: currentColor;"></span>
                 {{ $q->status_label }}
               </span>
             </td>
@@ -159,6 +161,11 @@
         @endforelse
       </tbody>
     </table>
+    </div>
+    <div class="app-scrollbar">
+      <div class="app-scrollbar-track"></div>
+      <div class="app-scrollbar-thumb"></div>
+    </div>
   </div>
 </div>
 @endsection

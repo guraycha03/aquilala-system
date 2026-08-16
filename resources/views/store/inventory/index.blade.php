@@ -95,7 +95,6 @@
   .filter-select:focus { border-color: #14532d; }
 
   /* Table */
-  .table-scroll { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th {
     background: #f8fafc; padding: 12px 16px; font-weight: 600; color: #475569;
@@ -242,7 +241,7 @@
   <div class="metric-card">
     <div class="metric-top">
       <div class="metric-icon" style="background:#f3e8ff;">
-        <svg viewBox="0 0 24 24" stroke="#7c3aed" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M5 4h7a6 6 0 0 1 0 11H5"/><line x1="5" y1="7" x2="9" y2="7"/><line x1="5" y1="11" x2="8" y2="11"/></svg>
+        <svg viewBox="0 0 24 24" stroke="#7c3aed" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M8 3h6.5a4.5 4.5 0 0 1 0 9H8"/><line x1="4.5" y1="6.5" x2="21" y2="6.5" stroke-width="1.5"/><line x1="4.5" y1="9.5" x2="21" y2="9.5" stroke-width="1.5"/></svg>
       </div>
       <div>
         <div class="metric-label">Total Stock Value</div>
@@ -306,7 +305,8 @@
       </select>
     </div>
 
-    <div class="table-scroll">
+    <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+      <div class="app-scroll">
       @if($products->count() > 0)
       <table>
         <thead>
@@ -335,6 +335,7 @@
             if ($isDisc) { $badge = 'badge-disc'; $text = 'Discontinued'; $dataStatus = 'out'; }
             $pct = $thresh > 0 ? min(100, round(($qty / max($thresh * 2, 1)) * 100)) : 100;
             $barColor = $qty <= 0 ? '#dc2626' : ($qty <= $thresh ? '#f59e0b' : '#16a34a');
+            $stockBarStyle = 'width:' . $pct . '%;background:' . $barColor . ';';
           @endphp
           <tr data-name="{{ strtolower($product->name) }} {{ strtolower($product->sku) }}" data-status="{{ $dataStatus }}">
             <td>
@@ -359,7 +360,7 @@
             <td>{{ $thresh }} units</td>
             <td>
               <div style="display:flex;align-items:center;gap:10px;">
-                <div class="stock-bar"><div style="width:{{ $pct }}%;background:{{ $barColor }};"></div></div>
+                <div class="stock-bar"><div data-inline-style="{{ $stockBarStyle }}"></div></div>
                 <span class="badge {{ $badge }}">{{ $text }}</span>
               </div>
             </td>
@@ -384,6 +385,11 @@
         <p>No products registered yet. Add products to your catalog to start tracking inventory levels.</p>
       </div>
       @endif
+      </div>
+      <div class="app-scrollbar">
+        <div class="app-scrollbar-track"></div>
+        <div class="app-scrollbar-thumb"></div>
+      </div>
     </div>
   </div>
 </div>

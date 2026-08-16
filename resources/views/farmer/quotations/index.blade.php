@@ -116,8 +116,9 @@
   </div>
 
   @if($quotations->count() > 0)
-    <div style="overflow-x: auto;">
-      <table class="quote-table">
+    <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+      <div class="app-scroll">
+        <table class="quote-table">
         <thead>
           <tr>
             <th>Reference</th>
@@ -164,6 +165,11 @@
           @endforeach
         </tbody>
       </table>
+      </div>
+      <div class="app-scrollbar">
+        <div class="app-scrollbar-track"></div>
+        <div class="app-scrollbar-thumb"></div>
+      </div>
     </div>
   @else
     <div style="text-align: center; padding: 60px 20px;">

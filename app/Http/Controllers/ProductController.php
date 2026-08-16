@@ -29,21 +29,32 @@ class ProductController extends Controller
 
         // ─── Merchant Dashboard Metrics ────────────────────────────
         $productCount = $products->count();
-        $lowStockCount = $products->filter(fn ($p) => $p->is_low_stock)->count();
+        $lowStockProducts = $products->filter(fn ($p) => $p->is_low_stock)->values();
+        $lowStockCount = $lowStockProducts->count();
 
-        // Quotation metrics for this store
-        $pendingQuotationsCount = Quotation::where(function ($q) {
-            $q->whereNull('store_user_id')->orWhere('store_user_id', Auth::id());
-        })->where('status', Quotation::STATUS_PENDING)->count();
+        // Estimated retail value of current on-hand inventory
+        $inventoryValue = $products->sum(
+            fn ($p) => (float) $p->price * (int) $p->stock_quantity
+        );
 
+        // ─── Quotation metrics for this store ──────────────────────
+        $storeQuoteScope = function ($query) {
+            return $query->where(function ($q) {
+                $q->whereNull('store_user_id')->orWhere('store_user_id', Auth::id());
+            });
+        };
+
+        $pendingQuotationsCount = $storeQuoteScope(Quotation::query())
+            ->where('status', Quotation::STATUS_PENDING)->count();
+        $computedQuotationsCount = $storeQuoteScope(Quotation::query())
+            ->where('status', Quotation::STATUS_COMPUTED)->count();
         $dispatchedQuotationsCount = Quotation::where('store_user_id', Auth::id())
             ->where('status', Quotation::STATUS_DISPATCHED)->count();
-
         $acceptedQuotationsCount = Quotation::where('store_user_id', Auth::id())
             ->where('status', Quotation::STATUS_ACCEPTED)->count();
 
         // Recent quotation activity for this store
-        $recentStoreQuotations = Quotation::with('farmer')
+        $recentStoreQuotations = Quotation::with(['farmer'])
             ->where(function ($q) {
                 $q->whereNull('store_user_id')->orWhere('store_user_id', Auth::id());
             })
@@ -55,12 +66,41 @@ class ProductController extends Controller
         return view('dashboard.store_owner', compact(
             'products',
             'productCount',
+            'lowStockProducts',
             'lowStockCount',
+            'inventoryValue',
             'pendingQuotationsCount',
+            'computedQuotationsCount',
             'dispatchedQuotationsCount',
             'acceptedQuotationsCount',
             'recentStoreQuotations'
         ));
+    }
+
+    /**
+     * Display the store owner's product catalog (My Store page).
+     */
+    public function storefront()
+    {
+        $products = Product::where('user_id', Auth::id())
+            ->with(['category', 'mainImage', 'images'])
+            ->latest()
+            ->get();
+
+        return view('store.storefront.index', compact('products'));
+    }
+
+    /**
+     * Display the farmer-facing product recommendations page.
+     */
+    public function recommendations()
+    {
+        $products = Product::active()
+            ->with(['category', 'mainImage', 'images', 'storeOwner'])
+            ->latest()
+            ->get();
+
+        return view('farmer.recommendations.index', compact('products'));
     }
 
     /**

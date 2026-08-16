@@ -1,0 +1,1203 @@
+
+
+A WEB-BASED FARM SUPPLY MANAGEMENT AND
+DECISION SUPPORT SYSTEM WITH PRODUCT
+CATALOG AND COST QUOTATION FOR
+AQUILALA IRRIGATORS ASSOCIATION
+INCORPORATED IN BULAN,
+SORSOGON
+
+
+
+
+
+1 Introduction
+This section provided an overview of the study’s background and sought to set the context
+for the project. It outlined the research topic’s details and objectives, along with the capstone
+project’s scope and limitations.
+1.1 Project Context
+Agriculture is the backbone of economies worldwide, providing food, raw materials, and
+employment for billions of people [1]. Globally, digital technologies such as artificial intelligence,
+the Internet of Things, and data analytics are increasingly being adopted to improve farming
+efficiency, reduce costs, and enhance crop yields [2]. However, in many developing countries,
+smallholder farmers still rely on traditional practices, leading to suboptimal outcomes.
+In Southeast Asia, agriculture remains a critical sector for economic development and rural
+livelihoods. The Association of Southeast Asian Nations (ASEAN) has recognized the importance
+of digital transformation in agriculture, promoting initiatives that leverage technology to enhance
+food security and farm productivity [3]. Countries such as Vietnam, Thailand, and Indonesia
+have begun implementing digital agricultural platforms to connect farmers with markets, provide extension services, and facilitate access to farm inputs [4]. Nevertheless, adoption rates
+1
+remain uneven, and many smallholder farmers continue to face barriers related to infrastructure,
+affordability, and digital literacy [5].
+In the Philippines, agriculture is a vital sector, contributing significantly to employment
+and rural development [6]. The national government has promoted various digital agriculture
+initiatives, such as the SAAD (Special Area for Agricultural Development) program and Project
+SARAi (Smarter Approaches to Reinvigorate Agriculture as an Industry), to modernize farming
+practices [7][8]. Despite these efforts, many Filipino farmers continue to depend on manual
+processes, word-of-mouth information, and rough estimates for planning and budgeting [9].
+Focusing on the province of Sorsogon in the Bicol Region, agriculture is the primary source
+of livelihood for the majority of rural households. Within Sorsogon, the municipality of Bulan
+is identified as an agricultural area where farming serves as one of the main sources of income
+for local residents. Farmers in Bulan typically follow two major cropping seasons: the Wet Season (June to October) and the Dry Season (November to May). During the wet season, farmers
+cultivate rice varieties that are tolerant to flooding and heavy rainfall. During the dry season,
+farmers may plant rice, corn, or high-value crops depending on water availability from irrigation
+systems. The Aquilala Irrigators Association plays a critical role in managing water distribution
+for these seasonal plantings. Local farmers still depend on traditional methods, personal experience, and word-of-mouth information when making farming decisions. Because of this, planning
+is often not well-structured, and farmers may end up choosing the wrong materials or spending
+more than expected.
+The Aquilala Irrigators Association Incorporated is a farmer-owned organization operating
+within Bulan, Sorsogon. According to an informal assessment conducted by the proponents in
+coordination with association officers, the association currently manages its farm supply inventory using manual logs and basic spreadsheets. Farmers who are members of the association and
+need supplies such as seeds, fertilizers, or pesticides must physically visit the association store or
+contact store personnel to inquire about product availability and pricing. This manual approach
+leads to delays, inaccurate stock information, and inefficiencies in serving farmers.
+In addition, many farmers struggle with planning their farming activities across the wet
+and dry seasons. Without structured guidance, farmers often rely on personal experience or
+word-of-mouth when deciding which supplies to buy and in what quantities for each season.
+Cost estimation is done roughly, leading to budget miscalculations or incomplete preparation.
+Farmers also lack a systematic way to document actual harvest yields and compare them with
+their planned outputs across different seasons, making it difficult for the association to assess
+the effectiveness of recommended inputs and provide better guidance for future planting cycles.
+The respondents expressed a strong need for a single, accessible platform that could provide user
+account management for three types of users: Admin (who oversees the entire system), Store
+2
+Owner (who manages products and inventory), and Farmers (who purchase supplies and report
+harvests), along with farming cost quotation, product catalog management, farm product and
+store recommendations, and comprehensive report generation including harvest yield comparison
+by season, expense analysis, crop performance tracking across wet and dry seasons, and farm
+output performance reports.
+At present, available systems usually focus on only one aspect, such as an online marketplace or general farming information. Few platforms integrate role-specific user management for
+Admin, Store Owner, and Farmers, along with product catalog browsing, cost quotation generation, decision support for farm input planning, and comprehensive harvest reporting with
+seasonal data visualization within a single environment [10]. This separation can make it more
+difficult for both experienced and beginner farmers to plan farming activities efficiently across
+different seasons. As a result, there is a need for a unified system that can support farming preparation, procurement, performance tracking, and season-based data-driven analysis in a more
+organized and accessible way. The specific gap that this study addresses is the lack of an integrated digital platform tailored to a local association that currently relies entirely on manual
+logs and face-to-face transactions, with distinct user roles for Admin, Store Owner, and Farmers,
+and with comprehensive reporting and seasonal visualization features.
+People increasingly rely on web-based technologies to simplify complex and time-consuming
+tasks. With the continued expansion of internet access, including in rural areas, web applications
+have become a practical and scalable solution for delivering accessible digital services [11]. In
+response to this need, the proponents propose a Web-Based Farm Supply Management and
+Decision Support System with Product Catalog and Cost Quotation for Aquilala Irrigators
+Association Incorporated in Bulan, Sorsogon. The proposed system is intended to provide an
+integrated environment for three types of users: Admin (system administrator), Store Owner
+(manages products and inventory), and Farmers (association members who purchase supplies
+and report harvests), along with farming cost quotation, store and product management, farm
+product and store recommendations, and comprehensive season-based report generation of actual
+harvest through a centralized platform.
+1.2 Purpose and Description
+The purpose of the study is to address the common challenges experienced by the Aquilala
+Irrigators Association Incorporated and its farmers in Bulan, Sorsogon, particularly in managing user accounts for Admin, Store Owner, and Farmers, generating farming cost quotations,
+managing store products, receiving farm product and store recommendations, and generating
+comprehensive harvest reports with seasonal data visualization. Many farmers still rely on manual processes and rough estimates, which often leads to disorganized planning and inefficient
+3
+use of resources, as supported by studies indicating challenges in the adoption and use of digital
+decision support tools in farming-related decision-making processes [12], [13]. To address this,
+the proposed system is a web-based platform that provides a unified workflow for farm supply
+management and farming decision support.
+The proposed system follows a sequential business process that demonstrates understanding of the association’s operations across the wet and dry seasons. The system has three types
+of users with different access levels. The Admin has full access to all system functions including user management, system configuration, and overall oversight. The Store Owner manages
+product listings, updates inventory levels, sets product prices, and receives low-stock alerts. The
+Farmers (association members) can browse the product catalog, receive farm product and store
+recommendations based on their crop type, land area, and selected season (Wet Season or Dry
+Season), request cost quotations, submit harvest reports, and view comparative analytics.
+In Step 1 (Administrative Setup), the Admin registers Store Owners and Farmer accounts,
+while the Store Owner inputs base product prices, inventory levels, and crop-specific input
+formulas which are the standard application rates per hectare for each crop type. The system
+also allows configuration of season-specific parameters, recognizing that input requirements may
+differ between wet and dry seasons. In Step 2 (Farmer Input), a registered Farmer selects their
+crop type such as Rice, selects the farming season (Wet Season or Dry Season), and inputs their
+land area such as 1 hectare. In Step 3 (Decision Support Calculation), the system processes this
+data using a Rule-Based Algorithm. For example, if the crop is Rice, the season is Dry Season,
+and the land area is 1 hectare, then the system recommends 2 bags of Urea Fertilizer and 20 kilos
+of seeds. If the season is Wet Season, the system may recommend a different seed variety that is
+flood-tolerant. This logic transforms the system from a simple inventory list into a true Decision
+Support System that accounts for seasonal variations. In Step 4 (Quotation Generation), the
+system generates an itemized cost quotation based on the recommended inputs multiplied by
+the current association prices, with each quotation including a ”Valid Until” date typically set
+to 3 to 7 days to protect against price fluctuations. The quotation also records the selected
+season (Wet or Dry) for future reference. If a quotation expires, the Farmer can simply generate
+a new quotation which will reflect the current prices and stock availability. In Step 5 (Feedback
+Loop), after harvest, the Farmer submits actual yield data and actual expenses, specifying which
+season the harvest corresponds to (Wet Season or Dry Season). The system then compares
+predicted versus actual output, refining future recommendations. The system then generates
+comprehensive reports including harvest yield and planned output comparison using line charts
+with seasonal markers, cost quotation and actual farm expense analysis using KPI cards and
+charts, crop performance per season (comparing Wet Season vs. Dry Season performance) using
+4
+line charts, and Farm Output Performance Report using KPI cards. These specific UI elements
+(line charts and KPI cards) will be strictly delivered as stated in Objective 2.5.
+To improve how results are presented to users, the proposed system integrates the Groq
+Cloud API (Llama 3.3 Model) which serves as a support component that processes structured
+system outputs and converts them into clearer explanations, recommendations, and user-friendly
+responses. This support component is not a main feature but rather an enhancement that ensures
+system-generated outputs are presented in natural, easy-to-understand language to Farmers,
+Store Owners, and Admin. The Groq Cloud API is an external service that handles natural
+language generation and output formatting separately from the core system business logic. In the
+event of API downtime, the system includes a fallback mechanism that displays basic formatted
+text without LLM enhancement, ensuring core functionality remains accessible.
+This study is deemed significant to the following:
+To Aquilala Irrigators Association Incorporated.The system will modernize cooperative operations by providing digital tools for user management, inventory tracking, quotation
+generation, farm input optimization, and harvest reporting. It will improve operational efficiency,
+reduce manual errors, and enhance service delivery to members.
+To Farmers (Association Members). The system will provide easier access to product
+information, faster quotation generation, farm input and product optimization recommendations
+based on transparent rule-based logic, and a simple way to document harvest yields. These
+features will help farmers plan their purchases, estimate costs, track performance, and manage
+farming activities more effectively.
+To Agriculture Store Owners. The system will streamline daily tasks such as managing
+product listings, updating inventory levels, setting product prices, receiving low-stock alerts, and
+processing quotations, reducing administrative burden and improving record-keeping.
+To the Future Researchers. This study may serve as a reference for developing similar
+systems for other cooperatives or agricultural organizations, providing insights into integrating
+role-based user management for Admin, Store Owner, and Farmers, along with product catalogs,
+quotations, farm input optimization, and harvest reporting.
+1.3 Objectives of the Study
+This study focuses on the development of a Web-Based Farm Supply Management and
+Decision Support System with Product Catalog and Cost Quotation for Aquilala Farmers Cooperative in Bulan, Sorsogon. The system is designed to help the cooperative manage farm supplies
+efficiently, assist farmers in accessing products and quotations, support farming decisions through
+structured guidance, and track harvest performance with comprehensive analytics. The specific
+objectives of the study are as follows:
+5
+1. To determine and analyze the data needed for the system to work, such as user information (Admin, Store Owner, Farmers), product details, inventory records, crop types, land area,
+pricing, quotation history, harvest records, and report templates.
+2. To design and develop a system that integrates the main functions of the platform based
+on the identified requirements. The proposed system will include the following features with
+role-based access:
+2.1 User Management Account
+2.2 Farming Cost Quotation
+2.3 Store and Product Management
+2.4 Farm Product and Store Recommendation
+2.5 Report Generation of Actual Harvest
+3. To evaluate the proposed capstone project using the ISO/IEC 25010 2023 Software Product
+Quality standard in terms of:
+3.1 Functional Su itability,
+3.2 Performance Efficiency, and
+3.3 Interaction Capability
+1.4 Scope and Limitation
+This study focuses on the development of a Web-Based Farm Supply Management and
+Decision Support System with Product Catalog and Cost Quotation designed for the Aquilala
+Irrigators Association Incorporated in Bulan, Sorsogon. The system is intended for use by three
+types of users: Admin (system administrator who oversees the entire system), Store Owner
+(manages products and inventory), and Farmers (registered association members involved in
+farm supply procurement, farming activities, and harvest documentation). The system includes
+features such as identification of needed data, user account management with three roles, farming
+cost quotation (with ”Valid Until” dates and season selection for Wet or Dry season), store and
+product management, farm product and store recommendations (using rule-based algorithms
+that account for seasonal variations), and comprehensive report generation of actual harvest
+including harvest yield vs. planned output comparison using line charts with seasonal markers,
+cost quotation vs. actual expense analysis using KPI cards and charts, crop performance per
+season using line charts comparing Wet Season vs. Dry Season, and Farm Output Performance
+Report using KPI cards. The system also integrates the Groq Cloud API (Llama 3.3 Model) as
+a support component that processes structured system outputs and converts them into clearer
+explanations, recommendations, and user-friendly responses. This external API handles natural
+language generation and output formatting separately from the core system business logic.
+6
+However, the study has several limitations framed as design focus rather than weaknesses. The data identified and listed are focused specifically on the operational context of
+Aquilala Irrigators Association Incorporated in Bulan, Sorsogon, and while this ensures relevance
+and accuracy for the target users, the specific data parameters such as crop types, application
+rates, seasonal variations, and pricing structures may require reconfiguration for application to
+other associations or agricultural settings. The system is designed exclusively for registered Farmers of Aquilala Irrigators Association Incorporated and does not extend to non-members or other
+associations, with user registration for Farmers requiring Admin verification and authentication
+limited to standard password-based login without biometric or two-factor mechanisms. Store
+Owners are registered by the Admin, and the Admin account is predefined for system oversight.
+Financial computations are limited to gross cost estimations based on association unit
+pricing entered by the Store Owner, and advanced tax accounting, logistics fees, delivery charges,
+and other ancillary costs are outside the current system architecture. Quotations generated by
+Farmers include a ”Valid Until” date typically set to 3 to 7 days to manage price volatility,
+and include the selected season (Wet or Dry) for reference. If a quotation expires, the Farmer
+can generate a new quotation which will automatically reflect the current prices and stock
+availability. The system does not automatically update expired quotations nor integrate with
+real-time market feeds. The accuracy of product information, pricing, and stock levels depends
+entirely on the correctness and timeliness of data entered by the Store Owner, and the system
+does not include automated price synchronization with external suppliers, with low-stock alerts
+based on manually configured reorder point thresholds sent to the Store Owner.
+Farm product and store recommendations are generated using a deterministic RuleBased Algorithm, for example, if the crop is Rice, the season is Dry Season, and the land area
+is 1 hectare, then the recommended Urea is 2 bags. If the season is Wet Season, the system
+may recommend a flood-tolerant seed variety. This approach provides transparent, explainable
+recommendations to Farmers but does not incorporate real-time variables such as weather data,
+soil analysis, pest or disease forecasting, or market price trends. Recommendations are limited to
+products available in the association’s catalog as managed by the Store Owner and are intended
+to support, not replace, professional agricultural extension advice. The system recognizes the
+two major seasons (Wet and Dry) but does not account for sub-seasons or transition periods.
+Harvest reports and comparative analytics rely on accurate self-reported data from
+Farmers, including planned output estimates, actual expenses, and the season (Wet or Dry) to
+which each harvest corresponds. To improve data accuracy, the system includes validation checks
+such as range limits (e.g., yield cannot exceed reasonable maximum per hectare) and consistency
+checks (e.g., expenses cannot be negative, harvest date must be consistent with the selected
+season). The system does not include automated yield measurement, sensor-based validation,
+7
+or integration with external farm management platforms. The accuracy of comparative charts
+(line charts, KPI cards) depends on the quality and completeness of data entered over time. The
+system requires multiple data points (at least two wet seasons and two dry seasons) to generate
+meaningful trend lines for crop performance per season comparison.
+The Groq Cloud API (Llama 3.3 Model) is an external service that introduces dependency on third-party API availability for natural language generation and output enhancement.
+To mitigate this risk, the system includes a fallback mechanism that displays basic formatted text without LLM enhancement when the API is unavailable, ensuring core functionality
+remains accessible. The system is web-based and requires an internet connection for full functionality; however, the system implements offline caching strategies using browser local storage
+and IndexedDB to allow Farmers to view previously generated quotations and reports even without an active internet connection. The system is limited to design, development, and academic
+evaluation, and full-scale commercial deployment, long-term maintenance, and 24/7 operational support are outside the scope of this capstone project. All generated outputs including
+quotations, recommendations, reports, and comparative charts are intended to support decisionmaking for Farmers and should not be considered a substitute for professional farming advice
+or legal financial documents.
+2 Review of Related Systems
+This chapter presents a review of related literature and systems aligned with the objectives of the study. It focuses on existing agricultural systems related to identification of data
+needed for agricultural systems, user account management, farming cost quotation, store and
+product management, farm product and store recommendations, and comprehensive report generation of actual harvest including data visualization. These systems were analyzed in terms of
+their features, system design approaches, underlying implementation methods, and functional
+limitations. A total of ten (10) sources were reviewed from peer-reviewed academic journals,
+conference proceedings, and institutional repositories indexed in Google Scholar. The insights
+gathered served as a basis for identifying gaps and guiding the design of the proposed system
+for Aquilala Farmers Cooperative
+2.1 Identification of Data Needed for Agricultural Systems.
+The study titled ”AgriNet Smart Centralized Platform for Fertilizer, Labour and Supply Management” published in the International Journal of Advanced Multidisciplinary Research
+and Educational Development (IJAMRED) in 2025 conducted a systematic literature review
+8
+of existing digital agricultural platforms [2]. The authors analyzed databases such as IEEE
+Xplore, ScienceDirect, and Google Scholar, selecting studies published between 2015 and 2025
+that emphasize IoT-based monitoring, cloud computing, and data-driven decision-making in
+agriculture. Their survey revealed that while numerous systems exist for individual tasks like
+soil monitoring or logistics, few provide a unified solution for end-to-end management, creating
+a significant integration gap where farmers must use multiple disconnected tools for different
+tasks. None of the reviewed systems accounted for seasonal variations (wet vs. dry seasons) in
+their recommendation logic or reporting. The proposed system for Aquilala Irrigators Association Incorporated directly addresses this gap by integrating user account management, farming
+cost quotation with season selection, store and product management, farm product and store
+recommendations with season-specific rules, and comprehensive harvest reporting with seasonal
+data visualization into a single, unified web-based platform.
+”Customization of Agricultural Technology Packages: A CPQ-Based Approach to
+Smart Farming” by Kishore Kumar Epuri, published in the Journal of Information Systems Engineering and Management in 2025, explored the convergence of Configure-Price-Quote (CPQ)
+frameworks with intelligent agricultural systems [3]. The study demonstrated that CPQ architectures enable precise assembly of smart farming components through granular configuration
+capabilities, yet these frameworks are typically designed for commercial product configuration
+and lack integration with agricultural-specific data such as crop types, land area, seasonal planting cycles, and wet/dry season variations. The proposed system bridges this gap by adapting
+the CPQ principle to agriculture, linking crop type, land area, and season (Wet or Dry) inputs
+directly to cost quotation generation, ensuring that quotations are based on actual farming
+requirements that vary by season rather than generic product selections, directly mapping to
+Objective 2.2.
+In the Philippine context, ”Assessment of the Adoption of the Digital Platform
+’DigiCOOP’ by the Farmer-Members of Libacao Development Cooperative and Valderama Multipurpose Cooperative in Aklan and Antique, Philippines, 2023” by Patricia Leigh M. Hermano,
+an undergraduate thesis at the University of the Philippines Los Ba˜nos (2024), analyzed the
+factors associated with the adoption of digital cooperative platforms [7]. The study identified
+that age, sex, number of technologically literate children in the household, and perception score
+were significantly associated with adoption, while also revealing challenges including discrepancies between non-adopters’ positive perceptions and their reasons for non-adoption. The findings
+underscore the importance of understanding what data users need when designing digital systems for cooperatives in the Philippines. The proposed system addresses this gap by conducting
+a thorough identification of data needed specifically for Aquilala Irrigators Association Incorporated in Bulan, Sorsogon, including seasonal data fields, ensuring that the system’s features
+9
+(crop types, input formulas, local pricing, wet/dry season parameters) are tailored to the local
+farming context, thereby increasing relevance and potential adoption among farmers, directly
+fulfilling Objective 1.
+2.2 User Account Management with Role-Based Access for Admin,
+Store Owner, and Farmers.
+The research titled ”The ’New Agricultural Collectivism’: How Cooperatives Horizontal Coordination Drive Multi-Stakeholders Self-Organization” by Hannachi, Fares, Col´eno, and
+Assens, published in the Journal of Co-operative Organization and Management (Elsevier) in
+2020 (DOI: 10.1016/j.jcom.2020.100111), explored how agricultural cooperatives act as metaorganizations to facilitate collaborative innovation and sustainable transitions [1][4]. The study
+found that cooperatives stimulate awareness of environmental challenges and local experimentation, orchestrate collaborative solutions by enrolling and engaging a broad set of actors, and
+coordinate the diffusion of novel practices across the institutional field. However, the study did
+not address specific digital platform requirements for cooperative user management with distinct roles, leaving a gap in understanding how digital tools can support role-based coordination
+within cooperatives. The proposed system responds to this gap by implementing role-based
+access control with three distinct roles: Admin (system oversight), Store Owner (product and
+inventory management), and Farmers (purchase and harvest reporting with season selection),
+directly fulfilling Objective 2.1 and supporting the association’s coordination functions.
+The ”Assessment of the Adoption of the Digital Platform ’DigiCOOP’” by Hermano
+(2024) documented the implementation of a digital platform for cooperatives in Aklan and
+Antique, Philippines [7]. The study found that older farmers were more inclined to adopt digital platforms, possibly due to their familiarity with cooperative services or a greater perceived
+need for digital solutions. However, challenges were identified, including technical issues in rural
+areas and the need for tailored strategies. A critical gap identified is that existing digital cooperative platforms lack role-specific interfaces for different user types (Admin, Store Owner,
+Farmers), leading to confusion and inefficient use. The proposed system for Aquilala Irrigators
+Association Incorporated directly responds to this gap by providing a user account management system with three distinct roles, each with tailored interfaces and permissions, enabling
+Admin to oversee the system, Store Owner to manage inventory, and Farmers to access product catalogs, select farming seasons, and submit harvest reports, thereby fulfilling Objective
+2.1.
+10
+2.3 Farming Cost Quotation and Decision Support Systems.
+”A Farmer-Centric Agricultural Decision Support System for Market Dynamics in
+a Volatile Agricultural Supply Chain” by Tripathi, Singh, Singh, and Deshmukh, published
+in Benchmarking: An International Journal (Vol. 30, Issue 10, pp. 3925-3952, 2023, DOI:
+10.1108/BIJ-12-2021-0780), presented a structured iterative algorithmic framework that leverages forecasting capacity for agricultural price movement [5][9]. The study formulated an
+integrated risk management framework for effective sales planning decisions that factors in the
+associated costs of storage, rental, and physical loss until surplus is held for expected returns.
+While the framework focuses on post-harvest sales planning, it does not address pre-purchase
+cost quotation generation or integration with association inventory systems, nor does it account
+for seasonal variations in input requirements, representing a significant gap for farmers who
+need accurate cost estimates before planting in different seasons. The proposed system adopts
+a similar farmer-centric principle but applies it to the pre-purchase stage, linking cost quotation generation directly with product recommendations and including a validity period on each
+quotation, as well as season selection (Wet or Dry), ensuring that quotations generated by Farmers are time-bound, season-appropriate, and reflect current pricing entered by the Store Owner,
+directly fulfilling Objective 2.2.
+”Customization of Agricultural Technology Packages: A CPQ-Based Approach to
+Smart Farming” by Epuri (2025) demonstrated that CPQ mechanisms provide transparency
+in cost structures through explicit delineation of benefits [3]. However, CPQ mechanisms lack
+integration with real-time inventory data, price validity periods, and seasonal logic, which are
+essential for association-based agricultural supply management where input requirements differ
+between wet and dry seasons and prices fluctuate frequently. The proposed system extends the
+CPQ concept by integrating cost quotation generation with real-time inventory levels, including
+a ”Valid Until” date on each quotation, and allowing season selection, ensuring that Farmers receive accurate, time-bound, season-appropriate pricing information that reflects current
+association stock availability, directly fulfilling Objective 2.2.
+2.4 Store and Product Management System
+”AgriNet Smart Centralized Platform for Fertilizer, Labour and Supply Management”
+(IJAMRED, 2025) reviewed existing digital platforms for agricultural supply chain optimization
+[2]. The survey revealed that while numerous systems exist for individual tasks, few provide
+a unified solution for end-to-end management, with most platforms focusing on commercial
+transactions rather than association-specific inventory tracking with low-stock alerts and member
+purchase history. This gap leaves association store owners without adequate digital tools for
+11
+managing inventory specifically for member needs, especially when seasonal demand fluctuates
+between wet and dry seasons. The proposed system addresses this gap by providing a practical
+store and product management module that enables the Store Owner to digitize inventory,
+manage product listings, track stock levels in real-time, and receive automated low-stock alerts,
+with the ability to mark which products are recommended for each season, reducing reliance on
+manual logs and spreadsheets, thereby fulfilling Objective 2.3.
+The study titled ”Development of Decision Support System Using Farming-Systems
+Database and Management Support Service through Data Cooperation” by Sato M., published
+in the Kanto Tokai Hokuriku Journal of Farm Management (Japan, Issue 109, pp. 15-22, 2019,
+ISSN: 2189-7646), explored the development of decision support systems using farming-systems
+databases [6]. The research demonstrated how integrated databases can support management
+decisions in agricultural contexts, emphasizing the importance of structured product and inventory data. However, the study focused on database integration but did not address user-friendly
+interfaces for store owners or integration with quotation generation and seasonal logic, leaving a usability gap for association staff. The proposed system builds on this by implementing
+a comprehensive store and product management module for the Store Owner with inventory tracking, low-stock alert features, and seamless integration with the quotation generation
+module that accounts for seasonal product recommendations, directly supporting Objective
+2.3.
+2.5 Farm Product and Store Recommendation Systems
+”Collaborative Filtering Modification Technology for Recommendation Systems in
+Smart Digital Agribusiness Marketplace” by Prabowo, Subiyanto, and Salim, published in
+Kinetik: Game Technology, Information System, Computer Network, Computing, Electronics,
+and Control (Vol. 10, No. 3, pp. 399-410, August 2025, DOI: 10.22219/kinetik.v10i3.2264),
+developed a Geo-Mod Neuro Collaborative Filtering (GMNCF) model for agricultural product
+recommendations [8]. The model improves collaborative filtering by incorporating geographical region data to capture spatial user preferences and reduce data sparsity, achieving relative
+gains of approximately 4.9 percent in Precision, 5.9 percent in Recall, and 5.6 percent in F1-
+Score. However, while GMNCF achieves high accuracy, it requires machine learning expertise
+and substantial computational resources, making it impractical for small association implementations where technical capacity is limited. Moreover, it does not incorporate seasonal logic.
+This provides strong academic justification for choosing a simpler, more transparent Rule-Based
+Algorithm for the proposed system. The proposed system for Aquilala Irrigators Association
+Incorporated addresses this gap by adapting the recommendation principle using a more transparent and explainable Rule-Based Algorithm for Farmers that accounts for season selection,
+12
+such as if the crop is Rice, the season is Dry Season, and the land area is 1 hectare, then the
+recommended Urea Fertilizer is 2 bags. If the season is Wet Season, the system recommends a
+flood-tolerant seed variety. This rule-based approach requires no machine learning infrastructure,
+provides fully transparent recommendations that Farmers can understand and trust, accounts
+for seasonal variations, and is easily maintainable by association staff with basic technical skills,
+directly fulfilling Objective 2.4.
+”Android-Based Smart Digital Marketplace Application on Agricultural Commodities Using a New Variant Recommendation System” by Subiyanto, Prajanti, Salim,
+Prabowo, Sutrisno, Anantyo, and Anggriani, published in the International Journal of Electrical and Computer Engineering (IJECE) (Vol. 15, No. 2, pp. 1968-1977, 2025, DOI:
+10.11591/ijece.v15i2.pp1968-1977), developed a recommendation system utilizing geolocationaware neural graph collaborative filtering (GA-NGCF) [10]. The application demonstrated
+marked improvements in recommendation accuracy but similarly requires complex machine
+learning infrastructure and lacks seasonal logic. The proposed system for Aquilala Irrigators
+Association Incorporated adopts a practical, rule-based approach to farm product and store
+recommendations with season selection, providing recommendations that directly link computed farm input requirements based on crop-specific formulas and seasonal factors to available
+products in the association catalog, helping Farmers in Bulan, Sorsogon make informed purchasing decisions without the need for complex AI infrastructure, thereby fulfilling Objective
+2.4.
+2.6 Comprehensive Report Generation and Seasonal Data
+Visualization for Harvest Documentation.
+”Tree-to-Me: Standards-Driven Traceability for Farm-Level Visibility” by Cho, Agrahari Baniya, Murphy, et al., published in Agronomy (Vol. 15, Issue 5, pp. 1074-1092, May
+2025, DOI: 10.3390/agronomy15051074), proposed a novel traceability framework tailored to
+horticulture leveraging global data standards [5]. The system captures key on-farm events such
+as irrigation, harvesting, and chemical applications at varied resolutions, using decentralized
+identification, secure data-sharing protocols, and farmer-controlled access. While the system provides data visualization capabilities, it focuses on traceability rather than comparative analytics
+between planned and actual outputs, cost analysis, or seasonal performance trends comparing wet and dry seasons. The proposed system for Aquilala Irrigators Association Incorporated
+addresses this gap by providing comprehensive harvest reporting features that allow Farmers to
+record planned output estimates, actual yield, actual expenses, and the season (Wet or Dry) to
+which each harvest corresponds, then generate comparative analytics including harvest yield vs.
+planned output comparison using line charts with seasonal markers, cost quotation vs. actual
+13
+expense analysis using KPI cards and charts, crop performance per season using line charts comparing Wet Season vs. Dry Season performance, and Farm Output Performance Report using
+KPI cards, directly fulfilling Objective 2.5.
+”Development of Decision Support System Using Farming-Systems Database and
+Management Support Service through Data Cooperation” by Sato (2019) demonstrated how
+database-driven systems can support management decisions through systematic data collection
+and reporting [6], but lacked visual analytics features for trend analysis and seasonal performance comparison. The proposed system applies this principle while adding comprehensive data
+visualization through the Groq Cloud API for natural language explanations of harvest trends,
+allowing Farmers to document actual harvest yields and actual expenses with season attribution,
+then generate visual analytics reports that Admin can use to produce aggregate trend analysis comparing wet and dry seasons and improve future product recommendations for Farmers,
+thereby fulfilling Objective 2.5.
+Based on this review, the specific gap that this study addresses is the absence of an
+integrated digital platform tailored to a local association that currently relies entirely on manual logs, face-to-face transactions, and rough estimates for farming decisions across wet and dry
+seasons. While existing systems address individual functions such as market access (AgriNet),
+cooperative administration (DigiCOOP), recommendation systems (GMNCF, GA-NGCF), and
+traceability frameworks (Tree-to-Me), none combine user account management with three distinct roles (Admin, Store Owner, Farmers), cost quotation with validity periods and season
+selection, product catalog management, farm product and store recommendations with transparent rule-based logic that accounts for wet and dry seasons, and comprehensive harvest reporting
+with data visualization including line charts for seasonal yield comparison and trend analysis,
+KPI cards for expense analysis and farm output performance into a single, integrated system.
+The proposed system fills this gap by providing a unified platform that supports the complete
+workflow from farming planning and procurement to harvest documentation and seasonal comparative analytics, specifically designed for the operational context and resource constraints
+including intermittent internet connectivity of a smallholder association in Bulan, Sorsogon.
+3 Technical Background
+This section introduced the technical background of the system and project components, particularly the hardware and software specifications that were used in the development
+of the system, as well as the specifications for the users and the definitions of term.
+14
+3.1 System’s Development Specification
+The specifications of the hardware and software requirements of the system that the
+researchers utilized for its development were presented in this section.
+3.1.1 Hardware Specification
+The hardware specification shows the required hardware components that served as the
+support for the system’s operation and implementation.
+Table 3.1: Hardware Specification
+Particular Recommended
+Requirements
+Processor: MSI AMD Ryzen 5 7535HS with Radeon Graphics @ 3.30 GHz
+Memory: 8.00 GB (7.21 usable) DDR4 RAM @ 3200 MHz or Higher
+System Type: 64-bit Operating System, x64-based processor
+Storage 456 GB SSD
+This table presents the specifications of the hardware utilized by the proponents in the
+development of the system. The proponents used an MSI laptop equipped with an AMD Ryzen
+5 7535HS processor with Radeon Graphics, running at 3.30 GHz. The device had 8.00 GB of
+DDR4 RAM with a speed of 3200 MHz (7.21 GB usable), providing sufficient memory for system
+development and multitasking.
+In terms of storage, the proponents used a 456 GB Solid-State Drive (SSD), which
+ensured faster data access and improved system performance. The system type was a 64-bit
+operating system with an x64-based processor, allowing compatibility with modern development
+tools and frameworks.
+The mentioned hardware specifications requirements were believed to be sufficient in
+delivering specific functions in the development of the system.
+3.1.2 Software Specification
+The Software Specification presents the software tools and platforms used by the proponents during the development of the application. These tools supported both development
+and implementation processes, ensuring that the system met its intended performance and
+functionality requirements.
+In Table 3.2, the proponents’ computer ran on Windows 11 Home Single Language
+Operating System, which was utilized during the development of the system. MySQL version 8.0
+was used as the database management system, while Visual Studio Code version 1.113 served
+as the integrated development environment. The backend of the system was developed using
+15
+Table 3.2: System Software Specification
+Particular Recommended Requirements
+Operating System Windows 11 Home Single Language
+Database MySQL version 8.0
+Integrated Development Environment Visual Studio Code version 1.113
+Wireframe Design Figma version 125.2.3
+Backend Framework Laravel version 12.5
+Programming Language PHP version 8.3 and Python version 3.12
+Webpage Design Tailwind CSS version 4.0
+Frontend Framework Alpine.js version 3.14 with Vite 6.0
+LLM Output Formatting Groq Cloud API (Llama 3.3 Model)
+Coding and Technical Tasks ChatGPT
+Coding and Technical Tasks Copilot
+Coding and Technical Tasks DeepSeek
+Laravel version 12.5, while the frontend was built using Alpine.js version 3.14 with Vite 6.0.
+Tailwind CSS version 4.0 was used for interface styling and responsive design, and Figma version
+125.2.3 was used for wireframe and interface prototyping.
+PHP version 8.3 was used as the primary programming language for system logic,
+including data handling, computation of farm inputs, and cost estimation processes. Python
+version 3.12 was also utilized for additional data processing tasks where needed.
+For response generation and structured output enhancement, the system integrates an
+Groq Cloud API which processes structured system outputs and converts them into clearer explanations, recommendations, and user-friendly responses. This LLM Output formatting handles
+data transformation and presentation logic separately from the core system business logic.
+Additionally, ChatGPT, Copilot, and DeepSeek were used as development support tools
+for coding assistance, debugging, and technical documentation during the system development
+process.
+Draw.io version 2.8 was used for system diagramming to clearly illustrate the flow of
+the application. LaTeX Overleaf was utilized in preparing and formatting the manuscript to
+ensure proper document structure. The proponents selected well-established software tools that
+aligned with the requirements of the system and ensured compatibility across all development
+components
+3.1.3 Service Specification
+This section outlines key services that aid developers in building, testing, and deploying
+applications.
+Internet Service Provider. This refers to the network service used by the proponents
+during the development of the system. A stable internet connection was essential for accessing
+16
+Table 3.3: Service Specification
+Particular Recommended Requirements
+Internet Service Provider GlobeAtHome
+Hosting Hostinger
+development tools, online resources, APIs, and external services required in building the webbased application. It also supported collaboration, testing, and continuous development of the
+system.
+Hosting. The hosting service refers to the platform used to deploy and manage the
+web-based system. It provides server space for storing application files, database connections,
+and system resources required for online accessibility. For the proposed system, hosting ensures
+that the platform can be accessed by users such as farmers, store owners, and other stakeholders
+through the internet in a reliable and secure manner.
+3.2 User’s System Specification Requirements
+This section outlines the minimum and recommended hardware and software specifications needed for the user’s system. These requirements are defined to ensure the system’s
+availability objectives are met.
+Table 3.4: User’s System Specification Requirements
+Particular Minimum Recommended
+Processor Quad-core 1.8 GHz (Helio A22
+/ Snapdragon 425
+Octa-core 2.0 GHz or higher
+(Helio G85 / Snapdragon 680)
+System Diagramming Tool Draw.io version 2.8
+Documentation Tool LaTeX Overleaf
+Memory 2.00 GB RAM 4.00 GB RAM or Higher
+Storage 100 MB available space
+(Browser-based)
+500 MB available space (for
+Offline Caching)
+Operating System Android 10 / iOS 13 Android 12 or Higher / iOS 15
+or Higher
+Internet Connection 3G / HSPA+ (at least 3 Mbps) 4GLTE/5G/ Fiber/(10Mbps)
+Display 5.0-inch Touchscreen (720p) 6.5-inch Touchscreen (1080p)
+This table 3.4outlines the system specification requirements for users, including both
+minimum and recommended hardware and software configurations to ensure proper system
+performance and accessibility.
+17
+Users are expected to use a mobile device with at least a quad-core 1.8 GHz processor
+such as Helio A22 or Snapdragon 425. For optimal performance, an octa-core 2.0 GHz processor or higher, such as Helio G85 or Snapdragon 680, is recommended. The system requires a
+minimum of 2.00 GB RAM, while 4.00 GB RAM or higher is recommended to ensure smoother
+operation.
+For storage, at least 100 MB of available space is required for browser-based usage,
+while 500 MB or more is recommended to support offline caching and temporary data storage.
+The system is compatible with Android 10 or iOS 13 and above, with Android 12 or higher and
+iOS 15 or higher recommended for improved security and compatibility.
+A stable internet connection is required for system functionality, with a minimum of 3G
+or HSPA+ (3 Mbps), while 4G LTE, 5G, or fiber connection (10 Mbps or higher) is recommended
+for better responsiveness. A display size of at least 5.0 inches with 720p resolution is required,
+while a 6.5-inch display with 1080p resolution is recommended for improved user experience and
+interface clarity.
+3.3 Technical Terms
+The following terms are used throughout this study. This section provided conceptual
+and operational definitions to clarify their meanings and how they were applied within the
+system.
+Web-Based Farm Supply Management and Decision Support System. This
+refers to a distributed client-server architecture that leverages hypertext transfer protocol
+(HTTP) over transmission control protocol/internet protocol (TCP/IP) stack to deliver agricultural resource planning functionalities through a uniform resource locator (URL)-accessible
+interface. Operationally, in this study, it refers to the Laravel and PHP-based monolithic application deployed on a cloud-hosted virtual private server (VPS) that implements representational
+state transfer (REST) application programming interfaces (APIs) to facilitate user account
+management, farming cost quotation, store and product management, farm product and store
+recommendations, and comprehensive harvest report generation with data visualization for
+Aquilala Farmers Cooperative.
+Identification of Data Needed. This is the process of listing all information that the
+system needs to work properly. Operationally, in this study, it refers to the list of data identified
+by the proponents including user information (Admin, Store Owner, Farmers), product details,
+inventory records, crop types, land area, pricing, quotation history, planned harvest estimates,
+actual harvest records, actual expense records, season data, and report templates required for
+the proposed system’s database.
+18
+User Account Management. This refers to the system’s ability to create, update,
+and control user access. Operationally, in this study, it refers to the module that handles registration, login, and role-based access for three types of users: Admin (full system control), Store
+Owner (manages products and inventory), and Farmers (browse products, get recommendations,
+request quotations, submit harvest reports, and view comparative analytics).
+Role-Based Access Control (RBAC). This is a security method that gives different
+permissions to different types of users based on their job. Operationally, in this study, it refers
+to the permission system where Admin can do everything, Store Owner can manage products
+and inventory, and Farmers can only browse products, get recommendations, request quotations,
+submit harvest reports, and view charts and KPI cards.
+Farming Cost Quotation with Validity Period. This is a document that shows
+how much farming supplies will cost, with an expiration date. Operationally, in this study, it
+refers to the system-generated document produced for Farmers that includes product names,
+quantities, prices, total cost, and a ”Valid Until” date (typically 3-7 days), which can be saved
+as PDF or printed.
+Store and Product Management. This refers to the tools for managing products,
+prices, and stock levels in a store. Operationally, in this study, it refers to the module accessible
+to Store Owner for adding, updating, and deleting product listings, tracking inventory levels,
+and receiving low-stock alerts.
+Farm Product and Store Recommendation. This is a decision support feature
+that suggests the right farming supplies based on what crop the farmer wants to plant and how
+big their land is. Operationally, in this study, it refers to the Rule-Based Algorithm that takes
+Farmer inputs (crop type, land area) and calculates recommended quantities of seeds, fertilizers,
+and other supplies, for example, if the crop is Rice and land area is 1 hectare, then the system
+recommends 2 bags of Urea Fertilizer.
+Rule-Based Algorithm. This is a set of simple ”if-then” rules used to make decisions
+without complex math or artificial intelligence. Operationally, in this study, it refers to the logic
+in the system that uses standard application rates per hectare (e.g., 2 bags of Urea per hectare
+of Rice) to compute recommendations for Farmers.
+Comprehensive Report Generation of Actual Harvest. This is a complete
+reporting system that allows farmers to record actual harvest data and compare it with planned
+outputs, analyze expenses, track crop performance over seasons, and generate performance
+reports. Operationally, in this study, it refers to the feature where Farmers can submit planned
+harvest estimates, actual harvest yields, and actual expenses. The system then generates harvest
+yield and planned output comparison using line charts, cost quotation and actual farm expense
+19
+analysis using KPI cards and charts, crop performance per season using line charts, and Farm
+Output Performance Report using KPI cards.
+Line Chart. This is a type of chart that displays information as a series of data points
+connected by straight line segments, useful for showing trends over time. Operationally, in this
+study, it refers to the data visualization component (using Chart.js or ApexCharts) that displays
+harvest yield trends, planned vs. actual comparisons, and crop performance across seasons.
+KPI Card. This is a visual dashboard component that displays a Key Performance
+Indicator (KPI) with a title, value, and optional comparison or trend indicator. Operationally, in
+this study, it refers to the cards that show summary metrics such as total harvest yield, average
+yield per hectare, total expenses, expense variance, and farm output performance ratings.
+Groq Cloud API (Llama 3.3 Model). This is an external service that uses a large
+language model to convert structured data into natural, human-readable text. Operationally, in
+this study, it refers to the LLM service that processes system outputs and generates clearer explanations, recommendations, and user-friendly responses for Farmers, with a fallback mechanism
+when the API is unavailable.
+ISO/IEC 25010 Software Product Quality Standard. This is an international
+standard for measuring software quality. Operationally, in this study, it refers to the evaluation
+framework used to assess the proposed system on three characteristics: Functional Suitability (does it do what it should?), Performance Efficiency (is it fast enough?), and Interaction
+Capability (is it easy to use?).
+Functional Suitability. This is whether the system provides all the functions it
+promised. Operationally, in this study, it refers to checking if the system successfully delivers
+all five features: user account management (Admin, Store Owner, Farmers), farming cost quotation, store and product management, farm product and store recommendations (rule-based), and
+comprehensive harvest report generation with line charts, KPI cards, and comparative analytics,
+evaluated through User Acceptance Testing.
+Performance Efficiency. This is how fast and responsive the system is. Operationally,
+in this study, it refers to measuring page load times, quotation generation speed, chart rendering
+speed, and report generation speed using JMeter for load testing and Google Lighthouse for
+front-end performance metrics.
+Interaction Capability. This is how easy the system is to learn and use. Operationally, in this study, it refers to evaluating how easily Admin, Store Owner, and Farmers can
+navigate the system, understand the interface, generate charts and reports, and complete their
+tasks, measured through usability surveys and task completion rates.
+20
+4 Design and Methodologies
+This chapter will go over the procedure, techniques, and tools, among other things.
+Documentation aids were used in this study. It includes several diagrams, figures, and tables to
+help explain the methodology used visually.
+4.1 Concept
+This project aimed to develop a web-based farm supply management and decision support system with product catalog and cost quotation that allowed users, particularly farmers,
+store owners, and administrators in Bulan, Sorsogon, to manage farm supplies, estimate costs,
+receive product recommendations, and track harvest performance through an integrated platform. This web-based application utilizes the user’s device browser as an interface, allowing
+Admin to manage user accounts, Store Owner to manage products and inventory, and Farmers to input crop type and land area to receive farm product and store recommendations, cost
+quotations, and harvest reports with data visualization. Moreover, a particular development
+environment, specifically Visual Studio Code, was used for the design and development of this
+application.
+The proponents followed the Object-Oriented Analysis and Design and used an
+iterative-type approach for the System Development Life Cycle. The development methodology
+and approach that were used were the Agile Methodology (with Planning, Design, Development,
+Testing, Deployment, Reviewing, and Launching phases) and Top-Down approach. Development
+tools were integrated, such as Laravel for back-end development, Alpine.js and Tailwind CSS for
+front-end development, MySQL for database management, and Chart.js/ApexCharts for data
+visualization of line charts and KPI cards. The Output Formatting Service API was used for
+formatting raw backend data into structured formats such as tables, cards, line charts, and KPI
+cards. The proponents utilized Unified Modeling Language (UML), particularly the use case
+diagram and activity diagram. The following diagram aims to visually present and discuss the
+structure of the system created for Aquilala Farmers Cooperative in Bulan, Sorsogon.
+21
+4.1.1 System Architecture Design
+Fig. 4.1: System Architecture Diagram of the Proposed System
+22
+Figure 4.1 illustrates the architectural structure of the proposed system, detailing the
+flow of information between the users and the multi-layered server environment. The system
+involves three primary participants: the Farmers, Store Owners, and the Administrator, all
+of whom access the platform via web-enabled devices. The architecture is organized into four
+distinct layers to ensure modularity and scalability: the Presentation Layer, the Application
+Layer, the Service Integration Layer, and the Data Layer.
+The Presentation Layer serves as the front-end interface, developed using Tailwind
+CSS and Alpine.js, which provides the user experience for dashboards and forms. This layer
+communicates directly with the Application Layer, where the core business logic is processed
+using the Laravel 12 framework. The Application Layer is responsible for high-level tasks such
+as user management and the complex calculations required for the quotation engine. To further
+refine data, the Service Integration Layer aggregates and structures raw information into UIready outputs, such as dashboard analytics and report preparations.
+The Data Layer manages the MySQL 8.0 database, fulfilling requests sent from the
+upper layers by retrieving or storing data regarding user accounts, product catalogs, and farm
+input records. An optional External Service Layer is integrated via the Groq Cloud API to
+enhance the presentation of data outputs. This layered approach ensures that the system remains
+maintainable; if a modification is required in the business logic, the presentation and data layers
+remain stable. Additionally, since the system is web-based, an active internet connection is
+required for the participants to access the centralized database and receive real-time updates on
+product pricing and stock availability
+4.2 Analysis and Design
+For this study, the analysis and design process follows an object-oriented and layered
+approach, ensuring that system components are modular, scalable, and maintainable. The system
+was further developed using the Agile development methodology, allowing iterative refinement of
+features such as product catalog management, cost quotation generation, and reporting modules
+based on user feedback per development sprint.
+To support proper system visualization and structured documentation, the Unified
+Modeling Language (UML) was used as the primary modeling tool. UML provides a standardized
+way to represent system behavior and structure, allowing developers and stakeholders to clearly
+understand system interactions before implementation.
+Among the UML diagrams used, the Use Case Diagram is particularly important as
+it illustrates the interaction between system actors (Admin, Store Owner, and Farmer) and the
+23
+system’s core functionalities. It defines the system boundary and identifies the key services provided by the system, including user management, product catalog management, cost quotation
+generation, and reporting features.
+A Data Flow Diagram (DFD) is a graphical depiction that demonstrates the movement
+of data within a system or process. It employed standardized symbols and notations to represent
+inputs, outputs, storage, and processes.
+Fig. 4.2: Context Flow Diagram Level 0
+Shown in Figure 4.2, the Level 0 Data Flow Diagram (DFD) provides a context-level
+data flow of the system. As in the diagram above, the system appears in the middle of the figure.
+The Farmer, Store Owner, and Administrator are represented as rectangles, and each interaction
+with the system is represented by an arrow.
+24
+Fig. 4.3: Data Flow Diagram Level 1
+Figure 4.3 presents the Level 1 Data Flow Diagram (DFD) of the system, which offers
+a more detailed view of the system compared to the Level 0 diagram. Unlike the Level 0 DFD
+that shows the system as a single process, the Level 1 DFD breaks down the main functions into
+smaller subprocesses to illustrate how data flows and processes operate within the system.
+This diagram also identifies the external entities—Farmer, Store Owner, and
+Admin—and the actions they perform, such as inputting farming requirements, managing product catalogs, and verifying user accounts. It further shows how the system handles the process
+of generating cost quotations and product recommendations based on crop type and land area,
+providing a clearer picture of how each subprocess interacts and supports the system’s overall
+functionality.
+25
+Fig. 4.4: Use Case Diagram for the Proposed System
+A Use Case Diagram is a high-level, behavioral diagram and a core element of the
+Unified Modeling Language (UML), visually representing the interactions between users (actors),
+a system, and use cases (functions or goals) that actors want to accomplish. It outlined the
+system’s functionalities and how users interacted with them, all aimed at achieving a particular
+objective.
+This use case represented the interactions of the user with the system. The rectangle
+served as the boundary of the system. The oblong shape is called a use case, the action of the
+actors or participants in the system. The line between the actor and the use case, called an
+association, indicated that the actor could perform that action. The broken line arrow, called
+include, represented inclusion with another use case to reuse common behavior. Another broken
+line arrow, called an extend, added optional functionality. The line that depicted that extend
+use case represented the note or comment that explained how it would be used or be triggered
+by the actors’ actions. The use case diagrams and interaction of multiple entities in each module
+were as follows:
+In figure 4.4 illustrates the Use Case Diagram of the proposed system, defining the
+functional boundaries and the specific interactions between the external actors and the system’s
+core modules. The diagram identifies three primary actors: the Admin, the Store Owner, and
+the Farmer, each possessing a unique set of permissions and objectives within the platform.
+The Farmer is the central beneficiary of the decision support features. Their use cases
+focus on inputting farm requirements, generating cost quotations, and comparing products across
+26
+different stores to optimize their budget. The Store Owner acts as the data provider, responsible for use cases involving the maintenance of the product catalog, inventory tracking, and
+price updates. Finally, the Admin serves as the system overseer, with use cases encompassing
+user account management, store verification, and the generation of comprehensive system-wide
+reports.
+Common use cases, such as User Authentication, are shared across all actors to ensure
+secure access. The relationships depicted in the diagram emphasize the collaborative nature of
+the system, where data managed by the Store Owner directly feeds into the functional outputs
+utilized by the Farmer. This visual representation serves as a roadmap for the development
+phase, ensuring that every user-specific need is accounted for in the system logic.
+Fig. 4.5: Sequence Diagram of the Proposed System
+UML Sequence Diagrams are interaction diagrams that detail how operations are carried out within the system. They capture the interaction between objects in the context of a
+collaboration, focusing specifically on the temporal order of messages. By using a vertical axis to
+represent time, the diagram visually demonstrates what messages are sent and at what specific
+27
+point they are triggered. These diagrams are essential for capturing the high-level interactions
+between the users and the system, effectively realizing the logic behind a specific use case. For this
+study, the sequence diagram focuses on the Automated Cost Quotation Generation process, as it
+represents the core decision-support functionality where all architectural layers—Presentation,
+Application, and Data—must interact in real-time.
+Figure 4.5 illustrates the step-by-step interaction between the system actors and the
+internal objects during the quotation process. The sequence is initiated by the Farmer, who
+interacts with the Presentation Layer to submit farming requirements such as land area and crop
+type. This request is captured by the Web Interface and transmitted to the QuotationController
+within the Application Layer.
+As the sequence progresses, the controller invokes the Logic Engine to perform the necessary agricultural computations. To fulfill this, the system sends a request to the Database (Data
+Layer) to fetch real-time product prices and dosage standards stored in the MySQL tables. Once
+the data is retrieved, the logic engine calculates the total estimated cost and identifies suitable
+product recommendations. These results are then passed back to the controller, which formats
+the data for the Presentation Layer to display a structured cost breakdown and recommendation
+summary to the farmer. This time-ordered flow ensures that data integrity is maintained from
+the initial user input to the final output, providing a reliable and responsive experience for the
+cooperative members.
+Class diagrams are among the most essential types of diagrams in the Unified Modeling Language (UML) because they clearly map out the structure of a system by modeling its
+classes, attributes, operations, and the relationships between objects. While previous diagrams
+focused on behavior and interaction, the Class Diagram provides a static view of the system data
+blueprint. It describes the types of objects that reside within the system, such as Users, Products,
+and Quotations, and defines the rules of their existence. For the proposed system, this diagram
+is crucial for visualizing the database schema and the object oriented structure of the Laravel
+backend, ensuring that data flows correctly between store inventories and farmer requests.
+Figure 4.7 illustrates the static structure of the Proposed System. The diagram is organized around a central User class, which utilizes inheritance to define the specialized roles of the
+Admin, Store Owner, and Farmer. This hierarchical structure ensures that common attributes
+like email and password are maintained globally, while role specific operations such as ”Generate
+Reports” for Admins or ”Input Requirements” for Farmers remain isolated to their respective
+classes.
+The relationship between the Store Owner, Store, and Product classes defines the system inventory logic. A one to one association exists between an owner and their store, while a
+one to many relationship exists between a store and its products, ensuring that each item in the
+28
+catalog is uniquely linked to its source for accurate pricing. Furthermore, the Quotation class
+serves as the core of the Decision Support System; it acts as an associative entity that connects
+the Farmer inputs with the Product data. The diagram shows that a single quotation can contain
+multiple product line items, allowing the system to calculate a comprehensive cost breakdown.
+By defining these relationships and multiplicities, the Class Diagram ensures that the database
+remains normalized and that the application logic can reliably retrieve and process farm supply
+information.
+29
+Fig. 4.6: Class Diagram of the Proposed System
+30
+4.2.1 Requirement Analysis
+Requirement analysis is the process of identifying, gathering, and documenting the
+requirements for a system or software application. Requirement Analysis has two types
+Functional and Non-Functional Requirements.
+4.2.2 Functional Requirements
+The functional requirements of the developed system specifically described the task
+requirements and task references. These functional requirements were based on the objectives of
+the study.
+Table 4.1: Functional Requirements
+Task Requirements Task Reference
+The system shall provide secure user registration, login, and rolebased access for Admins, Store Owners, and Farmers.
+User Authentication and
+Access Control
+The system shall allow the Admin to manage user accounts,
+including creating, updating, and deactivating users.
+User Management
+The system shall enable Store Owners to create and manage their
+store profiles, including store information and location details.
+Store Management
+The system shall allow Store Owners to add, update, and remove
+product listings within their store.
+Product Catalog
+The system shall allow Store Owners to update product prices
+and manage stock levels in real time.
+Inventory and Price
+Management
+The system shall allow Farmers to input farming requirements
+such as crop type, land area, and budget.
+Farm Input Processing
+The system shall generate cost quotations based on farmer inputs
+and available product data.
+Cost Quotation Generation
+The system shall recommend suitable farm inputs and products
+based on the farmer’s requirements.
+Product Recommendation
+The system shall allow Farmers to browse and compare products
+from different stores.
+Product Browsing and
+Comparison
+The system shall store generated quotations and allow Farmers to
+review their quotation history.
+Quotation Storage and
+History
+The system shall allow Store Owners to view farmer-generated
+quotation requests to analyze product demand.
+Quotation Demand
+Viewing
+The system shall generate reports and analytics such as quotation
+summaries, product demand trends, and system activity logs.
+Reporting and Analytics
+The system shall record user activities for monitoring and auditing
+purposes.
+Activity Logging
+Table 4.1 presents the functional requirements of the proposed system, outlining the
+key features and operations that support farm supply management and decision-making. These
+requirements are aligned with the system’s objectives and ensure that the needs of Farmers,
+Store Owners, and the Admin are effectively addressed. Each function contributes to the overall
+usability, efficiency, and reliability of the system.
+31
+4.2.3 Non-Functional Requirements
+The non-functional requirements of the developed system specifically described the
+task requirements and task references. The non-functional requirements listed below were also
+established based on the objectives of the study. The references were adapted from the Software
+Quality Standards of the International Organization for Standardization, also known as ISO/IEC
+25010.
+Table 4.2: Non-Functional Requirements
+Task Requirements Task Reference
+The system shall effectively perform farm supply management,
+cost quotation generation, and decision support functions as
+intended in accordance with user requirements.
+Functional Suitability
+The system shall ensure efficient processing of user requests,
+including fast loading of pages, quick quotation generation, and
+responsive system operations.
+Performance Efficiency
+The system shall provide an intuitive, user-friendly, and accessible
+interface that supports smooth interaction between Farmers, Store
+Owners, and Admin users.
+Interaction Capability
+4.3 Development Model
+Agile Methodology is intended to be used on the development of the Web-Based Farm
+Supply Management and Decision Support System with Product Catalog and Cost Quotation
+for Aquilala Farmers Cooperative in Bulan, Sorsogon, providing iterative design, development,
+and testing through user feedback. Agile methodology is chosen due to its flexibility over changes
+in features or design, allowing the proponents to adjust depending on the users’ needs. This
+allows quick planning and early development, prioritizing feedback from Admin, Store Owner,
+and Farmers. Agile is used so that the system is based on what the users need and revolves
+around real-time feedback from users through regular testing and redevelopment.
+32
+Fig. 4.7: Methodology of the Proposed System
+Planning Phase. The planning phase is the initial stage of the software development
+lifecycle where project objectives, scope, requirements, resources, and timelines are defined. The
+planning begins with identifying the data needed for the system such as user information, product
+details, inventory records, crop types, land area, pricing, quotation history, harvest records,
+and report templates. Requirements gathering is conducted through interviews with cooperative
+officers, store staff, and farmers. The team then plans five sprints each lasting two weeks.
+Design Phase.The design phase is the stage where system requirements are translated
+into a blueprint for construction. It involves creating architectural designs, database schemas,
+user interface layouts, and component specifications.Designing a friendly user interface using
+Figma with low and high-fidelity wireframes of the web-based application. The user interface
+prioritizes user experience and usability for Admin, Store Owner, and Farmers with clear text,
+clean visual hierarchy, proper color palette and contrasts, and following the Swiss design principles of less is more and simplicity. The system has a responsive design for usage even on remote
+areas, allowing farmers to use the system even with slow internet.
+Development Phase. The development phase is the stage where the actual coding
+and implementation of the system occur. The development is intended to have quick and short
+sprint phases focusing on specific features of the system and iterating based on the features set
+by the user, allowing for flexible development of the application. The development is divided into
+five sprints: Sprint 1 builds User Account Management for Admin, Store Owner, and Farmers;
+Sprint 2 builds Store and Product Management including product catalog, inventory tracking,
+and low-stock alerts; Sprint 3 builds Farm Product and Store Recommendation using a RuleBased Algorithm (e.g., if crop is Rice and land area is 1 hectare, then recommend 2 bags of Urea)
+and Farming Cost Quotation with ”Valid Until” dates; Sprint 4 builds Report Generation of
+33
+Actual Harvest with data visualization using line charts and KPI cards, including harvest yield
+vs. planned output comparison, cost quotation vs. actual expense analysis, crop performance per
+season, and Farm Output Performance Report; Sprint 5 integrates all modules, tests the system,
+and prepares for deployment.
+Testing Phase. The testing phase is the stage where the developed system is evaluated
+to verify that it meets specified requirements and to identify defects. Analyzing that the application is working as it is intended to be, testing all of the functionalities and features allowing to
+identify problems, bugs to be fixed at the next iteration week. The usability of the application
+will both be tested by the developers and by Admin, Store Owner, and Farmers at the end of
+each two-week iteration to check if the application is working as intended.
+Deployment Phase.The deployment phase is the stage where the completed system
+is released to the production environment for use by end-users. It involves installing the system,
+configuring the production environment, migrating data, training users, and providing ongoing
+support. After the continual development, test, and refinement, the system is deployed to the
+Aquilala Farmers Cooperative for use by Admin, Store Owner, and a small number of farmers for
+further feedback, providing tutorials on the system’s functionality and logic to be implemented.
+Using the feedback, the developers will rollout bug fixes and patches to the application for
+smooth deployment.
+4.4 Development Approach
+The Top-Down approach is intended to be implemented in the development of the
+application/system, the top-down approach begin at the highest level of the system and progressively breaks down the system into smaller parts allowing easier planning, documentation,
+smooth, and early development of the application.
+4.5 Software Development Tools
+Software development tools are technologies and applications used in the development,
+implementation, and maintenance of the Web-Based Farm Supply Management and Decision
+Support System. These tools were selected based on their suitability in supporting the system’s
+functionality, performance, and scalability.
+4.5.1 Frontend Development
+Tailwind CSS. A utility-first CSS framework used for building modern and responsive
+user interfaces. It is used in the system to design clean and consistent dashboards for Farmers,
+Store Owners, and Admin, ensuring mobile and desktop responsiveness.
+34
+Alpine.js. A lightweight JavaScript framework for adding interactivity to web pages.
+It is used in the system to handle dynamic UI elements such as modals, dropdowns, form
+interactions, and real-time interface behavior in quotation and product pages.
+4.5.2 Backend Development
+Laravel. A PHP web application framework used for building structured and secure
+backend systems. It is used in the system to handle user authentication, role management, product catalog management, cost quotation generation, and system reporting. PHP. A server-side
+scripting language used for web development. It is used in the system as the main programming
+language for processing requests, executing business logic, and generating system outputs such
+as quotations and reports.
+4.5.3 Database Management System
+MySQL. A relational database management system used for storing and managing
+structured data. It is used in the system to store user accounts, products, stores, farming inputs,
+quotations, and system activity logs
+4.5.4 Development and Design Tools
+Visual Studio Code. A source code editor used for writing and debugging code. It is
+used in the system development for coding both frontend and backend components efficiently.
+Figma. A web-based UI/UX design tool used for creating interface prototypes. It is
+used in the system to design dashboards and user interfaces before development.
+Draw.io. A diagramming tool used for creating system models. It is used in the system
+for developing UML diagrams such as use case diagrams, class diagrams, and system architecture
+diagrams.
+LaTeX (Overleaf). A document preparation system used for academic writing. It
+is used in the system for formatting and writing the capstone manuscript in a structured and
+professional format.
+4.5.5 External Services
+Groq Cloud API (Llama 3.3 Model). An AI-based API service used for natural
+language processing support. It is used in the system to enhance formatting and presentation of
+system-generated outputs such as reports.
+35
+4.6 Schedule and Timeline
+A timeline is a graphical representation of a chronological sequence of events, while a
+schedule is a detailed plan that assigns specific tasks to specific time periods. In this study, a
+Gantt chart was used to visualize the project schedule, showing the start and end dates of each
+major activity across the development lifecycle. The Gantt chart aligns with the seven phases
+of the Agile methodology adopted for this project: Planning, Design, Development, Testing,
+Deployment, Reviewing, and Launching.
+The development of the Web-Based Farm Supply Management and Decision Support
+System for Aquilala Irrigators Association Incorporated spanned eleven months, from February
+to December. The following discussion anchors each phase of the Gantt chart to the corresponding
+Agile phase.
+Fig. 4.8: Gantt Chart
+36
+Figure 4.8 presents the timeline followed by the researchers in the development of the
+system. This timeline served as an essential guide as it clearly outlined the sequence of activities
+involved throughout the entire system development process. By providing a structured schedule,
+the timeline enabled the proponents to plan each phase of the project systematically and ensure
+that all required tasks were completed within the allotted time frames.
+Moreover, the timeline helped the researchers organize their workload, set realistic and
+achievable deadlines, and monitor progress for each development requirement. Regular evaluation
+of the timeline allowed the team to identify possible delays at an early stage and make timely
+adjustments in task scheduling and resource allocation. As a result, the researchers were able to
+maintain consistency and discipline throughout the development process.
+Overall, the timeline played a vital role in ensuring the smooth and efficient development of the Web-Based Farm Supply Management and Decision Support System for Aquilala
+Irrigators Association Incorporated. It supported effective project management, minimized
+delays, and contributed to the successful completion of the system within the planned schedule.
+4.7 Responsibilities
+In this study, the proponents were four Bachelor of Science in Information Technology
+(BSIT) students. Each member was assigned a specific role and set of responsibilities
+to ensure the successful development and completion of the system.
+Project Leader. Raydan M. Tagub, The Project Leader was responsible for overseeing the overall progress of the project. This role involved leading the team, organizing tasks,
+managing schedules, coordinating activities, and ensuring that project milestones were met.
+The Project Leader also supervised the preparation of project documentation and manuscripts
+related to the development of the system.
+System Analyst. Hugh E. Evasco, The System Analyst was responsible for analyzing
+system requirements and ensuring that the solution aligned with stakeholder needs. This role
+involved selecting appropriate software solutions, monitoring system requirements, and gathering
+and analyzing data. The System Analyst also prepared requirements documents, flowcharts, and
+design specifications essential to system development.
+Software Engineer. Charisse G. Guray, The Software Engineer was responsible for
+designing, developing, and implementing the system’s software components. This role included
+writing and managing source code, ensuring system efficiency, and performing both software and
+hardware testing to verify functionality and reliability. The Software Engineer also collaborated
+closely with the System Analyst during system development and testing.
+Technical Writer. Shenna Mea B. Conde, The Technical Writer was responsible for
+documenting the system development process and preparing written materials for the study.
+37
+This role included drafting technical documentation, conducting related research, and preparing
+manuscripts required for the project. The Technical Writer worked closely with the Project
+Leader to ensure accuracy and clarity in all written outputs.
+4.8 Budget and Cost Management
+Cost management is the process of estimating, allocating, and controlling project costs.
+The cost management process allows a business to predict future expenses to reduce the chances
+of budget overrun. Projected costs are calculated during the planning phase of a project and
+must be approved before work begins. As the project plan is executed, expenses are documented
+and tracked, so things stay within the cost management plan. Once the project is completed,
+predicted costs and actual costs are compared, providing benchmarks for future cost management
+plans and project budgets.
+4.8.1 Proponent’s Budget and Cost Management
+Table 4.3 presents the budgetary requirements for the materials and supplies essential for printing the documents of the developed study. The printed copies of the manuscript
+were vital for both the proposal and final defense, as well as for the proper storage of project
+deliverables. The approximate total cost of the materials was Php 1,796.00.
+Table 4.3: Materials and Supplies
+Item Name Quantity Unit Price Total Amount
+Short Bond Paper
+(3 ream)
+3 reams Php 200.00 Php 600.00
+Ink (Epson L3110
+Ink 003)
+1 set (4 pieces) Php 1,000.00 Php 1,000.00
+Binder Clip 2 boxes (24 pieces) Php 68.00 Php 136.00
+White Folder Short 10 pieces Php 6.00 Php 60.00
+Eraser 1 pc. Php 15.00 Php 15.00
+Pentel Pen (Black) 3 pcs. Php 80.00 Php 240.00
+Total Amount: Php 1,796.00
+Table 4.4 Internet service is essential for learning, browsing, and researching information. A domain name is used as a human-readable web address for a website or online resource.
+In this system, it was utilized for email notifications. Cloud hosting was used to host the application, while Turnitin was utilized to check the manuscript for plagiarism and AI-generated
+content. During system development, ChatGPT assisted the proponents in debugging errors and
+38
+explaining complex concepts. The total estimated cost of acquiring these necessary services was
+Php 14,400.00.
+Table 4.4: Service Expenses
+Service Duration Price Total Amount
+Internet 10 months Php 1,300.00 Php 13,000.00
+Domain Name 1 year Php 800.00 Php 800.00
+Turnitin 2 weeks Php 150.00 Php 300.00
+ChatGPT 3 months Php 100.00 Php 300.00
+Total Amount: Php 14,400.00
+In total, the estimated expenses for this project amounted to Php 16,196.00. It is
+important to note that this amount did not include certain personal expenses of the proponents,
+such as rent and other miscellaneous costs. The funding for the project was sourced from the
+combined contributions of the proponents.
+4.9 Verification and Validation
+The need for verification and validation in the development of the project was essential
+to ensure that the system was accurately developed according to the specified requirements and
+to confirm that it met the needs and expectations of the client. The following points are discussed
+below:
+4.9.1 Verification
+Verification is the process of ensuring that the system is developed correctly based on
+the specified requirements, design, and technical specifications. It focuses on checking whether
+each module functions as intended during the development phase. Since the system follows an
+Agile development methodology, verification was conducted incrementally through development
+sprints. Each module, including user authentication, product management, and cost quotation generation, was tested individually before integration to ensure correct functionality and
+proper interaction with the database. Regular prototype demonstrations were conducted with
+the project adviser to identify errors early and ensure that the Laravel-based backend implementation aligns with the system design and requirements. This process helped ensure that each
+component of the system was properly validated before full system integration.
+39
+4.9.2 Validation
+Upon the acceptance of the proposed solution, the system underwent validation through
+a survey using the ISO Questionnaire based on ISO/IEC 25010. This survey aimed to evaluate the
+usability of the developed system among a randomly selected group of twenty-five (25) participants, which included students from Sorsogon State University – Bulan Campus, IT professionals
+from the same university, customers, and selected store owners located in Bulan, Sorsogon.
+The ISO questionnaire is classified into four main headings, namely: Functional Suitability, Performance Efficiency, Interaction Capability, and Reliability. Each of these consists
+of four to five quantifiable measures to be rated by respondents using a 5-point Likert Scale.
+The complete questionnaire for validation purposes is found within Appendix A. Within the
+assessment period, the proponents used the ISO questionnaire to evaluate the functionality of
+the system. Among the identified four dimensions (i.e., Functional Suitability, Performance Efficiency, Interaction Capability, and Reliability) are measures that contain four such measures.
+Respondents rate these measures on a scale from 1 to 5, ranging from Excellent to Poor, with
+intermediate options of Very Good, Good, and Fair. In total, 21 items are assessed using this
+scale. Each item was carefully crafted by the researchers to ensure that it really captured the
+system’s key features and functionalities, thus allowing the evaluation of the system’s overall
+performance.
+A 5-point Likert scale is elaborately discussed as an instrument to measure attributes
+pertaining to the validation of the system. In this table, different rating levels with the mean
+ranges allotted to each rating are presented to enable a better understanding of the results. The
+additional verbal interpretations help in the contextualization of the various ratings, thereby
+enabling respondents to appreciate the significance of their scores. This composite structure is
+an invaluable tool for investigating the utility and reliability of the system under evaluation.
+Table 4.5: Likert Scale
+Rating Mean Range Verbal Interpretation
+5 4.21 - 5.00 Excellent
+4 3.21 - 4.20 Very Good
+3 2.41 - 3.20 Good
+2 1.81 - 2.60 Fair
+1 1.00 - 1.80 Poor
+In table 4.6 the detailed description of the Functional Suitability Sub-Characteristics
+that assess the system’s ability to perform its intended functions accurately, provide correct and
+40
+Table 4.6: Functional Suitability Characteristic
+Sub-characteristics Description
+Suitability The system performs its intended functions accurately (user
+account management, cost quotation, product management, recommendations, harvest reporting).
+Accuracy The product locator feature works effectively in identifying item
+locations.
+Appropriateness All buttons, links, and features operate as expected.
+Correctness The system provides correct and complete product information.
+Interoperability The The integration of the Rule-Based Algorithm for product
+recommendations and the Output Formatting Service API for
+chart generation enhances system functionality.
+complete product information, and ensure that all features and integrations operate effectively
+to support overall system performance and user experience.
+Table 4.7: Performance Efficiency Characteristics
+Sub-characteristics Description
+Time-behavior The system loads quickly and responds without noticeable delay,
+even when generating cost quotations or rendering line charts.
+Time Behavior The distance tracker operates smoothly even with varying distances.
+Time Behavior The line charts and KPI cards render smoothly even with multiple
+data points.
+Resource Utilization The system performs well across different devices or environments.
+Capacity The system can handle multiple users (Admin, Store Owner,
+Farmers) operating simultaneously without slowing down.
+In table 4.7, is a description of the Performance Efficiency Sub-Characteristics that
+evaluate the system’s loading speed, responsiveness, resource utilization, and capacity to maintain smooth operation and quick response time across different devices and conditions, especially
+in areas with slow internet connectivity in Bulan, Sorsogon.
+Table 4.8 detailed description of the Interaction Capability Sub-Characteristics that
+assess the system’s user interface design, ease of learning, operability, and overall ability to
+provide an intuitive, user-friendly, and enjoyable experience for Admin, Store Owner, and
+Farmers.
+Table 4.9 the detailed description of the Reliability Sub-Characteristics that assess
+the system’s consistency, stability, fault tolerance, recoverability, and overall dependability
+41
+Table 4.8: Interaction Capability Characteristics
+Sub-characteristics Description
+User Interface Aesthetics The interface design is simple and easy to navigate.
+User Interface Aesthetics The dashboard for Admin, Store Owner, and Farmers
+provides clear visual hierarchy and proper color contrast.
+Learnability It is easy to learn how to use the system.
+Operability The icons and menus are clearly labeled and understandable.
+Operability The process of generating cost quotations, receiving product recommendations, and submitting harvest
+reports is straightforward and intuitive.
+Overall Interaction Capability The system provides an overall pleasant user experience.
+Table 4.9: Reliability Characteristics
+Sub-characteristics Description
+Maturity The system operates consistently without crashes or errors.
+Availability The system maintains stability during continuous use by multiple
+user.
+Fault Tolerance The data displayed (product information, cost quotations, harvest reports, line charts, KPI cards) is accurate and dependable.
+Recoverability The system recovers properly from minor errors or interruptions,
+such as when the Output Formatting Service API is temporarily
+unavailable (fallback to basic table view).
+Overall Reliability Overall, the system is reliable and trustworthy to use for farm
+supply management and decision support.
+in providing accurate and trustworthy performance for the Aquilala Irrigators Association
+Incorporated.
+42
+4.10 Testing
+The system underwent a structured software testing process to ensure that all functionalities operate correctly, meet the requirements of the Aquilala Irrigators Association
+Incorporated, and provide accurate decision support prior to deployment. The testing process was
+divided into three phases: unit testing, integration testing, and user acceptance testing (UAT).
+Unit Testing focused on verifying the smallest components of the system to ensure
+correct functionality at the code level. Core modules such as user authentication, product catalog
+management, farm input validation, and cost computation logic were individually tested. This
+ensured that the Laravel 12 backend correctly processes inputs, such as computing costs for
+specific farm inputs, without dependency on other system modules.
+Integration Testing examined how different modules work together. This phase ensured
+that the farm input module properly communicates with the quotation engine, and that the
+recommendation module correctly retrieves relevant product data from the MySQL database.
+It also verified the consistency of data flow across the system’s layered architecture, from user
+input to quotation generation.
+User Acceptance Testing (UAT) was the final phase. In this stage, the system was
+evaluated by actual users, including farmers and store owners, to assess its performance in realworld scenarios. Farmers tested the system by generating cost quotations based on crop type and
+land area, while store owners evaluated product management and demand monitoring features.
+This phase focused on usability, accuracy, and overall system effectiveness. Feedback from users
+was used to make final refinements before system deployment.
+43
+REFERENCE
+[1] World Bank, ”Digital platforms and agricultural market access,” World Bank Group,
+2022. [Online]. Available: https://www.worldbank.org
+[2] ”AgriNet Smart Centralized Platform for Fertilizer, Labour and Supply Management,” International Journal of Advanced Multidisciplinary Research and Educational
+Development (IJAMRED), 2025.
+[3] K. K. Epuri, ”Customization of Agricultural Technology Packages: A CPQ-Based
+Approach to Smart Farming,” Journal of Information Systems Engineering and Management,
+2025.
+[4] M. Hannachi and F. Col´eno, ”The ’new agricultural collectivism’: How cooperatives
+horizontal coordination drive multi-stakeholders self-organization,” Elsevier, 2020.
+[5] Y. Cho, A. Agrahari Baniya, K. Murphy, et al., ”Tree-to-Me: Standards-Driven
+Traceability for Farm-Level Visibility,” Agronomy, vol. 15, no. 5, pp. 1074-1092, May 2025, doi:
+10.3390/agronomy15051074.
+[6] M. Sato, ”Development of decision support system using farming-systems database
+and management support service through data cooperation,” Kanto Tokai Hokuriku Journal of
+Farm Management, no. 109, pp. 15-22, 2019, ISSN: 2189-7646.
+[7] P. L. M. Hermano, ”Assessment of the Adoption of the Digital Platform ’DigiCOOP’
+by the Farmer-Members of Libacao Development Cooperative and Valderama Multipurpose
+Cooperative in Aklan and Antique, Philippines, 2023,” Undergraduate Thesis, University of the
+Philippines Los Ba˜nos, 2024.
+[8] S. B. A. Prabowo, Subiyanto, and N. A. Salim, ”Collaborative Filtering Modification Technology for Recommendation Systems in Smart Digital Agribusiness Marketplace,”
+Kinetik: Game Technology, Information System, Computer Network, Computing, Electronics,
+and Control, vol. 10, no. 3, pp. 399-410, Aug. 2025, doi: 10.22219/kinetik.v10i3.2264.
+[9] P. K. Tripathi, C. K. Singh, R. Singh, and A. K. Deshmukh, ”A farmer-centric
+agricultural decision support system for market dynamics in a volatile agricultural supply chain,”
+Benchmarking: An International Journal, vol. 30, no. 10, pp. 3925-3952, 2023, doi: 10.1108/BIJ12-2021-0780.
+[10] Subiyanto, S. D. W. Prajanti, N. A. Salim, S. B. A. Prabowo, D. Sutrisno, A.
+Anantyo, and D. Anggriani, ”Android-based smart digital marketplace application on agricultural commodities using a new variant recommendation system,” International Journal
+of Electrical and Computer Engineering (IJECE), vol. 15, no. 2, pp. 1968-1977, 2025, doi:
+10.11591/ijece.v15i2.pp1968-1977.
+44

@@ -62,7 +62,7 @@ class QuotationController extends Controller
 
         // If no items computed yet, show the formulas/calculator
         $decisionFormulas = DecisionFormula::with('product')
-            ->where('crop_type', $quotation->crop_type)
+            ->whereCrop($quotation->crop_type)
             ->where('season', $quotation->season)
             ->get();
 
@@ -82,6 +82,8 @@ class QuotationController extends Controller
             'formula_items.*.product_id'        => ['required', 'integer', 'exists:products,id'],
             'formula_items.*.calculated_quantity' => ['required', 'numeric', 'min:0'],
         ]);
+
+        $validated['crop_type'] = ucwords(strtolower(trim($validated['crop_type'])));
 
         DB::transaction(function () use ($validated, $quotation) {
             // Update quotation details
@@ -256,6 +258,8 @@ class QuotationController extends Controller
             'land_area' => ['required', 'numeric', 'min:0.01', 'max:999.99'],
             'notes'     => ['nullable', 'string', 'max:2000'],
         ]);
+
+        $validated['crop_type'] = ucwords(strtolower(trim($validated['crop_type'])));
 
         DB::transaction(function () use ($validated) {
             // Generate a unique reference number
