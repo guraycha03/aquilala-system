@@ -384,7 +384,7 @@
                         <span data-inline-style="{{ $alertQtyStyle }}">{{ $qty <= 0 ? '0 left' : $qty . ' left' }}</span>
                       </div>
                       <div class="stock-bar" style="margin-top:7px;"><div data-pct="{{ $pct }}" data-bar data-bg="{{ $qty <= 0 ? '#94a3b8' : '#dc2626' }}" style="width:0%"></div></div>
-                      <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Reorder at {{ $th }} units · <a href="{{ route('store.products.edit', $p->id) }}" style="color:#dc2626;font-weight:700;text-decoration:none;">Restock →</a></div>
+                      <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Reorder at {{ $th }} {{ $p->stock_unit ?? 'pieces' }} · <a href="{{ route('store.products.edit', $p->id) }}" style="color:#dc2626;font-weight:700;text-decoration:none;">Restock →</a></div>
                     </div>
                   </div>
                 @endforeach

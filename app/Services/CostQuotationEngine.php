@@ -165,7 +165,7 @@ class CostQuotationEngine
                 'price_at_generation' => $priceAtGeneration,
                 'base_quantity'       => $baseQuantity,
                 'adjusted_quantity'   => $adjustedQuantity,
-                'unit'                => $formula?->unit ?? $product->stock_unit ?? 'unit',
+                'unit'                => $formula?->unit ?? $product->stock_unit ?? 'piece',
                 'subtotal'            => $lineSubtotal,
                 'adjustments'         => array_filter([
                     $soilAdjustmentNote,

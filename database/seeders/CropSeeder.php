@@ -25,7 +25,7 @@ class CropSeeder extends Seeder
         ];
 
         foreach ($crops as $crop) {
-            Crop::create($crop);
+            Crop::updateOrCreate(['name' => $crop['name']], $crop);
         }
     }
 }

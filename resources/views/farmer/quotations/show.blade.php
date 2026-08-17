@@ -156,7 +156,7 @@
         <thead>
           <tr>
             <th>Product</th>
-            <th>Unit Price</th>
+            <th>Price</th>
             <th>Quantity</th>
             <th style="text-align: right;">Subtotal</th>
           </tr>

@@ -353,7 +353,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="price">Unit Price <span class="required-star">*</span></label>
+                    <label for="price">Selling Price <span class="required-star">*</span></label>
                     <div class="input-addon-wrapper">
                         <span class="addon-symbol">₱</span>
                         <input type="number" class="form-control" id="price" name="price" value="{{ old('price') }}" placeholder="0.00" step="0.01" min="0" required>

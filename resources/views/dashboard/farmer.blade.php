@@ -29,28 +29,29 @@
   .reveal.in { opacity: 1; transform: translateY(0); }
 
   .hero-band {
-    background: linear-gradient(135deg, #0d2917 0%, #14532d 48%, #0f766e 100%);
-    border-radius: 22px; padding: 30px 32px; color: #fff; position: relative; overflow: hidden;
-    box-shadow: 0 18px 48px rgba(13,41,23,0.30); margin-bottom: 26px;
+    background: rgb(230, 245, 195);
+    border-radius: 22px; padding: 30px 32px; color: #143d23; position: relative; overflow: hidden;
+    box-shadow: 0 4px 16px rgba(20,61,35,0.10); margin-bottom: 26px;
   }
-  .hero-band::before { content: ""; position: absolute; top: -110px; right: -60px; width: 280px; height: 280px; border-radius: 50%; background: rgba(255,255,255,0.06); }
-  .hero-band::after { content: ""; position: absolute; bottom: -90px; left: 25%; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.05); }
+  .hero-band::before { content: ""; position: absolute; top: -110px; right: -60px; width: 280px; height: 280px; border-radius: 50%; background: rgba(16,185,129,0.15); }
+  .hero-band::after { content: ""; position: absolute; bottom: -90px; left: 25%; width: 200px; height: 200px; border-radius: 50%; background: rgba(59,130,246,0.10); }
   .hero-inner { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; }
-  .hero-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #7ee0a6; margin-bottom: 6px; }
-  .hero-title { font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
-  .hero-sub { font-size: 13px; color: rgba(255,255,255,0.78); margin: 6px 0 0 0; }
-  .hero-sub strong { color: #fff; }
+  .hero-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #166534; margin-bottom: 6px; }
+  .hero-title { font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.01em; color: #14532d; }
+  .hero-sub { font-size: 13px; color: #40632d; margin: 6px 0 0 0; }
+  .hero-sub strong { color: #14532d; }
   .hero-season { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; margin-top: 10px; padding: 5px 12px; border-radius: 20px; }
-  .hero-season-wet { background: rgba(56,189,248,0.18); color: #bae6fd; }
-  .hero-season-dry { background: rgba(251,191,36,0.18); color: #fde68a; }
+  .hero-season-wet { background: #dbeafe; color: #1d4ed8; }
+  .hero-season-dry { background: #fef3c7; color: #b45309; }
 
   .btn-hero {
     display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.22);
-    color: #fff; padding: 11px 20px; border-radius: 12px; font-size: 13px; font-weight: 700;
-    text-decoration: none; transition: all 0.2s ease; backdrop-filter: blur(6px);
+    background: #ffffff; border: 1px solid rgba(20,61,35,0.10);
+    color: #14532d; padding: 11px 20px; border-radius: 12px; font-size: 13px; font-weight: 700;
+    text-decoration: none; transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(20,61,35,0.08);
   }
-  .btn-hero:hover { background: rgba(255,255,255,0.22); transform: translateY(-1px); }
+  .btn-hero:hover { background: #f0fdf4; transform: translateY(-1px); }
   .btn-hero svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
   .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 

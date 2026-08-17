@@ -29,6 +29,8 @@ class User extends Authenticatable
         'barangay',
         'city',
         'province',
+        'default_land_area',
+        'default_land_area_unit',
     ];
 
     /**
@@ -53,5 +55,10 @@ class User extends Authenticatable
     public function products(): HasMany
     {
         return $this->hasMany(Product::class, 'user_id');
+    }
+
+    public function farmerCrops(): HasMany
+    {
+        return $this->hasMany(FarmerCrop::class, 'user_id');
     }
 }

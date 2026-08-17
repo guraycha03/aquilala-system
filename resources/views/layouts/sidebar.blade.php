@@ -216,7 +216,7 @@
           </li>
           <li>
             <a href="{{ route('farmer.crops.index') }}" class="{{ request()->is('farmer/crops*') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
               My Crops
             </a>
           </li>

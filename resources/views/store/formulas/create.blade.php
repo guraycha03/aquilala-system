@@ -148,10 +148,13 @@
                list="unit-suggestions" placeholder="e.g., Bags" value="{{ old('unit') }}" required>
         <datalist id="unit-suggestions">
           <option value="Bags"></option>
+          <option value="Sacks"></option>
           <option value="Kilograms"></option>
           <option value="Liters"></option>
           <option value="Pieces"></option>
-          <option value="Units"></option>
+          <option value="Sachets"></option>
+          <option value="Bottles"></option>
+          <option value="Boxes"></option>
         </datalist>
         <div class="input-hint">The unit this rate is expressed in (e.g., Bags per hectare).</div>
       </div>
@@ -198,9 +201,9 @@
     const half = (rate * 0.5).toFixed(2);
     const two = (rate * 2).toFixed(2);
     preview.innerHTML =
-      'Recommended quantity = <strong>' + rate.toFixed(2) + '</strong> ' + (unit || 'units') + ' × land area.<br>' +
-      'Example: <strong>' + productText + '</strong> for a 1 ha farm = ' + one.toFixed(2) + ' ' + (unit || 'units') +
-      ', for 0.5 ha = ' + half + ' ' + (unit || 'units') + ', for 2 ha = ' + two + ' ' + (unit || 'units') + '.';
+      'Recommended quantity = <strong>' + rate.toFixed(2) + '</strong> ' + (unit || 'pieces') + ' × land area.<br>' +
+      'Example: <strong>' + productText + '</strong> for a 1 ha farm = ' + one.toFixed(2) + ' ' + (unit || 'pieces') +
+      ', for 0.5 ha = ' + half + ' ' + (unit || 'pieces') + ', for 2 ha = ' + two + ' ' + (unit || 'pieces') + '.';
   }
 
   rateInput.addEventListener('input', updatePreview);

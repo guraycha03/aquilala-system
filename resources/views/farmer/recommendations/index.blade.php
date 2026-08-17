@@ -104,7 +104,7 @@
           <div style="padding: 16px 20px; background: #fafbfa; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
             <span style="font-size: 18px; font-weight: 800; color: #143d23;">₱{{ number_format($product->price, 2) }}</span>
             <span data-inline-style="{{ $stockTextStyle }}">
-              {{ $product->stock_quantity }} {{ $product->stock_unit ?? 'in stock' }}
+              {{ $product->stock_quantity }} {{ $product->stock_unit ?? 'pieces' }}
             </span>
           </div>
         </div>

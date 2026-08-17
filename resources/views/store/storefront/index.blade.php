@@ -446,7 +446,7 @@
                 <div class="card-footer">
                     <div class="price-row">
                         <div class="price-tag">₱{{ number_format($product->price, 2) }}</div>
-                        <span class="units-count">{{ $qty }} available</span>
+                        <span class="units-count">{{ $qty }} {{ $product->stock_unit ?? 'pieces' }} available</span>
                     </div>
 
                     <div class="action-group">

@@ -299,7 +299,7 @@
         <span class="price-tag">₱{{ number_format($product->price, 2) }}</span>
         <span class="stock-status {{ $product->is_low_stock ? 'stock-low' : 'stock-in' }}">
           <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block;"></span>
-          {{ $product->stock_quantity }} {{ $product->stock_unit ?? 'units' }} left
+          {{ $product->stock_quantity }} {{ $product->stock_unit ?? 'pieces' }} left
         </span>
       </div>
     </a>

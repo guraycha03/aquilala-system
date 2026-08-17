@@ -127,7 +127,7 @@
         <!-- RIGHT: Main / Important Details -->
         <div>
             <div class="price-display">₱{{ number_format($product->price, 2) }}</div>
-            <div class="price-unit">{{ $product->price_unit ?? 'per unit' }}</div>
+            <div class="price-unit">{{ $product->price_unit ?? 'each' }}</div>
 
             <div style="margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px;">
                 <span class="badge {{ $product->status === 'active' ? 'badge-green' : ($product->status === 'discontinued' ? 'badge-red' : 'badge-amber') }}">
@@ -137,7 +137,7 @@
                 <span class="badge {{ $product->is_low_stock ? 'badge-red' : 'badge-green' }}">
                     {{ $product->stock_status }}
                 </span>
-                <span class="badge badge-blue">In Stock: {{ $product->stock_quantity }} {{ $product->stock_unit ?? 'units' }}</span>
+                <span class="badge badge-blue">In Stock: {{ $product->stock_quantity }} {{ $product->stock_unit ?? 'pieces' }}</span>
             </div>
 
 @if(auth()->user()->role === 'farmer')
@@ -195,7 +195,7 @@
         <div class="spec-grid">
             <div class="info-row">
                 <span class="info-label">Package Size</span>
-                <span class="info-value">{{ $product->package_size ? $product->package_size . ' ' . ($product->package_unit ?? 'unit(s)') : 'N/A' }}</span>
+                <span class="info-value">{{ $product->package_size ? $product->package_size . ' ' . ($product->package_unit ?? 'pieces') : 'N/A' }}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Packaging Type</span>
@@ -203,15 +203,15 @@
             </div>
             <div class="info-row">
                 <span class="info-label">Price Unit</span>
-                <span class="info-value">{{ $product->price_unit ?? 'per unit' }}</span>
+                <span class="info-value">{{ $product->price_unit ?? 'each' }}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Stock Quantity</span>
-                <span class="info-value">{{ $product->stock_quantity }} {{ $product->stock_unit ?? 'units' }}</span>
+                <span class="info-value">{{ $product->stock_quantity }} {{ $product->stock_unit ?? 'pieces' }}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Reorder Threshold</span>
-                <span class="info-value">{{ $product->reorder_threshold }} {{ $product->stock_unit ?? 'units' }}</span>
+                <span class="info-value">{{ $product->reorder_threshold }} {{ $product->stock_unit ?? 'pieces' }}</span>
             </div>
             @if($product->coverage_estimate)
             <div class="info-row">
@@ -345,7 +345,7 @@
                     <span class="badge {{ $related->is_low_stock ? 'badge-red' : 'badge-green' }}" style="font-size: 10px;">
                         {{ $related->is_low_stock ? '⚠️ Low Stock' : '✓ In Stock' }}
                     </span>
-                    {{ $related->stock_quantity }} {{ $related->stock_unit ?? 'units' }}
+                    {{ $related->stock_quantity }} {{ $related->stock_unit ?? 'pieces' }}
                 </div>
             </div>
         </a>

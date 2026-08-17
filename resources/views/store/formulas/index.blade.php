@@ -266,7 +266,7 @@
                         @if($formula->product)
                           <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">
                             {{ $formula->product->category->name ?? 'General' }}
-                            · ₱{{ number_format($formula->product->price ?? 0, 2) }}/{{ $formula->product->price_unit ?? 'unit' }}
+                            · ₱{{ number_format($formula->product->price ?? 0, 2) }}/{{ $formula->product->price_unit ?? 'piece' }}
                           </div>
                         @endif
                       </td>

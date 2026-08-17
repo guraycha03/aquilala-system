@@ -57,6 +57,9 @@ class DatabaseSeeder extends Seeder
 
         // 4. Run the operational farm management system values
         $this->call([
+            CategorySeeder::class,
+            CropSeeder::class,
+            StoreOwnerProfileSeeder::class,
             SystemDataSeeder::class,
         ]);
     }

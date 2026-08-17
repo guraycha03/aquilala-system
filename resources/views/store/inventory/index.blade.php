@@ -355,9 +355,9 @@
             </td>
             <td><span class="cat-pill">{{ $product->category->name ?? $product->category ?? 'General' }}</span></td>
             <td>
-              <strong>{{ $qty }}</strong> {{ $product->stock_unit ?? 'units' }}
+              <strong>{{ $qty }}</strong> {{ $product->stock_unit ?? 'pieces' }}
             </td>
-            <td>{{ $thresh }} units</td>
+            <td>{{ $thresh }} {{ $product->stock_unit ?? 'pieces' }}</td>
             <td>
               <div style="display:flex;align-items:center;gap:10px;">
                 <div class="stock-bar"><div data-inline-style="{{ $stockBarStyle }}"></div></div>
@@ -407,7 +407,7 @@
         <div class="field">
           <label>Stock Quantity</label>
           <input type="number" name="stock_quantity" id="adjustQty" min="0" required>
-          <div class="hint">Current units available for sale.</div>
+          <div class="hint">Current stock available for sale.</div>
         </div>
         <div class="field">
           <label>Reorder Threshold (Min Limit)</label>

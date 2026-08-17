@@ -55,13 +55,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\FarmerDashboardController::class, 'index'])->name('dashboard'); // referenced as dashboard.farmer or farmer.dashboard
 
         // Crops Management
-        Route::get('/crops', function () { return view('farmer.crops.index'); })->name('crops.index');
+        Route::get('/crops', [App\Http\Controllers\FarmerCropController::class, 'index'])->name('crops.index');
+        Route::post('/crops', [App\Http\Controllers\FarmerCropController::class, 'store'])->name('crops.store');
+        Route::put('/crops/{farmerCrop}', [App\Http\Controllers\FarmerCropController::class, 'update'])->name('crops.update');
+        Route::delete('/crops/{farmerCrop}', [App\Http\Controllers\FarmerCropController::class, 'destroy'])->name('crops.destroy');
+        Route::put('/crops-default-land', [App\Http\Controllers\FarmerCropController::class, 'updateDefaultLand'])->name('crops.default-land');
 
         // Recommendations
         Route::get('/recommendations', [App\Http\Controllers\ProductController::class, 'recommendations'])->name('recommendations.index');
 
         // Products & Store Browsing
-        Route::get('/products/browse', function () { return view('farmer.products.browse'); })->name('products.browse');
+        Route::get('/products/browse', [App\Http\Controllers\ProductController::class, 'browse'])->name('products.browse');
         Route::get('/products/{product}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
         Route::get('/stores', [App\Http\Controllers\StoreDirectoryController::class, 'index'])->name('stores.index');
 

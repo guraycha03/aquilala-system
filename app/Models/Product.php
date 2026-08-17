@@ -120,9 +120,9 @@ class Product extends Model
             return 'Out of Stock';
         }
         if ($this->is_low_stock) {
-            return 'Low Stock — ' . $this->stock_quantity . ' ' . ($this->stock_unit ?? 'units') . ' remaining';
+            return 'Low Stock — ' . $this->stock_quantity . ' ' . ($this->stock_unit ?? 'pieces') . ' remaining';
         }
-        return 'In Stock — ' . $this->stock_quantity . ' ' . ($this->stock_unit ?? 'units') . ' available';
+        return 'In Stock — ' . $this->stock_quantity . ' ' . ($this->stock_unit ?? 'pieces') . ' available';
     }
 
     public function getCoverageEstimateAttribute(): ?string
@@ -137,9 +137,9 @@ class Product extends Model
         }
         if ($coverage['min'] === $coverage['max']) {
             return 'Approximately ' . $coverage['min'] . ' ' . $coverage['unit'] . ' per ' .
-                $this->package_size . ' ' . ($this->package_unit ?? 'unit') . ' package';
+                $this->package_size . ' ' . ($this->package_unit ?? 'piece') . ' package';
         }
         return 'Approximately ' . $coverage['min'] . '–' . $coverage['max'] . ' ' . $coverage['unit'] . ' per ' .
-            $this->package_size . ' ' . ($this->package_unit ?? 'unit') . ' package';
+            $this->package_size . ' ' . ($this->package_unit ?? 'piece') . ' package';
     }
 }
