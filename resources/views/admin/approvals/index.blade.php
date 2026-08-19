@@ -1,66 +1,66 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Merchant Approvals')
+@section('title', 'Registration Approvals')
 
 @section('content')
   @php
-    // SAMPLE placeholder data — swap with a real store-application model later.
+    // SAMPLE placeholder data — swap with a real user-registration model later.
     $applications = [
         [
-            'id' => 'A-1043', 'store' => 'Sorsogon Agro-Chemical Center', 'owner' => 'Delia Marquez',
-            'email' => 'sorsogon.agro@gmail.com', 'phone' => '0917 123 4567',
-            'barangay' => 'Busay', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'address' => 'Maharlika Highway, Purok 3', 'products' => 'Fertilizers, Seeds, Pesticides',
+            'id' => 'A-1043', 'name' => 'Delia Marquez', 'role' => 'Farmer',
+            'email' => 'delia.marquez@gmail.com', 'phone' => '0917 123 4567',
+            'barangay' => 'Inararan', 'city' => 'Bulan', 'province' => 'Sorsogon',
+            'farm_size' => '2.5 hectares', 'crops' => 'Rice, Vegetables',
             'date' => 'June 25, 2026', 'status' => 'pending',
-            'note' => 'Applied for the Wet Season marketplace. Business documents attached.',
+            'note' => 'Registered for Wet Season marketplace. Farmer ID attached.',
         ],
         [
-            'id' => 'A-1044', 'store' => 'Greenfield Agro Store', 'owner' => 'Ramon Villanueva',
+            'id' => 'A-1044', 'name' => 'Ramon Villanueva', 'role' => 'Farmer',
             'email' => 'ramon.v@gmail.com', 'phone' => '0918 234 5678',
-            'barangay' => 'San Francisco', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'address' => 'San Francisco Barangay Road', 'products' => 'Rice Seeds, Fertilizers',
+            'barangay' => 'J.P. Laurel', 'city' => 'Bulan', 'province' => 'Sorsogon',
+            'farm_size' => '1.8 hectares', 'crops' => 'Rice, Corn',
             'date' => 'July 2, 2026', 'status' => 'pending',
-            'note' => 'Referral from Bulan Farm Depot.',
+            'note' => 'Referred by Bulan Farm Cooperative.',
         ],
         [
-            'id' => 'A-1045', 'store' => 'Fresh Harvest Trading', 'owner' => 'Liza Bautista',
+            'id' => 'A-1045', 'name' => 'Liza Bautista', 'role' => 'User',
             'email' => 'liza.bautista@yahoo.com', 'phone' => '0919 345 6789',
-            'barangay' => 'Zamboanga', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'address' => 'Zamboanga Market Stalls 4-6', 'products' => 'Pesticides, Herbicides, Tools',
+            'barangay' => 'Aquino', 'city' => 'Bulan', 'province' => 'Sorsogon',
+            'farm_size' => '—', 'crops' => '—',
             'date' => 'July 8, 2026', 'status' => 'pending',
-            'note' => 'New applicant. Awaiting business permit scan.',
+            'note' => 'New applicant. Awaiting valid ID verification.',
         ],
         [
-            'id' => 'A-1046', 'store' => 'Coconut Point Trading', 'owner' => 'Nena Reyes',
-            'email' => 'coconut.point@outlook.com', 'phone' => '0920 456 7890',
-            'barangay' => 'Palale', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'address' => 'Palale Proper', 'products' => 'Fertilizers, Foliar Spray',
+            'id' => 'A-1046', 'name' => 'Nena Reyes', 'role' => 'Farmer',
+            'email' => 'nena.reyes@outlook.com', 'phone' => '0920 456 7890',
+            'barangay' => 'Somagongsong', 'city' => 'Bulan', 'province' => 'Sorsogon',
+            'farm_size' => '3.0 hectares', 'crops' => 'Coconut, Abaca',
             'date' => 'July 12, 2026', 'status' => 'pending',
-            'note' => 'Specializes in coconut crop inputs.',
+            'note' => 'Coconut farmer. Barangay certificate attached.',
         ],
         [
-            'id' => 'A-1031', 'store' => 'Bulan Farm Depot', 'owner' => 'Maria Santos',
-            'email' => 'bulanfarm@gmail.com', 'phone' => '0917 555 0102',
-            'barangay' => 'Poblacion', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'address' => 'Rizal Street, Poblacion', 'products' => 'Seeds, Fertilizers, Pesticides',
+            'id' => 'A-1031', 'name' => 'Maria Santos', 'role' => 'Farmer',
+            'email' => 'maria.santos@gmail.com', 'phone' => '0917 555 0102',
+            'barangay' => 'A. Bonifacio', 'city' => 'Bulan', 'province' => 'Sorsogon',
+            'farm_size' => '1.2 hectares', 'crops' => 'Rice, Leafy Vegetables',
             'date' => 'June 18, 2026', 'status' => 'approved',
-            'note' => 'Verified on-site. Business permit on file.',
+            'note' => 'Verified on-site. Farmer ID and land docs on file.',
         ],
         [
-            'id' => 'A-1028', 'store' => 'Rice Mill & Agri Supplies', 'owner' => 'Jose Ramos',
-            'email' => 'ricemill.agri@gmail.com', 'phone' => '0918 555 0113',
-            'barangay' => 'Cagba', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'address' => 'Cagba Road, near irrigation canal', 'products' => 'Rice Seeds, Fertilizers, Feed',
+            'id' => 'A-1028', 'name' => 'Jose Ramos', 'role' => 'User',
+            'email' => 'jose.ramos@gmail.com', 'phone' => '0918 555 0113',
+            'barangay' => 'Managanaga', 'city' => 'Bulan', 'province' => 'Sorsogon',
+            'farm_size' => '—', 'crops' => '—',
             'date' => 'June 2, 2026', 'status' => 'approved',
-            'note' => 'Long-standing supplier; docs complete.',
+            'note' => 'Community member. ID and proof of address verified.',
         ],
         [
-            'id' => 'A-1022', 'store' => 'Sorsogon Agri Center', 'owner' => 'Elena Cruz',
-            'email' => 'agri.center.sorsogon@gmail.com', 'phone' => '0919 555 0144',
-            'barangay' => 'Dancalan', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'address' => 'Dancalan Diversion Road', 'products' => 'Fertilizers, Pesticides',
+            'id' => 'A-1022', 'name' => 'Elena Cruz', 'role' => 'Farmer',
+            'email' => 'elena.cruz@gmail.com', 'phone' => '0919 555 0144',
+            'barangay' => 'Inararan', 'city' => 'Bulan', 'province' => 'Sorsogon',
+            'farm_size' => '0.8 hectares', 'crops' => 'Vegetables, Herbs',
             'date' => 'May 28, 2026', 'status' => 'rejected',
-            'note' => 'Incomplete business documents. Applicant may re-submit.',
+            'note' => 'Incomplete registration documents. May re-submit.',
         ],
     ];
 
@@ -232,8 +232,8 @@
     <div class="app-content">
       <div class="header-row reveal in">
         <div>
-          <h1>Store Verification Approvals</h1>
-          <p>Review and authorize registration applications from external farm supply stores seeking marketplace entry.</p>
+          <h1>Registration Approvals</h1>
+          <p>Review and approve individual farmers and users applying to join the association's marketplace.</p>
         </div>
       </div>
 
@@ -242,7 +242,7 @@
         <div class="app-kpi reveal" data-reveal>
           <div class="ak-label">Needs Review</div>
           <div class="ak-value" id="kpiPending">0</div>
-          <div class="ak-sub">applications awaiting action</div>
+          <div class="ak-sub">registrations awaiting action</div>
         </div>
         <div class="app-kpi reveal" data-reveal>
           <div class="ak-label">Approved</div>
@@ -257,7 +257,7 @@
         <div class="app-kpi reveal" data-reveal>
           <div class="ak-label">Verification Rate</div>
           <div class="ak-value" id="kpiRate">0%</div>
-          <div class="ak-sub">of reviewed applications</div>
+          <div class="ak-sub">of reviewed registrations</div>
         </div>
       </section>
 
@@ -265,7 +265,7 @@
         <div class="app-toolbar">
           <div class="app-search">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input id="searchInput" type="text" placeholder="Search store, owner, or email…">
+            <input id="searchInput" type="text" placeholder="Search farmer, name, or email…">
           </div>
           <div class="status-seg" id="statusSeg">
             <button data-status="all" class="active">All <span class="c" id="segAll">0</span></button>
@@ -277,8 +277,8 @@
 
         <div class="app-list" id="appList"></div>
         <div class="app-empty" id="appEmpty" style="display:none;">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h4"/><path d="M15 12h4"/><path d="M7 16h10"/></svg>
-          <p>No applications match your search or filter.</p>
+          <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/><line x1="20" y1="8" x2="20" y2="14"/></svg>
+          <p>No registrations match your search or filter.</p>
         </div>
       </div>
     </div>
@@ -290,7 +290,7 @@
     <div class="drawer-head">
       <div>
         <div id="drId" style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:0.06em;">—</div>
-        <div id="drStore" style="font-size:18px;font-weight:800;color:#1e293b;margin-top:3px;">Store</div>
+        <div id="drName" style="font-size:18px;font-weight:800;color:#1e293b;margin-top:3px;">Applicant</div>
         <div id="drStatus" style="margin-top:7px;"></div>
       </div>
       <button class="drawer-close" id="drawerClose">
@@ -299,10 +299,10 @@
     </div>
     <div class="drawer-body">
       <div class="d-info">
-        <div class="d-sec-title">Business &amp; Applicant</div>
+        <div class="d-sec-title">Applicant Information</div>
         <div class="d-row">
           <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <div><div class="d-label">Applicant</div><div class="d-value" id="drOwner">—</div></div>
+          <div><div class="d-label">Name</div><div class="d-value" id="drApplicant">—</div></div>
         </div>
         <div class="d-row">
           <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -314,17 +314,17 @@
         </div>
         <div class="d-row">
           <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <div><div class="d-label">Location</div><div class="d-value" id="drLocation">—</div></div>
+          <div><div class="d-label">Address</div><div class="d-value" id="drLocation">—</div></div>
         </div>
         <div class="d-row">
           <svg viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-          <div><div class="d-label">Product Lines</div><div class="d-value" id="drProducts">—</div></div>
+          <div><div class="d-label">Farm Details</div><div class="d-value" id="drFarmDetails">—</div></div>
         </div>
         <div class="d-sep"></div>
 
         <div class="d-sec-title">Submitted Documents</div>
-        <div class="d-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Business name registration</div>
-        <div class="d-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Mayor&rsquo;s permit on file</div>
+        <div class="d-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Valid government ID</div>
+        <div class="d-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Proof of address</div>
         <div class="d-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Contact details verified</div>
         <div class="d-sep"></div>
 
@@ -359,8 +359,8 @@
         var m = meta[st];
         return '<span class="status-badge" style="background:' + m[2] + ';color:' + m[1] + ';">' + m[0] + '</span>';
       }
-      function storeIcon() {
-        return '<svg viewBox="0 0 24 24"><path d="M3 9v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9"/><path d="M2 9h20l-1-4H3L2 9z"/><path d="M7 9V5"/><path d="M12 9V5"/><path d="M17 9V5"/><path d="M6 14h4v4H6v-4z"/><path d="M14 14h4v8h-4v-8z"/></svg>';
+      function farmerIcon() {
+        return '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
       }
 
       function render() {
@@ -368,7 +368,7 @@
         var shown = apps.filter(function (a) {
           if (status !== 'all' && a.status !== status) return false;
           if (q) {
-            var hay = (a.store + ' ' + a.owner + ' ' + a.email + ' ' + a.barangay + ' ' + a.city).toLowerCase();
+            var hay = (a.name + ' ' + a.role + ' ' + a.email + ' ' + a.barangay + ' ' + a.city).toLowerCase();
             if (hay.indexOf(q) === -1) return false;
           }
           return true;
@@ -383,12 +383,12 @@
             : '<button class="btn-app btn-view" data-act="view" data-id="' + a.id + '"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Details</button>';
 
           return '<div class="app-card" data-id="' + a.id + '">' +
-            '<div class="app-avatar">' + storeIcon() + '</div>' +
+            '<div class="app-avatar">' + farmerIcon() + '</div>' +
             '<div class="app-mid">' +
-              '<div class="app-name">' + a.store + '</div>' +
+              '<div class="app-name">' + a.name + '</div>' +
               '<div class="app-sub">' + a.barangay + ', ' + a.city + ', ' + a.province + '</div>' +
               '<div class="app-meta">' +
-                '<span><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' + a.owner + '</span>' +
+                '<span><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' + a.role + '</span>' +
                 '<span><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>' + a.email + '</span>' +
                 '<span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' + a.date + '</span>' +
               '</div>' +
@@ -432,7 +432,7 @@
         updateKpis();
         render();
         showToast(old === 'pending'
-          ? (newStatus === 'approved' ? 'Application approved — store can now list products.' : 'Application rejected.')
+          ? (newStatus === 'approved' ? 'Registration approved — farmer can now access the marketplace.' : 'Registration rejected.')
           : 'Status updated to ' + meta[newStatus][0] + '.');
         if (current && current.id === id) { current = a; fillDrawer(); }
       }
@@ -494,14 +494,14 @@
       }
       function fillDrawer() {
         if (!current) return;
-        document.getElementById('drId').textContent = 'Application ' + current.id;
-        document.getElementById('drStore').textContent = current.store;
+        document.getElementById('drId').textContent = 'Registration ' + current.id;
+        document.getElementById('drName').textContent = current.name;
         document.getElementById('drStatus').innerHTML = statusBadgeHTML(current.status);
-        document.getElementById('drOwner').textContent = current.owner;
+        document.getElementById('drApplicant').textContent = current.name;
         document.getElementById('drEmail').textContent = current.email;
         document.getElementById('drPhone').textContent = current.phone;
-        document.getElementById('drLocation').textContent = current.address + ', ' + current.barangay + ', ' + current.city + ', ' + current.province;
-        document.getElementById('drProducts').textContent = current.products;
+        document.getElementById('drLocation').textContent = current.barangay + ', ' + current.city + ', ' + current.province;
+        document.getElementById('drFarmDetails').textContent = current.farm_size + ' — ' + current.crops;
         document.getElementById('drNote').textContent = current.note;
         var isPending = current.status === 'pending';
         document.getElementById('drApprove').style.display = isPending ? '' : 'none';

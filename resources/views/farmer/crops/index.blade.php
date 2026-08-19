@@ -12,7 +12,7 @@
     }
     .crops-page::before { width: 340px; height: 340px; background: rgba(22,163,74,0.10); top: -80px; right: -60px; }
     .crops-page::after { width: 280px; height: 280px; background: rgba(132,204,22,0.08); bottom: -60px; left: -40px; }
-    .crops-content { position: relative; z-index: 1; }
+    .crops-content { position: relative; }
 
     /* ── Hero Banner ── */
     .hero-band {
@@ -34,15 +34,32 @@
     .hero-sub { font-size: 13px; color: rgba(255,255,255,0.72); margin: 5px 0 0 0; }
     .hero-sub strong { color: #fff; }
     .btn-hero {
-        display: inline-flex; align-items: center; gap: 8px;
-        background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.20);
-        color: #fff; padding: 10px 20px; border-radius: 11px; font-size: 13px; font-weight: 700;
-        text-decoration: none; transition: all 0.2s ease; backdrop-filter: blur(6px);
-        cursor: pointer;
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center;
+    background: #22c55e; 
+    color: #ffffff; 
+    padding: 10px 22px; 
+    border-radius: 10px; 
+    font-size: 13px; 
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-decoration: none; 
+    border: none;
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
     }
-    .btn-hero:hover { background: rgba(255,255,255,0.24); transform: translateY(-1px); }
-    .btn-hero svg { width: 15px; height: 15px; }
-
+    .btn-hero:hover { 
+        background: #16a34a; 
+        color: #ffffff;
+        transform: translateY(-2px); 
+        box-shadow: 0 6px 20px rgba(34, 197, 94, 0.45);
+    }
+    .btn-hero:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+    }
     /* ── Stats Strip ── */
     .stats-strip {
         display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px;
@@ -271,7 +288,194 @@
         .hero-inner { flex-direction: column; align-items: flex-start; }
         .card-details { grid-template-columns: 1fr; }
         .stepper-label { font-size: 8px; }
+        .land-plot-wrap { flex-direction: column; }
     }
+
+    /* ── Modern Farm Plot Dashboard ── */
+    .land-plot-card {
+        background: #FFFFFF;
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+        margin-bottom: 24px;
+    }
+    .land-plot-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+    .land-plot-title {
+        font-size: 16px;
+        font-weight: 800;
+        color: #1E293B;
+        margin: 0;
+        letter-spacing: -0.01em;
+    }
+    .land-plot-sub { font-size: 12px; color: #64748B; margin-top: 2px; }
+    .land-plot-svg-wrap {
+        position: relative;
+        border-radius: 18px;
+        background: #F8FAF9;
+        border: 1px solid #E2E8F0;
+        padding: 16px;
+        overflow: hidden;
+    }
+    .plot-map-controls {
+        position: absolute;
+        top: 28px;
+        right: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        z-index: 5;
+    }
+    .plot-map-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .plot-map-btn:hover { background: #F1F5F9; color: #0F172A; }
+    .plot-polygon {
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+    .plot-polygon:hover {
+        filter: brightness(0.96);
+        transform: scale(0.995);
+    }
+    .plot-tooltip {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #0F172A;
+        color: #FFFFFF;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 10;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .land-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid #F1F5F9;
+    }
+    .land-legend-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: #F8FAF9;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+    }
+    .land-legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    /* ── Farm Plot Fullscreen ── */
+    .farm-fullscreen-overlay {
+        display: none; position: fixed; inset: 0; z-index: 2000;
+        background: rgba(15,41,24,0.6); backdrop-filter: blur(8px);
+        align-items: center; justify-content: center;
+    }
+    .farm-fullscreen-overlay.active { display: flex; }
+    .farm-fullscreen-box {
+        background: #fff; border-radius: 20px; width: 95vw; height: 90vh;
+        display: flex; flex-direction: column; overflow: hidden;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+        animation: modalIn 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    .farm-fs-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 16px 24px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;
+    }
+    .farm-fs-header h3 { margin: 0; font-size: 16px; font-weight: 800; color: #1e293b; }
+    .farm-fs-header-actions { display: flex; gap: 8px; align-items: center; }
+    .farm-fs-close {
+        width: 36px; height: 36px; border-radius: 10px; border: 1px solid #e2e8f0;
+        background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        color: #64748b; transition: all 0.15s ease;
+    }
+    .farm-fs-close:hover { background: #f1f5f9; color: #1e293b; }
+    .farm-fs-body {
+        flex: 1; overflow: auto; position: relative; background: #f8faf9;
+        cursor: grab;
+    }
+    .farm-fs-body.grabbing { cursor: grabbing; }
+    .farm-fs-body .farm-fs-svg {
+        min-width: 100%; min-height: 100%; display: block;
+        transition: transform 0.15s ease;
+        transform-origin: center center;
+    }
+    .farm-fs-zoom-controls {
+        position: absolute; bottom: 20px; right: 20px;
+        display: flex; flex-direction: column; gap: 4px; z-index: 10;
+    }
+    .farm-fs-zoom-btn {
+        width: 38px; height: 38px; border-radius: 10px; border: 1px solid #e2e8f0;
+        background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        color: #475569; font-size: 18px; font-weight: 700;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.15s ease;
+    }
+    .farm-fs-zoom-btn:hover { background: #f1f5f9; color: #0f172a; }
+    .farm-fs-zoom-label {
+        text-align: center; font-size: 11px; font-weight: 700; color: #64748b;
+        background: #fff; border-radius: 8px; padding: 3px 0; border: 1px solid #e2e8f0;
+        min-width: 38px;
+    }
+
+    /* ── Land Capacity (Form) ── */
+    .land-cap-wrap { margin-bottom: 14px; }
+    .land-cap-bar-track {
+        width: 100%; height: 10px; background: #e5e7eb; border-radius: 5px;
+        overflow: hidden; position: relative;
+    }
+    .land-cap-bar-fill {
+        height: 100%; border-radius: 5px; transition: width 0.4s ease, background 0.3s ease;
+    }
+    .land-cap-bar-fill.ok { background: linear-gradient(90deg, #16a34a, #22c55e); }
+    .land-cap-bar-fill.warn { background: linear-gradient(90deg, #d97706, #f59e0b); }
+    .land-cap-bar-fill.over { background: linear-gradient(90deg, #dc2626, #ef4444); }
+    .land-cap-text {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-top: 6px; font-size: 11px; color: #64748b; font-weight: 600;
+    }
+    .land-cap-remaining { color: #16a34a; font-weight: 700; }
+    .land-cap-remaining.warn { color: #d97706; }
+    .land-cap-remaining.over { color: #dc2626; }
+    .land-cap-warning {
+        display: none; margin-top: 8px; padding: 8px 12px; border-radius: 8px;
+        font-size: 12px; font-weight: 600; line-height: 1.4;
+    }
+    .land-cap-warning.warn { display: block; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .land-cap-warning.over { display: block; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .form-group input.over-cap { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.08); }
+    .form-group input.warn-cap { border-color: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.08); }
 </style>
 
 @if(session('success'))
@@ -307,7 +511,6 @@
             </div>
         </div>
         <button class="btn-hero" onclick="openAddModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add Crop Batch
         </button>
     </div>
@@ -352,6 +555,148 @@
         </div>
     </div>
 </div>
+
+{{-- ── Farm Plot Visualization ── --}}
+@php
+    $totalArea = (float) ($user->default_land_area ?? 0);
+    $plotActive = $crops->filter(fn($c) => !in_array($c->growth_stage, ['harvested', 'failed']));
+    $usedArea = (float) $plotActive->sum('land_area');
+    $availableArea = max(0, $totalArea - $usedArea);
+    $allocPct = $totalArea > 0 ? min(100, round(($usedArea / $totalArea) * 100)) : 0;
+    $unitLabel = match($stats['land_area_unit'] ?? 'ha') { 'sq_m' => 'm²', 'sq_ft' => 'ft²', default => 'ha' };
+
+    $pastelPalette = ['#8CE663', '#E2F2D5', '#FFE8D1', '#E0F2FE'];
+
+    $plotEntries = [];
+    $i = 0;
+    foreach ($plotActive as $batch) {
+        $plotEntries[] = [
+            'name' => $batch->crop->name ?? 'Crop',
+            'area' => (float) $batch->land_area,
+            'stage' => $batch->growth_stage,
+            'batch' => $batch->batch_name ?? '',
+            'color' => $pastelPalette[$i % count($pastelPalette)],
+            'stroke' => '#FFFFFF',
+        ];
+        $i++;
+    }
+    if ($availableArea > 0.01 && $totalArea > 0) {
+        $plotEntries[] = [
+            'name' => 'Unallocated', 'area' => $availableArea,
+            'stage' => 'available', 'batch' => '',
+            'color' => '#F1F5F9', 'stroke' => '#CBD5E1',
+        ];
+    }
+
+    $svgW = 800; $svgH = 260;
+    $currX = 0;
+@endphp
+
+@if($totalArea > 0)
+<div class="land-plot-card">
+    <div class="land-plot-head">
+        <div>
+            <h3 class="land-plot-title">Field Overview</h3>
+            <p class="land-plot-sub">{{ number_format($usedArea, 1) }} {{ $unitLabel }} planted of {{ number_format($totalArea, 1) }} {{ $unitLabel }} total</p>
+        </div>
+        <div style="background: #F1F5F9; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #1E293B;">
+            {{ $allocPct }}% Allocated
+        </div>
+    </div>
+
+    <div class="land-plot-svg-wrap">
+        <div class="plot-map-controls">
+            <button class="plot-map-btn" title="Toggle Legend" onclick="togglePlotLegend()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </button>
+            <button class="plot-map-btn" title="Full View" onclick="openFarmFs()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </button>
+        </div>
+
+        <div class="plot-tooltip" id="plotTooltip"></div>
+
+        <svg viewBox="0 0 {{ $svgW }} {{ $svgH }}" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; display: block;">
+    @foreach($plotEntries as $index => $pe)
+        @php
+            $pct = $totalArea > 0 ? ($pe['area'] / $totalArea) : 0;
+            $width = $pct * $svgW;
+            $x1 = $currX;
+            $x2 = $currX + $width;
+            $currX += $width;
+
+            $pad = 3;
+            $px1 = $x1 + $pad;
+            $px2 = $x2 - $pad;
+            $py1 = $pad;
+            $py2 = $svgH - $pad;
+            $rectW = max(0, $px2 - $px1);
+
+            // Dynamic font sizing based on plot width
+            $fontSizeName = $rectW > 100 ? 13 : ($rectW > 40 ? 10 : 8);
+            $fontSizeArea = $rectW > 100 ? 10 : ($rectW > 40 ? 9 : 7);
+        @endphp
+
+        @if($rectW > 0)
+        <g class="plot-polygon"
+           data-name="{{ $pe['name'] }}"
+           data-area="{{ $pe['area'] }}"
+           data-stage="{{ $pe['stage'] }}"
+           data-batch="{{ $pe['batch'] }}"
+           data-unit="{{ $unitLabel }}"
+        >
+            <rect x="{{ $px1 }}" y="{{ $py1 }}" width="{{ $rectW }}" height="{{ $py2 - $py1 }}"
+                  rx="14" ry="14"
+                  fill="{{ $pe['color'] }}"
+                  stroke="{{ $pe['stroke'] }}"
+                  stroke-width="2"/>
+
+            {{-- Render content for all shapes down to 15px width --}}
+            @if($rectW > 15)
+            <g transform="translate({{ $px1 + ($rectW / 2) }}, {{ $svgH / 2 }})">
+                @if($pe['stage'] !== 'available' && $rectW > 40)
+                    <path d="M-6 -12 C-6 -4 0 0 0 0 C0 0 6 -4 6 -12 Z" fill="none" stroke="#1E293B" stroke-width="1.5" transform="scale(0.8) translate(0, -12)"/>
+                @endif
+
+                {{-- Name Label --}}
+                <text x="0" y="{{ $rectW > 40 && $pe['stage'] !== 'available' ? 4 : -4 }}" 
+                      text-anchor="middle"
+                      fill="#1E293B" 
+                      font-size="{{ $fontSizeName }}" 
+                      font-weight="700"
+                      font-family="system-ui, -apple-system, sans-serif">
+                      {{ $rectW < 35 ? \Illuminate\Support\Str::limit($pe['name'], 3, '') : $pe['name'] }}
+                </text>
+
+                {{-- Land Area Label --}}
+                <text x="0" y="{{ $rectW > 40 && $pe['stage'] !== 'available' ? 18 : 10 }}" 
+                      text-anchor="middle"
+                      fill="#64748B" 
+                      font-size="{{ $fontSizeArea }}" 
+                      font-weight="600"
+                      font-family="system-ui, -apple-system, sans-serif">
+                      {{ number_format($pe['area'], 1) }}{{ $unitLabel }}
+                </text>
+            </g>
+            @endif
+        </g>
+        @endif
+    @endforeach
+</svg>
+
+    </div>
+
+    <div class="land-legend">
+        @foreach($plotEntries as $pe)
+        <div class="land-legend-pill">
+            <span class="land-legend-dot" style="background: {{ $pe['color'] }}; border: 1px solid rgba(0,0,0,0.08);"></span>
+            <span>{{ $pe['name'] }}{{ $pe['batch'] ? ' — ' . $pe['batch'] : '' }}</span>
+            <span style="color: #94A3B8; font-weight: 400;">({{ number_format($pe['area'], 1) }} {{ $unitLabel }})</span>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
 
 <!-- ── Filter Bar ── -->
 @if($crops->count() > 0)
@@ -494,8 +839,7 @@
         </div>
         <h3 class="empty-title">No Crop Batches Yet</h3>
         <p class="empty-desc">Start by logging your first crop batch to track planting, monitor growth stages, and plan harvests for the season.</p>
-        <button class="btn-hero" onclick="openAddModal()" style="margin: 0 auto; background: #16a34a; border-color: #16a34a; color: #fff;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <button class="btn-hero" onclick="openAddModal()" style="margin: 0 auto;">
             Add First Crop Batch
         </button>
         <div class="empty-tips">
@@ -508,6 +852,40 @@
 @endif
 
 </div>
+</div>
+
+<!-- ── Farm Plot Fullscreen ── -->
+<div class="farm-fullscreen-overlay" id="farmFullscreen">
+    <div class="farm-fullscreen-box">
+        <div class="farm-fs-header">
+            <h3>Farm Plot — Full View</h3>
+            <div class="farm-fs-header-actions">
+                <button class="farm-fs-close" onclick="farmFsZoom(0.1)" title="Zoom In">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <button class="farm-fs-close" onclick="farmFsZoom(-0.1)" title="Zoom Out">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+                <button class="farm-fs-close" onclick="farmFsReset()" title="Reset View">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
+                <button class="farm-fs-close" onclick="closeFarmFs()" title="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="farm-fs-body" id="farmFsBody">
+            <div class="farm-fs-zoom-controls">
+                <button class="farm-fs-zoom-btn" onclick="farmFsZoom(0.15)">+</button>
+                <div class="farm-fs-zoom-label" id="farmFsZoomLabel">100%</div>
+                <button class="farm-fs-zoom-btn" onclick="farmFsZoom(-0.15)">−</button>
+                <button class="farm-fs-zoom-btn" onclick="farmFsReset()" style="margin-top:4px; font-size:13px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                </button>
+            </div>
+            <div id="farmFsSvgWrap"></div>
+        </div>
+    </div>
 </div>
 
 <!-- ── ADD MODAL ── -->
@@ -540,14 +918,27 @@
                 </div>
 
                 <div class="form-section-label">Land & Season</div>
+                @if($stats['land_area'] > 0)
+                <div class="land-cap-wrap">
+                    <div class="land-cap-bar-track">
+                        <div class="land-cap-bar-fill ok" id="capBarFill" style="width: {{ $allocPct }}%"></div>
+                    </div>
+                    <div class="land-cap-text">
+                        <span>{{ number_format($stats['used_land_area'], 1) }} {{ $unitLabel }} used</span>
+                        <span class="land-cap-remaining" id="capRemaining">{{ number_format($stats['remaining_land'], 1) }} {{ $unitLabel }} remaining</span>
+                    </div>
+                </div>
+                <div class="land-cap-warning" id="capWarning"></div>
+                @endif
                 <div class="form-row">
                     <div class="form-group">
                         <label>Land Area *</label>
-                        <input type="number" name="land_area" step="0.01" min="0.01" value="{{ $user->default_land_area ?? '1' }}" required>
+                        <input type="number" name="land_area" id="addLandArea" step="0.01" min="0.01" value="{{ $user->default_land_area ?? '1' }}" required
+                               oninput="checkLandCapacity(this.value)">
                     </div>
                     <div class="form-group">
                         <label>Area Unit *</label>
-                        <select name="land_area_unit" id="landAreaUnit" required>
+                        <select name="land_area_unit" id="landAreaUnit" required onchange="checkLandCapacity(document.getElementById('addLandArea').value)">
                             <option value="ha" {{ ($user->default_land_area_unit ?? 'ha') === 'ha' ? 'selected' : '' }}>Hectares (ha)</option>
                             <option value="sq_m" {{ ($user->default_land_area_unit ?? '') === 'sq_m' ? 'selected' : '' }}>Square Meters (m²)</option>
                             <option value="sq_ft" {{ ($user->default_land_area_unit ?? '') === 'sq_ft' ? 'selected' : '' }}>Square Feet (ft²)</option>
@@ -693,45 +1084,189 @@
 <form id="deleteForm" method="POST" style="display:none;">@csrf @method('DELETE')</form>
 
 <script>
-    function openAddModal() { document.getElementById('addModal').classList.add('active'); }
-    function openLandModal() { document.getElementById('landModal').classList.add('active'); }
+    /* ── Modals ── */
+    window.openAddModal = function() {
+        const modal = document.getElementById('addModal');
+        if (!modal) return;
+        modal.classList.add('active');
+        setTimeout(function() { 
+            const input = document.getElementById('addLandArea');
+            if (input && typeof checkLandCapacity === 'function') {
+                checkLandCapacity(input.value);
+            }
+        }, 50);
+    };
 
-    function openUpdateModal(id, stage) {
+    window.openLandModal = function() { const m = document.getElementById('landModal'); if (m) m.classList.add('active'); };
+    window.closeModal = function(id) { const el = document.getElementById(id); if (el) el.classList.remove('active'); };
+    window.openUpdateModal = function(id, stage) {
         const form = document.getElementById('updateForm');
-        form.action = '{{ url("/farmer/crops") }}/' + id;
-        document.getElementById('updateStage').value = stage;
-        toggleHarvest(stage);
-        document.getElementById('updateModal').classList.add('active');
-    }
-
-    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-    function deleteCrop(id) {
+        if (form) form.action = '{{ url("/farmer/crops") }}/' + id;
+        const updateStageEl = document.getElementById('updateStage');
+        if (updateStageEl) updateStageEl.value = stage;
+        try { toggleHarvest(stage); } catch(e) {}
+        const um = document.getElementById('updateModal'); if (um) um.classList.add('active');
+    };
+    window.deleteCrop = function(id) {
         if (confirm('Remove this crop batch? This cannot be undone.')) {
             const f = document.getElementById('deleteForm');
-            f.action = '{{ url("/farmer/crops") }}/' + id;
-            f.submit();
+            if (f) { f.action = '{{ url("/farmer/crops") }}/' + id; f.submit(); }
+        }
+    };
+    // Close modal when clicking overlay background
+    document.querySelectorAll('.modal-overlay').forEach(o => {
+        o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); });
+    });
+
+    /* ── Land Capacity ── */
+    /* ── Land Capacity ── */
+    const _capTotal = parseFloat("{{ $stats['land_area'] ?? 0 }}") || 0;
+    const _capUsed = parseFloat("{{ $stats['used_land_area'] ?? 0 }}") || 0;
+    const _capUnit = {!! json_encode($unitLabel ?? 'ha') !!};
+
+    function checkLandCapacity(val) {
+        const input = document.getElementById('addLandArea');
+        const bar = document.getElementById('capBarFill');
+        const rem = document.getElementById('capRemaining');
+        const warn = document.getElementById('capWarning');
+        if (!input || !bar || _capTotal <= 0) return;
+        const entered = parseFloat(val) || 0;
+        const newUsed = _capUsed + entered;
+        const newPct = Math.min(100, Math.round((newUsed / _capTotal) * 100));
+        const newRem = Math.max(0, _capTotal - newUsed);
+        bar.style.width = newPct + '%';
+        input.classList.remove('over-cap', 'warn-cap');
+        bar.classList.remove('ok', 'warn', 'over');
+        rem.classList.remove('warn', 'over');
+        warn.className = 'land-cap-warning';
+        if (newUsed > _capTotal) {
+            bar.classList.add('over');
+            input.classList.add('over-cap');
+            rem.classList.add('over');
+            rem.textContent = 'Exceeded by ' + Math.abs(_capTotal - newUsed).toFixed(2) + ' ' + _capUnit;
+            warn.className = 'land-cap-warning over';
+            warn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Land area exceeds your total farm size! You cannot plant more than ' + _capTotal + ' ' + _capUnit + '.';
+        } else if (newPct >= 80) {
+            bar.classList.add('warn');
+            input.classList.add('warn-cap');
+            rem.classList.add('warn');
+            rem.textContent = newRem.toFixed(1) + ' ' + _capUnit + ' remaining';
+            warn.className = 'land-cap-warning warn';
+            warn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Running low on land — only ' + newRem.toFixed(1) + ' ' + _capUnit + ' will remain.';
+        } else {
+            bar.classList.add('ok');
+            rem.textContent = newRem.toFixed(1) + ' ' + _capUnit + ' remaining';
         }
     }
 
+    /* ── Farm Plot Tooltips ── */
+    const unitLabels = { ha: 'ha', sq_m: 'm\u00B2', sq_ft: 'ft\u00B2' };
+    const stageLabels = {
+        land_prep: 'Land Preparation', seeding: 'Seeding', vegetative: 'Vegetative',
+        reproductive: 'Reproductive', ripening: 'Ripening', harvested: 'Harvested', failed: 'Failed',
+        available: 'Unallocated'
+    };
+    function showPlotTip(el) {
+        const tip = document.getElementById('plotTooltip');
+        if (!tip) return;
+        const name = el.dataset.name;
+        const area = parseFloat(el.dataset.area);
+        const stage = el.dataset.stage;
+        const batch = el.dataset.batch;
+        const unit = unitLabels[el.dataset.unit] || 'ha';
+        tip.innerHTML = '<strong>' + name + '</strong>' + (batch ? ' — ' + batch : '')
+            + ' &middot; ' + area + ' ' + unit
+            + ' &middot; ' + stageLabels[stage];
+        tip.style.opacity = '1';
+    }
+    function hidePlotTip() { var t = document.getElementById('plotTooltip'); if (t) t.style.opacity = '0'; }
+
+    // Attach plot polygon event listeners safely (works if script runs after DOM or before)
+    (function attachPlotHandlers(){
+        function attach(){
+            document.querySelectorAll('.plot-polygon').forEach(function(el){
+                el.removeEventListener('mouseenter', el._showPlotTip);
+                el.removeEventListener('mouseleave', el._hidePlotTip);
+                // store references so removal is possible later
+                el._showPlotTip = function(){ showPlotTip(el); };
+                el._hidePlotTip = function(){ hidePlotTip(); };
+                el.addEventListener('mouseenter', el._showPlotTip);
+                el.addEventListener('mouseleave', el._hidePlotTip);
+                el.addEventListener('click', function(){
+                    // open fullscreen on click for convenience
+                    openFarmFs();
+                });
+            });
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+        else attach();
+    })();
+
+    /* ── Plot Legend Toggle ── */
+    function togglePlotLegend() {
+        var legend = document.querySelector('.land-legend');
+        if (!legend) return;
+        legend.style.display = legend.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    /* ── Farm Plot Fullscreen ── */
+    var _fsScale = 1;
+    function openFarmFs() {
+        var overlay = document.getElementById('farmFullscreen');
+        var wrap = document.getElementById('farmFsSvgWrap');
+        var svgSrc = document.querySelector('.land-plot-svg-wrap svg');
+        if (!overlay || !wrap || !svgSrc) return;
+        wrap.innerHTML = '';
+        var clone = svgSrc.cloneNode(true);
+        clone.style.width = '100%';
+        clone.style.height = 'auto';
+        clone.style.minHeight = '400px';
+        clone.style.display = 'block';
+        wrap.appendChild(clone);
+        _fsScale = 1;
+        _applyFsTransform();
+        document.getElementById('farmFsZoomLabel').textContent = '100%';
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeFarmFs() {
+        var overlay = document.getElementById('farmFullscreen');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    function farmFsZoom(delta) {
+        _fsScale = Math.max(0.3, Math.min(4, _fsScale + delta));
+        _applyFsTransform();
+        document.getElementById('farmFsZoomLabel').textContent = Math.round(_fsScale * 100) + '%';
+    }
+    function farmFsReset() {
+        _fsScale = 1;
+        _applyFsTransform();
+        document.getElementById('farmFsZoomLabel').textContent = '100%';
+        var body = document.getElementById('farmFsBody');
+        if (body) { body.scrollLeft = 0; body.scrollTop = 0; }
+    }
+    function _applyFsTransform() {
+        var wrap = document.getElementById('farmFsSvgWrap');
+        if (wrap) wrap.style.transform = 'scale(' + _fsScale + ')';
+    }
+
+    /* ── Filter Crop Cards ── */
     function filterCrops(type, btn) {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
-        document.querySelectorAll('.crop-card').forEach(card => {
+        document.querySelectorAll('.crop-card').forEach(function(card) {
             card.style.display = (type === 'all' || card.dataset.status === type) ? '' : 'none';
         });
     }
 
-    document.getElementById('updateStage').addEventListener('change', function() {
-        toggleHarvest(this.value);
-    });
-
+    /* ── Update Stage Modal ── */
+    const _updateStageEl = document.getElementById('updateStage');
+    if (_updateStageEl) _updateStageEl.addEventListener('change', function() { toggleHarvest(this.value); });
     function toggleHarvest(s) {
-        document.getElementById('harvestFields').style.display = s === 'harvested' ? 'block' : 'none';
+        const hf = document.getElementById('harvestFields');
+        if (!hf) return;
+        hf.style.display = s === 'harvested' ? 'block' : 'none';
     }
-
-    document.querySelectorAll('.modal-overlay').forEach(o => {
-        o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); });
-    });
 </script>
 @endsection

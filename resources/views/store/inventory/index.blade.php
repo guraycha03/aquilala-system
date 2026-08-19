@@ -241,14 +241,14 @@
   <div class="metric-card">
     <div class="metric-top">
       <div class="metric-icon" style="background:#f3e8ff;">
-        <svg viewBox="0 0 24 24" stroke="#7c3aed" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M8 3h6.5a4.5 4.5 0 0 1 0 9H8"/><line x1="4.5" y1="6.5" x2="21" y2="6.5" stroke-width="1.5"/><line x1="4.5" y1="9.5" x2="21" y2="9.5" stroke-width="1.5"/></svg>
+        <svg viewBox="0 0 24 24" stroke="#7c3aed" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
       </div>
       <div>
-        <div class="metric-label">Total Stock Value</div>
-        <div class="metric-value" style="font-size:22px;">₱{{ number_format($totalStockValue, 2) }}</div>
+        <div class="metric-label">Total Units in Stock</div>
+        <div class="metric-value">{{ number_format($totalUnits) }}</div>
       </div>
     </div>
-    <div class="metric-foot">Estimated inventory worth</div>
+    <div class="metric-foot">Combined stock across all products</div>
   </div>
 </div>
 

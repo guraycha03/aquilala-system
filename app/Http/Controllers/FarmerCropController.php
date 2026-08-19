@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FarmerCrop;
 use App\Models\Crop;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -20,11 +21,17 @@ class FarmerCropController extends Controller
         $activeCrops = $crops->whereNotIn('growth_stage', ['harvested', 'failed']);
         $totalEstimatedCost = $crops->sum('estimated_cost');
 
+        $totalArea = (float) ($user->default_land_area ?? 0);
+        $usedArea = (float) $activeCrops->sum('land_area');
+        $remainingLand = max(0, $totalArea - $usedArea);
+
         $stats = [
             'active_count' => $activeCrops->count(),
             'total_count' => $crops->count(),
-            'land_area' => $user->default_land_area ?? 0,
+            'land_area' => $totalArea,
             'land_area_unit' => $user->default_land_area_unit ?? 'ha',
+            'used_land_area' => $usedArea,
+            'remaining_land' => $remainingLand,
             'estimated_cost' => $totalEstimatedCost,
         ];
 
@@ -49,13 +56,27 @@ class FarmerCropController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
+        $user = Auth::user();
+        $totalArea = (float) ($user->default_land_area ?? 0);
+        if ($totalArea > 0) {
+            $usedArea = (float) FarmerCrop::where('user_id', $user->id)
+                ->whereNotIn('growth_stage', ['harvested', 'failed'])
+                ->sum('land_area');
+            $remaining = $totalArea - $usedArea;
+            if ((float) $validated['land_area'] > $remaining) {
+                return back()->withErrors([
+                    'land_area' => 'Exceeds available land. Only ' . number_format($remaining, 2) . ' ' . ($user->default_land_area_unit ?? 'ha') . ' remaining.'
+                ])->withInput();
+            }
+        }
+
         $validated['user_id'] = Auth::id();
         $validated['growth_stage'] = 'seeding';
 
-        FarmerCrop::create($validated);
+        $farmerCrop = FarmerCrop::create($validated);
 
-        // Save as default land area if user hasn't set one yet
-        $user = Auth::user();
+        ActivityLogger::cropPlanted($farmerCrop);
+
         if (!$user->default_land_area) {
             $user->update([
                 'default_land_area' => $validated['land_area'],
@@ -87,6 +108,13 @@ class FarmerCropController extends Controller
 
         $farmerCrop->update($validated);
 
+        if ($validated['growth_stage'] === 'harvested') {
+            ActivityLogger::cropHarvested($farmerCrop);
+        } else {
+            $change = collect($validated)->except(['growth_stage'])->filter()->implode(', ');
+            ActivityLogger::cropUpdated($farmerCrop, $change ?: 'growth_stage → ' . $validated['growth_stage']);
+        }
+
         return redirect()->route('farmer.crops.index')
             ->with('success', 'Crop batch updated successfully!');
     }
@@ -97,6 +125,7 @@ class FarmerCropController extends Controller
             abort(403);
         }
 
+        ActivityLogger::cropDeleted($farmerCrop->crop?->name ?? 'Unknown', $farmerCrop->batch_name ?? 'Unnamed');
         $farmerCrop->delete();
 
         return redirect()->route('farmer.crops.index')
@@ -110,7 +139,11 @@ class FarmerCropController extends Controller
             'default_land_area_unit' => 'required|in:ha,sq_m,sq_ft',
         ]);
 
-        Auth::user()->update($validated);
+        $user = Auth::user();
+        $oldArea = (float) ($user->default_land_area ?? 0);
+        $user->update($validated);
+
+        ActivityLogger::landUpdated($oldArea, $validated['default_land_area'], $validated['default_land_area_unit']);
 
         return redirect()->route('farmer.crops.index')
             ->with('success', 'Default land area updated.');

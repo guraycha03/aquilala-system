@@ -336,9 +336,9 @@
                   <div style="font-size:12px;color:#64748b;margin-top:4px;line-height:1.4;">
                     <strong>{{ $qt->crop_type }}</strong> · {{ ucfirst($qt->season) }} Season · {{ $qt->land_area }} ha
                     @if($qt->farmer)
-                      <br>🧑‍🌾 {{ $qt->farmer->name }}
+                      <br><svg viewBox="0 0 24 24" width="12" height="12" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> {{ $qt->farmer->name }}
                       @if($qt->storeOwner)
-                        → 🏪 {{ $qt->storeOwner->store_name ?? $qt->storeOwner->name }}
+                        → <svg viewBox="0 0 24 24" width="12" height="12" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px;"><path d="M3 9l1.5-4.5h15L21 9"/><path d="M3 9v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"/><path d="M3 9h18"/><path d="M6 14h4v4H6z"/><path d="M14 14h4v6h-4z"/></svg> {{ $qt->storeOwner->store_name ?? $qt->storeOwner->name }}
                       @endif
                     @endif
                   </div>

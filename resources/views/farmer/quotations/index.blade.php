@@ -1,120 +1,245 @@
 @extends('layouts.sidebar')
 
-@section('title', 'My Quotations')
+@section('title', 'My Cost Quotations')
 
 @section('content')
 <style>
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
   }
+  @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .stats-grid { grid-template-columns: 1fr; } }
+
   .stat-card {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 18px;
+    position: relative;
+    border-radius: 14px;
+    padding: 20px 22px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
-  .stat-card .stat-label { font-size: 12px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
-  .stat-card .stat-value { font-size: 24px; font-weight: 800; color: #1e2922; margin-top: 4px; }
-  .stat-card .stat-value.green { color: #16a34a; }
-  .stat-card .stat-value.amber { color: #d97706; }
-  .stat-card .stat-value.blue { color: #2563eb; }
-  .stat-card .stat-value.red { color: #dc2626; }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .stat-card::after {
+    content: '';
+    position: absolute; top: 0; right: 0; width: 80px; height: 80px;
+    border-radius: 50%; opacity: 0.07;
+    transform: translate(20px, -20px);
+  }
+  .stat-card.green  { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #bbf7d0; }
+  .stat-card.green::after { background: #16a34a; }
+  .stat-card.blue   { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; }
+  .stat-card.blue::after  { background: #2563eb; }
+  .stat-card.amber  { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde68a; }
+  .stat-card.amber::after { background: #d97706; }
+  .stat-card.violet { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border: 1px solid #ddd6fe; }
+  .stat-card.violet::after { background: #7c3aed; }
+
+  .stat-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+  }
+  .stat-card.green .stat-icon  { background: rgba(22,163,74,0.12); color: #16a34a; }
+  .stat-card.blue .stat-icon   { background: rgba(37,99,235,0.12); color: #2563eb; }
+  .stat-card.amber .stat-icon  { background: rgba(217,119,6,0.12); color: #d97706; }
+  .stat-card.violet .stat-icon { background: rgba(124,58,237,0.12); color: #7c3aed; }
+
+  .stat-card .stat-label {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 4px;
+  }
+  .stat-card.green .stat-label  { color: #15803d; }
+  .stat-card.blue .stat-label   { color: #1d4ed8; }
+  .stat-card.amber .stat-label  { color: #b45309; }
+  .stat-card.violet .stat-label { color: #6d28d9; }
+
+  .stat-card .stat-value { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+  .stat-card.green .stat-value  { color: #166534; }
+  .stat-card.blue .stat-value   { color: #1e40af; }
+  .stat-card.amber .stat-value  { color: #92400e; }
+  .stat-card.violet .stat-value { color: #5b21b6; }
+
+  /* Table card */
+  .table-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.02);
+    border: 1px solid #f0f2f1;
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f2f1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
 
   .quote-table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .quote-table th {
-    background: #fafbfa; padding: 12px 14px; font-weight: 600;
-    color: #4a574e; border-bottom: 1px solid #e2e8f0; text-align: left;
-    font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em;
+    padding: 13px 16px; font-weight: 600;
+    color: #6b7c6e; border-bottom: 1px solid #f0f2f1; text-align: left;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+    background: #fafdfb;
   }
-  .quote-table td { padding: 14px; border-bottom: 1px solid #f1f5f9; color: #3d4a41; }
-  .quote-table tr:hover td { background: #f8fafc; }
+  .quote-table td { padding: 14px 16px; border-bottom: 1px solid #f5f7f6; color: #374138; }
+  .quote-table tbody tr { transition: background 0.15s; }
+  .quote-table tbody tr:hover td { background: #f8faf9; }
 
+  /* Status badges */
   .status-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 4px 10px; border-radius: 20px;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px;
     font-size: 12px; font-weight: 600;
+    letter-spacing: 0.01em;
   }
-  .status-badge.pending { background: #fef3c7; color: #d97706; }
-  .status-badge.computed { background: #e0f2fe; color: #0284c7; }
-  .status-badge.dispatched { background: #f3e8ff; color: #7c3aed; }
-  .status-badge.accepted { background: #f0fdf4; color: #16a34a; }
-  .status-badge.rejected { background: #fef2f2; color: #dc2626; }
+  .status-badge.computed { background: #eff6ff; color: #1d4ed8; }
+  .status-badge.viewed   { background: #f5f3ff; color: #6d28d9; }
+  .status-badge.expired  { background: #f5f5f5; color: #9ca3af; }
+  .status-badge.pending  { background: #fffbeb; color: #b45309; }
+  .status-badge.accepted { background: #f0fdf4; color: #15803d; }
+  .status-badge-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: currentColor;
+  }
 
-  .item-count-badge {
-    background: #f1f5f9; padding: 2px 8px; border-radius: 6px;
-    font-size: 12px; color: #475569; font-weight: 600;
+  .item-count {
+    background: #f5f7f6; padding: 4px 10px; border-radius: 8px;
+    font-size: 12px; color: #4b5c50; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px;
   }
-  .action-link {
+
+  /* Primary CTA */
+  .cta-primary {
+    background: linear-gradient(135deg, #143d23 0%, #1a5230 100%);
+    color: #fff; text-decoration: none;
+    padding: 10px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 7px;
+    box-shadow: 0 2px 8px rgba(20,61,35,0.25);
+    transition: all 0.2s ease;
+    border: none; cursor: pointer;
+  }
+  .cta-primary:hover {
+    box-shadow: 0 4px 16px rgba(20,61,35,0.3);
+    transform: translateY(-1px);
+  }
+  .cta-primary:active { transform: scale(0.98); }
+
+  .action-view {
     color: #143d23; font-weight: 600; font-size: 13px;
     text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
-    padding: 6px 12px; border-radius: 6px; transition: background 0.2s;
+    padding: 6px 12px; border-radius: 8px; transition: all 0.15s;
   }
-  .action-link:hover { background: #f0fdf4; text-decoration: underline; }
+  .action-view:hover { background: #f0fdf4; }
+
+  .delete-btn {
+    background: none; border: 1px solid #e5e7eb; border-radius: 8px;
+    padding: 6px 8px; cursor: pointer; color: #b0b8b3;
+    transition: all 0.15s; display: inline-flex; align-items: center;
+  }
+  .delete-btn:hover { border-color: #fecaca; color: #dc2626; background: #fef2f2; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center; padding: 72px 24px;
+    background: linear-gradient(180deg, #fafdfb 0%, #f5f7f6 100%);
+  }
+  .empty-icon {
+    width: 72px; height: 72px; border-radius: 20px; margin: 0 auto 20px;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border: 1px solid #bbf7d0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .empty-icon svg { width: 32px; height: 32px; color: #16a34a; }
+
+  .link-animated {
+    --c: #143d23;
+    position: relative; display: inline-flex; align-items: center;
+    gap: 8px; padding: 4px 0; text-decoration: none;
+    font-weight: 700; font-size: 14px; color: var(--c);
+    transition: color 0.2s;
+  }
+  .link-animated::after {
+    content: ''; position: absolute; bottom: 0; left: 0;
+    width: 0; height: 2px; background: var(--c);
+    transition: width 0.3s ease;
+  }
+  .link-animated:hover::after { width: 100%; }
+  .link-animated:hover { color: #166534; }
+  .link-animated:hover svg { transform: translateX(3px); }
+  .link-animated svg { transition: transform 0.2s ease; width: 16px; height: 16px; }
 </style>
 
-<div class="header-panel" style="margin-bottom: 24px;">
-  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">My Quotations</h1>
-  <p style="color: #606d64; font-size: 14px; margin: 0;">
-    Track and manage your product quotation requests across all supply stores.
-  </p>
+<div class="header-panel" style="margin-bottom: 28px;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">My Cost Quotations</h1>
+      <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
+        Instantly generated farming cost quotations — no approval needed. Browse and create new quotations anytime.
+      </p>
+    </div>
+    <a href="{{ route('farmer.quotations.request') }}" class="cta-primary">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Cost Quotation
+    </a>
+  </div>
 </div>
 
 @if(session('success'))
-  <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#16a34a" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
-    <span style="font-size: 14px; color: #166534; font-weight: 500;">{{ session('success') }}</span>
+  <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(22,163,74,0.06);">
+    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(22,163,74,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <span style="font-size: 14px; color: #166534; font-weight: 600;">{{ session('success') }}</span>
   </div>
 @endif
 
 @php
   $totalQuotes = $quotations->count();
-  $pendingCount = $quotations->where('status', 'pending')->count();
-  $dispatchedCount = $quotations->where('status', 'dispatched')->count();
-  $acceptedCount = $quotations->where('status', 'accepted')->count();
-  $rejectedCount = $quotations->where('status', 'rejected')->count();
-  $recentQuotes = $quotations->take(5);
+  $computedCount = $quotations->where('status', 'computed')->count();
+  $viewedCount = $quotations->where('status', 'viewed')->count();
+  $totalValue = $quotations->sum('estimated_total_cost');
 @endphp
 
 <!-- Stats -->
 <div class="stats-grid">
-  <div class="stat-card">
-    <div class="stat-label">Total Requests</div>
-    <div class="stat-value blue">{{ $totalQuotes }}</div>
+  <div class="stat-card green">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="stat-label">Total Quotations</div>
+    <div class="stat-value">{{ $totalQuotes }}</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">Pending Response</div>
-    <div class="stat-value amber">{{ $pendingCount }}</div>
+  <div class="stat-card blue">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    </div>
+    <div class="stat-label">Ready to View</div>
+    <div class="stat-value">{{ $computedCount }}</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">Awaiting Review</div>
-    <div class="stat-value blue">{{ $dispatchedCount }}</div>
+  <div class="stat-card violet">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="stat-label">Seen by Stores</div>
+    <div class="stat-value">{{ $viewedCount }}</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-label">Accepted</div>
-    <div class="stat-value green">{{ $acceptedCount }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Rejected</div>
-    <div class="stat-value red">{{ $rejectedCount }}</div>
+  <div class="stat-card amber">
+    <div class="stat-icon">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M8 3h6.5a4.5 4.5 0 0 1 0 9H8"/></svg>
+    </div>
+    <div class="stat-label">Total Estimated Value</div>
+    <div class="stat-value">₱{{ number_format($totalValue, 0) }}</div>
   </div>
 </div>
 
 <!-- Quotations List -->
-<div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
-  <div style="padding: 18px 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-    <div>
-      <h2 style="font-size: 16px; font-weight: 700; color: #1e2922; margin: 0;">Quotation Requests</h2>
-      <p style="font-size: 13px; color: #64748b; margin: 2px 0 0 0;">All your product quotation requests and their current status</p>
-    </div>
-    <a href="{{ route('farmer.quotations.request') }}" style="background: #143d23; color: #fff; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      New Quotation Request
-    </a>
-  </div>
-
+<div class="table-card">
   @if($quotations->count() > 0)
     <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
       <div class="app-scroll">
@@ -122,44 +247,58 @@
         <thead>
           <tr>
             <th>Reference</th>
-            <th>Store</th>
+            <th>Crop / Season</th>
+            <th>Land Area</th>
             <th>Items</th>
-            <th>Total Estimate</th>
-            <th>Date Requested</th>
+            <th>Estimated Cost</th>
+            <th>Date</th>
             <th>Status</th>
-            <th>Action</th>
+            <th style="text-align: right;">Action</th>
           </tr>
         </thead>
         <tbody>
           @foreach($quotations as $quote)
             <tr>
-              <td style="font-weight: 700; color: #143d23; font-family: monospace;">{{ $quote->quotation_number }}</td>
               <td>
-                @if($quote->storeOwner)
-                  <div style="font-weight: 600;">{{ $quote->storeOwner->name }}</div>
-                  <div style="font-size: 11px; color: #94a3b8;">{{ $quote->storeOwner->email }}</div>
-                @else
-                  <span style="color: #94a3b8;">Waiting for store assignment</span>
-                @endif
+                <span style="font-weight: 700; color: #143d23; font-family: 'SF Mono', ui-monospace, monospace; font-size: 13px; letter-spacing: 0.02em;">{{ $quote->quotation_number }}</span>
               </td>
               <td>
-                <span class="item-count-badge">{{ $quote->items->count() }} product(s)</span>
+                <div style="text-transform: capitalize; font-weight: 500;">{{ $quote->crop_type }}</div>
+                <div style="font-size: 12px; color: #94a3b8; text-transform: capitalize;">{{ $quote->season }} season</div>
               </td>
-              <td style="font-weight: 700; color: #1e2922;">
-                ₱{{ number_format($quote->estimated_total_cost, 2) }}
-              </td>
-              <td style="color: #64748b; font-size: 13px;">{{ $quote->created_at->format('M d, Y') }}</td>
+              <td><span style="font-weight: 600;">{{ number_format($quote->land_area, 2) }}</span> <span style="color: #94a3b8; font-size: 12px;">ha</span></td>
               <td>
-                <span class="status-badge {{ $quote->status }}">
-                  <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block;"></span>
-                  {{ $quote->status_label }}
+                <span class="item-count">
+                  <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+                  {{ $quote->items->count() }}
                 </span>
               </td>
               <td>
-                <a href="{{ route('farmer.quotations.show', $quote) }}" class="action-link">
-                  View Details
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                </a>
+                <span style="font-weight: 700; color: #1a2b1e;">₱{{ number_format($quote->estimated_total_cost, 2) }}</span>
+              </td>
+              <td style="color: #879a8c; font-size: 13px; white-space: nowrap;">{{ $quote->created_at->format('M d, Y') }}</td>
+              <td>
+                <span class="status-badge {{ $quote->status }}">
+                  <span class="status-badge-dot"></span>
+                  {{ $quote->status_label }}
+                </span>
+              </td>
+              <td style="text-align: right;">
+                <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">
+                  <a href="{{ route('farmer.quotations.show', $quote) }}" class="action-view">
+                    View
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
+                  </a>
+                  <form action="{{ route('farmer.quotations.destroy', $quote) }}" method="POST"
+                        onsubmit="return confirm('Delete this cost quotation?');"
+                        style="margin: 0;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" title="Delete quotation" class="delete-btn">
+                      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
           @endforeach
@@ -172,18 +311,19 @@
       </div>
     </div>
   @else
-    <div style="text-align: center; padding: 60px 20px;">
-      <svg viewBox="0 0 24 24" width="48" height="48" stroke="#d1d9d3" stroke-width="1.5" fill="none" style="margin-bottom: 12px;">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-      </svg>
-      <h3 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0 0 4px 0;">No Quotation Requests Yet</h3>
-      <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">You haven't submitted any quotation requests. Browse store products and request a quote!</p>
-      <a href="{{ route('farmer.quotations.request') }}" style="background: #143d23; color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 6px;">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        Request a Quotation
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <h3 style="font-size: 18px; color: #1a2b1e; font-weight: 700; margin: 0 0 6px 0;">No Cost Quotations Yet</h3>
+      <p style="font-size: 14px; color: #6b7c6e; margin: 0 0 24px 0; max-width: 360px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+        Generate your first farming cost quotation instantly — no approval required.
+      </p>
+      <a href="{{ route('farmer.quotations.request') }}" class="link-animated">
+        <span>Generate Cost Quotation</span>
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
       </a>
     </div>
   @endif
 </div>
 @endsection
-

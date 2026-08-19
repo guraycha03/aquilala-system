@@ -145,7 +145,7 @@
   <div>
     <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">DSS Recommendation Rule Setup</h1>
     <p style="color: #606d64; font-size: 14px; margin: 0;">
-      Define standard per-hectare application rates that drive the quotation engine's recommended input quantities.
+      Define standard per-hectare application rates that drive the cost quotation engine's recommended input quantities.
     </p>
   </div>
   <a href="{{ route('store.formulas.create') }}" class="btn-primary">
@@ -176,7 +176,7 @@
     <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
   </svg>
   <div>
-    <strong>How formulas work:</strong> When a farmer requests a quotation for a crop + season, the engine computes
+    <strong>How formulas work:</strong> When a farmer generates a cost quotation for a crop + season, the engine computes
     <strong>recommended quantity = rate per hectare × land area</strong> for every product with a formula here.
     Soil and weather adjustments (e.g., sandy soil, typhoon season) are applied automatically on top of these base rates.
   </div>

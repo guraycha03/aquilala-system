@@ -226,10 +226,6 @@
             <div class="num">{{ $productCount }}</div>
             <div class="lbl">Products</div>
           </div>
-          <div class="hero-stat">
-            <div class="num">₱{{ number_format($inventoryValue, 0) }}</div>
-            <div class="lbl">Inventory Value</div>
-          </div>
         </div>
       </div>
     </section>
@@ -245,9 +241,6 @@
       <x-kpi-card title="Pending Quotations" value="{{ $pendingQuotationsCount }}" trendValue="{{ $computedQuotationsCount }} computed" trendDirection="{{ $pendingQuotationsCount > 0 ? 'up' : 'neutral' }}" trendLabel="awaiting response" accent="#7c3aed" link="{{ route('store.quotations.index') }}">
         <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Inventory Value" value="₱{{ number_format($inventoryValue, 2) }}" trendValue="{{ $dispatchedQuotationsCount }} dispatched" trendDirection="neutral" trendLabel="est. retail value" accent="#2563eb">
-        <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M8 3h6.5a4.5 4.5 0 0 1 0 9H8"/><line x1="4.5" y1="6.5" x2="21" y2="6.5" stroke-width="1.5"/><line x1="4.5" y1="9.5" x2="21" y2="9.5" stroke-width="1.5"/></svg></x-slot:icon>
-      </x-kpi-card>
     </section>
 
     <!-- 3. QUICK ACTIONS -->
@@ -262,7 +255,7 @@
       </a>
       <a href="{{ route('store.quotations.index') }}" class="qa-btn">
         <span class="qa-icon" style="background:#f3e8ff;color:#7c3aed;"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
-        <span class="qa-txt"><b>Quotations</b><span>Cost estimates</span></span>
+        <span class="qa-txt"><b>Quotations</b><span>Cost Quotations</span></span>
       </a>
       <a href="{{ route('store.formulas.index') }}" class="qa-btn">
         <span class="qa-icon" style="background:#fef3c7;color:#d97706;"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
@@ -275,7 +268,7 @@
     </section>
 
     <!-- 4. MAIN GRID -->
-    <section style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:22px;align-items:start;">
+    <section style="display:grid;grid-template-columns:1fr;gap:22px;align-items:start;">
 
       <!-- PRODUCTS -->
       <div class="dash-panel reveal" data-reveal>
@@ -321,10 +314,10 @@
                       <div class="stock-bar"><div data-pct="{{ $pct }}" data-bar data-bg="{{ $barColor }}" style="width:0%"></div></div>
                       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;">
                         <div class="prod-price">₱{{ number_format($product->price, 2) }}</div>
-                        <span class="prod-edit">
+                        <a href="{{ route('store.products.edit', $product->id) }}" class="prod-edit" onclick="event.stopPropagation();">
                           <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           Edit
-                        </span>
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -358,8 +351,8 @@
           </div>
           <div style="padding:12px 16px;">
             <div class="dash-tabs">
-              <button class="dash-tab active" data-tab="alerts">⚠️ Stock Alerts</button>
-              <button class="dash-tab" data-tab="quotes">📄 Quotations</button>
+              <button class="dash-tab active" data-tab="alerts"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Stock Alerts</button>
+              <button class="dash-tab" data-tab="quotes"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Quotations</button>
             </div>
           </div>
 
@@ -423,7 +416,7 @@
                       <div style="font-size:12px;color:#64748b;margin-top:4px;line-height:1.4;">
                         <strong>{{ $qt->crop_type }}</strong> · {{ ucfirst($qt->season) }} Season · {{ $qt->land_area }} ha
                         @if($qt->farmer)
-                          <br>🧑‍🌾 {{ $qt->farmer->name }}
+                          <svg viewBox="0 0 24 24" width="12" height="12" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> {{ $qt->farmer->name }}
                         @endif
                       </div>
                       @if($qt->estimated_total_cost > 0)

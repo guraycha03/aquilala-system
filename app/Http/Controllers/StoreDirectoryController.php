@@ -14,15 +14,20 @@ class StoreDirectoryController extends Controller
     {
         $stores = User::where('role', 'store_owner')
             ->whereNotNull('store_name')
-            ->withCount('products')
             ->with(['products' => function ($q) {
-                $q->active()->take(4);
+                $q->where('status', 'active');
             }])
+            ->withCount('products')
             ->orderBy('store_name')
             ->get();
 
+        // Trim to 4 products per store in the view data (avoids row_number window fn)
+        $stores->each(function ($store) {
+            $store->setRelation('products', $store->products->take(4));
+        });
+
         $totalStores = $stores->count();
-        $totalProducts = Product::active()->count();
+        $totalProducts = Product::where('status', 'active')->count();
 
         return view('farmer.stores.index', compact('stores', 'totalStores', 'totalProducts'));
     }

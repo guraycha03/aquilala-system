@@ -64,6 +64,12 @@ Route::middleware('auth')->group(function () {
         // Recommendations
         Route::get('/recommendations', [App\Http\Controllers\ProductController::class, 'recommendations'])->name('recommendations.index');
 
+        // AI Chat
+        Route::get('/ai-chat', [App\Http\Controllers\AiChatController::class, 'index'])->name('ai-chat.index');
+
+        // Supported Crops Directory
+        Route::get('/crops-directory', [App\Http\Controllers\CropsDirectoryController::class, 'index'])->name('crops-directory.index');
+
         // Products & Store Browsing
         Route::get('/products/browse', [App\Http\Controllers\ProductController::class, 'browse'])->name('products.browse');
         Route::get('/products/{product}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
@@ -72,10 +78,15 @@ Route::middleware('auth')->group(function () {
         // Quotations
         Route::get('/quotations', [App\Http\Controllers\QuotationController::class, 'farmerIndex'])->name('quotations.index');
         Route::get('/quotations/request', [App\Http\Controllers\QuotationController::class, 'farmerCreate'])->name('quotations.request');
+        Route::get('/quotations/products', [App\Http\Controllers\QuotationController::class, 'farmerProducts'])->name('quotations.products');
         Route::get('/quotations/{quotation}', [App\Http\Controllers\QuotationController::class, 'farmerShow'])->name('quotations.show');
         Route::post('/quotations', [App\Http\Controllers\QuotationController::class, 'farmerStore'])->name('quotations.store');
+        Route::delete('/quotations/{quotation}', [App\Http\Controllers\QuotationController::class, 'farmerDestroy'])->name('quotations.destroy');
         Route::post('/quotations/{quotation}/accept', [App\Http\Controllers\QuotationController::class, 'acceptQuotation'])->name('quotations.accept');
         Route::post('/quotations/{quotation}/reject', [App\Http\Controllers\QuotationController::class, 'rejectQuotation'])->name('quotations.reject');
+
+        // Activity Log
+        Route::get('/activity', [App\Http\Controllers\QuotationController::class, 'farmerActivity'])->name('activity.index');
 
         // Notifications
         Route::get('/notifications', function () { return view('farmer.notifications.index'); })->name('notifications.index');
@@ -109,10 +120,12 @@ Route::middleware('auth')->group(function () {
         Route::put('/formulas/{formula}', [App\Http\Controllers\FormulaController::class, 'update'])->name('formulas.update');
         Route::delete('/formulas/{formula}', [App\Http\Controllers\FormulaController::class, 'destroy'])->name('formulas.destroy');
     
-        // Missing product management routes
+        // Product management routes
         Route::get('/products/create', [App\Http\Controllers\ProductController::class, 'create'])->name('products.create');
+        Route::post('/products', [App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
         Route::get('/products/{product}', [App\Http\Controllers\ProductController::class, 'show'])->name('products.show');
         Route::get('/products/{product}/edit', [App\Http\Controllers\ProductController::class, 'edit'])->name('products.edit');
+        Route::put('/products/{product}', [App\Http\Controllers\ProductController::class, 'update'])->name('products.update');
         Route::delete('/products/{product}', [App\Http\Controllers\ProductController::class, 'destroy'])->name('products.destroy');
     });
     
@@ -130,6 +143,7 @@ Route::middleware('auth')->group(function () {
         })->name('users.index');
         Route::get('/approvals', function () { return view('admin.approvals.index'); })->name('approvals.index');
         Route::get('/quotations', [App\Http\Controllers\QuotationController::class, 'adminIndex'])->name('quotations.index');
+        Route::get('/activity', [App\Http\Controllers\QuotationController::class, 'adminActivity'])->name('activity.index');
         Route::get('/analytics', function () {
             $formulas = \App\Models\DecisionFormula::with('product.category')
                 ->orderBy('crop_type')

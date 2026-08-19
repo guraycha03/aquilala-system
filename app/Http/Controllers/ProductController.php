@@ -32,11 +32,6 @@ class ProductController extends Controller
         $lowStockProducts = $products->filter(fn ($p) => $p->is_low_stock)->values();
         $lowStockCount = $lowStockProducts->count();
 
-        // Estimated retail value of current on-hand inventory
-        $inventoryValue = $products->sum(
-            fn ($p) => (float) $p->price * (int) $p->stock_quantity
-        );
-
         // ─── Quotation metrics for this store ──────────────────────
         $storeQuoteScope = function ($query) {
             return $query->where(function ($q) {
@@ -68,7 +63,6 @@ class ProductController extends Controller
             'productCount',
             'lowStockProducts',
             'lowStockCount',
-            'inventoryValue',
             'pendingQuotationsCount',
             'computedQuotationsCount',
             'dispatchedQuotationsCount',

@@ -46,10 +46,10 @@ class DatabaseSeeder extends Seeder
         User::updateOrCreate(
             ['email' => $farmerEmail],
             [
-                'name' => 'Christian G. Guray',
-                'first_name' => 'Christian',
+                'name' => 'Cha G. Risse',
+                'first_name' => 'Cha',
                 'middle_initial' => 'G.',
-                'last_name' => 'Guray',
+                'last_name' => 'Risse',
                 'role' => 'farmer',
                 'password' => Hash::make(env('SEED_FARMER_PASSWORD', md5($farmerEmail . 'aquilala_secure'))),
             ]

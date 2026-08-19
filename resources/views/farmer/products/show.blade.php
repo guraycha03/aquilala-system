@@ -144,7 +144,7 @@
             <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
                 <a href="{{ route('farmer.quotations.request', ['category_id' => $product->category_id]) }}" class="btn-quote">
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                    Request Quotation
+                    Request Cost Quotation
                 </a>
             </div>
             @endif
@@ -169,9 +169,12 @@
                 <div class="info-row">
                     <span class="info-label">Recommended Season</span>
                     <span class="info-value">
-                        @if($product->recommended_season === 'wet') 🌧️ Wet Season
-                        @elseif($product->recommended_season === 'dry') ☀️ Dry Season
-                        @else 🔄 All Seasons
+                        @if($product->recommended_season === 'wet')
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="#2563eb" fill="none" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="16" x2="8" y2="20"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="16" y1="16" x2="16" y2="20"/></svg> Wet Season
+                        @elseif($product->recommended_season === 'dry')
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="#d97706" fill="none" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Dry Season
+                        @else
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="#87a992" fill="none" stroke-width="2" style="vertical-align: middle; margin-right: 4px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> All Seasons
                         @endif
                     </span>
                 </div>
@@ -343,7 +346,11 @@
                 <div class="related-price">₱{{ number_format($related->price, 2) }}</div>
                 <div style="font-size: 12px; color: #87a992; margin-top: 4px;">
                     <span class="badge {{ $related->is_low_stock ? 'badge-red' : 'badge-green' }}" style="font-size: 10px;">
-                        {{ $related->is_low_stock ? '⚠️ Low Stock' : '✓ In Stock' }}
+                        @if($related->is_low_stock)
+                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" style="vertical-align: middle;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Low Stock
+                        @else
+                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" style="vertical-align: middle;"><polyline points="20 6 9 17 4 12"/></svg> In Stock
+                        @endif
                     </span>
                     {{ $related->stock_quantity }} {{ $related->stock_unit ?? 'pieces' }}
                 </div>

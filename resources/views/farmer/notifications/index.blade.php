@@ -66,7 +66,7 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">Notifications</h1>
-        <p class="page-subtitle">Stay updated on your quotations, store dispatches, and platform activity.</p>
+        <p class="page-subtitle">Stay updated on your cost quotations, store activity, and platform updates.</p>
     </div>
 </div>
 
@@ -80,7 +80,7 @@
         </div>
         <h3 class="empty-title">No Notifications Yet</h3>
         <p class="empty-description">
-            There's nothing here right now. Updates on your quotation requests, store dispatches, and other platform activity will appear here.
+            There's nothing here right now. Updates on your cost quotations, store activity, and other platform updates will appear here.
         </p>
     </div>
 </div>

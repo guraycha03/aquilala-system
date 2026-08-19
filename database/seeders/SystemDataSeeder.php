@@ -379,6 +379,198 @@ class SystemDataSeeder extends Seeder
             ]
         );
 
+        // ── EGGPLANT SEEDS ──
+        $eggplantSeeds = Product::updateOrCreate(
+            ['sku' => 'SEED-VEG-EGG-01'],
+            [
+                'user_id' => $storeOwner->id,
+                'category_id' => $catIds['Vegetable Seeds'] ?? null,
+                'category' => 'Seeds',
+                'name' => 'RAMGO F1 Eggplant Seeds (250g)',
+                'brand' => 'RAMGO',
+                'product_type' => 'Seeds',
+                'price' => 1200.00,
+                'price_unit' => 'per pack',
+                'stock_quantity' => 45,
+                'stock_unit' => 'packs',
+                'package_size' => 250,
+                'package_unit' => 'g',
+                'packaging_type' => 'Packet',
+                'reorder_threshold' => 10,
+                'recommended_season' => 'dry',
+                'status' => 'active',
+                'description' => 'High-yield F1 hybrid eggplant. Fruit length: 20–25cm, dark purple, glossy. Resistant to fruit and shoot borer. Ideal for dry season production. Transplant seedlings at 25–30 days.',
+            ]
+        );
+
+        // ── HOT PEPPER SEEDS ──
+        $hotPepperSeeds = Product::updateOrCreate(
+            ['sku' => 'SEED-VEG-Pepper-01'],
+            [
+                'user_id' => $storeOwner->id,
+                'category_id' => $catIds['Vegetable Seeds'] ?? null,
+                'category' => 'Seeds',
+                'name' => 'RAMGO Hot Pepper Seeds (100g)',
+                'brand' => 'RAMGO',
+                'product_type' => 'Seeds',
+                'price' => 850.00,
+                'price_unit' => 'per pack',
+                'stock_quantity' => 60,
+                'stock_unit' => 'packs',
+                'package_size' => 100,
+                'package_unit' => 'g',
+                'packaging_type' => 'Packet',
+                'reorder_threshold' => 12,
+                'recommended_season' => 'both',
+                'status' => 'active',
+                'description' => 'High-heat hot pepper variety. Fruit length: 8–10cm, intense red color. High capsaicin content. Suitable for both wet and dry season. Harvest begins 60–70 days after transplanting.',
+            ]
+        );
+
+        // ── LUFFA / PATOLA SEEDS ──
+        $luffaSeeds = Product::updateOrCreate(
+            ['sku' => 'SEED-VEG-LUF-01'],
+            [
+                'user_id' => $storeOwner->id,
+                'category_id' => $catIds['Vegetable Seeds'] ?? null,
+                'category' => 'Seeds',
+                'name' => 'RAMGO Patola (Luffa) Seeds (150g)',
+                'brand' => 'RAMGO',
+                'product_type' => 'Seeds',
+                'price' => 650.00,
+                'price_unit' => 'per pack',
+                'stock_quantity' => 35,
+                'stock_unit' => 'packs',
+                'package_size' => 150,
+                'package_unit' => 'g',
+                'packaging_type' => 'Packet',
+                'reorder_threshold' => 8,
+                'recommended_season' => 'wet',
+                'status' => 'active',
+                'description' => 'High-germination luffa gourd seeds. Vigorous vine, excellent for wet season. Fruit length: 30–40cm. Harvest at 45–55 days. Requires trellising.',
+            ]
+        );
+
+        // ── CALAMANSI SEEDLINGS ──
+        $calamansi = Product::updateOrCreate(
+            ['sku' => 'SEED-FRUIT-CAL-01'],
+            [
+                'user_id' => $storeOwner->id,
+                'category_id' => $catIds['Fruit Seedlings'] ?? null,
+                'category' => 'Seeds',
+                'name' => 'Calamansi Seedlings (Budded)',
+                'brand' => 'Local Nursery',
+                'product_type' => 'Seedling',
+                'price' => 150.00,
+                'price_unit' => 'per piece',
+                'stock_quantity' => 500,
+                'stock_unit' => 'pieces',
+                'package_size' => 1,
+                'package_unit' => 'piece',
+                'packaging_type' => 'Bag',
+                'reorder_threshold' => 50,
+                'recommended_season' => 'wet',
+                'status' => 'active',
+                'description' => 'Budded calamansi seedlings, 6–8 months old. Fruit bearing in 2–3 years. Spacing: 5m × 5m. Yield: 15–25 kg/tree/year at maturity. Plant during wet season for best establishment.',
+            ]
+        );
+
+        // ── MANGO SEEDLINGS ──
+        $mango = Product::updateOrCreate(
+            ['sku' => 'SEED-FRUIT-MNG-01'],
+            [
+                'user_id' => $storeOwner->id,
+                'category_id' => $catIds['Fruit Seedlings'] ?? null,
+                'category' => 'Seeds',
+                'name' => 'Carabao Mango Grafted Seedlings',
+                'brand' => 'Local Nursery',
+                'product_type' => 'Seedling',
+                'price' => 250.00,
+                'price_unit' => 'per piece',
+                'stock_quantity' => 300,
+                'stock_unit' => 'pieces',
+                'package_size' => 1,
+                'package_unit' => 'piece',
+                'packaging_type' => 'Bag',
+                'reorder_threshold' => 30,
+                'recommended_season' => 'wet',
+                'status' => 'active',
+                'description' => 'Grafted Carabao mango (local mango) seedlings. Fruit bearing in 3–4 years. Spacing: 10m × 10m. Yield: 50–100 kg/tree/year at maturity. Plant during wet season for best root establishment.',
+            ]
+        );
+
+        // ── BANANA PLANTLETS ──
+        $banana = Product::updateOrCreate(
+            ['sku' => 'SEED-FRUIT-BAN-01'],
+            [
+                'user_id' => $storeOwner->id,
+                'category_id' => $catIds['Fruit Seedlings'] ?? null,
+                'category' => 'Seeds',
+                'name' => 'Lakatan Banana Tissue-Cultured Plantlets',
+                'brand' => 'Dole',
+                'product_type' => 'Seedling',
+                'price' => 85.00,
+                'price_unit' => 'per piece',
+                'stock_quantity' => 800,
+                'stock_unit' => 'pieces',
+                'package_size' => 1,
+                'package_unit' => 'piece',
+                'packaging_type' => 'Bag',
+                'reorder_threshold' => 80,
+                'recommended_season' => 'both',
+                'status' => 'active',
+                'description' => 'Disease-free tissue-cultured Lakatan banana plantlets. High-yielding dessert variety. Spacing: 2m × 3m. First harvest in 12–14 months. Yield: 15–25 kg per bunch.',
+            ]
+        );
+
+        // ── INSECTICIDE FOR VEG ──
+        $insecticideVeg = Product::updateOrCreate(
+            ['sku' => 'PROT-INSECT-VEG-01'],
+            [
+                'user_id' => $storeOwner->id,
+                'category_id' => $catIds['Insecticide'] ?? null,
+                'category' => 'Crop Protection',
+                'name' => 'Confidor Imidacloprid (200ml)',
+                'brand' => 'Bayer',
+                'product_type' => 'Insecticide',
+                'price' => 385.00,
+                'price_unit' => 'per bottle',
+                'stock_quantity' => 65,
+                'stock_unit' => 'bottles',
+                'package_size' => 200,
+                'package_unit' => 'ml',
+                'packaging_type' => 'Bottle',
+                'reorder_threshold' => 12,
+                'recommended_season' => 'both',
+                'status' => 'active',
+                'description' => 'Systemic insecticide for sucking pests in vegetables. Effective against aphids, whiteflies, and jassids. Low toxicity to beneficial insects when applied correctly. Dosage: 0.5–1.0 mL per liter of water.',
+            ]
+        );
+
+        // ── ORGANIC FERTILIZER FOR VEG ──
+        $organicVeg = Product::updateOrCreate(
+            ['sku' => 'FERT-ORG-VEG-01'],
+            [
+                'user_id' => $storeOwner->id,
+                'category_id' => $catIds['Organic Fertilizer'] ?? null,
+                'category' => 'Fertilizer',
+                'name' => 'VermiCast Organic Fertilizer (25kg)',
+                'brand' => 'VermiGrow',
+                'product_type' => 'Fertilizer',
+                'price' => 220.00,
+                'price_unit' => 'per sack',
+                'stock_quantity' => 150,
+                'stock_unit' => 'sacks',
+                'package_size' => 25,
+                'package_unit' => 'kg',
+                'packaging_type' => 'Sack',
+                'reorder_threshold' => 20,
+                'recommended_season' => 'both',
+                'status' => 'active',
+                'description' => 'Premium vermicompost fertilizer ideal for vegetables and fruits. Rich in NPK and beneficial microbes. Safe for organic farming. Application: 1–2 kg per hill or broadcast 500kg/ha.',
+            ]
+        );
+
         // ─────────────────────────────────────────────
         // 4. SEED FERTILIZER DETAILS
         // ─────────────────────────────────────────────
@@ -471,14 +663,98 @@ class SystemDataSeeder extends Seeder
         );
 
         ProductApplication::updateOrCreate(
+            ['product_id' => $complete->id, 'crop_id' => $riceCrop?->id],
+            [
+                'application_rate_min' => 200,
+                'application_rate_max' => 300,
+                'application_rate_unit' => 'kg/ha',
+                'application_method' => 'Broadcasting during final land preparation',
+                'application_timing' => 'Basal: 1–2 days before transplanting',
+                'notes' => 'Mix into top 10cm soil. Provides balanced nutrition for initial growth.',
+            ]
+        );
+
+        ProductApplication::updateOrCreate(
             ['product_id' => $tomatoSeeds->id, 'crop_id' => $vegCrop?->id],
             [
                 'application_rate_min' => 50,
                 'application_rate_max' => 100,
                 'application_rate_unit' => 'g/ha',
-                'application_method' => 'Transplanting (seedling tray → field)',
+                'application_method' => 'Transplanting (seedling tray to field)',
                 'application_timing' => 'Start seeds 4–6 weeks before transplanting',
-                'notes' => 'Spacing: 60cm × 50cm. Requires staking. Harvest at 60–75 days after transplanting.',
+                'notes' => 'Spacing: 60cm x 50cm. Requires staking. Harvest at 60–75 days after transplanting.',
+            ]
+        );
+
+        ProductApplication::updateOrCreate(
+            ['product_id' => $eggplantSeeds->id, 'crop_id' => $vegCrop?->id],
+            [
+                'application_rate_min' => 30,
+                'application_rate_max' => 50,
+                'application_rate_unit' => 'g/ha',
+                'application_method' => 'Transplanting (seedling tray to field)',
+                'application_timing' => 'Start seeds 4–6 weeks before transplanting',
+                'notes' => 'Spacing: 60cm x 75cm. Harvest at 70–80 days after transplanting.',
+            ]
+        );
+
+        ProductApplication::updateOrCreate(
+            ['product_id' => $hotPepperSeeds->id, 'crop_id' => $vegCrop?->id],
+            [
+                'application_rate_min' => 20,
+                'application_rate_max' => 40,
+                'application_rate_unit' => 'g/ha',
+                'application_method' => 'Transplanting (seedling tray to field)',
+                'application_timing' => 'Start seeds 6–8 weeks before transplanting',
+                'notes' => 'Spacing: 45cm x 60cm. Harvest at 60–70 days after transplanting.',
+            ]
+        );
+
+        ProductApplication::updateOrCreate(
+            ['product_id' => $luffaSeeds->id, 'crop_id' => $vegCrop?->id],
+            [
+                'application_rate_min' => 15,
+                'application_rate_max' => 25,
+                'application_rate_unit' => 'g/ha',
+                'application_method' => 'Direct sowing or transplanting',
+                'application_timing' => 'Wet season (June–August planting window)',
+                'notes' => 'Spacing: 2m x 1m. Requires trellising. Harvest at 45–55 days.',
+            ]
+        );
+
+        ProductApplication::updateOrCreate(
+            ['product_id' => $calamansi->id, 'crop_id' => null],
+            [
+                'application_rate_min' => 400,
+                'application_rate_max' => 400,
+                'application_rate_unit' => 'pieces/ha',
+                'application_method' => 'Planting hole method',
+                'application_timing' => 'Wet season for best root establishment',
+                'notes' => 'Spacing: 5m x 5m (400 trees/ha). Fruit bearing in 2–3 years.',
+            ]
+        );
+
+        ProductApplication::updateOrCreate(
+            ['product_id' => $mango->id, 'crop_id' => null],
+            [
+                'application_rate_min' => 100,
+                'application_rate_max' => 100,
+                'application_rate_unit' => 'pieces/ha',
+                'application_method' => 'Planting hole method',
+                'application_timing' => 'Wet season for best root establishment',
+                'notes' => 'Spacing: 10m x 10m (100 trees/ha). Fruit bearing in 3–4 years.',
+            ]
+        );
+
+        ProductApplication::updateOrCreate(
+            ['product_id' => $banana->id, 'crop_id' => null],
+            [
+                'application_rate_min' => 1667,
+                'application_rate_max' => 1667,
+                'application_rate_unit' => 'pieces/ha',
+                'application_method' => 'Planting hole method',
+                'application_timing' => 'Year-round, best during wet season',
+                'notes' => 'Spacing: 2m x 3m (1,667 plants/ha). First harvest 12–14 months.',
             ]
         );
 
@@ -532,6 +808,116 @@ class SystemDataSeeder extends Seeder
         DecisionFormula::updateOrCreate(
             ['crop_type' => 'Rice', 'season' => 'dry', 'product_id' => $complete->id],
             ['rate_per_hectare' => 5.00, 'unit' => 'Sacks', 'notes' => 'Full basal dose for dry season rice.']
+        );
+
+        // ── CORN Decision Formulas ──
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Corn', 'season' => 'wet', 'product_id' => $cornSeeds->id],
+            ['rate_per_hectare' => 2.00, 'unit' => 'Sacks', 'notes' => 'Hybrid corn seeds for wet season. 20kg/sack. 53,000–65,000 plants/ha.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Corn', 'season' => 'wet', 'product_id' => $urea->id],
+            ['rate_per_hectare' => 3.50, 'unit' => 'Sacks', 'notes' => 'Split application: basal + side-dress at V6 stage.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Corn', 'season' => 'wet', 'product_id' => $complete->id],
+            ['rate_per_hectare' => 4.00, 'unit' => 'Sacks', 'notes' => 'Basal application during wet season land preparation.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Corn', 'season' => 'wet', 'product_id' => $insecticide->id],
+            ['rate_per_hectare' => 1.50, 'unit' => 'Bottles', 'notes' => 'For fall armyworm and stem borer control during wet season.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Corn', 'season' => 'dry', 'product_id' => $cornSeeds->id],
+            ['rate_per_hectare' => 2.50, 'unit' => 'Sacks', 'notes' => 'Higher seed rate for dry season. Requires irrigation.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Corn', 'season' => 'dry', 'product_id' => $urea->id],
+            ['rate_per_hectare' => 4.00, 'unit' => 'Sacks', 'notes' => 'Increased N rate for dry season yields.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Corn', 'season' => 'dry', 'product_id' => $complete->id],
+            ['rate_per_hectare' => 5.00, 'unit' => 'Sacks', 'notes' => 'Full basal dose for dry season corn.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Corn', 'season' => 'dry', 'product_id' => $insecticide->id],
+            ['rate_per_hectare' => 1.00, 'unit' => 'Bottles', 'notes' => 'Preventive insecticide application for dry season.']
+        );
+
+        // ── Vegetables Decision Formulas ──
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Vegetables', 'season' => 'wet', 'product_id' => $luffaSeeds->id],
+            ['rate_per_hectare' => 3.00, 'unit' => 'Packs', 'notes' => 'Patola seeds for wet season. Trellis required. Harvest 45–55 days.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Vegetables', 'season' => 'wet', 'product_id' => $organicVeg->id],
+            ['rate_per_hectare' => 20.00, 'unit' => 'Sacks', 'notes' => 'Organic base fertilizer for wet season vegetable production.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Vegetables', 'season' => 'wet', 'product_id' => $insecticideVeg->id],
+            ['rate_per_hectare' => 2.00, 'unit' => 'Bottles', 'notes' => 'Systemic insecticide for sucking pests in wet season vegetables.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Vegetables', 'season' => 'wet', 'product_id' => $fungicide->id],
+            ['rate_per_hectare' => 1.50, 'unit' => 'Sachets', 'notes' => 'Fungicide for downy mildew and bacterial leaf spot in wet season.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Vegetables', 'season' => 'dry', 'product_id' => $tomatoSeeds->id],
+            ['rate_per_hectare' => 2.00, 'unit' => 'Packs', 'notes' => 'F1 tomato seeds for dry season. Requires staking. Harvest 60–75 days.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Vegetables', 'season' => 'dry', 'product_id' => $eggplantSeeds->id],
+            ['rate_per_hectare' => 1.50, 'unit' => 'Packs', 'notes' => 'F1 eggplant for dry season. Transplant at 25–30 days. Harvest 70–80 days.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Vegetables', 'season' => 'dry', 'product_id' => $hotPepperSeeds->id],
+            ['rate_per_hectare' => 1.00, 'unit' => 'Packs', 'notes' => 'Hot pepper seeds for dry season. Harvest 60–70 days after transplanting.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Vegetables', 'season' => 'dry', 'product_id' => $complete->id],
+            ['rate_per_hectare' => 3.00, 'unit' => 'Sacks', 'notes' => 'Balanced NPK for dry season vegetable basal application.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Vegetables', 'season' => 'dry', 'product_id' => $organicVeg->id],
+            ['rate_per_hectare' => 15.00, 'unit' => 'Sacks', 'notes' => 'Organic soil conditioner for dry season vegetable beds.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Vegetables', 'season' => 'dry', 'product_id' => $insecticideVeg->id],
+            ['rate_per_hectare' => 1.50, 'unit' => 'Bottles', 'notes' => 'Systemic insecticide for whitefly and aphid control in dry season.']
+        );
+
+        // ── Fruits Decision Formulas ──
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Fruits', 'season' => 'wet', 'product_id' => $calamansi->id],
+            ['rate_per_hectare' => 400.00, 'unit' => 'Pieces', 'notes' => 'Calamansi seedlings. Spacing: 5m × 5m. Plant during wet season.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Fruits', 'season' => 'wet', 'product_id' => $banana->id],
+            ['rate_per_hectare' => 1667.00, 'unit' => 'Pieces', 'notes' => 'Lakatan banana plantlets. Spacing: 2m × 3m. First harvest 12–14 months.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Fruits', 'season' => 'wet', 'product_id' => $organicVeg->id],
+            ['rate_per_hectare' => 25.00, 'unit' => 'Sacks', 'notes' => 'Organic fertilizer for fruit tree establishment during wet season.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Fruits', 'season' => 'wet', 'product_id' => $insecticide->id],
+            ['rate_per_hectare' => 1.00, 'unit' => 'Bottles', 'notes' => 'Insecticide for fruit fly and borer control during wet season.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Fruits', 'season' => 'dry', 'product_id' => $mango->id],
+            ['rate_per_hectare' => 100.00, 'unit' => 'Pieces', 'notes' => 'Carabao mango grafted seedlings. Spacing: 10m × 10m. Fruit bearing 3–4 years.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Fruits', 'season' => 'dry', 'product_id' => $banana->id],
+            ['rate_per_hectare' => 1667.00, 'unit' => 'Pieces', 'notes' => 'Lakatan banana plantlets for dry season planting. Ensure irrigation.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Fruits', 'season' => 'dry', 'product_id' => $organicVeg->id],
+            ['rate_per_hectare' => 20.00, 'unit' => 'Sacks', 'notes' => 'Organic fertilizer for fruit tree maintenance during dry season.']
+        );
+        DecisionFormula::updateOrCreate(
+            ['crop_type' => 'Fruits', 'season' => 'dry', 'product_id' => $mop->id],
+            ['rate_per_hectare' => 1.50, 'unit' => 'Sacks', 'notes' => 'Potassium supplement for fruit quality improvement during dry season.']
         );
 
         $this->command->info('Store data seeded successfully with ' . Product::where('user_id', $storeOwner->id)->count() . ' products.');

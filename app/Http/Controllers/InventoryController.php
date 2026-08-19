@@ -34,6 +34,7 @@ class InventoryController extends Controller
         $totalStockValue = $products->sum(function ($p) {
             return ($p->stock_quantity ?? 0) * $p->price;
         });
+        $totalUnits = $products->sum(fn ($p) => (int) ($p->stock_quantity ?? 0));
 
         // Stock health breakdown
         $healthyCount = $totalItems - $lowStockCount - $outOfStockCount;
@@ -44,6 +45,7 @@ class InventoryController extends Controller
             'lowStockCount',
             'outOfStockCount',
             'totalStockValue',
+            'totalUnits',
             'healthyCount',
             'lowStockItems'
         ));

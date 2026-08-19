@@ -7,6 +7,8 @@ use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
 use App\Models\User;
+use App\Services\ActivityLogger;
+use App\Services\CostQuotationEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,192 +17,7 @@ use Illuminate\Support\Str;
 class QuotationController extends Controller
 {
     // ────────────────────────────────────────────────────────────────
-    //  STORE OWNER — Inbound Quotations (from farmers)
-    // ────────────────────────────────────────────────────────────────
-
-    /**
-     * List all quotations available for the store owner (pool-based).
-     */
-    public function storeIndex()
-    {
-        $storeUserId = Auth::id();
-
-        // Quotations: pending (unassigned) + already assigned to me
-        $quotations = Quotation::with('farmer')
-            ->where(function ($q) use ($storeUserId) {
-                $q->whereNull('store_user_id')
-                  ->orWhere('store_user_id', $storeUserId);
-            })
-            ->orderByRaw("FIELD(status, 'pending', 'computed', 'dispatched', 'accepted', 'rejected')")
-            ->latest()
-            ->get();
-
-        // Metrics
-        $pendingCount  = $quotations->where('status', Quotation::STATUS_PENDING)->count();
-        $computedCount = $quotations->whereIn('status', [Quotation::STATUS_COMPUTED, Quotation::STATUS_DISPATCHED])->count();
-        $totalValue    = $quotations->sum('estimated_total_cost');
-
-        return view('store.quotations.index', compact(
-            'quotations',
-            'pendingCount',
-            'computedCount',
-            'totalValue'
-        ));
-    }
-
-    /**
-     * Show a single quotation with its items for the store owner to compute/manage.
-     */
-    public function storeShow(Quotation $quotation)
-    {
-        // Ensure the store owner has access
-        if ($quotation->store_user_id !== null && $quotation->store_user_id !== Auth::id()) {
-            abort(403, 'This quotation has been claimed by another store.');
-        }
-
-        $quotation->load(['farmer', 'items.product']);
-
-        // If no items computed yet, show the formulas/calculator
-        $decisionFormulas = DecisionFormula::with('product')
-            ->whereCrop($quotation->crop_type)
-            ->where('season', $quotation->season)
-            ->get();
-
-        return view('store.quotations.show', compact('quotation', 'decisionFormulas'));
-    }
-
-    /**
-     * Compute prices: apply decision formulas to generate QuotationItems.
-     */
-    public function computePrices(Request $request, Quotation $quotation)
-    {
-        $validated = $request->validate([
-            'crop_type'     => ['required', 'string', 'max:255'],
-            'season'        => ['required', 'in:wet,dry'],
-            'land_area'     => ['required', 'numeric', 'min:0.01'],
-            'formula_items' => ['required', 'array', 'min:1'],
-            'formula_items.*.product_id'        => ['required', 'integer', 'exists:products,id'],
-            'formula_items.*.calculated_quantity' => ['required', 'numeric', 'min:0'],
-        ]);
-
-        $validated['crop_type'] = ucwords(strtolower(trim($validated['crop_type'])));
-
-        DB::transaction(function () use ($validated, $quotation) {
-            // Update quotation details
-            $quotation->update([
-                'crop_type'  => $validated['crop_type'],
-                'season'     => $validated['season'],
-                'land_area'  => $validated['land_area'],
-                'store_user_id' => Auth::id(),
-                'status'     => Quotation::STATUS_COMPUTED,
-            ]);
-
-            // Remove old items if re-computing
-            $quotation->items()->delete();
-
-            $totalCost = 0;
-
-            foreach ($validated['formula_items'] as $item) {
-                $product = Product::findOrFail($item['product_id']);
-
-                $calculatedQty = (float) $item['calculated_quantity'];
-                $priceAtGen    = (float) $product->price;
-                $subtotal      = $calculatedQty * $priceAtGen;
-
-                $quotation->items()->create([
-                    'product_id'          => $product->id,
-                    'product_name'        => $product->name,
-                    'price_at_generation' => $priceAtGen,
-                    'calculated_quantity' => $calculatedQty,
-                    'subtotal'            => $subtotal,
-                ]);
-
-                $totalCost += $subtotal;
-            }
-
-            $quotation->update([
-                'estimated_total_cost' => $totalCost,
-            ]);
-        });
-
-        return redirect()
-            ->route('store.quotations.show', $quotation)
-            ->with('success', 'Cost estimates computed successfully.');
-    }
-
-    /**
-     * Update a single quotation item (override price/quantity).
-     */
-    public function updateItem(Request $request, QuotationItem $item)
-    {
-        if ($item->quotation->store_user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $validated = $request->validate([
-            'override_price'    => ['nullable', 'numeric', 'min:0'],
-            'override_quantity' => ['nullable', 'numeric', 'min:0'],
-        ]);
-
-        DB::transaction(function () use ($validated, $item) {
-            $item->update($validated);
-
-            // Recalc subtotal from effective values
-            $effectivePrice    = $item->override_price ?? $item->price_at_generation;
-            $effectiveQuantity = $item->override_quantity ?? $item->calculated_quantity;
-            $item->subtotal    = $effectivePrice * $effectiveQuantity;
-            $item->save();
-
-            // Recalc quotation total
-            $quotation = $item->quotation;
-            $quotation->estimated_total_cost = $quotation->items->sum(function ($i) {
-                return $i->effective_price * $i->effective_quantity;
-            });
-            $quotation->save();
-        });
-
-        return back()->with('success', 'Line item updated.');
-    }
-
-    /**
-     * Dispatch (send) the quotation to the farmer.
-     */
-    public function dispatchQuotation(Quotation $quotation)
-    {
-        if ($quotation->store_user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $quotation->update([
-            'status'     => Quotation::STATUS_DISPATCHED,
-            'valid_until' => now()->addDays(7), // 7-day validity window
-        ]);
-
-        return redirect()
-            ->route('store.quotations.index')
-            ->with('success', 'Quotation dispatched to farmer successfully.');
-    }
-
-    /**
-     * Claim a pending quotation (assign to this store).
-     */
-    public function claimQuotation(Quotation $quotation)
-    {
-        if ($quotation->store_user_id !== null) {
-            return back()->with('error', 'This quotation has already been claimed by another store.');
-        }
-
-        $quotation->update([
-            'store_user_id' => Auth::id(),
-        ]);
-
-        return redirect()
-            ->route('store.quotations.show', $quotation)
-            ->with('success', 'Quotation claimed. You can now compute prices.');
-    }
-
-    // ────────────────────────────────────────────────────────────────
-    //  FARMER — Quotation Requests
+    //  FARMER — Generate Cost Quotation (auto-computed instantly)
     // ────────────────────────────────────────────────────────────────
 
     /**
@@ -208,7 +25,7 @@ class QuotationController extends Controller
      */
     public function farmerIndex()
     {
-        $quotations = Quotation::with('storeOwner', 'items')
+        $quotations = Quotation::with('items.product.storeOwner')
             ->where('user_id', Auth::id())
             ->latest()
             ->get();
@@ -217,7 +34,7 @@ class QuotationController extends Controller
     }
 
     /**
-     * Show a quotation detail to the farmer.
+     * Show a quotation detail to the farmer (read-only cost breakdown).
      */
     public function farmerShow(Quotation $quotation)
     {
@@ -225,122 +42,405 @@ class QuotationController extends Controller
             abort(403);
         }
 
-        $quotation->load(['storeOwner', 'items.product', 'farmer']);
+        $quotation->load(['items.product.storeOwner', 'farmer']);
 
         return view('farmer.quotations.show', compact('quotation'));
     }
 
     /**
-     * Show the farmer the quotation request form.
-     * Farmer inputs: crop type, season, land area — the system's
-     * Rule-Based Algorithm recommends products via DecisionFormula.
+     * Delete a quotation (farmer only, own quotations).
      */
-    public function farmerCreate()
+    public function farmerDestroy(Quotation $quotation)
     {
-        // Load distinct crop types available in the formulas database
-        $cropTypes = DecisionFormula::select('crop_type')
-            ->distinct()
-            ->pluck('crop_type');
+        if ($quotation->user_id !== Auth::id()) {
+            abort(403);
+        }
 
-        return view('farmer.quotations.request', compact('cropTypes'));
+        ActivityLogger::quotationDeleted($quotation);
+
+        $quotation->items()->delete();
+        $quotation->delete();
+
+        return redirect()
+            ->route('farmer.quotations.index')
+            ->with('success', 'Cost estimate has been deleted.');
     }
 
     /**
-     * Farmer submits a quotation request with their farming requirements.
-     * Step 1: Farmer provides crop_type, season, land_area, notes.
-     * The store owner will then use DecisionFormulas to compute prices.
+     * Show the farmer the quotation request form.
      */
-    public function farmerStore(Request $request)
+    public function farmerCreate()
+    {
+        $predefinedCrops = [
+            'Rice', 'Corn', 'Wheat',
+            'Tomato', 'Eggplant', 'Okra', 'Sitaw (String Beans)', 'Patola (Sponge Gourd)',
+            'Ampalaya (Bitter Gourd)', 'Squash (Kalabasa)', 'Cabbage', 'Pechay (Bok Choy)',
+            'Lettuce', 'Carrots', 'Radish (Labanos)', 'Turnip', 'Beets',
+            'Onions', 'Garlic', 'Ginger', 'Chili (Siling Labuyo)', 'Bell Pepper',
+            'Cucumber', 'Sweet Potato (Camote)', 'Taro (Gabi)', 'Potato',
+            'Watermelon', 'Papaya', 'Mango', 'Banana', 'Pineapple',
+            'Avocado', 'Calamansi', 'Guyabano (Soursop)', 'Rambutan',
+            'Durian', 'Lanzones', 'Chico', 'Santol', 'Bayabas (Guava)',
+            'Mung Beans (Munggo)', 'Peanuts', 'Soybeans', 'Black-eyed Peas',
+            'Cassava (Kamoteng Kahoy)', 'Ube (Purple Yam)',
+            'Sugarcane', 'Coffee', 'Cacao', 'Coconut', 'Abaca', 'Tobacco',
+        ];
+
+        $dbCrops = DecisionFormula::select('crop_type')
+            ->distinct()
+            ->pluck('crop_type')
+            ->toArray();
+
+        $allCrops = collect($predefinedCrops)
+            ->merge($dbCrops)
+            ->unique(fn ($item) => strtolower(trim($item)))
+            ->values();
+
+        return view('farmer.quotations.request', ['cropTypes' => $allCrops]);
+    }
+
+    /**
+     * AJAX endpoint: return products linked to a crop type + season.
+     */
+    public function farmerProducts(Request $request)
     {
         $validated = $request->validate([
             'crop_type' => ['required', 'string', 'max:255'],
             'season'    => ['required', 'in:wet,dry'],
-            'land_area' => ['required', 'numeric', 'min:0.01', 'max:999.99'],
-            'notes'     => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $validated['crop_type'] = ucwords(strtolower(trim($validated['crop_type'])));
+        $cropType = ucwords(strtolower(trim($validated['crop_type'])));
 
-        DB::transaction(function () use ($validated) {
-            // Generate a unique reference number
-            $quotationNumber = 'QT-' . date('Y') . '-' . strtoupper(Str::random(6));
-
-            Quotation::create([
-                'user_id'              => Auth::id(),
-                'store_user_id'        => null, // No store assigned yet — pool-based
-                'quotation_number'     => $quotationNumber,
-                'crop_type'            => $validated['crop_type'],
-                'season'               => $validated['season'],
-                'land_area'            => $validated['land_area'],
-                'estimated_total_cost' => 0, // To be computed by the store owner
-                'status'               => Quotation::STATUS_PENDING,
-                'valid_until'          => now()->addDays(14), // Temporary; store will set actual
-                'notes'                => $validated['notes'] ?? null,
+        $products = Product::select('products.id', 'products.name', 'products.sku', 'products.price', 'products.price_unit', 'products.stock_quantity', 'products.stock_unit', 'products.brand', 'products.status')
+            ->join('decision_formulas', 'decision_formulas.product_id', '=', 'products.id')
+            ->whereRaw('LOWER(decision_formulas.crop_type) = ?', [$cropType])
+            ->where('decision_formulas.season', $validated['season'])
+            ->where('products.status', 'active')
+            ->with('category:id,name')
+            ->distinct()
+            ->get()
+            ->map(fn ($p) => [
+                'id'            => $p->id,
+                'name'          => $p->name,
+                'sku'           => $p->sku,
+                'price'         => $p->price,
+                'price_unit'    => $p->price_unit,
+                'stock_quantity'=> $p->stock_quantity,
+                'stock_unit'    => $p->stock_unit,
+                'brand'         => $p->brand,
+                'category'      => $p->category->name ?? null,
+                'in_stock'      => $p->stock_quantity > 0,
             ]);
-        });
+
+        return response()->json($products);
+    }
+
+    /**
+     * Farmer submits → auto-computed instantly via CostQuotationEngine.
+     * No store approval needed. The estimate is immediately available.
+     */
+    public function farmerStore(Request $request)
+    {
+        $validated = $request->validate([
+            'crop_type'          => ['required', 'string', 'max:255'],
+            'season'             => ['required', 'in:wet,dry'],
+            'land_area'          => ['required', 'numeric', 'min:0.01', 'max:999.99'],
+            'notes'              => ['nullable', 'string', 'max:2000'],
+            'selected_product_ids' => ['nullable', 'string'],
+        ]);
+
+        $cropType = ucwords(strtolower(trim($validated['crop_type'])));
+
+        // Parse selected product IDs
+        $selectedProductIds = [];
+        if (!empty($validated['selected_product_ids'])) {
+            $decoded = json_decode($validated['selected_product_ids'], true);
+            if (is_array($decoded) && count($decoded) > 0) {
+                $selectedProductIds = array_map('intval', $decoded);
+                $existingIds = Product::whereIn('id', $selectedProductIds)->pluck('id')->toArray();
+                $selectedProductIds = array_values(array_intersect($selectedProductIds, $existingIds));
+            }
+        }
+
+        // Use CostQuotationEngine to auto-compute the full quotation
+        $engine = new CostQuotationEngine();
+
+        try {
+            $quotation = $engine->calculateAndSave([
+                'crop_type'         => $cropType,
+                'season'            => $validated['season'],
+                'land_area'         => $validated['land_area'],
+                'weather_context'   => 'normal',
+                'soil_type'         => 'clay_loam',
+                'selected_products' => !empty($selectedProductIds) ? $selectedProductIds : null,
+                'notes'             => $validated['notes'] ?? null,
+            ], Auth::user());
+        } catch (\Exception $e) {
+            // Fallback: create a basic quotation without items if engine fails
+            $quotation = DB::transaction(function () use ($validated, $cropType, $selectedProductIds) {
+                $q = Quotation::create([
+                    'user_id'              => Auth::id(),
+                    'quotation_number'     => 'QT-' . date('Y') . '-' . strtoupper(Str::random(6)),
+                    'crop_type'            => $cropType,
+                    'season'               => $validated['season'],
+                    'land_area'            => $validated['land_area'],
+                    'estimated_total_cost' => 0,
+                    'status'               => Quotation::STATUS_COMPUTED,
+                    'valid_until'          => now()->addDays(14),
+                    'notes'                => $validated['notes'] ?? null,
+                ]);
+
+                // Try to add items from DecisionFormula manually
+                $formulas = DecisionFormula::with('product')
+                    ->whereCrop($cropType)
+                    ->where('season', $validated['season'])
+                    ->get();
+
+                if ($formulas->isNotEmpty()) {
+                    $totalCost = 0;
+                    foreach ($formulas as $formula) {
+                        if ($formula->product && $formula->product->status === 'active') {
+                            $qty = round((float) $formula->rate_per_hectare * (float) $validated['land_area'], 2);
+                            $price = (float) $formula->product->price;
+                            $subtotal = round($qty * $price, 2);
+
+                            $q->items()->create([
+                                'product_id'          => $formula->product_id,
+                                'product_name'        => $formula->product->name,
+                                'price_at_generation' => $price,
+                                'calculated_quantity' => $qty,
+                                'subtotal'            => $subtotal,
+                            ]);
+                            $totalCost += $subtotal;
+                        }
+                    }
+                    $q->update(['estimated_total_cost' => $totalCost]);
+                }
+
+                return $q;
+            });
+        }
+
+        ActivityLogger::quotationCreated($quotation);
 
         return redirect()
-            ->route('farmer.quotations.index')
-            ->with('success', 'Your quotation request has been submitted. A store owner will compute the cost estimate based on your farming requirements.');
-    }
-
-    /**
-     * Farmer accepts a dispatched quotation.
-     */
-    public function acceptQuotation(Quotation $quotation)
-    {
-        if ($quotation->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $quotation->update(['status' => Quotation::STATUS_ACCEPTED]);
-
-        return back()->with('success', 'Quotation accepted. You can now proceed with the purchase.');
-    }
-
-    /**
-     * Farmer rejects a dispatched quotation.
-     */
-    public function rejectQuotation(Request $request, Quotation $quotation)
-    {
-        if ($quotation->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        $validated = $request->validate([
-            'rejection_reason' => ['nullable', 'string', 'max:2000'],
-        ]);
-
-        $quotation->update([
-            'status'      => Quotation::STATUS_REJECTED,
-            'store_notes' => $validated['rejection_reason'] ?? null,
-        ]);
-
-        return back()->with('success', 'Quotation rejected.');
+            ->route('farmer.quotations.show', $quotation)
+            ->with('success', 'Your cost estimate has been generated instantly! Review the breakdown below. Store owners will also see this as demand intel for their products.');
     }
 
     // ────────────────────────────────────────────────────────────────
-    //  ADMIN — Oversight
+    //  FARMER — Activity Log
     // ────────────────────────────────────────────────────────────────
 
     /**
-     * Admin view of all quotations across the system.
+     * Show the farmer's activity history.
      */
-    public function adminIndex()
+    public function farmerActivity()
     {
-        $quotations = Quotation::with('farmer', 'storeOwner')
+        $activities = \App\Models\ActivityLog::where('user_id', Auth::id())
+            ->latest()
+            ->paginate(20);
+
+        return view('farmer.activity.index', compact('activities'));
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  STORE OWNER — Demand Intelligence Dashboard
+    // ────────────────────────────────────────────────────────────────
+
+    /**
+     * Show quotations that involve this store's products (demand visibility).
+     */
+    public function storeIndex()
+    {
+        $storeUserId = Auth::id();
+
+        // Quotations where this store's products were used
+        $quotations = Quotation::involvingStore($storeUserId)
+            ->with(['farmer', 'items.product'])
+            ->orderByRaw("FIELD(status, 'computed', 'viewed', 'expired')")
             ->latest()
             ->get();
 
+        // Demand metrics
+        $totalQuotations = $quotations->count();
+        $recentQuotations = $quotations->where('created_at', '>=', now()->subDays(7))->count();
+        $totalDemandValue = $quotations->sum('estimated_total_cost');
+
+        // Products from this store that appear in quotations
+        $productDemand = $quotations->pluck('items')
+            ->flatten()
+            ->filter(fn ($item) => $item->product && $item->product->user_id === $storeUserId)
+            ->groupBy('product_name')
+            ->map(fn ($items) => [
+                'count' => $items->count(),
+                'total_qty' => $items->sum('calculated_quantity'),
+                'total_value' => $items->sum('subtotal'),
+            ])
+            ->sortByDesc('count')
+            ->take(10)
+            ->toArray();
+
+        return view('store.quotations.index', compact(
+            'quotations',
+            'totalQuotations',
+            'recentQuotations',
+            'totalDemandValue',
+            'productDemand'
+        ));
+    }
+
+    /**
+     * Read-only view of a quotation for the store owner (demand intel).
+     */
+    public function storeShow(Quotation $quotation)
+    {
+        // Verify this store's products are in the quotation
+        $involvedStoreIds = $quotation->getInvolvedStoreIds();
+        if (!in_array(Auth::id(), $involvedStoreIds)) {
+            abort(403, 'You do not have access to this quotation.');
+        }
+
+        $quotation->load(['farmer', 'items.product.storeOwner']);
+
+        // Mark as viewed by this store
+        if ($quotation->status === Quotation::STATUS_COMPUTED) {
+            $quotation->update(['status' => Quotation::STATUS_VIEWED]);
+            ActivityLogger::quotationViewed($quotation);
+        }
+
+        // Get this store's items specifically
+        $storeItems = $quotation->items->filter(fn ($item) =>
+            $item->product && $item->product->user_id === Auth::id()
+        );
+
+        return view('store.quotations.show', compact('quotation', 'storeItems'));
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  ADMIN — Demand Analytics & Association Performance
+    // ────────────────────────────────────────────────────────────────
+
+    /**
+     * Admin view: all quotations + per-store demand metrics.
+     */
+    public function adminIndex()
+    {
+        $quotations = Quotation::with(['farmer', 'items.product.storeOwner'])
+            ->latest()
+            ->get();
+
+        // Global metrics
         $metrics = [
             'total'      => $quotations->count(),
-            'pending'    => $quotations->where('status', Quotation::STATUS_PENDING)->count(),
-            'computed'   => $quotations->whereIn('status', [Quotation::STATUS_COMPUTED, Quotation::STATUS_DISPATCHED])->count(),
-            'completed'  => $quotations->whereIn('status', [Quotation::STATUS_ACCEPTED, Quotation::STATUS_REJECTED])->count(),
+            'computed'   => $quotations->where('status', Quotation::STATUS_COMPUTED)->count(),
+            'viewed'     => $quotations->where('status', Quotation::STATUS_VIEWED)->count(),
+            'expired'    => $quotations->where('status', Quotation::STATUS_EXPIRED)->count(),
             'totalValue' => $quotations->sum('estimated_total_cost'),
         ];
 
-        return view('admin.quotations.index', compact('quotations', 'metrics'));
+        // Per-store demand performance
+        $storePerformance = $quotations
+            ->pluck('items')
+            ->flatten()
+            ->filter(fn ($item) => $item->product && $item->product->storeOwner)
+            ->groupBy(fn ($item) => $item->product->user_id)
+            ->map(function ($items, $storeId) {
+                $store = $items->first()->product->storeOwner;
+                return [
+                    'store_name'      => $store->name,
+                    'store_id'        => $storeId,
+                    'quotation_count' => $items->pluck('quotation_id')->unique()->count(),
+                    'product_count'   => $items->pluck('product_id')->unique()->count(),
+                    'total_value'     => $items->sum('subtotal'),
+                    'total_qty'       => $items->sum('calculated_quantity'),
+                ];
+            })
+            ->sortByDesc('quotation_count')
+            ->values()
+            ->toArray();
+
+        // Crop demand breakdown
+        $cropDemand = $quotations
+            ->groupBy('crop_type')
+            ->map(fn ($qs) => [
+                'count' => $qs->count(),
+                'total_area' => $qs->sum('land_area'),
+                'total_value' => $qs->sum('estimated_total_cost'),
+            ])
+            ->sortByDesc('count')
+            ->values()
+            ->toArray();
+
+        return view('admin.quotations.index', compact('quotations', 'metrics', 'storePerformance', 'cropDemand'));
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  ADMIN — Activity Audit Log (all users)
+    // ────────────────────────────────────────────────────────────────
+
+    /**
+     * Admin view: all user activities across the system.
+     */
+    public function adminActivity()
+    {
+        $activities = \App\Models\ActivityLog::with('user')
+            ->latest()
+            ->paginate(20);
+
+        // Filter options
+        $userFilter = request('user_id');
+        $typeFilter = request('type');
+
+        $query = \App\Models\ActivityLog::with('user');
+
+        if ($userFilter) {
+            $query->where('user_id', $userFilter);
+        }
+        if ($typeFilter) {
+            $query->where('type', $typeFilter);
+        }
+
+        $activities = $query->latest()->paginate(20);
+
+        // For the filter dropdown
+        $users = \App\Models\User::orderBy('name')->get();
+        $activityTypes = \App\Models\ActivityLog::select('type')->distinct()->pluck('type')->sort()->toArray();
+
+        return view('admin.activity.index', compact('activities', 'users', 'activityTypes', 'userFilter', 'typeFilter'));
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  LEGACY STUBS — Backward compatibility for old routes
+    // ────────────────────────────────────────────────────────────────
+
+    public function acceptQuotation(Quotation $quotation)
+    {
+        return back()->with('success', 'This quotation is an informational estimate. Contact the store directly to proceed with a purchase.');
+    }
+
+    public function rejectQuotation(Request $request, Quotation $quotation)
+    {
+        return back()->with('success', 'This quotation is an informational estimate. No action needed.');
+    }
+
+    public function claimQuotation(Quotation $quotation)
+    {
+        return back()->with('success', 'Quotations are now auto-computed. No claiming needed — you can view demand intel directly.');
+    }
+
+    public function computePrices(Request $request, Quotation $quotation)
+    {
+        return back()->with('success', 'Quotations are now auto-computed when farmers submit them.');
+    }
+
+    public function dispatchQuotation(Quotation $quotation)
+    {
+        return back()->with('success', 'Quotations are now instantly available to farmers. No dispatch step needed.');
+    }
+
+    public function updateItem(Request $request, QuotationItem $item)
+    {
+        return back()->with('success', 'Quotation items are now auto-computed. Overrides are no longer needed.');
     }
 }
-

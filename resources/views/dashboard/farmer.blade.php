@@ -115,12 +115,28 @@
   .qt-dot { position: absolute; left: 0; top: 18px; width: 12px; height: 12px; border-radius: 50%; border: 2.5px solid; background: #fff; }
   .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
 
-  .crop-chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(22,163,74,0.08); color: #166534; font-size: 12px; font-weight: 600; padding: 5px 13px; border-radius: 18px; border: 1px solid rgba(22,163,74,0.18); }
-  .crop-chip span { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+  .crop-carousel { display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; padding:2px 0 6px 0; cursor:grab; scrollbar-width:none; }
+  .crop-carousel::-webkit-scrollbar { display:none; }
+  .crop-carousel:active { cursor:grabbing; }
+  .crop-carousel-card {
+    scroll-snap-align:start; flex:0 0 110px; display:flex; flex-direction:column; align-items:center; gap:8px;
+    padding:16px 10px 14px; background:#fafbfc; border:1px solid #e8eaed; border-radius:14px;
+    transition: all 0.2s ease; user-select:none; -webkit-user-select:none;
+  }
+  .crop-carousel-card:hover { border-color:#c8e6c9; background:#f0fdf4; transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.06); }
+  .crop-carousel-card:active { transform:scale(0.97); }
+  .crop-carousel-icon {
+    width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+  }
+  .crop-carousel-icon svg { width:18px; height:18px; stroke:#16a34a; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .crop-carousel-label { font-size:12px; font-weight:600; color:#1e2922; text-align:center; line-height:1.2; }
+  .crop-scroll-hint { display:none; }
 
   @media (max-width: 768px) {
     .hero-band { padding: 22px; }
     .hero-title { font-size: 21px; }
+    .crop-scroll-hint { display:flex; align-items:center; gap:4px; font-size:10px; color:#94a3b8; margin-bottom:8px; }
   }
 </style>
 
@@ -177,10 +193,10 @@
 
       <!-- Current Season -->
       <div class="dash-panel reveal" data-reveal>
-        <div class="panel-head">
+        <div class="panel-head" style="border-bottom:none;padding-bottom:0;">
           <div>
-            <h3>Current Season</h3>
-            <p>{{ $climateInfo['months'] ?? ($season === 'wet' ? 'June – October' : 'November – May') }} &middot; local farming calendar</p>
+            <h3 style="font-size:16px;">Current Season</h3>
+            <p style="margin-top:3px;">{{ $climateInfo['months'] ?? ($season === 'wet' ? 'June – October' : 'November – May') }}</p>
           </div>
           <span data-inline-style="{{ $seasonPillStyle }}">
             @if($season === 'wet')
@@ -191,78 +207,156 @@
             {{ $climateInfo['label'] ?? ($season === 'wet' ? 'Wet Season' : 'Dry Season') }}
           </span>
         </div>
-        <div class="panel-body">
+        <div class="panel-body" style="padding-top:8px;">
           @if(!empty($climateInfo['typical_weather']))
-            <p style="margin:0 0 14px 0;font-size:13px;color:#475569;line-height:1.6;">{{ $climateInfo['typical_weather'] }}</p>
+            <p style="margin:0 0 18px 0;font-size:13px;color:#64748b;line-height:1.6;">{{ $climateInfo['typical_weather'] }}</p>
           @endif
 
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;">
-            <div style="background:rgba(22,163,74,0.06);border:1px solid rgba(22,163,74,0.14);border-radius:12px;padding:10px 12px;">
-              <div style="font-size:10.5px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Season Months</div>
-              <div style="font-size:13px;font-weight:700;color:#0f172a;margin-top:2px;">{{ $climateInfo['months'] ?? ($season === 'wet' ? 'June – October' : 'November – May') }}</div>
+          <div style="display:flex;gap:0;margin-bottom:18px;border:1px solid #e8eaed;border-radius:14px;overflow:hidden;background:#fafbfc;">
+            <div style="flex:1;padding:16px 18px;text-align:center;border-right:1px solid #e8eaed;">
+              <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:6px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Months</span>
+              </div>
+              <div style="font-size:14px;font-weight:700;color:#1e293b;line-height:1.3;">{{ $climateInfo['months'] ?? ($season === 'wet' ? 'June – October' : 'November – May') }}</div>
             </div>
-            <div style="background:rgba(2,132,199,0.06);border:1px solid rgba(2,132,199,0.14);border-radius:12px;padding:10px 12px;">
-              <div style="font-size:10.5px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Typical Temp</div>
-              <div style="font-size:13px;font-weight:700;color:#0f172a;margin-top:2px;">{{ $climateInfo['temperature'] ?? '—' }}</div>
+            <div style="flex:1;padding:16px 18px;text-align:center;border-right:1px solid #e8eaed;">
+              <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:6px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="#f59e0b" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+                <span style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Temp</span>
+              </div>
+              <div style="font-size:14px;font-weight:700;color:#1e293b;line-height:1.3;">{{ $climateInfo['temperature'] ?? '—' }}</div>
             </div>
-            <div style="background:rgba(217,119,6,0.06);border:1px solid rgba(217,119,6,0.14);border-radius:12px;padding:10px 12px;">
-              <div style="font-size:10.5px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Humidity</div>
-              <div style="font-size:13px;font-weight:700;color:#0f172a;margin-top:2px;">{{ $climateInfo['humidity'] ?? '—' }}</div>
+            <div style="flex:1;padding:16px 18px;text-align:center;">
+              <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:6px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="#0ea5e9" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                <span style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Humidity</span>
+              </div>
+              <div style="font-size:14px;font-weight:700;color:#1e293b;line-height:1.3;">{{ $climateInfo['humidity'] ?? '—' }}</div>
             </div>
           </div>
 
           @if(!empty($climateInfo['recommendation']))
-            <div style="background:rgba(20,61,35,0.05);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="#16a34a" stroke-width="2" fill="none" style="flex-shrink:0;margin-top:1px;"><path d="M12 2l9 4v6c0 5-3.5 8-9 10-5.5-2-9-5-9-10V6l9-4z"/><line x1="9" y1="12" x2="11" y2="14"/><line x1="11" y1="14" x2="15" y2="9"/></svg>
-              <p style="margin:0;font-size:12.5px;color:#1e2922;line-height:1.5;"><strong>Seasonal guidance:</strong> {{ $climateInfo['recommendation'] }}</p>
+            <div style="background:#f0fdf4;border:1px solid #dcfce7;border-radius:12px;padding:14px 16px;display:flex;gap:11px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:8px;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;">Seasonal Guidance</div>
+                <p style="margin:0;font-size:12.5px;color:#3f5144;line-height:1.55;">{{ $climateInfo['recommendation'] }}</p>
+              </div>
             </div>
           @endif
 
-          <a href="{{ route('farmer.quotations.request') }}" class="btn-primary" style="margin-top:14px;">
-            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Plan & Request a Quotation
-          </a>
         </div>
       </div>
 
       <!-- Farm Input Decision Support -->
       <div class="dash-panel reveal" data-reveal>
-        <div class="panel-head">
+        <div class="panel-head" style="border-bottom:none;padding-bottom:0;">
           <div>
-            <h3>Farm Input Decision Support</h3>
-            <p>Rule-based recommendations by crop, season &amp; land area</p>
+            <h3 style="font-size:16px;">Decision Support</h3>
+            <p style="margin-top:3px;">Per-hectare input rates by crop &amp; season</p>
           </div>
         </div>
-        <div class="panel-body">
+        <div class="panel-body" style="padding-top:8px;">
           @if($supportedCrops->isNotEmpty())
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-              @foreach($supportedCrops as $crop)
-                <span class="crop-chip"><span></span>{{ $crop }}</span>
-              @endforeach
+            <!-- Supported Crops -->
+            <div style="margin-bottom:18px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Supported Crops</div>
+                <div class="crop-scroll-hint">
+                  <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                  Swipe to browse
+                  <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              </div>
+              <div class="crop-carousel" id="cropCarousel">
+                @php
+                  $cropImages = [
+                    'rice' => 'crops/rice.png',
+                    'palay' => 'crops/rice.png',
+                    'corn' => 'crops/corn.png',
+                    'maize' => 'crops/corn.png',
+                    'mango' => 'crops/mango.png',
+                    'banana' => 'crops/banana.png',
+                    'eggplant' => 'crops/eggplant.png',
+                    'talong' => 'crops/eggplant.png',
+                    'chili' => 'crops/chili.png',
+                    'pepper' => 'crops/chili.png',
+                    'siling labuyo' => 'crops/chili.png',
+                    'cacao' => 'crops/cacao.png',
+                    'pineapple' => 'crops/pineapple.png',
+                    'watermelon' => 'crops/watermelon.png',
+                    'sugarcane' => 'crops/sugar-cane.png',
+                    'calamansi' => 'crops/lemon.png',
+                    'lemon' => 'crops/lemon.png',
+                    'wheat' => 'crops/wheat.png',
+                    'orange' => 'crops/orange.png',
+                  ];
+                  $defaultCropImage = 'images/crop.png';
+                @endphp
+                @php $shownCrops = $supportedCrops->take(10); @endphp
+                @foreach($shownCrops as $crop)
+                  @php
+                    $key = strtolower($crop);
+                    $imgPath = $cropImages[$key] ?? null;
+                    $imgSrc = $imgPath ? "images/{$imgPath}" : $defaultCropImage;
+                  @endphp
+                  <div class="crop-carousel-card">
+                    <div class="crop-carousel-icon" style="background:transparent;display:flex;align-items:center;justify-content:center;">
+                      <img src="{{ asset($imgSrc) }}" alt="{{ $crop }}" style="width:36px;height:36px;object-fit:contain;">
+                    </div>
+                    <span class="crop-carousel-label">{{ $crop }}</span>
+                  </div>
+                @endforeach
+              </div>
+              <a href="{{ route('farmer.crops-directory.index') }}" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 14px;border-radius:10px;background:rgba(20,61,35,0.06);font-size:12px;font-weight:700;color:#14532d;text-decoration:none;transition:all 0.2s;">
+                View All {{ $supportedCrops->count() }} Crops
+                <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
             </div>
 
-            <p style="margin:0 0 14px 0;font-size:13px;color:#475569;line-height:1.6;">
-              The system recommends seed, fertilizer, and supply quantities using <strong>Decision Formula</strong> rules — standard per-hectare rates adjusted for your crop, land area, and the season you select.
-            </p>
-
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px;">
-              <div style="background:rgba(2,132,199,0.05);border-radius:12px;padding:12px 14px;border:1px solid rgba(2,132,199,0.12);">
-                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-                  <svg viewBox="0 0 24 24" width="13" height="13" stroke="#0284c7" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
-                  <strong style="font-size:13px;color:#0284c7;">Wet Season</strong>
+            <!-- How it works -->
+            <div style="background:#f8faf9;border:1px solid #e8eaed;border-radius:12px;padding:14px 16px;margin-bottom:18px;">
+              <div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">How It Works</div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <div style="display:flex;align-items:center;gap:6px;flex:1;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:#e0f2fe;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0284c7;flex-shrink:0;">1</div>
+                  <span style="font-size:11.5px;color:#475569;white-space:nowrap;">Pick crop</span>
                 </div>
-                <p style="margin:0;font-size:12px;color:#475569;line-height:1.4;">Higher pest/fungus risk, flood-tolerant seed variants.</p>
-              </div>
-              <div style="background:rgba(217,119,6,0.05);border-radius:12px;padding:12px 14px;border:1px solid rgba(217,119,6,0.12);">
-                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-                  <svg viewBox="0 0 24 24" width="13" height="13" stroke="#d97706" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"/></svg>
-                  <strong style="font-size:13px;color:#d97706;">Dry Season</strong>
+                <svg viewBox="0 0 24 24" width="12" height="12" stroke="#cbd5e1" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <div style="display:flex;align-items:center;gap:6px;flex:1;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#d97706;flex-shrink:0;">2</div>
+                  <span style="font-size:11.5px;color:#475569;white-space:nowrap;">Set area</span>
                 </div>
-                <p style="margin:0;font-size:12px;color:#475569;line-height:1.4;">Drought-tolerant varieties, higher irrigation requirements.</p>
+                <svg viewBox="0 0 24 24" width="12" height="12" stroke="#cbd5e1" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <div style="display:flex;align-items:center;gap:6px;flex:1;">
+                  <div style="width:20px;height:20px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#16a34a;flex-shrink:0;">3</div>
+                  <span style="font-size:11.5px;color:#475569;white-space:nowrap;">Get rates</span>
+                </div>
               </div>
             </div>
 
-            <a href="{{ route('farmer.recommendations.index') }}" class="btn-ghost">View Recommendations <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+            <!-- Season Comparison -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+              <div style="padding:14px 14px 12px;border-radius:12px;background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #bfdbfe;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="#3b82f6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+                  <span style="font-size:12px;font-weight:700;color:#1e40af;">Wet Season</span>
+                </div>
+                <p style="margin:0;font-size:11.5px;color:#475569;line-height:1.5;">Pest &amp; fungus risk. Flood-tolerant seed variants recommended.</p>
+              </div>
+              <div style="padding:14px 14px 12px;border-radius:12px;background:linear-gradient(135deg,#fffbeb,#fefce8);border:1px solid #fde68a;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="#d97706" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"/></svg>
+                  <span style="font-size:12px;font-weight:700;color:#92400e;">Dry Season</span>
+                </div>
+                <p style="margin:0;font-size:11.5px;color:#475569;line-height:1.5;">Drought-tolerant varieties. Higher irrigation requirements.</p>
+              </div>
+            </div>
+
+            <a href="{{ route('farmer.recommendations.index') }}" class="btn-ghost" style="width:100%;justify-content:center;">View Full Recommendations <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
           @else
             <div style="text-align:center;padding:34px 16px;">
               <p style="font-size:13px;color:#64748b;margin:0;">No crop types registered in the Decision Formula rules yet.</p>
@@ -429,6 +523,26 @@
       revealEls.forEach(function (el) { ro.observe(el); });
     } else {
       revealEls.forEach(function (el) { el.classList.add('in'); });
+    }
+
+    /* Crop carousel — drag to scroll (mouse + touch) */
+    var carousel = document.getElementById('cropCarousel');
+    if (carousel) {
+      var isDrag = false, startX, scrollLeft;
+      carousel.addEventListener('mousedown', function (e) {
+        isDrag = true;
+        carousel.style.cursor = 'grabbing';
+        startX = e.pageX - carousel.offsetLeft;
+        scrollLeft = carousel.scrollLeft;
+      });
+      carousel.addEventListener('mouseleave', function () { isDrag = false; carousel.style.cursor = 'grab'; });
+      carousel.addEventListener('mouseup', function () { isDrag = false; carousel.style.cursor = 'grab'; });
+      carousel.addEventListener('mousemove', function (e) {
+        if (!isDrag) return;
+        e.preventDefault();
+        var x = e.pageX - carousel.offsetLeft;
+        carousel.scrollLeft = scrollLeft - (x - startX) * 1.5;
+      });
     }
   });
 </script>

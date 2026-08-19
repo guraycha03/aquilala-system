@@ -9,12 +9,17 @@ use Carbon\Carbon;
 
 class Quotation extends Model
 {
-    // ── Status Workflow Constants ──────────────────────────────────
-    const STATUS_PENDING    = 'pending';    // Farmer submitted, awaiting store computation
-    const STATUS_COMPUTED   = 'computed';   // Store owner computed prices
-    const STATUS_DISPATCHED = 'dispatched'; // Store owner dispatched the quotation to farmer
-    const STATUS_ACCEPTED   = 'accepted';   // Farmer accepted the quotation
-    const STATUS_REJECTED   = 'rejected';   // Farmer rejected the quotation
+    // ── Status Constants (Informational / Demand-Visibility Model) ──
+    // Farmer creates → auto-computed instantly → store sees demand intel
+    const STATUS_COMPUTED   = 'computed';   // Auto-computed estimate (default)
+    const STATUS_VIEWED     = 'viewed';     // Store owner viewed the quotation
+    const STATUS_EXPIRED    = 'expired';    // Past valid_until date
+
+    // Legacy statuses kept for backward compatibility
+    const STATUS_PENDING    = 'pending';
+    const STATUS_DISPATCHED = 'dispatched';
+    const STATUS_ACCEPTED   = 'accepted';
+    const STATUS_REJECTED   = 'rejected';
 
     protected $fillable = [
         'user_id',
@@ -47,20 +52,24 @@ class Quotation extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
-            self::STATUS_PENDING    => 'Pending Response',
-            self::STATUS_COMPUTED   => 'Estimate Computed',
-            self::STATUS_DISPATCHED => 'Estimate Dispatched',
+            self::STATUS_COMPUTED   => 'Estimate Ready',
+            self::STATUS_VIEWED     => 'Viewed by Store',
+            self::STATUS_EXPIRED    => 'Expired',
+            self::STATUS_PENDING    => 'Pending',
+            self::STATUS_DISPATCHED => 'Dispatched',
             self::STATUS_ACCEPTED   => 'Accepted',
             self::STATUS_REJECTED   => 'Rejected',
-            default                 => ucfirst($this->status ?? 'pending'),
+            default                 => ucfirst($this->status ?? 'computed'),
         };
     }
 
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
-            self::STATUS_PENDING    => '#d97706',
             self::STATUS_COMPUTED   => '#0284c7',
+            self::STATUS_VIEWED     => '#7c3aed',
+            self::STATUS_EXPIRED    => '#94a3b8',
+            self::STATUS_PENDING    => '#d97706',
             self::STATUS_DISPATCHED => '#7c3aed',
             self::STATUS_ACCEPTED   => '#16a34a',
             self::STATUS_REJECTED   => '#dc2626',
@@ -71,8 +80,10 @@ class Quotation extends Model
     public function getStatusBgAttribute(): string
     {
         return match ($this->status) {
-            self::STATUS_PENDING    => '#fef3c7',
             self::STATUS_COMPUTED   => '#e0f2fe',
+            self::STATUS_VIEWED     => '#f3e8ff',
+            self::STATUS_EXPIRED    => '#f1f5f9',
+            self::STATUS_PENDING    => '#fef3c7',
             self::STATUS_DISPATCHED => '#f3e8ff',
             self::STATUS_ACCEPTED   => '#f0fdf4',
             self::STATUS_REJECTED   => '#fef2f2',
@@ -97,6 +108,19 @@ class Quotation extends Model
         return $this->hasMany(QuotationItem::class);
     }
 
+    /**
+     * Get the unique store owners whose products appear in this quotation.
+     */
+    public function getInvolvedStoreIds(): array
+    {
+        return $this->items()
+            ->join('products', 'quotation_items.product_id', '=', 'products.id')
+            ->pluck('products.user_id')
+            ->unique()
+            ->values()
+            ->toArray();
+    }
+
     // ── Scopes ─────────────────────────────────────────────────────
 
     public function scopePending($query)
@@ -114,12 +138,13 @@ class Quotation extends Model
         return $query->where('user_id', $farmerUserId);
     }
 
-    public function scopeAvailableForStore($query)
+    /**
+     * Quotations that contain products belonging to the given store owner.
+     */
+    public function scopeInvolvingStore($query, int $storeUserId)
     {
-        // Pending quotations that no store has claimed yet, OR assigned to this store
-        return $query->where(function ($q) {
-            $q->whereNull('store_user_id')
-              ->orWhere('store_user_id', auth()->id());
+        return $query->whereHas('items.product', function ($q) use ($storeUserId) {
+            $q->where('products.user_id', $storeUserId);
         });
     }
 }

@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
  * CostQuotationEngine
  * 
  * Core rule-based calculation engine for the Aquilala Irrigators Association.
- * Computes highly localized, realistic farming cost estimates based on:
+ * Computes highly localized, realistic farming cost quotations based on:
  * - Land area, soil type, weather/season context
  * - Crop-specific standard multipliers (DecisionFormula records)
  * - Current active product prices from the store owner's inventory
@@ -152,6 +152,14 @@ class CostQuotationEngine
                 // El Niño: add irrigation fuel/water fee
                 $adjustedQuantity = max($adjustedQuantity, round(1.0 * $landArea, 2)); // 1 unit irrigation per ha
                 $weatherNote = 'El Niño: irrigation fuel/water fees applied';
+            }
+
+            // ── Round up to whole units for discrete products ──
+            $unit = strtolower(trim($formula?->unit ?? $product->stock_unit ?? 'piece'));
+            $discreteUnits = ['sack', 'sacks', 'bag', 'bags', 'piece', 'pieces', 'unit', 'units', 'carton', 'cartons', 'box', 'boxes', 'pack', 'packs'];
+
+            if (in_array($unit, $discreteUnits)) {
+                $adjustedQuantity = (int) ceil($adjustedQuantity);
             }
 
             // ── Compute Subtotal ──

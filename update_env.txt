@@ -1,3 +1,37 @@
+ngrok config add-authtoken 3FcIrGgAMsw6dU5KntGg5kmVJm0_4NpF7seMWTbk8SuRiEDy
+
+
+ngrok http 8000
+
+
+.\ngrok.exe http 8000
+
+npx cloudflared tunnel --url http://127.0.0.1:8000
+
+
+
+
+npx localtunnel --port 8000
+
+
+C:\my-projects\aquilala-system>npx localtunnel --port 8000
+Need to install the following packages:
+localtunnel@2.0.2
+Ok to proceed? (y) y
+your url is: https://seven-socks-flow.loca.lt
+
+
+
+
+
+Click on the Extensions icon on the left sidebar of VS Code (or press Ctrl + Shift + X).
+Search for ngrok and install the extension named "ngrok" (by Vinicius Reis or Phil Nash).
+
+Open your VS Code Command Palette by pressing Ctrl + Shift + P.Type ngrok: Start and hit Enter.
+It will ask for your port. Type 8000 and hit Enter.
+
+ The extension will automatically download ngrok and generate your shareable link right inside the app!
+
 
 
 can you please update my .env file to be ready for a real world use of this system, also i actually cloned this project from my other device so evrything in env and some files are of default, so please check out my other files to update what needed after the cloning
@@ -5,23 +39,16 @@ can you please update my .env file to be ready for a real world use of this syst
 
 what should i use now, the blackbox is really usefull i just used it last week, it inlimted, i can use it daily without end, also it reads all of my files, run terminal, auto complete files, creates files with full codes and evrything, is there atlearnative that can do all of this too? without neededing to pay or card , all free 
 
+Inactive Link Icon: Muted Sage (#b9cfc0)
 
-AQ.Ab8RN6IpvhY8K4lPif_uKhgpvuvXxrjO-l-4T8Z28aE40chHOQ
-
-
-API key details
-info
-For details on using auth keys with Gemini API, see our API key documentation.
-API Key
-AQ.Ab8RN6IpvhY8K4lPif_uKhgpvuvXxrjO-l-4T8Z28aE40chHOQ
-Name
-Gemini API VS Code Extension
-Project name
-projects/872203606703
-Project number
-872203606703
+Active or Hovered : Deep Forest Green (#143d23)
+when active, or Pure White (#ffffff) on hover.
 
 
-open ai
-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
+
+
+farmer's addresses
+
+
+Inararan, J.P. Laurel, Aquino, Somagongsong, A. Bonifacio , Managanaga
 

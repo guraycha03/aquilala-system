@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Quotation Logs')
+@section('title', 'Cost Quotation Analytics')
 
 @section('content')
 <style>
@@ -17,7 +17,7 @@
   .stat-value { font-size: 28px; font-weight: 800; color: #143d23; line-height: 1; }
   .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 500; }
 
-  .data-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+  .data-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 20px; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th { background: #fafbfa; padding: 14px 16px; font-weight: 600; color: #4a574e; border-bottom: 1px solid #e2e8f0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
   td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; color: #3d4a41; }
@@ -42,11 +42,17 @@
     font-size: 10px;
     flex-shrink: 0;
   }
+  .demand-bar {
+    height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-top: 4px;
+  }
+  .demand-bar-fill {
+    height: 100%; background: #143d23; border-radius: 3px; transition: width 0.3s;
+  }
 </style>
 
 <div class="header-panel" style="margin-bottom: 24px;">
-  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">System Cost Quotation Logs</h1>
-  <p style="color: #606d64; font-size: 14px; margin: 0;">Monitor financial interactions and procurement queries between farmers and merchants.</p>
+  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Quotation Analytics</h1>
+  <p style="color: #606d64; font-size: 14px; margin: 0;">System-wide demand visibility — farmer cost quotations, store performance, and crop trends.</p>
 </div>
 
 <!-- System-wide metrics -->
@@ -54,43 +60,115 @@
   <div class="stat-card">
     <div>
       <div class="stat-value">{{ $metrics['total'] }}</div>
-      <div class="stat-label">Total Quotations</div>
+      <div class="stat-label">Total Estimates</div>
     </div>
     <svg viewBox="0 0 24 24" width="24" height="24" stroke="#143d23" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
   </div>
   <div class="stat-card">
     <div>
-      <div class="stat-value">{{ $metrics['pending'] }}</div>
-      <div class="stat-label">Pending</div>
-    </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#d97706" stroke-width="1.5" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-  </div>
-  <div class="stat-card">
-    <div>
       <div class="stat-value">{{ $metrics['computed'] }}</div>
-      <div class="stat-label">Active Estimates</div>
+      <div class="stat-label">Fresh Estimates</div>
     </div>
     <svg viewBox="0 0 24 24" width="24" height="24" stroke="#0284c7" stroke-width="1.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
   </div>
   <div class="stat-card">
     <div>
-      <div class="stat-value">{{ $metrics['completed'] }}</div>
-      <div class="stat-label">Completed</div>
+      <div class="stat-value">{{ $metrics['viewed'] }}</div>
+      <div class="stat-label">Viewed by Stores</div>
     </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#16a34a" stroke-width="1.5" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#7c3aed" stroke-width="1.5" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+  </div>
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ $metrics['expired'] }}</div>
+      <div class="stat-label">Expired</div>
+    </div>
+    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#94a3b8" stroke-width="1.5" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
   </div>
   <div class="stat-card">
     <div>
       <div class="stat-value">₱{{ number_format($metrics['totalValue'], 0) }}</div>
-      <div class="stat-label">Total Value</div>
+      <div class="stat-label">Total Demand Value</div>
     </div>
     <svg viewBox="0 0 24 24" width="24" height="24" stroke="#16a34a" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M8 3h6.5a4.5 4.5 0 0 1 0 9H8"/><line x1="4.5" y1="6.5" x2="21" y2="6.5" stroke-width="1.5"/><line x1="4.5" y1="9.5" x2="21" y2="9.5" stroke-width="1.5"/></svg>
   </div>
 </div>
 
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+  <!-- Store Performance -->
+  <div class="data-table-container" style="margin-bottom: 0;">
+    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
+      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Store Performance</h2>
+      <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Which stores' products farmers are exploring most</p>
+    </div>
+    <div style="padding: 16px 20px;">
+      @if(count($storePerformance) > 0)
+        @php $maxQ = max(array_column($storePerformance, 'quotation_count')); @endphp
+        @foreach($storePerformance as $store)
+          <div style="{{ !$loop->last ? 'margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;' : '' }}">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div class="avatar" style="background: #fef3c7; color: #92400e; width: 28px; height: 28px;">
+                  @php $w = explode(' ', trim($store['store_name'])); echo count($w) >= 2 ? mb_substr($w[0], 0, 1).mb_substr(end($w), 0, 1) : mb_substr($store['store_name'], 0, 2); @endphp
+                </div>
+                <span style="font-weight: 600; color: #1e2922; font-size: 14px;">{{ $store['store_name'] }}</span>
+              </div>
+              <span style="font-size: 13px; color: #64748b;">{{ $store['quotation_count'] }} quotation(s)</span>
+            </div>
+            <div class="demand-bar">
+              <div class="demand-bar-fill" style="width: {{ ($store['quotation_count'] / $maxQ) * 100 }}%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #94a3b8;">
+              <span>{{ $store['product_count'] }} unique product(s)</span>
+              <span>₱{{ number_format($store['total_value'], 0) }} value</span>
+            </div>
+          </div>
+        @endforeach
+      @else
+        <div style="text-align: center; padding: 32px; color: #94a3b8;">
+          <p style="margin: 0;">No store demand data yet.</p>
+        </div>
+      @endif
+    </div>
+  </div>
+
+  <!-- Crop Demand Breakdown -->
+  <div class="data-table-container" style="margin-bottom: 0;">
+    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
+      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Crop Demand Breakdown</h2>
+      <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Which crops farmers are planning for</p>
+    </div>
+    <div style="padding: 16px 20px;">
+      @if(count($cropDemand) > 0)
+        @php $maxCrop = max(array_column($cropDemand, 'count')); @endphp
+        @foreach($cropDemand as $crop)
+          <div style="{{ !$loop->last ? 'margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;' : '' }}">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span style="font-weight: 600; color: #1e2922; font-size: 14px; text-transform: capitalize;">{{ $crop['count'] > 0 ? $crop['count'] : '' }} {{ Str::plural($loop->key, $crop['count']) }}</span>
+              <span style="font-size: 13px; color: #64748b;">{{ $crop['count'] }} estimate(s)</span>
+            </div>
+            <div class="demand-bar">
+              <div class="demand-bar-fill" style="width: {{ ($crop['count'] / $maxCrop) * 100 }}%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #94a3b8;">
+              <span>{{ number_format($crop['total_area'], 1) }} ha total area</span>
+              <span>₱{{ number_format($crop['total_value'], 0) }} value</span>
+            </div>
+          </div>
+        @endforeach
+      @else
+        <div style="text-align: center; padding: 32px; color: #94a3b8;">
+          <p style="margin: 0;">No crop demand data yet.</p>
+        </div>
+      @endif
+    </div>
+  </div>
+</div>
+
+<!-- Full Quotation Log -->
 <div class="data-table-container">
   <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
-    <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Global Transaction Log</h2>
+    <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Global Quotation Log</h2>
   </div>
   <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
     <div class="app-scroll">
@@ -99,10 +177,9 @@
         <tr>
           <th>Reference</th>
           <th>Farmer</th>
-          <th>Merchant / Store</th>
           <th>Crop</th>
           <th>Area</th>
-          <th>Total Estimate</th>
+          <th>Est. Value</th>
           <th>Status</th>
           <th>Submitted</th>
         </tr>
@@ -119,18 +196,6 @@
                 </div>
                 <span>{{ $q->farmer?->name ?? 'Unknown' }}</span>
               </div>
-            </td>
-            <td>
-              @if($q->storeOwner)
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <div class="avatar" style="background: #fef3c7; color: #92400e;">
-                    @php $w = explode(' ', trim($q->storeOwner->name)); echo count($w) >= 2 ? mb_substr($w[0], 0, 1).mb_substr(end($w), 0, 1) : '?'; @endphp
-                  </div>
-                  <span>{{ $q->storeOwner->name }}</span>
-                </div>
-              @else
-                <span style="color: #94a3b8;">Unassigned</span>
-              @endif
             </td>
             <td style="text-transform: capitalize;">{{ $q->crop_type }} — {{ $q->season }}</td>
             <td>{{ number_format($q->land_area, 1) }} ha</td>
@@ -151,7 +216,7 @@
           </tr>
         @empty
           <tr>
-            <td colspan="8" style="text-align: center; padding: 48px 20px; color: #64748b;">
+            <td colspan="7" style="text-align: center; padding: 48px 20px; color: #64748b;">
               <svg viewBox="0 0 24 24" width="36" height="36" stroke="#94a3b8" stroke-width="1.5" fill="none" style="margin-bottom: 8px;">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
               </svg>
@@ -169,4 +234,3 @@
   </div>
 </div>
 @endsection
-
