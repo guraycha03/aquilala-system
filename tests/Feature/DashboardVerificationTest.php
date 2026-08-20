@@ -51,7 +51,7 @@ class DashboardVerificationTest extends TestCase
         $this->actingAs($farmer)
             ->get('/farmer/dashboard')
             ->assertOk()
-            ->assertSee('Producer Hub');
+            ->assertSee('Farmer Hub');
     }
 
     public function test_admin_dashboard_loads(): void

@@ -147,7 +147,7 @@
     <section class="hero-band reveal in">
       <div class="hero-inner">
         <div>
-          <div class="hero-eyebrow">Producer Hub</div>
+          <div class="hero-eyebrow">Farmer Hub</div>
           <h1 class="hero-title"><span data-greeting>{{ $greeting }}</span>, {{ $user->name }}</h1>
           <p class="hero-sub">Here's your <strong>farming overview</strong> for {{ $now->format('l, F j') }}.</p>
           <span class="hero-season {{ $season === 'wet' ? 'hero-season-wet' : 'hero-season-dry' }}">

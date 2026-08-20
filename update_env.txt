@@ -52,3 +52,16 @@ farmer's addresses
 
 Inararan, J.P. Laurel, Aquino, Somagongsong, A. Bonifacio , Managanaga
 
+
+
+
+
+Then run php artisan config:clear.
+
+Right now LOCAL is active so you can develop normally. The bootstrap/app.php has trustProxies('*') and trustHosts('.loca.lt') configured — these are harmless for local dev and ready for when you switch to remote.
+When sharing with your group:
+1. Start localtunnel: npx localtunnel --port 8000
+2. Swap the .env block (comment LOCAL, uncomment REMOTE with the new tunnel URL)
+3. php artisan config:clear
+
+

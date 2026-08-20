@@ -90,15 +90,6 @@
   .role-owner { background: #fef3c7; color: #d97706; }
   .role-farmer { background: #dcfce7; color: #15803d; }
 
-  /* Quotation pipeline (minimal) */
-  .pipe-row { padding: 15px 0; }
-  .pipe-row + .pipe-row { border-top: 1px solid #f1f3f2; }
-  .pipe-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
-  .pipe-meta span { font-size: 13px; color: #64748b; font-weight: 500; }
-  .pipe-meta b { font-size: 16px; color: #0f172a; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .pipe-track { height: 5px; border-radius: 999px; background: #eef1ef; overflow: hidden; }
-  .pipe-fill { height: 100%; border-radius: 999px; background: var(--fill, #cbd5e1); opacity: 0.85; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
-
   /* Timeline */
   .qt-item { position: relative; padding: 13px 0 13px 24px; border-bottom: 1px solid rgba(0,0,0,0.045); }
   .qt-item:last-child { border-bottom: none; }
@@ -162,46 +153,8 @@
       </x-kpi-card>
     </section>
 
-    <!-- 3. QUOTATION PIPELINE + RECENT REGISTRATIONS -->
-    <section class="dash-grid" style="margin-bottom:22px;">
-      <!-- Quotation status breakdown -->
-      <div class="dash-panel reveal" data-reveal>
-        <div class="panel-head">
-          <div>
-            <h3>Quotation Pipeline</h3>
-            <p>Requests by current stage</p>
-          </div>
-          <a href="{{ route('admin.quotations.index') }}" class="btn-ghost">View All <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
-        </div>
-        <div class="panel-body" style="padding-top: 6px; padding-bottom: 22px;">
-          @php
-            $statusMeta = [
-                'pending'    => ['Pending Response', '#a57f43'],
-                'computed'   => ['Estimate Computed', '#62829b'],
-                'dispatched' => ['Estimate Dispatched', '#86799f'],
-                'accepted'   => ['Accepted', '#63856c'],
-                'rejected'   => ['Rejected', '#a86464'],
-            ];
-            $pipelineMax = max(max($quotationStatusCounts), 1);
-          @endphp
-          @foreach($statusMeta as $key => [$label, $color])
-            @php
-              $cnt = $quotationStatusCounts[$key] ?? 0;
-              $w = round($cnt / $pipelineMax * 100);
-            @endphp
-            <div class="pipe-row">
-              <div class="pipe-meta">
-                <span>{{ $label }}</span>
-                <b>{{ $cnt }}</b>
-              </div>
-              <div class="pipe-track">
-                <div class="pipe-fill" data-w="{{ $w }}" data-fill="{{ $color }}" style="width:0%;background-color:var(--fill);"></div>
-              </div>
-            </div>
-          @endforeach
-        </div>
-      </div>
-
+    <!-- 3. RECENT REGISTRATIONS -->
+    <section style="margin-bottom:22px;">
       <!-- Recent registrations -->
       <div class="dash-panel reveal" data-reveal>
         <div class="panel-head">
