@@ -3,12 +3,12 @@
 @section('title', $product->name)
 
 @section('content')
+<x-breadcrumb :items="[
+  ['label' => 'Browse Products', 'url' => route('farmer.products.browse')],
+  ['label' => $product->name],
+]"/>
+
 <div class="header-panel" style="margin-bottom: 24px;">
-    <nav style="font-size: 13px; color: #87a992; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-        <a href="{{ route('farmer.products.browse') }}" style="color: #87a992; text-decoration: none;">Browse Products</a>
-        <span>›</span>
-        <span style="color: #4a574e;">{{ $product->name }}</span>
-    </nav>
     <h1 style="font-size: 24px; font-weight: 700; color: #1e2922;">{{ $product->name }}</h1>
     <p style="color: #606d64; font-size: 14px;">Supplied by <strong>{{ $product->storeOwner?->name ?? 'Unknown Merchant' }}</strong></p>
 </div>
@@ -114,8 +114,13 @@
     <div class="detail-hero">
         <!-- LEFT: Product Image -->
         <div class="product-image-panel">
-            @if($product->mainImage)
-                <img src="{{ $product->mainImage->url }}" alt="{{ $product->name }}">
+            @php
+                $detailImage = $product->mainImage ?: $product->images->first();
+            @endphp
+            @if($detailImage && !empty($detailImage->file_path))
+                <img src="{{ asset('storage/' . $detailImage->file_path) }}"
+                     alt="{{ $product->name }}"
+                     onerror="this.closest('.product-image-panel').innerHTML = '<div style=&quot;text-align:center;&quot;><svg viewBox=&quot;0 0 24 24&quot; width=&quot;48&quot; height=&quot;48&quot; stroke=&quot;#cbd5e1&quot; fill=&quot;none&quot; stroke-width=&quot;1.5&quot;><rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;2&quot;/><circle cx=&quot;8.5&quot; cy=&quot;8.5&quot; r=&quot;1.5&quot;/><path d=&quot;M21 15l-5-5L5 21&quot;/></svg><p style=&quot;margin-top:8px;font-size:12px;&quot;>Product Image</p></div>';">
             @else
                 <div style="text-align: center;">
                     <svg viewBox="0 0 24 24" width="48" height="48" stroke="#cbd5e1" fill="none" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>

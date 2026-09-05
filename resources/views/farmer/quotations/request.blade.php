@@ -146,6 +146,11 @@
   }
 </style>
 
+<x-breadcrumb :items="[
+  ['label' => 'My Cost Quotations', 'url' => route('farmer.quotations.index')],
+  ['label' => 'Request Quotation'],
+]"/>
+
 <div style="margin-bottom: 28px;">
   <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">
     Generate a Cost Quotation

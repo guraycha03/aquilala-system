@@ -94,12 +94,12 @@
   }
 </style>
 
+<x-breadcrumb :items="[
+  ['label' => 'My Cost Quotations', 'url' => route('farmer.quotations.index')],
+  ['label' => $quotation->quotation_number],
+]"/>
+
 <div class="page-header-card">
-  <nav style="font-size: 13px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-    <a href="{{ route('farmer.quotations.index') }}" style="color: #4b975c; text-decoration: none; font-weight: 500;">My Quotations</a>
-    <svg viewBox="0 0 24 24" width="14" height="14" stroke="#879a8c" stroke-width="2" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
-    <span style="color: #5c6d61;">{{ $quotation->quotation_number }}</span>
-  </nav>
   <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
     <div>
       <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 6px 0; letter-spacing: -0.02em;">

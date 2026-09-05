@@ -17,12 +17,22 @@ Route::get('/', function () {
     return redirect()->route('login');
 })->name('home');
 
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-    Route::get('/register', [AuthController::class, 'showSignup'])->name('register');
-    Route::post('/register', [AuthController::class, 'signup'])->name('register.post');
-});
+    // Phone Verification via Email Confirmation — landing page is viewable by
+    // anyone (an activated user opening their old link should see "already active").
+    Route::get('/confirm-account', [App\Http\Controllers\AccountActivationController::class, 'show'])
+        ->name('account.activation.show');
+
+    Route::middleware('guest')->group(function () {
+        Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+        Route::get('/register', [AuthController::class, 'showSignup'])->name('register');
+        Route::post('/register', [AuthController::class, 'signup'])->name('register.post');
+        Route::get('/registration-submitted', [AuthController::class, 'showRegistrationSubmitted'])->name('register.submitted');
+
+        // Completing activation signs the user in, so it must stay guest-only.
+        Route::post('/confirm-account', [App\Http\Controllers\AccountActivationController::class, 'complete'])
+            ->name('account.activation.complete');
+    });
 
 /*
 |--------------------------------------------------------------------------
@@ -141,7 +151,19 @@ Route::middleware('auth')->group(function () {
             $users = \App\Models\User::orderBy('created_at', 'desc')->get();
             return view('admin.users.index', compact('users'));
         })->name('users.index');
-        Route::get('/approvals', function () { return view('admin.approvals.index'); })->name('approvals.index');
+
+        // Admin pre-registration with phone/email uniqueness check + free email activation flow
+        Route::get('/users/create', [App\Http\Controllers\AdminUserController::class, 'create'])->name('users.create');
+        Route::post('/users', [App\Http\Controllers\AdminUserController::class, 'store'])->name('users.store');
+        Route::post('/users/{user}/resend-invitation', [App\Http\Controllers\AdminUserController::class, 'resend'])
+            ->name('users.resend');
+        Route::post('/users/{user}/approve', [App\Http\Controllers\AdminUserController::class, 'approve'])
+            ->name('users.approve');
+        Route::post('/users/{user}/reject', [App\Http\Controllers\AdminUserController::class, 'reject'])
+            ->name('users.reject');
+
+        Route::get('/approvals', [App\Http\Controllers\AdminUserController::class, 'approvals'])
+            ->name('approvals.index');
         Route::get('/quotations', [App\Http\Controllers\QuotationController::class, 'adminIndex'])->name('quotations.index');
         Route::get('/activity', [App\Http\Controllers\QuotationController::class, 'adminActivity'])->name('activity.index');
         Route::get('/analytics', function () {

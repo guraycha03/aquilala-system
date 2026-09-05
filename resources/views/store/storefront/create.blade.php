@@ -258,6 +258,11 @@
     }
 </style>
 
+<x-breadcrumb :items="[
+  ['label' => 'My Store', 'url' => route('store.storefront.index')],
+  ['label' => 'Add Product'],
+]"/>
+
 <div class="form-container">
     <!-- Header -->
     <div class="page-header">

@@ -65,6 +65,11 @@
   }
 </style>
 
+<x-breadcrumb :items="[
+  ['label' => 'Input Formulas', 'url' => route('store.formulas.index')],
+  ['label' => 'Edit Formula'],
+]"/>
+
 <div class="header-panel" style="margin-bottom: 24px;">
   <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Edit Input Formula</h1>
   <p style="color: #606d64; font-size: 14px; margin: 0;">

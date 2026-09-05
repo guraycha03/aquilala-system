@@ -4,65 +4,47 @@
 
 @section('content')
   @php
-    // SAMPLE placeholder data — swap with a real user-registration model later.
-    $applications = [
-        [
-            'id' => 'A-1043', 'name' => 'Delia Marquez', 'role' => 'Farmer',
-            'email' => 'delia.marquez@gmail.com', 'phone' => '0917 123 4567',
-            'barangay' => 'Inararan', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'farm_size' => '2.5 hectares', 'crops' => 'Rice, Vegetables',
-            'date' => 'June 25, 2026', 'status' => 'pending',
-            'note' => 'Registered for Wet Season marketplace. Farmer ID attached.',
-        ],
-        [
-            'id' => 'A-1044', 'name' => 'Ramon Villanueva', 'role' => 'Farmer',
-            'email' => 'ramon.v@gmail.com', 'phone' => '0918 234 5678',
-            'barangay' => 'J.P. Laurel', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'farm_size' => '1.8 hectares', 'crops' => 'Rice, Corn',
-            'date' => 'July 2, 2026', 'status' => 'pending',
-            'note' => 'Referred by Bulan Farm Cooperative.',
-        ],
-        [
-            'id' => 'A-1045', 'name' => 'Liza Bautista', 'role' => 'User',
-            'email' => 'liza.bautista@yahoo.com', 'phone' => '0919 345 6789',
-            'barangay' => 'Aquino', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'farm_size' => '—', 'crops' => '—',
-            'date' => 'July 8, 2026', 'status' => 'pending',
-            'note' => 'New applicant. Awaiting valid ID verification.',
-        ],
-        [
-            'id' => 'A-1046', 'name' => 'Nena Reyes', 'role' => 'Farmer',
-            'email' => 'nena.reyes@outlook.com', 'phone' => '0920 456 7890',
-            'barangay' => 'Somagongsong', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'farm_size' => '3.0 hectares', 'crops' => 'Coconut, Abaca',
-            'date' => 'July 12, 2026', 'status' => 'pending',
-            'note' => 'Coconut farmer. Barangay certificate attached.',
-        ],
-        [
-            'id' => 'A-1031', 'name' => 'Maria Santos', 'role' => 'Farmer',
-            'email' => 'maria.santos@gmail.com', 'phone' => '0917 555 0102',
-            'barangay' => 'A. Bonifacio', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'farm_size' => '1.2 hectares', 'crops' => 'Rice, Leafy Vegetables',
-            'date' => 'June 18, 2026', 'status' => 'approved',
-            'note' => 'Verified on-site. Farmer ID and land docs on file.',
-        ],
-        [
-            'id' => 'A-1028', 'name' => 'Jose Ramos', 'role' => 'User',
-            'email' => 'jose.ramos@gmail.com', 'phone' => '0918 555 0113',
-            'barangay' => 'Managanaga', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'farm_size' => '—', 'crops' => '—',
-            'date' => 'June 2, 2026', 'status' => 'approved',
-            'note' => 'Community member. ID and proof of address verified.',
-        ],
-        [
-            'id' => 'A-1022', 'name' => 'Elena Cruz', 'role' => 'Farmer',
-            'email' => 'elena.cruz@gmail.com', 'phone' => '0919 555 0144',
-            'barangay' => 'Inararan', 'city' => 'Bulan', 'province' => 'Sorsogon',
-            'farm_size' => '0.8 hectares', 'crops' => 'Vegetables, Herbs',
-            'date' => 'May 28, 2026', 'status' => 'rejected',
-            'note' => 'Incomplete registration documents. May re-submit.',
-        ],
-    ];
+    $pendingApplications = $applications->filter(fn($u) => $u->isPendingApproval());
+    $approvedApplications = $applications->filter(fn($u) => !$u->isPendingApproval() && ($u->approved_at !== null || in_array($u->status, [
+        \App\Models\User::STATUS_PENDING_VERIFICATION,
+        \App\Models\User::STATUS_ACTIVE,
+    ], true)));
+
+    $serialized = $applications->map(function ($u) {
+        $location = trim(implode(', ', array_filter([$u->barangay, $u->city, $u->province])));
+        $lang = $u->default_land_area
+            ? number_format((float) $u->default_land_area, 2) . ' ' . ($u->default_land_area_unit ?? '')
+            : '—';
+        return [
+            'id'        => $u->assoc_member_no ?: ('REG-' . str_pad((string) $u->id, 4, '0', STR_PAD_LEFT)),
+            'user_id'   => $u->id,
+            'name'      => $u->name,
+            'role'      => 'Farmer',
+            'email'     => $u->email,
+            'phone'     => $u->phone,
+            'address'   => trim(implode(', ', array_filter([$u->address, $u->barangay]))),
+            'location'  => $location,
+            'barangay'  => $u->barangay,
+            'city'      => $u->city,
+            'province'  => $u->province,
+            'sex'       => $u->sex,
+            'birth_date'=> $u->birth_date ? $u->birth_date->format('M d, Y') : '—',
+            'civil_status' => $u->civil_status,
+            'farm_location' => $u->farm_location,
+            'land_area' => $lang,
+            'land_ownership' => $u->land_ownership,
+            'years_farming'  => $u->years_farming !== null ? $u->years_farming : '—',
+            'farm_details' => trim(implode(' · ', array_filter([$lang, $u->farm_location]))),
+            'date'      => $u->created_at ? $u->created_at->format('M d, Y') : '—',
+            'note'      => trim(implode(' · ', array_filter([
+                $u->sex ? ('Sex: ' . $u->sex) : null,
+                $u->civil_status ? ('Civil status: ' . $u->civil_status) : null,
+                $u->land_ownership ? ('Land: ' . $u->land_ownership) : null,
+                $u->years_farming !== null ? ($u->years_farming . ' yr(s) farming') : null,
+            ]))) ?: 'Awaiting review of application details.',
+            'status'    => $u->isPendingApproval() ? 'pending' : 'approved',
+        ];
+    })->values()->all();
 
     $statusMeta = [
         'pending'  => ['Pending', '#a57f43', '#f6f0e6'],
@@ -70,6 +52,8 @@
         'rejected' => ['Rejected', '#a86464', '#f6ecec'],
     ];
   @endphp
+
+  <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <style>
     .app-page { position: relative; }
@@ -85,10 +69,6 @@
     .header-row h1 { font-size: 24px; font-weight: 700; color: #1e293b; letter-spacing: 0.02em; margin: 0 0 4px 0; }
     .header-row p { font-size: 13px; color: #64748b; margin: 0; }
 
-    .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1); }
-    .reveal.in { opacity: 1; transform: translateY(0); }
-
-    /* KPIs */
     .app-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 22px; }
     .app-kpi {
       padding: 16px 18px; border-radius: 14px; background: rgba(255,255,255,0.84);
@@ -99,7 +79,6 @@
     .app-kpi .ak-value { font-size: 24px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; }
     .app-kpi .ak-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
 
-    /* Panel + toolbar */
     .app-panel {
       background: rgba(255,255,255,0.86); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
       border: 1px solid rgba(255,255,255,0.55); border-radius: 18px;
@@ -126,7 +105,6 @@
     .status-seg button.active { background: #143d23; color: #ffffff; box-shadow: 0 2px 8px rgba(20,61,35,0.22); }
     .status-seg button.active .c { background: rgba(255,255,255,0.2); color: #ffffff; }
 
-    /* Application cards */
     .app-list { padding: 6px 20px 20px; }
     .app-card {
       display: flex; align-items: center; gap: 16px; padding: 16px 8px;
@@ -169,14 +147,13 @@
     .app-empty svg { width: 38px; height: 38px; stroke: #cbd5e1; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
     .app-empty p { font-size: 13px; color: #64748b; margin: 10px 0 0 0; }
 
-    /* Details drawer */
     .app-overlay {
       position: fixed; inset: 0; background: rgba(15,23,42,0.35); z-index: 800;
       opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s;
     }
     .app-overlay.open { opacity: 1; visibility: visible; }
     .app-drawer {
-      position: fixed; top: 0; right: 0; bottom: 0; width: 400px; max-width: 92vw; z-index: 900;
+      position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 92vw; z-index: 900;
       background: #ffffff; box-shadow: -12px 0 40px rgba(15,23,42,0.16);
       transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
       display: flex; flex-direction: column; overflow: hidden;
@@ -200,8 +177,6 @@
     .d-row .d-value { font-size: 13px; color: #334155; line-height: 1.5; }
     .d-sep { height: 1px; background: #f1f5f9; margin: 4px 0; }
     .d-sec-title { font-size: 12px; font-weight: 700; color: #1e293b; letter-spacing: 0.03em; margin-bottom: 10px; }
-    .d-check { display: flex; align-items: center; gap: 9px; font-size: 12px; color: #475569; padding: 7px 0; }
-    .d-check svg { width: 15px; height: 15px; stroke: #63856c; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
     .d-note {
       background: #f6f8f7; border: 1px solid #eef1ef; border-radius: 10px; padding: 12px 14px;
       font-size: 12px; color: #475569; line-height: 1.55;
@@ -209,7 +184,6 @@
     .drawer-foot { padding: 16px 22px; border-top: 1px solid #f1f5f9; display: flex; gap: 10px; }
     .drawer-foot .btn-app { flex: 1; justify-content: center; padding: 11px; }
 
-    /* Toast */
     .app-toast {
       position: fixed; bottom: 26px; left: 50%; transform: translate(-50%, 20px); z-index: 1000;
       background: #143d23; color: #ffffff; font-size: 13px; font-weight: 600;
@@ -230,38 +204,37 @@
 
   <div class="app-page">
     <div class="app-content">
-      <div class="header-row reveal in">
+      <div class="header-row">
         <div>
           <h1>Registration Approvals</h1>
-          <p>Review and approve individual farmers and users applying to join the association's marketplace.</p>
+          <p>Review member applications and grant access after approving their registration request.</p>
         </div>
       </div>
 
-      <!-- KPIs -->
       <section class="app-kpis">
-        <div class="app-kpi reveal" data-reveal>
+        <div class="app-kpi">
           <div class="ak-label">Needs Review</div>
-          <div class="ak-value" id="kpiPending">0</div>
+          <div class="ak-value" id="kpiPending">{{ $pendingApplications->count() }}</div>
           <div class="ak-sub">registrations awaiting action</div>
         </div>
-        <div class="app-kpi reveal" data-reveal>
+        <div class="app-kpi">
           <div class="ak-label">Approved</div>
-          <div class="ak-value" id="kpiApproved">0</div>
-          <div class="ak-sub">verified this period</div>
+          <div class="ak-value" id="kpiApproved">{{ $approvedApplications->count() }}</div>
+          <div class="ak-sub">members approved</div>
         </div>
-        <div class="app-kpi reveal" data-reveal>
+        <div class="app-kpi">
           <div class="ak-label">Rejected</div>
           <div class="ak-value" id="kpiRejected">0</div>
           <div class="ak-sub">declined applications</div>
         </div>
-        <div class="app-kpi reveal" data-reveal>
-          <div class="ak-label">Verification Rate</div>
-          <div class="ak-value" id="kpiRate">0%</div>
-          <div class="ak-sub">of reviewed registrations</div>
+        <div class="app-kpi">
+          <div class="ak-label">Total Applications</div>
+          <div class="ak-value" id="kpiTotal">{{ $applications->count() }}</div>
+          <div class="ak-sub">all submitted registrations</div>
         </div>
       </section>
 
-      <div class="app-panel reveal" data-reveal>
+      <div class="app-panel">
         <div class="app-toolbar">
           <div class="app-search">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -271,7 +244,6 @@
             <button data-status="all" class="active">All <span class="c" id="segAll">0</span></button>
             <button data-status="pending">Pending <span class="c" id="segPending">0</span></button>
             <button data-status="approved">Approved <span class="c" id="segApproved">0</span></button>
-            <button data-status="rejected">Rejected <span class="c" id="segRejected">0</span></button>
           </div>
         </div>
 
@@ -284,7 +256,6 @@
     </div>
   </div>
 
-  <!-- Details drawer -->
   <div class="app-overlay" id="appOverlay"></div>
   <aside class="app-drawer" id="appDrawer" aria-hidden="true">
     <div class="drawer-head">
@@ -314,18 +285,34 @@
         </div>
         <div class="d-row">
           <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <div><div class="d-label">Address</div><div class="d-value" id="drLocation">—</div></div>
-        </div>
-        <div class="d-row">
-          <svg viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-          <div><div class="d-label">Farm Details</div><div class="d-value" id="drFarmDetails">—</div></div>
+          <div><div class="d-label">Home Address</div><div class="d-value" id="drLocation">—</div></div>
         </div>
         <div class="d-sep"></div>
 
-        <div class="d-sec-title">Submitted Documents</div>
-        <div class="d-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Valid government ID</div>
-        <div class="d-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Proof of address</div>
-        <div class="d-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Contact details verified</div>
+        <div class="d-sec-title">Personal Details</div>
+        <div class="d-row">
+          <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <div><div class="d-label">Sex / Civil Status</div><div class="d-value" id="drPersonal">—</div></div>
+        </div>
+        <div class="d-row">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div><div class="d-label">Date of Birth</div><div class="d-value" id="drBirth">—</div></div>
+        </div>
+        <div class="d-sep"></div>
+
+        <div class="d-sec-title">Farm Details</div>
+        <div class="d-row">
+          <svg viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          <div><div class="d-label">Farm Location</div><div class="d-value" id="drFarmLocation">—</div></div>
+        </div>
+        <div class="d-row">
+          <svg viewBox="0 0 24 24"><path d="M12 22v-9"/><path d="M8 6l4-4 4 4"/><path d="M17 6v6H7V6"/><path d="M5 22h14"/></svg>
+          <div><div class="d-label">Land Area</div><div class="d-value" id="drLandArea">—</div></div>
+        </div>
+        <div class="d-row">
+          <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01"/><path d="M9 13h.01"/><path d="M9 17h.01"/></svg>
+          <div><div class="d-label">Ownership / Experience</div><div class="d-value" id="drExperience">—</div></div>
+        </div>
         <div class="d-sep"></div>
 
         <div class="d-sec-title">Review Note</div>
@@ -343,20 +330,23 @@
   <script>
     (function () {
       var meta = @json($statusMeta);
-      var apps = @json($applications);
+      var apps = @json($serialized);
       var status = 'all';
-      var current = null;
-      var confirmTimer = null;
+      var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
       var listEl = document.getElementById('appList');
       var emptyEl = document.getElementById('appEmpty');
       var searchInput = document.getElementById('searchInput');
 
-      function countBy(st) {
-        return apps.filter(function (a) { return a.status === st; }).length;
-      }
+      @if (session('success'))
+        showToast(@js(session('success')));
+      @endif
+      @if (session('error'))
+        showToast(@js(session('error')));
+      @endif
+
       function statusBadgeHTML(st) {
-        var m = meta[st];
+        var m = meta[st] || meta.pending;
         return '<span class="status-badge" style="background:' + m[2] + ';color:' + m[1] + ';">' + m[0] + '</span>';
       }
       function farmerIcon() {
@@ -368,14 +358,14 @@
         var shown = apps.filter(function (a) {
           if (status !== 'all' && a.status !== status) return false;
           if (q) {
-            var hay = (a.name + ' ' + a.role + ' ' + a.email + ' ' + a.barangay + ' ' + a.city).toLowerCase();
+            var hay = (a.name + ' ' + a.email + ' ' + a.barangay + ' ' + a.city + ' ' + a.province).toLowerCase();
             if (hay.indexOf(q) === -1) return false;
           }
           return true;
         });
 
         listEl.innerHTML = shown.map(function (a) {
-          var m = meta[a.status];
+          var m = meta[a.status] || meta.pending;
           var actions = a.status === 'pending'
             ? '<button class="btn-app btn-view" data-act="view" data-id="' + a.id + '"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Details</button>' +
               '<button class="btn-app btn-ok" data-act="approve" data-id="' + a.id + '"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Approve</button>' +
@@ -386,7 +376,7 @@
             '<div class="app-avatar">' + farmerIcon() + '</div>' +
             '<div class="app-mid">' +
               '<div class="app-name">' + a.name + '</div>' +
-              '<div class="app-sub">' + a.barangay + ', ' + a.city + ', ' + a.province + '</div>' +
+              '<div class="app-sub">' + (a.location || 'Location not specified') + '</div>' +
               '<div class="app-meta">' +
                 '<span><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' + a.role + '</span>' +
                 '<span><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>' + a.email + '</span>' +
@@ -404,40 +394,56 @@
       }
 
       function updateKpis() {
-        var p = countBy('pending'), ok = countBy('approved'), no = countBy('rejected');
+        var p = apps.filter(function (x) { return x.status === 'pending'; }).length;
+        var ok = apps.filter(function (x) { return x.status === 'approved'; }).length;
         document.getElementById('kpiPending').textContent = p;
         document.getElementById('kpiApproved').textContent = ok;
-        document.getElementById('kpiRejected').textContent = no;
-        var reviewed = ok + no;
-        document.getElementById('kpiRate').textContent = reviewed ? Math.round((ok / reviewed) * 100) + '%' : '—';
+        document.getElementById('kpiRejected').textContent = 0;
+        document.getElementById('kpiTotal').textContent = apps.length;
         document.getElementById('segAll').textContent = apps.length;
         document.getElementById('segPending').textContent = p;
         document.getElementById('segApproved').textContent = ok;
-        document.getElementById('segRejected').textContent = no;
       }
 
       var toastTimer = null;
       function showToast(msg) {
+        if (!msg) return;
         document.getElementById('toastMsg').textContent = msg;
         document.getElementById('appToast').classList.add('show');
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () { document.getElementById('appToast').classList.remove('show'); }, 2600);
+        toastTimer = setTimeout(function () { document.getElementById('appToast').classList.remove('show'); }, 3200);
       }
 
-      function setStatus(id, newStatus) {
-        var a = apps.find(function (x) { return x.id === id; });
-        if (!a) return;
-        var old = a.status;
-        a.status = newStatus;
-        updateKpis();
-        render();
-        showToast(old === 'pending'
-          ? (newStatus === 'approved' ? 'Registration approved — farmer can now access the marketplace.' : 'Registration rejected.')
-          : 'Status updated to ' + meta[newStatus][0] + '.');
-        if (current && current.id === id) { current = a; fillDrawer(); }
+      function doAction(userId, act, btn) {
+        btn.disabled = true;
+        fetch('/admin/users/' + userId + '/' + act, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrf,
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(function (response) { return response.json().then(function (d) { return { ok: response.ok, data: d }; }); })
+        .then(function (result) {
+          if (!result.ok) {
+            showToast(result.data.message || (act === 'approve' ? 'Could not approve.' : 'Could not reject.'));
+            btn.disabled = false;
+            return;
+          }
+          showToast(result.data.message || (act === 'approve' ? 'Registration approved — secure link emailed.' : 'Registration rejected.'));
+          var idx = apps.findIndex(function (x) { return String(x.user_id) === String(userId); });
+          if (idx !== -1) apps.splice(idx, 1);
+          updateKpis();
+          render();
+          if (current && String(current.user_id) === String(userId)) closeDrawer();
+        })
+        .catch(function () {
+          showToast('Network failure — please try again.');
+          btn.disabled = false;
+        });
       }
 
-      // Segmented status filter
       document.querySelectorAll('#statusSeg button').forEach(function (b) {
         b.addEventListener('click', function () {
           document.querySelectorAll('#statusSeg button').forEach(function (x) { x.classList.remove('active'); });
@@ -453,11 +459,9 @@
         searchTimer = setTimeout(render, 120);
       });
 
-      // Confirm-step actions
       function armConfirm(btn, cls) {
         btn.classList.add(cls);
-        clearTimeout(confirmTimer);
-        confirmTimer = setTimeout(function () { btn.classList.remove(cls); }, 2200);
+        setTimeout(function () { btn.classList.remove(cls); }, 2200);
       }
 
       listEl.addEventListener('click', function (e) {
@@ -467,7 +471,8 @@
         var act = btn.dataset.act;
         if (act === 'view') { openDrawer(id); return; }
         if (btn.classList.contains('confirm-ok') || btn.classList.contains('confirm-no')) {
-          setStatus(id, act === 'approve' ? 'approved' : 'rejected');
+          var a = apps.find(function (x) { return x.id === id; });
+          if (a) doAction(a.user_id, act === 'approve' ? 'approve' : 'reject', btn);
           return;
         }
         armConfirm(btn, act === 'approve' ? 'confirm-ok' : 'confirm-no');
@@ -476,9 +481,9 @@
           : '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Confirm reject?');
       });
 
-      // Drawer
       var drawer = document.getElementById('appDrawer');
       var overlay = document.getElementById('appOverlay');
+      var current = null;
       function openDrawer(id) {
         current = apps.find(function (x) { return x.id === id; }) || null;
         fillDrawer();
@@ -490,7 +495,6 @@
         drawer.classList.remove('open');
         overlay.classList.remove('open');
         drawer.setAttribute('aria-hidden', 'true');
-        clearTimeout(confirmTimer);
       }
       function fillDrawer() {
         if (!current) return;
@@ -500,8 +504,12 @@
         document.getElementById('drApplicant').textContent = current.name;
         document.getElementById('drEmail').textContent = current.email;
         document.getElementById('drPhone').textContent = current.phone;
-        document.getElementById('drLocation').textContent = current.barangay + ', ' + current.city + ', ' + current.province;
-        document.getElementById('drFarmDetails').textContent = current.farm_size + ' — ' + current.crops;
+        document.getElementById('drLocation').textContent = current.location || '—';
+        document.getElementById('drPersonal').textContent = [current.sex, current.civil_status].filter(Boolean).join(' · ') || '—';
+        document.getElementById('drBirth').textContent = current.birth_date;
+        document.getElementById('drFarmLocation').textContent = current.farm_location || '—';
+        document.getElementById('drLandArea').textContent = current.land_area;
+        document.getElementById('drExperience').textContent = [current.land_ownership, current.years_farming !== '—' ? current.years_farming + ' year(s)' : null].filter(Boolean).join(' · ') || '—';
         document.getElementById('drNote').textContent = current.note;
         var isPending = current.status === 'pending';
         document.getElementById('drApprove').style.display = isPending ? '' : 'none';
@@ -511,17 +519,10 @@
       overlay.addEventListener('click', closeDrawer);
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
       document.getElementById('drApprove').addEventListener('click', function () {
-        if (current) setStatus(current.id, 'approved');
+        if (current) doAction(current.user_id, 'approve', this);
       });
       document.getElementById('drReject').addEventListener('click', function () {
-        if (current) setStatus(current.id, 'rejected');
-      });
-
-      // Reveal
-      document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('[data-reveal]').forEach(function (el, i) {
-          setTimeout(function () { el.classList.add('in'); }, 60 + i * 70);
-        });
+        if (current) doAction(current.user_id, 'reject', this);
       });
 
       render();

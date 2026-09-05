@@ -8,7 +8,8 @@
     $ownerCount = $users->where('role', 'store_owner')->count();
     $farmerCount = $users->where('role', 'farmer')->count();
     $adminCount = $users->where('role', 'admin')->count();
-    $verifiedCount = $users->filter(fn($u) => $u->email_verified_at)->count();
+    $activatedCount = $users->where('status', \App\Models\User::STATUS_ACTIVE)->count();
+    $pendingCount = $users->filter(fn($u) => $u->isPendingVerification() || $u->isPendingApproval())->count();
 
     $roleMeta = [
         'admin'       => ['Administrator', '#86799f', '#f1eef6'],
@@ -16,6 +17,8 @@
         'farmer'      => ['Farmer', '#63856c', '#eef3ef'],
     ];
   @endphp
+
+  <meta name="csrf-token" content="{{ csrf_token() }}">
 
   <style>
     .users-page { position: relative; }
@@ -139,10 +142,10 @@
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export CSV
           </button>
-          <button id="addUserBtn" class="btn-users">
+          <a id="addUserBtn" href="{{ route('admin.users.create') }}" class="btn-users">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add New User
-          </button>
+          </a>
         </div>
       </div>
 
@@ -151,7 +154,7 @@
         <div class="users-kpi">
           <div class="uk-label">Total Accounts</div>
           <div class="uk-value">{{ $totalUsers }}</div>
-          <div class="uk-sub">{{ $verifiedCount }} verified emails</div>
+          <div class="uk-sub">{{ $activatedCount }} active · {{ $pendingCount }} pending</div>
         </div>
         <div class="users-kpi">
           <div class="uk-label"><span class="uk-dot" style="background:#63856c;"></span>Farmers</div>
@@ -185,8 +188,10 @@
           </select>
           <select id="verifyFilter">
             <option value="all">Any status</option>
-            <option value="verified">Verified</option>
-            <option value="pending">Unverified</option>
+            <option value="verified">Active</option>
+            <option value="approval">Pending approval</option>
+            <option value="pending">Pending verification</option>
+            <option value="suspended">Suspended</option>
           </select>
         </div>
 
@@ -208,12 +213,20 @@
                 @foreach($users as $u)
                   @php
                     $role = $roleMeta[$u->role] ?? ['Member', '#64748b', '#f1f5f9'];
-                    $verified = !empty($u->email_verified_at);
+                    // Status-driven: pending invites await activation; every other
+                    // usable account (admin, legacy/dev-seeded, activated) is Active.
+                    $accountState = match ($u->status) {
+                        \App\Models\User::STATUS_PENDING_APPROVAL    => 'approval',
+                        \App\Models\User::STATUS_PENDING_VERIFICATION => 'pending',
+                        \App\Models\User::STATUS_ACTIVE               => 'verified',
+                        \App\Models\User::STATUS_SUSPENDED            => 'suspended',
+                        default                                       => 'unverified',
+                    };
                     $location = trim(implode(', ', array_filter([$u->barangay, $u->city])));
-                    $contact = $u->contact_number ?? ($location ?: '—');
-                    $search = strtolower(($u->name ?? '') . ' ' . ($u->email ?? '') . ' ' . $location);
+                    $contact = $u->phone ?? ($u->contact_number ?? ($location ?: '—'));
+                    $search = strtolower(($u->name ?? '') . ' ' . ($u->email ?? '') . ' ' . ($u->phone ?? '') . ' ' . $location);
                   @endphp
-                  <tr data-search="{{ $search }}" data-role="{{ $u->role }}" data-verified="{{ $verified ? '1' : '0' }}">
+                  <tr data-search="{{ $search }}" data-role="{{ $u->role }}" data-verified="{{ $accountState }}">
                     <td>
                       <div class="user-cell">
                         <div class="user-avatar">
@@ -232,10 +245,25 @@
                       <span class="role-badge" data-inline-style="background:{{ $role[2] }};color:{{ $role[1] }};">{{ $role[0] }}</span>
                     </td>
                     <td>
-                      @if($verified)
+                      @if($accountState === 'verified')
                         <span class="verified-pill" style="background:#eef3ef;color:#3f7a4f;">
                           <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                          Verified
+                          Active
+                        </span>
+                      @elseif($accountState === 'approval')
+                        <span class="verified-pill" style="background:#eef4ff;color:#3b6bb5;" title="Registration request awaiting admin approval">
+                          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                          Pending Approval
+                        </span>
+                      @elseif($accountState === 'pending')
+                        <span class="verified-pill" style="background:#fef9ec;color:#a57f43;" title="Awaiting email activation">
+                          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                          Pending
+                        </span>
+                      @elseif($accountState === 'suspended')
+                        <span class="verified-pill" style="background:#fdf2f2;color:#b91c1c;" title="Account suspended">
+                          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                          Suspended
                         </span>
                       @else
                         <span class="verified-pill" style="background:#f1f5f9;color:#94a3b8;">
@@ -249,6 +277,18 @@
                     </td>
                     <td>
                       <div class="user-actions">
+                        @if($accountState === 'approval')
+                          <button class="icon-btn approve-btn" title="Approve registration" data-user-id="{{ $u->id }}" data-user-name="{{ $u->name }}">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                          </button>
+                          <button class="icon-btn reject-btn" title="Reject registration" data-user-id="{{ $u->id }}" data-user-name="{{ $u->name }}" style="color:#b91c1c;">
+                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
+                        @elseif($accountState === 'pending')
+                          <button class="icon-btn resend-btn" title="Resend activation email" data-user-id="{{ $u->id }}" data-user-name="{{ $u->name }}">
+                            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                          </button>
+                        @endif
                         <button class="icon-btn" title="Edit user" data-toast="Edit profile flow coming soon">
                           <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
@@ -307,11 +347,71 @@
         toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 2600);
       }
 
-      document.getElementById('addUserBtn').addEventListener('click', function () {
-        showToast('User creation form coming soon');
-      });
+      // Flash message after redirect from the Register User page
+      @if (session('success'))
+        showToast(@js(session('success')));
+      @endif
+      @if (session('error'))
+        showToast(@js(session('error')));
+      @endif
+
       document.querySelectorAll('.icon-btn[data-toast]').forEach(function (btn) {
         btn.addEventListener('click', function () { showToast(btn.dataset.toast); });
+      });
+
+      // ── Resend activation email for pending accounts ──
+      document.querySelectorAll('.resend-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          if (!confirm('Resend the activation email to ' + btn.dataset.userName + '?')) return;
+          btn.disabled = true;
+          fetch('/admin/users/' + btn.dataset.userId + '/resend-invitation', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(function (response) { return response.json().then(function (d) { return { ok: response.ok, data: d }; }); })
+          .then(function (result) {
+            showToast(result.data.message || (result.ok ? 'Invitation resent.' : 'Could not resend invitation.'));
+            btn.disabled = false;
+          })
+          .catch(function () {
+            showToast('Network failure — please try again.');
+            btn.disabled = false;
+          });
+        });
+      });
+
+      // ── Approve / reject pending registration requests ──
+      function runApprovalAction(btn, act) {
+        if (!confirm((act === 'approve' ? 'Approve' : 'Reject') + ' the registration of ' + btn.dataset.userName + '?')) return;
+        btn.disabled = true;
+        fetch('/admin/users/' + btn.dataset.userId + '/' + act, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(function (response) { return response.json().then(function (d) { return { ok: response.ok, data: d }; }); })
+        .then(function (result) {
+          if (!result.ok) { showToast(result.data.message || 'Could not complete the action.'); btn.disabled = false; return; }
+          showToast(result.data.message || (act === 'approve' ? 'Registration approved.' : 'Registration rejected.'));
+          setTimeout(function () { window.location.reload(); }, 900);
+        })
+        .catch(function () {
+          showToast('Network failure — please try again.');
+          btn.disabled = false;
+        });
+      }
+      document.querySelectorAll('.approve-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () { runApprovalAction(btn, 'approve'); });
+      });
+      document.querySelectorAll('.reject-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () { runApprovalAction(btn, 'reject'); });
       });
 
       function applyFilters() {
@@ -323,7 +423,7 @@
           var ok = true;
           if (q && row.getAttribute('data-search').indexOf(q) === -1) ok = false;
           if (ok && role !== 'all' && row.getAttribute('data-role') !== role) ok = false;
-          if (ok && ver !== 'all' && row.getAttribute('data-verified') !== (ver === 'verified' ? '1' : '0')) ok = false;
+          if (ok && ver !== 'all' && row.getAttribute('data-verified') !== ver) ok = false;
           row.style.display = ok ? '' : 'none';
           if (ok) shown++;
         });

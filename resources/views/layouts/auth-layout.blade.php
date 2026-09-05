@@ -18,6 +18,21 @@
             justify-content: center;
         }
 
+        /* Registration page: long form, allow natural scrolling instead of
+           flex-centering which could clip the top of tall content. */
+        body.auth-body--tall {
+            align-items: flex-start;
+            overflow-y: auto;
+            padding: 32px 0;
+        }
+
+        /* Remove browser-default focus outline; styled borders handle focus state */
+        input:focus, input:focus-visible, input:focus-within,
+        select:focus, select:focus-visible,
+        textarea:focus, textarea:focus-visible {
+            outline: none !important;
+        }
+
         /* Responsive Wrapper Container */
         .auth-container {
             width: 100%;
@@ -114,12 +129,18 @@
             .form-pane {
                 padding: 48px;
             }
+            /* Registration page: no side image, give the form full width */
+            .auth-container--wide {
+                grid-template-columns: 1fr;
+                max-width: 720px;
+                min-height: 0;
+            }
         }
     </style>
 </head>
-<body>
+<body class="@if(isset($hideVisualPane) && $hideVisualPane) auth-body--tall @endif">
 
-    <div class="auth-container">
+    <div class="auth-container @if(isset($hideVisualPane) && $hideVisualPane) auth-container--wide @endif">
         <div class="form-pane">
             
             <div class="form-brand-header">
@@ -131,6 +152,10 @@
             @yield('form-content')
         </div>
 
+        {{-- Right Hand Welcome Panel - Hidden on Mobile --}}
+        {{-- The register page sets $hideVisualPane = true to give the
+             form more room and avoid a long side image. --}}
+        @unless(isset($hideVisualPane) && $hideVisualPane)
         <div class="visual-pane" data-bg="{{ asset('images/login-img.png') }}">
             <div>
                 <h2>Aqui<span>lala</span></h2>
@@ -141,6 +166,7 @@
                 </p>
             </div>
         </div>
+        @endunless
     </div>
 
     <script>

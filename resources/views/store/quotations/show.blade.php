@@ -80,12 +80,12 @@
   }
 </style>
 
+<x-breadcrumb :items="[
+  ['label' => 'Demand Intelligence', 'url' => route('store.quotations.index')],
+  ['label' => $quotation->quotation_number],
+]"/>
+
 <div class="page-header-card">
-  <nav style="font-size: 13px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-    <a href="{{ route('store.quotations.index') }}" style="color: #3b82f6; text-decoration: none; font-weight: 500;">Demand Intelligence</a>
-    <svg viewBox="0 0 24 24" width="14" height="14" stroke="#93a8c4" stroke-width="2" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
-    <span style="color: #5c6d61;">{{ $quotation->quotation_number }}</span>
-  </nav>
   <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
     <div>
       <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 6px 0; letter-spacing: -0.02em;">

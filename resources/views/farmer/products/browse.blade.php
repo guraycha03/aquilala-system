@@ -190,11 +190,18 @@
   .results-info.visible { display: block; }
   .results-info strong { color: #475569; font-weight: 700; }
 
-  /* Product Grid */
+  /* Product Grid: 4 across on desktops (accounts for the fixed sidebar),
+     3 on smaller desktops/large tablets, 2 below that */
   .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 1200px) {
+    .product-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 900px) {
+    .product-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
   /* Product Cards */
@@ -344,6 +351,8 @@
     .filter-chip { padding: 6px 12px; font-size: 12px; }
   }
 </style>
+
+<x-breadcrumb :items="[['label' => 'Browse Products']]"/>
 
 <div class="page-header">
   <h1 class="page-title">Farm Supplies Catalog</h1>

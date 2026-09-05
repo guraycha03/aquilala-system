@@ -15,7 +15,7 @@
     
     /* Layout Framework */
     .sidebar { width: 260px; background: #143d23; color: #ffffff; display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; box-shadow: none; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .main-content { margin-left: 260px; flex: 1; padding: 88px 32px 32px; min-width: 0; }
+    .main-content { margin-left: 260px; flex: 1; padding: 64px 32px 32px; min-width: 0; }
 
     /* Shared overlay horizontal scrollbar (green draggable pill) */
     .app-scroll { overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 52px; }
@@ -52,11 +52,49 @@
     .season-icon-dry { background: rgba(251, 191, 36, 0.16); border: 1px solid rgba(251, 191, 36, 0.35); }
     .season-icon-dry svg { stroke: #fbbf24; }
 
-    /* Climate widget card — compensated for nav-body's asymmetric padding (14px left / 0 right) */
-    .climate-card { margin: 4px 22px 20px 8px; }
+    /* Climate widget card — one single card; compact row by default, expands in place on hover (desktop) or click/tap */
+    .climate-card {
+      margin: 4px 22px 20px 8px;
+      cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.09);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+      display: flex; flex-direction: column;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
     @media (max-width: 768px) {
       .climate-card { margin: 4px 8px 20px 8px; }
     }
+    .climate-card:focus-visible { outline: 2px solid #6aeb2f; outline-offset: 2px; }
+    .climate-card:hover,
+    .climate-card.pinned { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.16); }
+    .climate-row { display: flex; align-items: center; gap: 10px; min-height: 40px; }
+    .climate-mini-info { flex: 1; min-width: 0; }
+    .climate-mini-temp { font-size: 16px; font-weight: 800; color: #ffffff; font-family: ui-monospace, monospace; letter-spacing: -0.02em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .climate-mini-sub { font-size: 10px; color: #87a992; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .climate-chevron { width: 16px; height: 16px; stroke: #87a992; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; transition: transform 0.25s ease; }
+    .climate-card.pinned .climate-chevron { transform: rotate(180deg); }
+    .climate-details {
+      display: none; margin-top: 10px; padding-top: 11px;
+      border-top: 1px dashed rgba(255,255,255,0.10);
+      animation: climateIn 0.2s ease;
+    }
+    .climate-card:hover .climate-details,
+    .climate-card.pinned .climate-details { display: block; }
+    .climate-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .climate-meta .climate-updated { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #87a992; font-weight: 700; }
+    .climate-meta .climate-clock { font-size: 11px; color: #b9cfc0; font-family: ui-monospace, monospace; font-weight: 600; }
+    .climate-season { display: flex; align-items: center; gap: 10px; }
+    .climate-season-info { min-width: 0; }
+    .climate-season-label { font-size: 13px; font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .climate-season-sub { font-size: 10px; color: #87a992; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    @media (hover: none) {
+      .climate-card:hover .climate-details { display: none; }
+      .climate-card.pinned .climate-details, .climate-card.pinned .climate-chevron { display: block; }
+    }
+    @keyframes climateIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
     
     /* Navigation Body */
     .nav-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px 0 20px 14px; scrollbar-width: none; }
@@ -184,26 +222,38 @@
   $weather = class_exists('\App\Services\WeatherService') ? \App\Services\WeatherService::getCurrentWeather() : ['condition' => 'Partly Cloudy', 'temperature' => '28'];
 @endphp
 
-<div class="climate-card" style="padding: 14px 14px 13px 14px; border-radius: 12px; background: linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.09); box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 11px; border-bottom: 1px dashed rgba(255,255,255,0.10);">
-    <span id="today-date" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #87a992; font-weight: 700;"></span>
-    <span id="live-time" style="font-size: 11px; color: #b9cfc0; font-family: ui-monospace, monospace; font-weight: 600;"></span>
-  </div>
-  <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;">
-    <span class="season-icon {{ $isWet ? 'season-icon-wet' : 'season-icon-dry' }}">
+<div class="climate-card" id="climate-card" tabindex="0" role="button" aria-expanded="false" aria-label="Weather details">
+  <div class="climate-row">
+    <span class="season-icon {{ $isWet ? 'season-icon-wet' : 'season-icon-dry' }}" style="width: 34px; height: 34px;">
       @if($isWet)
         <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/></svg>
       @else
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       @endif
     </span>
-    <div style="width: 100%; min-width: 0;">
-      <div style="font-size: 13px; font-weight: 800; color: #ffffff; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $climate['label'] ?? 'Dry Season' }}</div>
-      <div style="font-size: 11px; color: #87a992; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $weather['condition'] ?? 'Partly Cloudy' }}</div>
+    <div class="climate-mini-info">
+      <div class="climate-mini-temp">{{ $weather['temperature'] ?? '28' }}°C</div>
+      <div class="climate-mini-sub">{{ $weather['condition'] ?? 'Partly Cloudy' }}</div>
     </div>
-    <div style="display: flex; align-items: baseline; gap: 6px;">
-      <span style="font-size: 16px; font-weight: 800; color: #ffffff; font-family: ui-monospace, monospace; letter-spacing: -0.02em; line-height: 1;">{{ $weather['temperature'] ?? '28' }}°C</span>
-      <span style="font-size: 9px; color: #87a992; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">{{ $climate['months'] ?? ($isWet ? 'June – October' : 'November – May') }}</span>
+    <svg class="climate-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+  <div class="climate-details">
+    <div class="climate-meta">
+      <span id="today-date" class="climate-updated"></span>
+      <span id="live-time" class="climate-clock"></span>
+    </div>
+    <div class="climate-season">
+      <span class="season-icon {{ $isWet ? 'season-icon-wet' : 'season-icon-dry' }}" style="width: 30px; height: 30px;">
+        @if($isWet)
+          <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/></svg>
+        @else
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        @endif
+      </span>
+      <div class="climate-season-info">
+        <div class="climate-season-label">{{ $climate['label'] ?? 'Dry Season' }}</div>
+        <div class="climate-season-sub">{{ $climate['months'] ?? ($isWet ? 'June – October' : 'November – May') }}</div>
+      </div>
     </div>
   </div>
 </div>
@@ -528,6 +578,36 @@ updateLiveTime();
       // Re-center when the mobile sidebar is opened
       setTimeout(centerActiveNav, 250);
     }
+
+    // Climate widget: click/tap toggles open/closed (pins it; hover also expands on desktop)
+    function toggleClimate() {
+      const card = document.getElementById('climate-card');
+      if (!card) return;
+      const pinned = card.classList.contains('pinned');
+      card.classList.toggle('pinned', !pinned);
+      card.setAttribute('aria-expanded', String(!pinned));
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      const card = document.getElementById('climate-card');
+      if (!card) return;
+      card.addEventListener('click', function (e) {
+        e.stopPropagation();
+        toggleClimate();
+      });
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleClimate();
+        }
+      });
+      // Close the pinned card when pressing Escape
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && card.classList.contains('pinned')) {
+          card.classList.remove('pinned');
+          card.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
 
     // Desktop notification bell toggle
     document.addEventListener('DOMContentLoaded', function () {

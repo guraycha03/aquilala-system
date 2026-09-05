@@ -21,6 +21,10 @@ Ok to proceed? (y) y
 your url is: https://seven-socks-flow.loca.lt
 
 
+npm install -g opencode-ai@latest
+
+
+
 
 
 
@@ -65,3 +69,21 @@ When sharing with your group:
 3. php artisan config:clear
 
 
+how could we make our system able to use phone numbers to          
+  ┃  securely register users? we are supposed to make real world        
+  ┃  system, how to make it they will reveive otp or soemthing and      
+  ┃  our system make numbers the way to login users so no dupkicate     
+  ┃  users of the same number or fake users with non existing numbers,  
+  ┃   only real registered number, is it free to do? or we need         
+    something like paid tools??  
+
+  what if its for a capstone project, do capstone project really needed this stuffs when we need actuall users to test our system before we pass the subject
+
+  can we just use Firebase Auth	Phone authentication service.                                       
+
+
+
+
+
+
+can you update the register page to look like a form for farmers to actually asking for a registration and reqesting system access from admin so it will be like a form for registration like how it work on real life, not just a register page with basic user text feild but needed user or member info needed for association members, like address, etc. cuz admin is the one registering farmers so on login farmers just need this basic info to login but actually they have each important user informations too
