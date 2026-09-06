@@ -156,7 +156,7 @@ class CostQuotationEngine
 
             // ── Round up to whole units for discrete products ──
             $unit = strtolower(trim($formula?->unit ?? $product->stock_unit ?? 'piece'));
-            $discreteUnits = ['sack', 'sacks', 'bag', 'bags', 'piece', 'pieces', 'unit', 'units', 'carton', 'cartons', 'box', 'boxes', 'pack', 'packs'];
+            $discreteUnits = ['sack', 'sacks', 'bag', 'bags', 'piece', 'pieces', 'unit', 'units', 'carton', 'cartons', 'box', 'boxes', 'pack', 'packs', 'bottle', 'bottles', 'sachet', 'sachets', 'kit', 'kits', 'length', 'lengths', 'set', 'sets'];
 
             if (in_array($unit, $discreteUnits)) {
                 $adjustedQuantity = (int) ceil($adjustedQuantity);

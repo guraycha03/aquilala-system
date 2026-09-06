@@ -73,9 +73,15 @@ class SoilAgronomyService
         $hourOfDay = $now->hour;
         $isDaytime = $hourOfDay >= 6 && $hourOfDay <= 18;
 
-        // Get season-adjusted ambient temperature from WeatherSimulationService
-        $weather = WeatherSimulationService::getCurrentWeather();
+        // Ambient temperature from the real OpenWeatherMap current weather.
+        // When the API is unavailable, fall back to the midpoint of the
+        // region's documented seasonal temperature band (climatology — this
+        // helper is not user-facing and never masquerades as a live reading).
+        $weather = WeatherService::getCurrentWeather();
         $ambientTemp = $weather['temperature'];
+        if ($ambientTemp === null) {
+            $ambientTemp = $season === 'wet' ? 28.0 : 29.0;
+        }
 
         // ─── Soil Moisture ─────────────────────────────────────────
         $moistureRanges = self::SOIL_MOISTURE_RANGES[$soilType];

@@ -48,7 +48,10 @@ return [
     */
     'openweather' => [
         'key' => env('OPENWEATHER_API_KEY'),
-        'url' => env('OPENWEATHER_API_URL', 'https://api.openweathermap.org/data/3.0/onecall'),
+        // Free-tier real-time current weather: http://.../data/2.5/weather
+        'url' => env('OPENWEATHER_API_URL', 'https://api.openweathermap.org/data/2.5/weather'),
+        // Free-tier 3-hour / 5-day forecast: http://.../data/2.5/forecast
+        'forecast_url' => env('OPENWEATHER_FORECAST_API_URL', 'https://api.openweathermap.org/data/2.5/forecast'),
     ],
 
 ];

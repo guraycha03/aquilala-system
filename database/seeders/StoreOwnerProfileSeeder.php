@@ -49,9 +49,10 @@ class StoreOwnerProfileSeeder extends Seeder
         $secondStore = User::where('email', 'store.gubat@aquilala.org')->first();
         if (!$secondStore) {
             $secondStore = User::create([
-                'name'           => 'Gubat Agri Supply',
-                'first_name'     => 'Gubat',
-                'last_name'      => 'Supply',
+                'name'           => 'Ramon B. Escoto',
+                'first_name'     => 'Ramon',
+                'middle_initial' => 'B.',
+                'last_name'      => 'Escoto',
                 'email'          => 'store.gubat@aquilala.org',
                 'role'           => 'store_owner',
                 'store_name'     => 'Gubat Agricultural Supply',
@@ -63,6 +64,55 @@ class StoreOwnerProfileSeeder extends Seeder
                 'password'       => bcrypt('password123'),
             ]);
             $this->command->info("Created store owner: {$secondStore->store_name}");
+        } else {
+            $secondStore->update([
+                'name'           => 'Ramon B. Escoto',
+                'first_name'     => 'Ramon',
+                'middle_initial' => 'B.',
+                'last_name'      => 'Escoto',
+                'store_name'     => 'Gubat Agricultural Supply',
+                'address'        => 'Brgy. Rizal, National Highway',
+                'barangay'       => 'Brgy. Rizal',
+                'city'           => 'Gubat',
+                'province'       => 'Sorsogon',
+                'contact_number' => '0918-765-4321',
+            ]);
+            $this->command->info("Updated store owner: {$secondStore->store_name}");
+        }
+
+        // Add a third store (Irosin)
+        $thirdStore = User::where('email', 'store.irosin@aquilala.org')->first();
+        if (!$thirdStore) {
+            $thirdStore = User::create([
+                'name'           => 'Liza M. Ferias',
+                'first_name'     => 'Liza',
+                'middle_initial' => 'M.',
+                'last_name'      => 'Ferias',
+                'email'          => 'store.irosin@aquilala.org',
+                'role'           => 'store_owner',
+                'store_name'     => 'Irosin Agro-Supply Depot',
+                'address'        => 'Purok 3, Brgy. Gabao, Maharlika Highway',
+                'barangay'       => 'Brgy. Gabao',
+                'city'           => 'Irosin',
+                'province'       => 'Sorsogon',
+                'contact_number' => '0919-432-8765',
+                'password'       => bcrypt('password123'),
+            ]);
+            $this->command->info("Created store owner: {$thirdStore->store_name}");
+        } else {
+            $thirdStore->update([
+                'name'           => 'Liza M. Ferias',
+                'first_name'     => 'Liza',
+                'middle_initial' => 'M.',
+                'last_name'      => 'Ferias',
+                'store_name'     => 'Irosin Agro-Supply Depot',
+                'address'        => 'Purok 3, Brgy. Gabao, Maharlika Highway',
+                'barangay'       => 'Brgy. Gabao',
+                'city'           => 'Irosin',
+                'province'       => 'Sorsogon',
+                'contact_number' => '0919-432-8765',
+            ]);
+            $this->command->info("Updated store owner: {$thirdStore->store_name}");
         }
     }
 }

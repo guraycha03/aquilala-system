@@ -44,13 +44,10 @@
     .brand-title { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; display: block; margin-bottom: 2px; color: #ffffff; }
     .brand-accent { color: #6aeb2f; }
 
-    /* Season Widget Icon */
-    .season-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; }
-    .season-icon svg { width: 17px; height: 17px; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-    .season-icon-wet { background: rgba(14, 165, 233, 0.16); border: 1px solid rgba(56, 189, 248, 0.35); }
-    .season-icon-wet svg { stroke: #38bdf8; }
-    .season-icon-dry { background: rgba(251, 191, 36, 0.16); border: 1px solid rgba(251, 191, 36, 0.35); }
-    .season-icon-dry svg { stroke: #fbbf24; }
+    /* Weather Widget Icon (real condition icons from public/images/weather) */
+    .season-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; }
+    .season-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .weather-unavailable img { filter: grayscale(1); opacity: 0.45; }
 
     /* Climate widget card — one single card; compact row by default, expands in place on hover (desktop) or click/tap */
     .climate-card {
@@ -87,6 +84,16 @@
     .climate-meta .climate-updated { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #87a992; font-weight: 700; }
     .climate-meta .climate-clock { font-size: 11px; color: #b9cfc0; font-family: ui-monospace, monospace; font-weight: 600; }
     .climate-season { display: flex; align-items: center; gap: 10px; }
+    .season-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px; flex-shrink: 0;
+      border-radius: 50%;
+      background: linear-gradient(160deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05));
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+      backdrop-filter: blur(4px);
+    }
+    .season-badge img { width: 22px; height: 22px; object-fit: contain; display: block; }
     .climate-season-info { min-width: 0; }
     .climate-season-label { font-size: 13px; font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .climate-season-sub { font-size: 10px; color: #87a992; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -200,7 +207,9 @@
 
   <header class="mobile-header">
     <div style="display: flex; align-items: center; gap: 4px;">
-      <button class="burger-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+      <button class="burger-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <div style="font-weight: 700; font-size: 18px; line-height: 1;">
         Aqui<span style="color: #6aeb2f; font-weight: 800;">lala</span>
       </div>
@@ -219,21 +228,29 @@
   $climate = $globalClimateInfo ?? (class_exists('\App\Helpers\SeasonHelper') ? \App\Helpers\SeasonHelper::getClimateInfo() : ['season' => 'dry', 'label' => 'Dry']); 
   $isWet = ($climate['season'] ?? 'dry') === 'wet';
   
-  $weather = class_exists('\App\Services\WeatherService') ? \App\Services\WeatherService::getCurrentWeather() : ['condition' => 'Partly Cloudy', 'temperature' => '28'];
+  $weather = class_exists('\App\Services\WeatherService') ? \App\Services\WeatherService::getCurrentWeather() : ['temperature' => null, 'condition' => 'Weather unavailable', 'is_available' => false];
+
+  $weatherIconMap = [
+    'sun'             => 'sunny',
+    'cloud-sun'       => 'cloud-sun',
+    'cloud'           => 'cloudy',
+    'cloud-rain'      => 'rain',
+    'cloud-lightning' => 'cloud-lightning',
+    'cloud-drizzle'   => 'drizzle',
+  ];
+  $weatherAvailable = !empty($weather['is_available']) && !empty($weather['icon']);
+  $weatherIconFile = $weatherAvailable ? ($weatherIconMap[$weather['icon']] ?? 'cloudy') : 'cloudy';
+  $seasonIconFile = $isWet ? 'wet-season' : 'dry-season';
 @endphp
 
 <div class="climate-card" id="climate-card" tabindex="0" role="button" aria-expanded="false" aria-label="Weather details">
   <div class="climate-row">
-    <span class="season-icon {{ $isWet ? 'season-icon-wet' : 'season-icon-dry' }}" style="width: 34px; height: 34px;">
-      @if($isWet)
-        <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/></svg>
-      @else
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-      @endif
+    <span class="season-icon {{ $weatherAvailable ? 'weather-available' : 'weather-unavailable' }}" style="width: 34px; height: 34px;">
+      <img src="{{ asset('images/weather/' . $weatherIconFile . '.png') }}" alt="{{ $weatherAvailable ? ($weather['condition'] ?? 'Weather') : 'Weather unavailable' }}">
     </span>
     <div class="climate-mini-info">
-      <div class="climate-mini-temp">{{ $weather['temperature'] ?? '28' }}°C</div>
-      <div class="climate-mini-sub">{{ $weather['condition'] ?? 'Partly Cloudy' }}</div>
+      <div class="climate-mini-temp">{{ $weather['is_available'] && $weather['temperature'] !== null ? $weather['temperature'] . '°C' : '—' }}</div>
+      <div class="climate-mini-sub">{{ $weather['condition'] ?? 'Weather unavailable' }}</div>
     </div>
     <svg class="climate-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
   </div>
@@ -243,12 +260,8 @@
       <span id="live-time" class="climate-clock"></span>
     </div>
     <div class="climate-season">
-      <span class="season-icon {{ $isWet ? 'season-icon-wet' : 'season-icon-dry' }}" style="width: 30px; height: 30px;">
-        @if($isWet)
-          <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/></svg>
-        @else
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-        @endif
+      <span class="season-badge">
+        <img src="{{ asset('images/weather/' . $seasonIconFile . '.png') }}" alt="{{ $climate['label'] ?? ($isWet ? 'Wet Season' : 'Dry Season') }}">
       </span>
       <div class="climate-season-info">
         <div class="climate-season-label">{{ $climate['label'] ?? 'Dry Season' }}</div>

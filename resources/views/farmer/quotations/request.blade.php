@@ -143,6 +143,7 @@
 
   @media (max-width: 768px) {
     .info-row { grid-template-columns: 1fr !important; }
+    #info-help-btn { right: 8px !important; top: -52px !important; }
   }
 </style>
 
@@ -151,13 +152,20 @@
   ['label' => 'Request Quotation'],
 ]"/>
 
-<div style="margin-bottom: 28px;">
-  <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">
-    Generate a Cost Quotation
-  </h1>
-  <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
-    Get an instant farming cost breakdown — no approval needed. Store owners see this as demand intel.
-  </p>
+<div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; position: relative;">
+  <div>
+    <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">
+      Generate a Cost Quotation
+    </h1>
+    <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
+      Get an instant farming cost breakdown — no approval needed. Store owners see this as demand intel.
+    </p>
+  </div>
+  <button type="button" id="info-help-btn" aria-label="Help and information"
+          style="width: 40px; height: 40px; flex-shrink: 0; position: absolute; top: 0; right: -11px; border-radius: 50%; background: #ffffff; border: 1px solid #e2e8f0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: all 0.2s;">
+    <img src="{{ asset('images/question-mark.png') }}" alt="Help and information"
+         style="width: 20px; height: 20px; object-fit: contain; display: block;">
+  </button>
 </div>
 
 @if(session('success'))
@@ -295,56 +303,71 @@
   </div>
 </div>
 
-<!-- Info Cards — compact row below the form -->
-<div class="info-row" style="margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-  <!-- How It Works -->
-  <div class="info-card" id="hiw-card">
-    <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #bbf7d0;">
-      <svg viewBox="0 0 24 24" width="18" height="18" stroke="#143d23" stroke-width="2" fill="none">
-        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-      </svg>
+<!-- Info Modal -->
+<div id="info-modal" role="dialog" aria-modal="true" aria-label="Help and information"
+     style="position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px;">
+  <div id="info-modal-backdrop" style="position: absolute; inset: 0; background: rgba(15, 30, 20, 0.5); backdrop-filter: blur(4px);"></div>
+  <div style="position: relative; background: #ffffff; border-radius: 18px; max-width: 560px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,0.2);">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #f0f2f1; position: sticky; top: 0; background: #ffffff;">
+      <h2 style="font-size: 17px; font-weight: 800; color: #1a2b1e; margin: 0;">Need Some Help?</h2>
+      <button type="button" id="info-modal-close" aria-label="Close"
+              style="width: 34px; height: 34px; border-radius: 50%; background: #f8fafc; border: 1px solid #eef1f4; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #64748b; transition: background 0.2s;">
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
-    <div>
-      <div style="font-weight: 700; font-size: 14px; color: #1a2b1e; margin-bottom: 4px;">How It Works</div>
-      <ol style="margin: 0; padding-left: 16px; font-size: 13px; color: #4b5c50; line-height: 1.9;">
-        <li>You enter your crop type, season, and land area</li>
-        <li>The system instantly computes a cost quotation using Decision Support formulas</li>
-        <li>You see a full breakdown with product quantities and pricing</li>
-        <li>Store owners see your quotation as demand intelligence — no pressure to buy</li>
-        <li>Contact the store directly if you decide to proceed with a purchase</li>
-      </ol>
-    </div>
-  </div>
+    <div style="padding: 24px; display: flex; flex-direction: column; gap: 18px;">
 
-  <!-- Supported Crops -->
-  <div class="info-card">
-    <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #fffbeb, #fef3c7); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #fde68a;">
-      <svg viewBox="0 0 24 24" width="18" height="18" stroke="#d97706" stroke-width="2" fill="none">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-    </div>
-    <div>
-      <div style="font-weight: 700; font-size: 14px; color: #1a2b1e; margin-bottom: 4px;">Supported Crops</div>
-      <p style="margin: 0; font-size: 13px; color: #4b5c50; line-height: 1.5;">
-      Our system supports instant cost quotations for Rice, Corn, Vegetables, Fruits, and more.
-      Quotations are based on standard application rates that vary between Wet and Dry seasons.
-      </p>
-    </div>
-  </div>
+      <!-- How It Works -->
+      <div class="info-card" style="padding: 18px;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #bbf7d0;">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="#143d23" stroke-width="2" fill="none">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: #1a2b1e; margin-bottom: 4px;">How It Works</div>
+          <ol style="margin: 0; padding-left: 16px; font-size: 13px; color: #4b5c50; line-height: 1.9;">
+            <li>You enter your crop type, season, and land area</li>
+            <li>The system instantly computes a cost quotation using Decision Support formulas</li>
+            <li>You see a full breakdown with product quantities and pricing</li>
+            <li>Store owners see your quotation as demand intelligence — no pressure to buy</li>
+            <li>Contact the store directly if you decide to proceed with a purchase</li>
+          </ol>
+        </div>
+      </div>
 
-  <!-- Validity Period -->
-  <div class="info-card">
-    <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #eff6ff, #dbeafe); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #bfdbfe;">
-      <svg viewBox="0 0 24 24" width="18" height="18" stroke="#0284c7" stroke-width="2" fill="none">
-        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-      </svg>
-    </div>
-    <div>
-      <div style="font-weight: 700; font-size: 14px; color: #1a2b1e; margin-bottom: 4px;">Quotation Validity</div>
-      <p style="margin: 0; font-size: 13px; color: #4b5c50; line-height: 1.5;">
-        Quotations are valid for 14 days. Prices may change, so generate a new quotation if needed.
-        This is for planning — not a purchase commitment.
-      </p>
+      <!-- Supported Crops -->
+      <div class="info-card" style="padding: 18px;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #fffbeb, #fef3c7); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #fde68a;">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="#d97706" stroke-width="2" fill="none">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: #1a2b1e; margin-bottom: 4px;">Supported Crops</div>
+          <p style="margin: 0; font-size: 13px; color: #4b5c50; line-height: 1.5;">
+            Our system supports instant cost quotations for Rice, Corn, Vegetables, Fruits, and more.
+            Quotations are based on standard application rates that vary between Wet and Dry seasons.
+          </p>
+        </div>
+      </div>
+
+      <!-- Validity Period -->
+      <div class="info-card" style="padding: 18px;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #eff6ff, #dbeafe); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #bfdbfe;">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="#0284c7" stroke-width="2" fill="none">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-weight: 700; font-size: 14px; color: #1a2b1e; margin-bottom: 4px;">Quotation Validity</div>
+          <p style="margin: 0; font-size: 13px; color: #4b5c50; line-height: 1.5;">
+            Quotations are valid for 14 days. Prices may change, so generate a new quotation if needed.
+            This is for planning — not a purchase commitment.
+          </p>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -579,6 +602,31 @@
   if (cropInput.value.trim() && getSelectedSeason()) {
     fetchProducts();
   }
+})();
+
+// --- Info Modal ---
+(function () {
+  const btn = document.getElementById('info-help-btn');
+  const modal = document.getElementById('info-modal');
+  const backdrop = document.getElementById('info-modal-backdrop');
+  const closeBtn = document.getElementById('info-modal-close');
+  if (!btn || !modal) return;
+
+  function open() {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  btn.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+  backdrop.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal.style.display === 'flex') close();
+  });
 })();
 </script>
 <style>@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }</style>

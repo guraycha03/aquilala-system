@@ -7,6 +7,13 @@
   *, *::before, *::after {
     outline: none !important;
   }
+  /* PAGE-SPECIFIC: raise the breadcrumb + title + subtitle block higher.
+     Reduces the layout's default top padding (64px) to 32px on desktop only.
+     Mobile keeps 88px clearance under the fixed mobile header.
+     To reuse on another page, copy this rule into that page's <style> block. */
+  @media (min-width: 769px) {
+    .main-content { padding-top: 32px; }
+  }
   .page-header {
     margin-bottom: 20px;
   }
@@ -380,8 +387,14 @@
     <div class="filter-label">Planting Season</div>
     <div class="filter-chips">
       <button type="button" class="filter-chip selected" data-season="">All Seasons</button>
-      <button type="button" class="filter-chip" data-season="wet">🌧️ Wet Season</button>
-      <button type="button" class="filter-chip" data-season="dry">☀️ Dry Season</button>
+      <button type="button" class="filter-chip" data-season="wet">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>
+        Wet Season
+      </button>
+      <button type="button" class="filter-chip" data-season="dry">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        Dry Season
+      </button>
     </div>
   </div>
 </div>
@@ -418,9 +431,9 @@
 
           @if($product->recommended_season)
             <span class="season-pill {{ $product->recommended_season === 'wet' ? 'season-wet' : ($product->recommended_season === 'dry' ? 'season-dry' : 'season-all') }}">
-              @if($product->recommended_season === 'wet') 🌧️ Wet
-              @elseif($product->recommended_season === 'dry') ☀️ Dry
-              @else 🔄 Year-round
+              @if($product->recommended_season === 'wet') <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg> Wet
+              @elseif($product->recommended_season === 'dry') <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Dry
+              @else <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Year-round
               @endif
             </span>
           @endif
