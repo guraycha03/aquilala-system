@@ -7,12 +7,36 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scrollbar-width: none; -ms-overflow-style: none; }
     html::-webkit-scrollbar { width: 0; height: 0; display: none; }
     body { font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif; background: #f3f6f4; color: #2c3530; display: flex; min-height: 100vh; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-    
+
+    /* Global select / dropdown styling — matches the Aquilala white + green theme */
+    select {
+      color-scheme: light;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+      background-color: #ffffff;
+      outline: none;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23143423' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+      background-position: right 0.5rem center;
+      background-repeat: no-repeat;
+      background-size: 1.5em 1.5em;
+      font-family: inherit;
+    }
+    select:not([disabled]) { cursor: pointer; }
+    select:focus {
+      border-color: #16a34a;
+      box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    }
+
     /* Layout Framework */
     .sidebar { width: 260px; background: #143d23; color: #ffffff; display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; box-shadow: none; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     .main-content { margin-left: 260px; flex: 1; padding: 64px 32px 32px; min-width: 0; }
@@ -88,10 +112,8 @@
       display: inline-flex; align-items: center; justify-content: center;
       width: 38px; height: 38px; flex-shrink: 0;
       border-radius: 50%;
-      background: linear-gradient(160deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05));
-      border: 1px solid rgba(255,255,255,0.22);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
-      backdrop-filter: blur(4px);
+      background: rgba(135,169,146,0.25);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
     }
     .season-badge img { width: 22px; height: 22px; object-fit: contain; display: block; }
     .climate-season-info { min-width: 0; }

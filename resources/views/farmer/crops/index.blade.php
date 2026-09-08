@@ -12,68 +12,48 @@
     }
     .crops-page::before { width: 340px; height: 340px; background: rgba(22,163,74,0.10); top: -80px; right: -60px; }
     .crops-page::after { width: 280px; height: 280px; background: rgba(132,204,22,0.08); bottom: -60px; left: -40px; }
-    .crops-content { position: relative; }
+    .crops-content { position: relative; z-index: 1; }
 
     /* ── Hero Banner ── */
     .hero-band {
-        background: linear-gradient(135deg, #0f2918 0%, #14532d 50%, #166534 100%);
-        border-radius: 20px; padding: 28px 32px; color: #fff; position: relative;
-        overflow: hidden; margin-bottom: 24px;
-        box-shadow: 0 12px 40px rgba(15,41,24,0.22);
+        background: rgb(230, 245, 195);
+        border-radius: 20px; padding: 28px 32px; color: #143d23; position: relative; overflow: hidden; margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(20,61,35,0.10);
     }
     .hero-band::before {
         content: ""; position: absolute; top: -80px; right: -40px; width: 220px; height: 220px;
-        border-radius: 50%; background: rgba(255,255,255,0.05);
+        border-radius: 50%; background: rgba(16,185,129,0.15);
     }
     .hero-band::after {
         content: ""; position: absolute; bottom: -70px; left: 20%; width: 180px; height: 180px;
-        border-radius: 50%; background: rgba(132,204,22,0.06);
+        border-radius: 50%; background: rgba(59,130,246,0.10);
     }
     .hero-inner { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; }
-    .hero-title { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
-    .hero-sub { font-size: 13px; color: rgba(255,255,255,0.72); margin: 5px 0 0 0; }
-    .hero-sub strong { color: #fff; }
+    .hero-title { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.01em; color: #14532d; }
+    .hero-sub { font-size: 13px; color: #40632d; margin: 5px 0 0 0; }
+    .hero-sub strong { color: #14532d; }
     .btn-hero {
-    display: inline-flex; 
-    align-items: center; 
-    justify-content: center;
-    background: #22c55e; 
-    color: #ffffff; 
-    padding: 10px 22px; 
-    border-radius: 10px; 
-    font-size: 13px; 
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    text-decoration: none; 
-    border: none;
-    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: #ffffff; color: #14532d; padding: 10px 22px; border-radius: 10px;
+        font-size: 13px; font-weight: 700; letter-spacing: 0.02em; text-decoration: none;
+        border: 1px solid rgba(20,61,35,0.10); box-shadow: 0 2px 8px rgba(20,61,35,0.08);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
     }
     .btn-hero:hover { 
-        background: #16a34a; 
-        color: #ffffff;
-        transform: translateY(-2px); 
-        box-shadow: 0 6px 20px rgba(34, 197, 94, 0.45);
+        background: #f0fdf4; color: #14532d; transform: translateY(-2px); 
+        box-shadow: 0 6px 20px rgba(20,61,35,0.12);
     }
-    .btn-hero:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
-    }
+    .btn-hero:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(20,61,35,0.08); }
+
     /* ── Stats Strip ── */
-    .stats-strip {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px;
-    }
+    .stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
     .stat-pill {
         background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
         padding: 16px 18px; display: flex; align-items: center; gap: 14px;
         box-shadow: 0 1px 4px rgba(0,0,0,0.03); transition: all 0.2s ease;
     }
     .stat-pill:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
-    .stat-icon {
-        width: 42px; height: 42px; border-radius: 12px; display: flex;
-        align-items: center; justify-content: center; flex-shrink: 0;
-    }
+    .stat-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .stat-icon svg { width: 20px; height: 20px; }
     .stat-text { display: flex; flex-direction: column; }
     .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
@@ -81,10 +61,7 @@
     .stat-unit { font-size: 12px; font-weight: 500; color: #94a3b8; }
 
     /* ── Section Header ── */
-    .section-head {
-        display: flex; align-items: center; justify-content: space-between;
-        margin-bottom: 16px;
-    }
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
     .section-title { font-size: 16px; font-weight: 700; color: #1e293b; }
     .filter-group { display: flex; gap: 6px; }
     .filter-btn {
@@ -96,71 +73,36 @@
     .filter-btn.active { background: #14532d; color: #fff; border-color: #14532d; }
 
     /* ── Crop Cards ── */
-    .crops-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-        gap: 16px; margin-bottom: 24px;
-    }
+    .crops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .crop-card {
         background: #fff; border: 1px solid #e5e7eb; border-radius: 16px;
         overflow: hidden; transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
         box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     }
     .crop-card:hover { box-shadow: 0 12px 36px rgba(0,0,0,0.08); transform: translateY(-3px); }
-
     .card-top-accent { height: 4px; width: 100%; }
-
     .card-header { padding: 16px 20px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
     .card-crop-name { font-size: 17px; font-weight: 800; color: #1e293b; margin: 0; letter-spacing: -0.01em; }
     .card-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
-    .card-category {
-        font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
-        color: #64748b;
-    }
-    .card-batch {
-        font-size: 11px; color: #94a3b8; padding: 2px 8px; background: #f1f5f9;
-        border-radius: 6px; font-weight: 500;
-    }
-
-    .stage-badge {
-        display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;
-        border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;
-        flex-shrink: 0;
-    }
+    .card-category { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
+    .card-batch { font-size: 11px; color: #94a3b8; padding: 2px 8px; background: #f1f5f9; border-radius: 6px; font-weight: 500; }
+    .stage-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
     .stage-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-
     .card-body { padding: 14px 20px; }
-
     .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; }
     .detail-item { display: flex; flex-direction: column; }
     .detail-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
     .detail-value { font-size: 13px; font-weight: 600; color: #334151; margin-top: 2px; }
 
     /* ── Growth Stage Stepper ── */
-    .stage-stepper {
-        display: flex; align-items: center; gap: 0; margin-top: 14px;
-        padding: 10px 14px; background: #f8fafc; border-radius: 10px;
-    }
-    .stepper-step {
-        flex: 1; display: flex; flex-direction: column; align-items: center;
-        position: relative; text-align: center;
-    }
-    .stepper-step::after {
-        content: ""; position: absolute; top: 8px; left: 50%; width: 100%; height: 2px;
-        background: #e2e8f0; z-index: 0;
-    }
+    .stage-stepper { display: flex; align-items: center; gap: 0; margin-top: 14px; padding: 10px 14px; background: #f8fafc; border-radius: 10px; }
+    .stepper-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; text-align: center; }
+    .stepper-step::after { content: ""; position: absolute; top: 8px; left: 50%; width: 100%; height: 2px; background: #e2e8f0; z-index: 0; }
     .stepper-step:last-child::after { display: none; }
-    .stepper-dot {
-        width: 16px; height: 16px; border-radius: 50%; border: 2px solid #d1d5db;
-        background: #fff; z-index: 1; position: relative; transition: all 0.3s ease;
-    }
+    .stepper-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #d1d5db; background: #fff; z-index: 1; position: relative; transition: all 0.3s ease; }
     .stepper-dot.done { background: #16a34a; border-color: #16a34a; }
-    .stepper-dot.current {
-        background: #fff; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.2);
-    }
-    .stepper-label {
-        font-size: 9px; font-weight: 600; color: #94a3b8; margin-top: 6px;
-        text-transform: uppercase; letter-spacing: 0.03em;
-    }
+    .stepper-dot.current { background: #fff; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
+    .stepper-label { font-size: 9px; font-weight: 600; color: #94a3b8; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
     .stepper-label.active-label { color: #16a34a; font-weight: 700; }
 
     /* ── Progress ── */
@@ -173,17 +115,10 @@
     .progress-footer { display: flex; justify-content: space-between; margin-top: 5px; }
     .progress-footer span { font-size: 10px; color: #94a3b8; font-weight: 500; }
 
-    .card-footer {
-        padding: 10px 20px; background: #fafbfc; border-top: 1px solid #f1f5f9;
-        display: flex; gap: 8px; align-items: center;
-    }
+    .card-footer { padding: 10px 20px; background: #fafbfc; border-top: 1px solid #f1f5f9; display: flex; gap: 8px; align-items: center; }
 
     /* ── Buttons ── */
-    .btn-sm {
-        padding: 6px 13px; font-size: 12px; border-radius: 8px; cursor: pointer;
-        font-weight: 600; border: none; display: inline-flex; align-items: center; gap: 5px;
-        transition: all 0.15s ease; text-decoration: none;
-    }
+    .btn-sm { padding: 6px 13px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; border: none; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease; text-decoration: none; }
     .btn-sm-green { background: #dcfce7; color: #166534; }
     .btn-sm-green:hover { background: #bbf7d0; }
     .btn-sm-red { background: #fee2e2; color: #991b1b; }
@@ -191,60 +126,38 @@
 
     /* ── Empty State ── */
     .empty-wrap { padding: 32px 0; text-align: center; }
-    .empty-card {
-        background: #fff; border: 1px dashed #cbd5e1; border-radius: 20px;
-        padding: 60px 32px; max-width: 520px; margin: 0 auto;
-        box-shadow: 0 8px 32px -8px rgba(0,0,0,0.04);
-    }
-    .empty-icon-wrap {
-        width: 88px; height: 88px; background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 20px; color: #16a34a;
-        box-shadow: 0 8px 24px -4px rgba(22,163,74,0.15);
-    }
+    .empty-card { background: #fff; border: 1px dashed #cbd5e1; border-radius: 20px; padding: 60px 32px; max-width: 520px; margin: 0 auto; box-shadow: 0 8px 32px -8px rgba(0,0,0,0.04); }
+    .empty-icon-wrap { width: 88px; height: 88px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #16a34a; box-shadow: 0 8px 24px -4px rgba(22,163,74,0.15); }
     .empty-title { font-size: 18px; font-weight: 800; color: #1e293b; margin: 0 0 6px; }
     .empty-desc { color: #64748b; font-size: 13px; line-height: 1.6; max-width: 360px; margin: 0 auto 24px; }
     .empty-tips { display: flex; justify-content: center; gap: 24px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
     .empty-tip { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; font-weight: 500; }
     .empty-tip svg { color: #16a34a; flex-shrink: 0; }
 
-    /* ── Modal ── */
+    /* ── Modal Overlay Fixed Target ── */
     .modal-overlay {
-        display: none; position: fixed; inset: 0; background: rgba(15,41,24,0.55);
-        z-index: 1000; align-items: center; justify-content: center;
-        backdrop-filter: blur(6px);
+        display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(15,41,24,0.6); z-index: 99999; overflow-y: auto; padding: 40px 0;
+        backdrop-filter: blur(4px);
     }
-    .modal-overlay.active { display: flex; }
+    .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
+    .modal-overlay.active .modal { animation: modalIn 0.18s ease-out; }
     .modal {
         background: #fff; border-radius: 18px; width: 95%; max-width: 540px;
         max-height: 90vh; overflow-y: auto;
-        box-shadow: 0 24px 80px rgba(0,0,0,0.25);
-        animation: modalIn 0.25s cubic-bezier(0.4,0,0.2,1);
+        box-shadow: 0 24px 80px rgba(0,0,0,0.25); margin: auto; position: relative; z-index: 100000;
     }
-    @keyframes modalIn { from { opacity: 0; transform: scale(0.96) translateY(12px); } }
-    .modal-header {
-        padding: 20px 24px 16px; border-bottom: 1px solid #f1f5f9;
-        display: flex; justify-content: space-between; align-items: center;
-    }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
     .modal-header h3 { font-size: 18px; font-weight: 800; color: #1e293b; margin: 0; }
-    .modal-close {
-        width: 34px; height: 34px; border-radius: 10px; border: none; background: #f1f5f9;
-        cursor: pointer; display: flex; align-items: center; justify-content: center;
-        color: #64748b; transition: all 0.15s ease;
-    }
+    .modal-close { width: 34px; height: 34px; border-radius: 10px; border: none; background: #f1f5f9; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; transition: all 0.15s ease; }
     .modal-close:hover { background: #e2e8f0; color: #1e293b; }
     .modal-body { padding: 20px 24px; }
-    .modal-footer {
-        padding: 16px 24px; border-top: 1px solid #f1f5f9;
-        display: flex; justify-content: flex-end; gap: 10px;
-    }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 10px; }
 
-    .form-section-label {
-        font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-        color: #16a34a; margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;
-    }
+    .form-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #16a34a; margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
     .form-section-label:first-child { margin-top: 0; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; }
     .form-group input, .form-group select, .form-group textarea {
@@ -252,27 +165,17 @@
         font-size: 13px; color: #1e293b; background: #fff; transition: all 0.2s ease;
         box-sizing: border-box; font-family: inherit;
     }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-        outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08);
-    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); }
     .form-group textarea { resize: vertical; min-height: 64px; }
 
-    .btn-cancel {
-        padding: 10px 18px; font-size: 13px; font-weight: 600; border-radius: 10px;
-        border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer;
-        transition: all 0.15s ease;
-    }
+    .btn-cancel { padding: 10px 18px; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; transition: all 0.15s ease; }
     .btn-cancel:hover { background: #f8fafc; border-color: #cbd5e1; }
-    .btn-submit {
-        padding: 10px 22px; font-size: 13px; font-weight: 700; border-radius: 10px;
-        border: none; background: #16a34a; color: #fff; cursor: pointer;
-        box-shadow: 0 4px 12px rgba(22,163,74,0.25); transition: all 0.2s ease;
-    }
+    .btn-submit { padding: 10px 22px; font-size: 13px; font-weight: 700; border-radius: 10px; border: none; background: #16a34a; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.25); transition: all 0.2s ease; }
     .btn-submit:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(22,163,74,0.3); }
 
     /* ── Toast ── */
     .toast {
-        position: fixed; top: 24px; right: 24px; z-index: 2000;
+        position: fixed; top: 24px; right: 24px; z-index: 200000;
         background: #166534; color: #fff; padding: 14px 22px; border-radius: 12px;
         font-size: 13px; font-weight: 600; box-shadow: 0 10px 32px rgba(22,101,52,0.3);
         display: flex; align-items: center; gap: 10px;
@@ -288,194 +191,41 @@
         .hero-inner { flex-direction: column; align-items: flex-start; }
         .card-details { grid-template-columns: 1fr; }
         .stepper-label { font-size: 8px; }
-        .land-plot-wrap { flex-direction: column; }
     }
 
     /* ── Modern Farm Plot Dashboard ── */
-    .land-plot-card {
-        background: #FFFFFF;
-        border-radius: 24px;
-        padding: 24px;
-        border: 1px solid #E2E8F0;
-        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
-        margin-bottom: 24px;
-    }
-    .land-plot-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 18px;
-    }
-    .land-plot-title {
-        font-size: 16px;
-        font-weight: 800;
-        color: #1E293B;
-        margin: 0;
-        letter-spacing: -0.01em;
-    }
+    .land-plot-card { background: #FFFFFF; border-radius: 24px; padding: 24px; border: 1px solid #E2E8F0; box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03); margin-bottom: 24px; }
+    .land-plot-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .land-plot-title { font-size: 16px; font-weight: 800; color: #1E293B; margin: 0; letter-spacing: -0.01em; }
     .land-plot-sub { font-size: 12px; color: #64748B; margin-top: 2px; }
-    .land-plot-svg-wrap {
-        position: relative;
-        border-radius: 18px;
-        background: #F8FAF9;
-        border: 1px solid #E2E8F0;
-        padding: 16px;
-        overflow: hidden;
-    }
-    .plot-map-controls {
-        position: absolute;
-        top: 28px;
-        right: 28px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        z-index: 5;
-    }
-    .plot-map-btn {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        color: #475569;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-        cursor: pointer;
-        transition: all 0.15s ease;
-    }
+    .land-plot-svg-wrap { position: relative; border-radius: 18px; background: #F8FAF9; border: 1px solid #E2E8F0; padding: 16px; overflow: hidden; }
+    .plot-map-controls { position: absolute; top: 28px; right: 28px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
+    .plot-map-btn { width: 32px; height: 32px; border-radius: 50%; background: #FFFFFF; border: 1px solid #E2E8F0; color: #475569; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; transition: all 0.15s ease; }
     .plot-map-btn:hover { background: #F1F5F9; color: #0F172A; }
-    .plot-polygon {
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-    }
-    .plot-polygon:hover {
-        filter: brightness(0.96);
-        transform: scale(0.995);
-    }
-    .plot-tooltip {
-        position: absolute;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #0F172A;
-        color: #FFFFFF;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 600;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        z-index: 10;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    .land-legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 18px;
-        padding-top: 16px;
-        border-top: 1px solid #F1F5F9;
-    }
-    .land-legend-pill {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 12px;
-        background: #F8FAF9;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        font-size: 12px;
-        font-weight: 600;
-        color: #334155;
-    }
-    .land-legend-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-    }
+    .plot-polygon { cursor: pointer; transform-box: fill-box; transform-origin: center; transition: opacity 0.15s ease; }
+    .plot-polygon:hover { opacity: 0.85; }
+    .plot-tooltip { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0F172A; color: #FFFFFF; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .land-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #F1F5F9; }
+    .land-legend-pill { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #F8FAF9; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 12px; font-weight: 600; color: #334155; }
+    .land-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
     /* ── Farm Plot Fullscreen ── */
-    .farm-fullscreen-overlay {
-        display: none; position: fixed; inset: 0; z-index: 2000;
-        background: rgba(15,41,24,0.6); backdrop-filter: blur(8px);
-        align-items: center; justify-content: center;
-    }
+    .farm-fullscreen-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; background: rgba(15,41,24,0.65); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
     .farm-fullscreen-overlay.active { display: flex; }
-    .farm-fullscreen-box {
-        background: #fff; border-radius: 20px; width: 95vw; height: 90vh;
-        display: flex; flex-direction: column; overflow: hidden;
-        box-shadow: 0 24px 80px rgba(0,0,0,0.3);
-        animation: modalIn 0.25s cubic-bezier(0.4,0,0.2,1);
-    }
-    .farm-fs-header {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 16px 24px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;
-    }
+    .farm-fullscreen-box { background: #fff; border-radius: 20px; width: 95vw; height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.3); animation: modalIn 0.18s ease-out; }
+    .farm-fs-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
     .farm-fs-header h3 { margin: 0; font-size: 16px; font-weight: 800; color: #1e293b; }
     .farm-fs-header-actions { display: flex; gap: 8px; align-items: center; }
-    .farm-fs-close {
-        width: 36px; height: 36px; border-radius: 10px; border: 1px solid #e2e8f0;
-        background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
-        color: #64748b; transition: all 0.15s ease;
-    }
+    .farm-fs-close { width: 36px; height: 36px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; transition: all 0.15s ease; }
     .farm-fs-close:hover { background: #f1f5f9; color: #1e293b; }
-    .farm-fs-body {
-        flex: 1; overflow: auto; position: relative; background: #f8faf9;
-        cursor: grab;
-    }
+    .farm-fs-body { flex: 1; overflow: auto; position: relative; background: #f8faf9; cursor: grab; }
     .farm-fs-body.grabbing { cursor: grabbing; }
-    .farm-fs-body .farm-fs-svg {
-        min-width: 100%; min-height: 100%; display: block;
-        transition: transform 0.15s ease;
-        transform-origin: center center;
-    }
-    .farm-fs-zoom-controls {
-        position: absolute; bottom: 20px; right: 20px;
-        display: flex; flex-direction: column; gap: 4px; z-index: 10;
-    }
-    .farm-fs-zoom-btn {
-        width: 38px; height: 38px; border-radius: 10px; border: 1px solid #e2e8f0;
-        background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
-        color: #475569; font-size: 18px; font-weight: 700;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.15s ease;
-    }
+    .farm-fs-body .farm-fs-svg { min-width: 100%; min-height: 100%; display: block; transition: transform 0.15s ease; transform-origin: center center; }
+    .farm-fs-zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
+    .farm-fs-zoom-btn { width: 38px; height: 38px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 18px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.15s ease; }
     .farm-fs-zoom-btn:hover { background: #f1f5f9; color: #0f172a; }
-    .farm-fs-zoom-label {
-        text-align: center; font-size: 11px; font-weight: 700; color: #64748b;
-        background: #fff; border-radius: 8px; padding: 3px 0; border: 1px solid #e2e8f0;
-        min-width: 38px;
-    }
+    .farm-fs-zoom-label { text-align: center; font-size: 11px; font-weight: 700; color: #64748b; background: #fff; border-radius: 8px; padding: 3px 0; border: 1px solid #e2e8f0; min-width: 38px; }
 
-    /* ── Land Capacity (Form) ── */
-    .land-cap-wrap { margin-bottom: 14px; }
-    .land-cap-bar-track {
-        width: 100%; height: 10px; background: #e5e7eb; border-radius: 5px;
-        overflow: hidden; position: relative;
-    }
-    .land-cap-bar-fill {
-        height: 100%; border-radius: 5px; transition: width 0.4s ease, background 0.3s ease;
-    }
-    .land-cap-bar-fill.ok { background: linear-gradient(90deg, #16a34a, #22c55e); }
-    .land-cap-bar-fill.warn { background: linear-gradient(90deg, #d97706, #f59e0b); }
-    .land-cap-bar-fill.over { background: linear-gradient(90deg, #dc2626, #ef4444); }
-    .land-cap-text {
-        display: flex; justify-content: space-between; align-items: center;
-        margin-top: 6px; font-size: 11px; color: #64748b; font-weight: 600;
-    }
-    .land-cap-remaining { color: #16a34a; font-weight: 700; }
-    .land-cap-remaining.warn { color: #d97706; }
-    .land-cap-remaining.over { color: #dc2626; }
-    .land-cap-warning {
-        display: none; margin-top: 8px; padding: 8px 12px; border-radius: 8px;
-        font-size: 12px; font-weight: 600; line-height: 1.4;
-    }
-    .land-cap-warning.warn { display: block; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-    .land-cap-warning.over { display: block; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-    .form-group input.over-cap { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.08); }
-    .form-group input.warn-cap { border-color: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.08); }
 </style>
 
 @if(session('success'))
@@ -495,15 +245,15 @@
             <h1 class="hero-title">My Crops</h1>
             <p class="hero-sub">Track planting cycles, monitor <strong>growth stages</strong>, and plan your harvests across seasons.</p>
             <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <span style="font-size: 12px; color: rgba(255,255,255,0.6);">Your land:</span>
+                <span style="font-size: 12px; color: #40632d;">Your land:</span>
                 @if($user->default_land_area)
-                <button onclick="openLandModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s ease; backdrop-filter: blur(4px);">
+                <button onclick="openLandModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(20,61,35,0.06); border: 1px solid rgba(20,61,35,0.12); border-radius: 8px; color: #14532d; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s ease;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
                     {{ $user->default_land_area }} {{ $user->default_land_area_unit === 'ha' ? 'ha' : ($user->default_land_area_unit === 'sq_m' ? 'm²' : 'ft²') }}
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                 </button>
                 @else
-                <button onclick="openLandModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(255,255,255,0.08); border: 1px dashed rgba(255,255,255,0.25); border-radius: 8px; color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease;">
+                <button onclick="openLandModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(20,61,35,0.04); border: 1px dashed rgba(20,61,35,0.25); border-radius: 8px; color: rgba(20,61,35,0.7); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease;">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Set default land area
                 </button>
@@ -538,7 +288,7 @@
     </div>
     <div class="stat-pill">
         <div class="stat-icon" style="background: #fef3c7; color: #d97706;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8l4.553-2.276A1 1 0 0 1 22 6.618v7.764a1 1 0 0 1-1.447.894L16 16"/><path d="M1 14v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
         </div>
         <div class="stat-text">
             <span class="stat-label">All Batches</span>
@@ -546,8 +296,8 @@
         </div>
     </div>
     <div class="stat-pill">
-        <div class="stat-icon" style="background: #fce7f3; color: #db2777;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <div class="stat-icon" style="background: #fce7f3;">
+            <img src="{{ asset('images/peso-yellow.png') }}" alt="₱" style="width: 22px; height: 22px; object-fit: contain;">
         </div>
         <div class="stat-text">
             <span class="stat-label">Estimated Cost</span>
@@ -565,31 +315,62 @@
     $allocPct = $totalArea > 0 ? min(100, round(($usedArea / $totalArea) * 100)) : 0;
     $unitLabel = match($stats['land_area_unit'] ?? 'ha') { 'sq_m' => 'm²', 'sq_ft' => 'ft²', default => 'ha' };
 
-    $pastelPalette = ['#8CE663', '#E2F2D5', '#FFE8D1', '#E0F2FE'];
+    $cropColors = [
+        // Grains
+        'Rice' => '#E8EED0', 'Corn' => '#FFE082', 'Wheat' => '#EFE0C8',
+        'Mung Bean' => '#C8E6C9', 'Soybean' => '#DCE8B9', 'Peanut' => '#E4D5BB',
+        'Cassava' => '#DCC9B8',
+        // Fruits
+        'Banana' => '#FFEE58', 'Mango' => '#FFCC80', 'Papaya' => '#FFB74D',
+        'Pineapple' => '#FFD54F', 'Jackfruit' => '#E6EE9C', 'Watermelon' => '#FFCDD2',
+        'Calamansi' => '#C5E1A5', 'Orange' => '#FFC107', 'Lemon' => '#FFF9C4',
+        // Vegetables
+        'Tomato' => '#FF8A80', 'Eggplant' => '#D1C4E9', 'Okra' => '#9CCC65',
+        'String Bean' => '#A5D6A7', 'Squash' => '#FFB74D', 'Ampalaya' => '#A5D6A7',
+        'Pepper' => '#FF7043', 'Cabbage' => '#C8E6C9', 'Sayote' => '#DCEDC8',
+        'Luffa' => '#BCE08A', 'Cucumber' => '#81C784', 'Lettuce' => '#DCEDC8',
+        'Malunggay' => '#A5D6A7', 'Kangkong' => '#C8E6C9', 'Carrot' => '#FFB74D',
+        'Onion' => '#E8D0DC', 'Garlic' => '#F5F5F5',
+        // Roots & Tubers
+        'Sweet Potato' => '#FFE0B2', 'Taro' => '#E1BEE7', 'Potato' => '#F5E6CA',
+        'Ginger' => '#F0E6C9', 'Turmeric' => '#FFD54F', 'Lemongrass' => '#DCEDC8',
+        // Trees & Perennials
+        'Coconut' => '#D9C4A8', 'Pili' => '#CDB79E', 'Cacao' => '#C98E5B',
+        'Coffee' => '#A97C50', 'Rubber' => '#E3E7EA', 'Abaca' => '#E2D5BC',
+        'Sugarcane' => '#DCEDC8', 'Tobacco' => '#C5A98E', 'Cotton' => '#FAFAFA',
+        'default' => '#C8E6C9',
+    ];
+
+    $getCropColor = function ($name) use ($cropColors) {
+        $name = trim((string) $name);
+        if ($name === '') return '#C8E6C9';
+        foreach ($cropColors as $key => $hex) {
+            if (strcasecmp($key, $name) === 0) return $hex;
+        }
+        return '#C8E6C9';
+    };
 
     $plotEntries = [];
-    $i = 0;
     foreach ($plotActive as $batch) {
+        $cropName = $batch->crop->name ?? 'Crop';
         $plotEntries[] = [
-            'name' => $batch->crop->name ?? 'Crop',
+            'name' => $cropName,
             'area' => (float) $batch->land_area,
             'stage' => $batch->growth_stage,
             'batch' => $batch->batch_name ?? '',
-            'color' => $pastelPalette[$i % count($pastelPalette)],
-            'stroke' => '#FFFFFF',
+            'color' => $getCropColor($cropName),
+            'stroke' => 'rgba(0, 0, 0, 0.12)',
         ];
-        $i++;
     }
     if ($availableArea > 0.01 && $totalArea > 0) {
         $plotEntries[] = [
             'name' => 'Unallocated', 'area' => $availableArea,
             'stage' => 'available', 'batch' => '',
-            'color' => '#F1F5F9', 'stroke' => '#CBD5E1',
+            'color' => '#F1F5F9', 'stroke' => 'rgba(0, 0, 0, 0.12)',
         ];
     }
 
     $svgW = 800; $svgH = 260;
-    $currX = 0;
 @endphp
 
 @if($totalArea > 0)
@@ -617,73 +398,52 @@
         <div class="plot-tooltip" id="plotTooltip"></div>
 
         <svg viewBox="0 0 {{ $svgW }} {{ $svgH }}" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; display: block;">
-    @foreach($plotEntries as $index => $pe)
-        @php
-            $pct = $totalArea > 0 ? ($pe['area'] / $totalArea) : 0;
-            $width = $pct * $svgW;
-            $x1 = $currX;
-            $x2 = $currX + $width;
-            $currX += $width;
+        @php $currX = 0; @endphp
+        @foreach($plotEntries as $pe)
+            @php
+                $pct = $totalArea > 0 ? ($pe['area'] / $totalArea) : 0;
+                $width = $pct * $svgW;
+                $x1 = $currX;
+                $x2 = $currX + $width;
+                $currX += $width;
 
-            $pad = 3;
-            $px1 = $x1 + $pad;
-            $px2 = $x2 - $pad;
-            $py1 = $pad;
-            $py2 = $svgH - $pad;
-            $rectW = max(0, $px2 - $px1);
+                $pad = 3;
+                $px1 = $x1 + $pad;
+                $px2 = $x2 - $pad;
+                $py1 = $pad;
+                $py2 = $svgH - $pad;
+                $rectW = max(0, $px2 - $px1);
 
-            // Dynamic font sizing based on plot width
-            $fontSizeName = $rectW > 100 ? 13 : ($rectW > 40 ? 10 : 8);
-            $fontSizeArea = $rectW > 100 ? 10 : ($rectW > 40 ? 9 : 7);
-        @endphp
+                $fontSizeName = $rectW > 100 ? 13 : ($rectW > 40 ? 10 : 8);
+                $fontSizeArea = $rectW > 100 ? 10 : ($rectW > 40 ? 9 : 7);
+            @endphp
 
-        @if($rectW > 0)
-        <g class="plot-polygon"
-           data-name="{{ $pe['name'] }}"
-           data-area="{{ $pe['area'] }}"
-           data-stage="{{ $pe['stage'] }}"
-           data-batch="{{ $pe['batch'] }}"
-           data-unit="{{ $unitLabel }}"
-        >
-            <rect x="{{ $px1 }}" y="{{ $py1 }}" width="{{ $rectW }}" height="{{ $py2 - $py1 }}"
-                  rx="14" ry="14"
-                  fill="{{ $pe['color'] }}"
-                  stroke="{{ $pe['stroke'] }}"
-                  stroke-width="2"/>
+            @if($rectW > 0)
+            <g class="plot-polygon"
+               data-name="{{ $pe['name'] }}"
+               data-area="{{ $pe['area'] }}"
+               data-stage="{{ $pe['stage'] }}"
+               data-batch="{{ $pe['batch'] }}"
+               data-unit="{{ $unitLabel }}">
+                <rect x="{{ $px1 }}" y="{{ $py1 }}" width="{{ $rectW }}" height="{{ $py2 - $py1 }}"
+                      rx="6" ry="6" fill="{{ $pe['color'] }}" stroke="{{ $pe['stroke'] }}" stroke-width="1"/>
 
-            {{-- Render content for all shapes down to 15px width --}}
-            @if($rectW > 15)
-            <g transform="translate({{ $px1 + ($rectW / 2) }}, {{ $svgH / 2 }})">
-                @if($pe['stage'] !== 'available' && $rectW > 40)
-                    <path d="M-6 -12 C-6 -4 0 0 0 0 C0 0 6 -4 6 -12 Z" fill="none" stroke="#1E293B" stroke-width="1.5" transform="scale(0.8) translate(0, -12)"/>
+                @if($rectW > 15)
+                <text x="{{ $px1 + ($rectW / 2) }}" y="{{ $svgH / 2 }}"
+                      text-anchor="middle" dominant-baseline="middle"
+                      fill="#2C3E50" font-family="system-ui, -apple-system, sans-serif">
+                    <tspan x="{{ $px1 + ($rectW / 2) }}" dy="-6" font-size="{{ $fontSizeName }}" font-weight="700">
+                        {{ $rectW < 35 ? \Illuminate\Support\Str::limit($pe['name'], 3, '') : $pe['name'] }}
+                    </tspan>
+                    <tspan x="{{ $px1 + ($rectW / 2) }}" dy="16" font-size="{{ $fontSizeArea }}" font-weight="600">
+                        {{ number_format($pe['area'], 1) }}{{ $unitLabel }}
+                    </tspan>
+                </text>
                 @endif
-
-                {{-- Name Label --}}
-                <text x="0" y="{{ $rectW > 40 && $pe['stage'] !== 'available' ? 4 : -4 }}" 
-                      text-anchor="middle"
-                      fill="#1E293B" 
-                      font-size="{{ $fontSizeName }}" 
-                      font-weight="700"
-                      font-family="system-ui, -apple-system, sans-serif">
-                      {{ $rectW < 35 ? \Illuminate\Support\Str::limit($pe['name'], 3, '') : $pe['name'] }}
-                </text>
-
-                {{-- Land Area Label --}}
-                <text x="0" y="{{ $rectW > 40 && $pe['stage'] !== 'available' ? 18 : 10 }}" 
-                      text-anchor="middle"
-                      fill="#64748B" 
-                      font-size="{{ $fontSizeArea }}" 
-                      font-weight="600"
-                      font-family="system-ui, -apple-system, sans-serif">
-                      {{ number_format($pe['area'], 1) }}{{ $unitLabel }}
-                </text>
             </g>
             @endif
-        </g>
-        @endif
-    @endforeach
-</svg>
-
+        @endforeach
+        </svg>
     </div>
 
     <div class="land-legend">
@@ -750,9 +510,9 @@
                     <span class="detail-label">Season</span>
                     <span class="detail-value" style="display: inline-flex; align-items: center; gap: 5px;">
                         @if($fc->season === 'wet')
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg> Wet
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg> Wet
                         @else
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Dry
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Dry
                         @endif
                     </span>
                 </div>
@@ -778,7 +538,6 @@
                 @endif
             </div>
 
-            {{-- Growth Stage Stepper --}}
             @if(!$isFinished)
             <div class="stage-stepper">
                 @foreach($stageOrder as $si => $sKey)
@@ -794,7 +553,6 @@
             </div>
             @endif
 
-            {{-- Progress Bar --}}
             @if($fc->expected_harvest_date && !$isFinished)
             <div class="progress-section">
                 <div class="progress-header">
@@ -839,7 +597,7 @@
 <div class="empty-wrap">
     <div class="empty-card">
         <div class="empty-icon-wrap">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/>
             </svg>
         </div>
@@ -857,10 +615,20 @@
 </div>
 @endif
 
+<x-new-crop-batch-modal
+    :all-crops="$allCrops"
+    :stats="$stats"
+    :user="$user"
+    :alloc-pct="$allocPct"
+    :unit-label="$unitLabel"
+/>
+
 </div>
 </div>
 
-<!-- ── Farm Plot Fullscreen ── -->
+{{-- MODALS AND OVERLAYS PLACED OUTSIDE .crops-page TO AVOID CSS STACKING/TRANSFORM CONFLICTS --}}
+
+<!-- ── Farm Plot Fullscreen Overlay ── -->
 <div class="farm-fullscreen-overlay" id="farmFullscreen">
     <div class="farm-fullscreen-box">
         <div class="farm-fs-header">
@@ -891,111 +659,6 @@
             </div>
             <div id="farmFsSvgWrap"></div>
         </div>
-    </div>
-</div>
-
-<!-- ── ADD MODAL ── -->
-<div class="modal-overlay" id="addModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h3>New Crop Batch</h3>
-            <button class="modal-close" onclick="closeModal('addModal')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        </div>
-        <form action="{{ route('farmer.crops.store') }}" method="POST">
-            @csrf
-            <div class="modal-body">
-                <div class="form-section-label">Crop Information</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Crop Type *</label>
-                        <select name="crop_id" required>
-                            <option value="">Select crop...</option>
-                            @foreach($allCrops as $crop)
-                                <option value="{{ $crop->id }}">{{ $crop->name }} — {{ $crop->category ?? 'General' }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Batch Name</label>
-                        <input type="text" name="batch_name" placeholder="e.g. North Field A">
-                    </div>
-                </div>
-
-                <div class="form-section-label">Land & Season</div>
-                @if($stats['land_area'] > 0)
-                <div class="land-cap-wrap">
-                    <div class="land-cap-bar-track">
-                        <div class="land-cap-bar-fill ok" id="capBarFill" style="width: {{ $allocPct }}%"></div>
-                    </div>
-                    <div class="land-cap-text">
-                        <span>{{ number_format($stats['used_land_area'], 1) }} {{ $unitLabel }} used</span>
-                        <span class="land-cap-remaining" id="capRemaining">{{ number_format($stats['remaining_land'], 1) }} {{ $unitLabel }} remaining</span>
-                    </div>
-                </div>
-                <div class="land-cap-warning" id="capWarning"></div>
-                @endif
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Land Area *</label>
-                        <input type="number" name="land_area" id="addLandArea" step="0.01" min="0.01" value="{{ $user->default_land_area ?? '1' }}" required
-                               oninput="checkLandCapacity(this.value)">
-                    </div>
-                    <div class="form-group">
-                        <label>Area Unit *</label>
-                        <select name="land_area_unit" id="landAreaUnit" required onchange="checkLandCapacity(document.getElementById('addLandArea').value)">
-                            <option value="ha" {{ ($user->default_land_area_unit ?? 'ha') === 'ha' ? 'selected' : '' }}>Hectares (ha)</option>
-                            <option value="sq_m" {{ ($user->default_land_area_unit ?? '') === 'sq_m' ? 'selected' : '' }}>Square Meters (m²)</option>
-                            <option value="sq_ft" {{ ($user->default_land_area_unit ?? '') === 'sq_ft' ? 'selected' : '' }}>Square Feet (ft²)</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Season *</label>
-                        <select name="season" required>
-                            <option value="wet">Wet Season (Jun–Oct)</option>
-                            <option value="dry">Dry Season (Nov–May)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Planting Date *</label>
-                        <input type="date" name="planting_date" value="{{ now()->format('Y-m-d') }}" required>
-                    </div>
-                </div>
-
-                <div class="form-section-label">Planning (Optional)</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Expected Harvest Date</label>
-                        <input type="date" name="expected_harvest_date">
-                    </div>
-                    <div class="form-group">
-                        <label>Estimated Cost (₱)</label>
-                        <input type="number" name="estimated_cost" step="0.01" min="0" placeholder="0.00">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Estimated Yield</label>
-                        <input type="number" name="estimated_yield" step="0.01" min="0" placeholder="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Yield Unit</label>
-                        <input type="text" name="yield_unit" placeholder="e.g. sacks, kg, tons">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Notes</label>
-                    <textarea name="notes" rows="2" placeholder="Any additional notes about this crop batch..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-cancel" onclick="closeModal('addModal')">Cancel</button>
-                <button type="submit" class="btn-submit">Add Crop Batch</button>
-            </div>
-        </form>
     </div>
 </div>
 
@@ -1090,12 +753,30 @@
 <form id="deleteForm" method="POST" style="display:none;">@csrf @method('DELETE')</form>
 
 <script>
-    /* ── Modals ── */
+    /* ── Modals Handler ── */
+    var _overlayOpenedAt = {};
+    function _lockPageScroll() {
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
+    }
+    function _releasePageScroll() {
+        const anyActive = document.querySelector('.modal-overlay.active, .ncb-overlay.active');
+        if (!anyActive) {
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+        }
+    }
+    window._openOverlay = function(el) {
+        if (!el) return;
+        _overlayOpenedAt[el.id] = Date.now();
+        el.classList.add('active');
+        _lockPageScroll();
+    };
     window.openAddModal = function() {
         const modal = document.getElementById('addModal');
         if (!modal) return;
-        modal.classList.add('active');
-        setTimeout(function() { 
+        window._openOverlay(modal);
+        setTimeout(function() {
             const input = document.getElementById('addLandArea');
             if (input && typeof checkLandCapacity === 'function') {
                 checkLandCapacity(input.value);
@@ -1103,15 +784,21 @@
         }, 50);
     };
 
-    window.openLandModal = function() { const m = document.getElementById('landModal'); if (m) m.classList.add('active'); };
-    window.closeModal = function(id) { const el = document.getElementById(id); if (el) el.classList.remove('active'); };
+    window.openLandModal = function() { const m = document.getElementById('landModal'); if (m) window._openOverlay(m); };
+    window.closeModal = function(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('active');
+            _releasePageScroll();
+        }
+    };
     window.openUpdateModal = function(id, stage) {
         const form = document.getElementById('updateForm');
         if (form) form.action = '{{ url("/farmer/crops") }}/' + id;
         const updateStageEl = document.getElementById('updateStage');
         if (updateStageEl) updateStageEl.value = stage;
         try { toggleHarvest(stage); } catch(e) {}
-        const um = document.getElementById('updateModal'); if (um) um.classList.add('active');
+        const um = document.getElementById('updateModal'); if (um) window._openOverlay(um);
     };
     window.deleteCrop = function(id) {
         if (confirm('Remove this crop batch? This cannot be undone.')) {
@@ -1119,51 +806,14 @@
             if (f) { f.action = '{{ url("/farmer/crops") }}/' + id; f.submit(); }
         }
     };
-    // Close modal when clicking overlay background
-    document.querySelectorAll('.modal-overlay').forEach(o => {
-        o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); });
+
+    document.querySelectorAll('.modal-overlay, .ncb-overlay').forEach(o => {
+        o.addEventListener('click', e => {
+            if (e.target === o && Date.now() - (_overlayOpenedAt[o.id] || 0) > 350) {
+                window.closeModal(o.id);
+            }
+        });
     });
-
-    /* ── Land Capacity ── */
-    /* ── Land Capacity ── */
-    const _capTotal = parseFloat("{{ $stats['land_area'] ?? 0 }}") || 0;
-    const _capUsed = parseFloat("{{ $stats['used_land_area'] ?? 0 }}") || 0;
-    const _capUnit = {!! json_encode($unitLabel ?? 'ha') !!};
-
-    function checkLandCapacity(val) {
-        const input = document.getElementById('addLandArea');
-        const bar = document.getElementById('capBarFill');
-        const rem = document.getElementById('capRemaining');
-        const warn = document.getElementById('capWarning');
-        if (!input || !bar || _capTotal <= 0) return;
-        const entered = parseFloat(val) || 0;
-        const newUsed = _capUsed + entered;
-        const newPct = Math.min(100, Math.round((newUsed / _capTotal) * 100));
-        const newRem = Math.max(0, _capTotal - newUsed);
-        bar.style.width = newPct + '%';
-        input.classList.remove('over-cap', 'warn-cap');
-        bar.classList.remove('ok', 'warn', 'over');
-        rem.classList.remove('warn', 'over');
-        warn.className = 'land-cap-warning';
-        if (newUsed > _capTotal) {
-            bar.classList.add('over');
-            input.classList.add('over-cap');
-            rem.classList.add('over');
-            rem.textContent = 'Exceeded by ' + Math.abs(_capTotal - newUsed).toFixed(2) + ' ' + _capUnit;
-            warn.className = 'land-cap-warning over';
-            warn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Land area exceeds your total farm size! You cannot plant more than ' + _capTotal + ' ' + _capUnit + '.';
-        } else if (newPct >= 80) {
-            bar.classList.add('warn');
-            input.classList.add('warn-cap');
-            rem.classList.add('warn');
-            rem.textContent = newRem.toFixed(1) + ' ' + _capUnit + ' remaining';
-            warn.className = 'land-cap-warning warn';
-            warn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Running low on land — only ' + newRem.toFixed(1) + ' ' + _capUnit + ' will remain.';
-        } else {
-            bar.classList.add('ok');
-            rem.textContent = newRem.toFixed(1) + ' ' + _capUnit + ' remaining';
-        }
-    }
 
     /* ── Farm Plot Tooltips ── */
     const unitLabels = { ha: 'ha', sq_m: 'm\u00B2', sq_ft: 'ft\u00B2' };
@@ -1187,26 +837,16 @@
     }
     function hidePlotTip() { var t = document.getElementById('plotTooltip'); if (t) t.style.opacity = '0'; }
 
-    // Attach plot polygon event listeners safely (works if script runs after DOM or before)
-    (function attachPlotHandlers(){
-        function attach(){
-            document.querySelectorAll('.plot-polygon').forEach(function(el){
-                el.removeEventListener('mouseenter', el._showPlotTip);
-                el.removeEventListener('mouseleave', el._hidePlotTip);
-                // store references so removal is possible later
-                el._showPlotTip = function(){ showPlotTip(el); };
-                el._hidePlotTip = function(){ hidePlotTip(); };
-                el.addEventListener('mouseenter', el._showPlotTip);
-                el.addEventListener('mouseleave', el._hidePlotTip);
-                el.addEventListener('click', function(){
-                    // open fullscreen on click for convenience
-                    openFarmFs();
-                });
-            });
-        }
-        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
-        else attach();
-    })();
+    function attachPlotHandlers(){
+        document.querySelectorAll('.plot-polygon').forEach(function(el){
+            el.addEventListener('mouseenter', function(){ showPlotTip(el); });
+            el.addEventListener('mouseleave', function(){ hidePlotTip(); });
+            el.addEventListener('click', function(){ openFarmFs(); });
+        });
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attachPlotHandlers);
+    else attachPlotHandlers();
 
     /* ── Plot Legend Toggle ── */
     function togglePlotLegend() {
@@ -1222,13 +862,15 @@
         var wrap = document.getElementById('farmFsSvgWrap');
         var svgSrc = document.querySelector('.land-plot-svg-wrap svg');
         if (!overlay || !wrap || !svgSrc) return;
-        wrap.innerHTML = '';
+        
+        wrap.replaceChildren(); // Fully clears prior elements before appending
         var clone = svgSrc.cloneNode(true);
         clone.style.width = '100%';
         clone.style.height = 'auto';
         clone.style.minHeight = '400px';
         clone.style.display = 'block';
         wrap.appendChild(clone);
+        
         _fsScale = 1;
         _applyFsTransform();
         document.getElementById('farmFsZoomLabel').textContent = '100%';
@@ -1276,3 +918,4 @@
     }
 </script>
 @endsection
+

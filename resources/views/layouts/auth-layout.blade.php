@@ -33,6 +33,30 @@
             outline: none !important;
         }
 
+        /* Global select/dropdown styling — white field, rounded corners, custom arrow,
+           and a forced light dropdown popup (never an OS-dark "black box") */
+        select {
+            color-scheme: light;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+            background-color: #ffffff;
+            outline: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23143423' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            font-family: inherit;
+        }
+        select:not([disabled]) { cursor: pointer; }
+        select:focus {
+            border-color: #16a34a;
+            box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+        }
+
         /* Responsive Wrapper Container */
         .auth-container {
             width: 100%;

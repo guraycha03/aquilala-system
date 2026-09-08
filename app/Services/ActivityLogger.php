@@ -36,6 +36,17 @@ class ActivityLogger
         ]);
     }
 
+    // ── Auth shortcuts ────────────────────────────────────────────
+
+    public static function userLoggedIn(User $user, string $via = 'email'): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_LOGIN,
+            "Signed in successfully via {$via}",
+            $user
+        );
+    }
+
     // ── Quotation shortcuts ──────────────────────────────────────
 
     public static function quotationCreated($quotation): ActivityLog

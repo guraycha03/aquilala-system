@@ -100,4 +100,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(FarmerCrop::class, 'user_id');
     }
+
+    public function chatHistories(): HasMany
+    {
+        return $this->hasMany(ChatHistory::class, 'user_id');
+    }
 }

@@ -128,6 +128,8 @@ class AuthController extends Controller
             ])->withInput($request->except('password'));
         }
 
+        \App\Services\ActivityLogger::userLoggedIn($user, $method === 'phone' ? 'phone number' : 'email');
+
         return redirect()->route('dashboard.redirect', ['role' => $user->role]);
     }
 

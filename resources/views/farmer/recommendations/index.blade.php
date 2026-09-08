@@ -108,38 +108,19 @@
     width: 48px;
     height: 48px;
     background: linear-gradient(135deg, #16a34a, #22c55e);
-    border-radius: 14px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     box-shadow: 0 4px 14px rgba(34,197,94,0.3);
+    overflow: hidden;
   }
-  .sr-ai-badge {
-    font-size: 11px;
-    font-weight: 700;
-    background: #dcfce7;
-    color: #16a34a;
-    padding: 3px 10px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .sr-ai-badge::before {
-    content: "";
-    width: 6px;
-    height: 6px;
+  .sr-ai-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     border-radius: 50%;
-    background: #16a34a;
-    display: inline-block;
-    animation: sr-pulse-dot 2s ease-in-out infinite;
-  }
-  @keyframes sr-pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
   }
   .sr-ai-input {
     background: white;
@@ -150,6 +131,13 @@
     gap: 10px;
     align-items: center;
     margin-top: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .sr-ai-input:hover {
+    border-color: #22c55e;
+    box-shadow: 0 4px 14px rgba(34,197,94,0.18);
   }
   .sr-ai-input span {
     flex: 1;
@@ -157,16 +145,15 @@
     font-size: 13.5px;
     font-style: italic;
   }
-  .sr-ai-input button {
+  .sr-ai-input .sr-ai-go {
+    flex: none;
     background: linear-gradient(135deg, #16a34a, #22c55e);
     color: white;
-    border: none;
+    font-style: normal;
     padding: 9px 18px;
     border-radius: 8px;
     font-weight: 700;
     font-size: 13px;
-    cursor: not-allowed;
-    opacity: 0.65;
     white-space: nowrap;
   }
 
@@ -533,23 +520,20 @@
     {{-- ═══ 3. AI Assistant Banner ═══ --}}
     <div class="sr-ai-banner">
       <div class="sr-ai-icon">
-        <svg viewBox="0 0 24 24" width="26" height="26" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z"/>
-        </svg>
+        <img src="{{ asset('images/ai-avatar.png') }}" alt="AI Assistant">
       </div>
       <div style="flex: 1; min-width: 0;">
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;">
           <h2 style="font-size: 17px; font-weight: 700; color: #14532d; margin: 0;">AI Crop &amp; Product Assistant</h2>
-          <span class="sr-ai-badge">Coming Soon</span>
         </div>
         <p style="font-size: 14px; color: #15803d; line-height: 1.6; margin: 0 0 4px 0;">
           Our intelligent assistant analyzes your crop type, land area, and local weather conditions to recommend the most effective inputs — from seeds to fertilizers and pest control.
         </p>
-        <div class="sr-ai-input">
+        <a class="sr-ai-input" href="{{ route('farmer.ai-chat.index') }}">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="#22c55e" stroke-width="2" fill="none" style="flex-shrink: 0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
           <span>e.g. "What fertilizer do I need for 2 hectares of rice this wet season?"</span>
-          <button disabled>Ask Assistant</button>
-        </div>
+          <span class="sr-ai-go">Ask Assistant</span>
+        </a>
       </div>
     </div>
 
@@ -708,9 +692,7 @@
 
 {{-- ═══ Floating AI Chat Button ═══ --}}
 <a href="{{ route('farmer.ai-chat.index') }}" class="sr-ai-fab" title="Chat with AI">
-  <svg viewBox="0 0 24 24" width="24" height="24" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z"/>
-  </svg>
+  <img src="{{ asset('images/ai-avatar.png') }}" alt="AI Assistant" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
 </a>
 
 @endsection

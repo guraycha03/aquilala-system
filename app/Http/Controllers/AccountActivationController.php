@@ -57,6 +57,8 @@ class AccountActivationController extends Controller
             'phone'   => $user->phone,
         ]);
 
+        \App\Services\ActivityLogger::userLoggedIn($user, 'activation link');
+
         return redirect()->route('dashboard.redirect', ['role' => $user->role])
             ->with('success', 'Your account is now active. Welcome to Aquilala!');
     }

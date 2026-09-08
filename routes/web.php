@@ -76,6 +76,12 @@ Route::middleware('auth')->group(function () {
 
         // AI Chat
         Route::get('/ai-chat', [App\Http\Controllers\AiChatController::class, 'index'])->name('ai-chat.index');
+        Route::post('/ai-chat', [App\Http\Controllers\AiChatController::class, 'send'])->name('ai-chat.send');
+        Route::post('/ai-chat/suggestions', [App\Http\Controllers\AiChatController::class, 'suggestions'])->name('ai-chat.suggestions');
+        Route::get('/ai-chat/histories', [App\Http\Controllers\AiChatController::class, 'histories'])->name('ai-chat.histories');
+        Route::get('/ai-chat/histories/{chatHistory}', [App\Http\Controllers\AiChatController::class, 'history'])->name('ai-chat.history.show');
+        Route::post('/ai-chat/histories', [App\Http\Controllers\AiChatController::class, 'saveHistory'])->name('ai-chat.history.save');
+        Route::delete('/ai-chat/histories/{chatHistory}', [App\Http\Controllers\AiChatController::class, 'destroyHistory'])->name('ai-chat.history.destroy');
 
         // Supported Crops Directory
         Route::get('/crops-directory', [App\Http\Controllers\CropsDirectoryController::class, 'index'])->name('crops-directory.index');

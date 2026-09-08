@@ -233,15 +233,129 @@ class QuotationController extends Controller
     // ────────────────────────────────────────────────────────────────
 
     /**
-     * Show the farmer's activity history.
+     * Show the farmer's activity history with smart filters
+     * (search, date period, and activity type).
      */
     public function farmerActivity()
     {
-        $activities = \App\Models\ActivityLog::where('user_id', Auth::id())
-            ->latest()
-            ->paginate(20);
+        $search = request('q');
+        $period = request('period', 'all');
+        $from   = request('from');
+        $to     = request('to');
+        $type   = request('type');
 
-        return view('farmer.activity.index', compact('activities'));
+        $userId = Auth::id();
+        $today  = now()->endOfDay();
+
+        // ── Date range resolution ──
+        // Custom From/To dates take priority over the period preset; otherwise the
+        // preset period defines the range. Both are sanitised (no future, no swapped
+        // order) so the query can never look into the future or return illogical data.
+        $fromDate = null;
+        $toDate   = null;
+
+        $parseDate = function ($value) {
+            if (!$value || strtotime($value) === false) {
+                return null;
+            }
+            return \Illuminate\Support\Carbon::parse($value);
+        };
+
+        if ($from && ($parsedFrom = $parseDate($from)) && $parsedFrom->startOfDay()->lte($today)) {
+            $from = $parsedFrom->toDateString();
+            $fromDate = $parsedFrom->startOfDay();
+        } else {
+            $from = null;
+        }
+
+        if ($to && ($parsedTo = $parseDate($to))) {
+            // Never search beyond today (future activity can't exist).
+            $toDate = $parsedTo->startOfDay()->gt($today) ? $today : $parsedTo->endOfDay();
+            $to = $toDate->toDateString();
+        } else {
+            $to = null;
+        }
+
+        // If a custom range is inverted (from > to), swap so from <= to.
+        if ($fromDate && $toDate && $fromDate->gt($toDate)) {
+            [$fromDate, $toDate] = [$toDate, $fromDate];
+            $from = $fromDate->toDateString();
+            $to   = $toDate->toDateString();
+        }
+
+        // ── Decide the effective start/end for the query ──
+        $start = $fromDate;
+        $end   = $toDate;
+
+        // Period preset only applies when the user hasn't chosen custom dates.
+        if (in_array($period, ['today', '7days', '30days', 'month'], true) && !$from && !$to) {
+            [$periodStart, $periodEnd] = match ($period) {
+                'today'   => [now()->startOfDay(), now()->endOfDay()],
+                '7days'   => [now()->subDays(6)->startOfDay(), now()->endOfDay()],
+                '30days'  => [now()->subDays(29)->startOfDay(), now()->endOfDay()],
+                'month'   => [now()->startOfMonth(), now()->endOfMonth()],
+            };
+            $start = $periodStart;
+            $end   = $periodEnd;
+            $from  = $periodStart->toDateString();
+            $to    = $periodEnd->toDateString();
+        } elseif ($period !== 'all' && !$from && !$to) {
+            // Invalid preset — fall back to no period filter.
+            $period = 'all';
+        }
+
+        // ── Build the filtered query ──
+        $query = \App\Models\ActivityLog::where('user_id', $userId);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', "%{$search}%")
+                    ->orWhere('type', 'like', "%{$search}%");
+            });
+        }
+
+        if ($start) {
+            $query->where('created_at', '>=', $start);
+        }
+        if ($end) {
+            $query->where('created_at', '<=', $end);
+        }
+
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        $activities = $query->latest()->paginate(20)->withQueryString();
+
+        // ── Aggregate stats from the farmer's FULL (unfiltered) history ──
+        // So the summary cards reflect their real totals regardless of active filters.
+        $statsBase = \App\Models\ActivityLog::where('user_id', $userId);
+        $totalQuotations = (clone $statsBase)->where('type', 'quotation.created')->count();
+        $totalCrops = (clone $statsBase)->whereIn('type', ['crop.planted', 'crop.updated', 'crop.harvested', 'crop.deleted'])->count();
+        $totalDeleted = (clone $statsBase)->where('type', 'quotation.deleted')->count();
+        $totalLogins = (clone $statsBase)->where('type', 'auth.login')->count();
+
+        $uniqueTypes = \App\Models\ActivityLog::where('user_id', $userId)
+            ->select('type')
+            ->distinct()
+            ->pluck('type')
+            ->sort()
+            ->values()
+            ->toArray();
+
+        return view('farmer.activity.index', compact(
+            'activities',
+            'search',
+            'period',
+            'from',
+            'to',
+            'type',
+            'uniqueTypes',
+            'totalQuotations',
+            'totalCrops',
+            'totalDeleted',
+            'totalLogins'
+        ));
     }
 
     // ────────────────────────────────────────────────────────────────

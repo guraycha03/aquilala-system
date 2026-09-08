@@ -54,4 +54,8 @@ return [
         'forecast_url' => env('OPENWEATHER_FORECAST_API_URL', 'https://api.openweathermap.org/data/2.5/forecast'),
     ],
 
+    'groq' => [
+        'key' => env('GROQ_API_KEY'),
+    ],
+
 ];

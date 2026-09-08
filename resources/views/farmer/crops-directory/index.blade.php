@@ -21,6 +21,48 @@
         'legume' => 'Legume',
     ];
 
+    // Shared pastel crop color map — mirrors the colors used in the farmer land
+    // partition so a crop reads as the same color in the catalog and the field.
+    $cropColors = [
+        // Grains
+        'Rice' => '#E8F5E9', 'Corn' => '#FFF59D', 'Wheat' => '#F5E6CA',
+        // Fruits
+        'Coconut' => '#E0D5C1', 'Pili' => '#D7CCC8', 'Banana' => '#FFF176',
+        'Mango' => '#FFCC80', 'Papaya' => '#FFB74D', 'Pineapple' => '#FFE082',
+        'Jackfruit' => '#E6EE9C', 'Calamansi' => '#C5E1A5', 'Watermelon' => '#FFAB91',
+        'Orange' => '#FFB74D', 'Lemon' => '#FFF59D',
+        // Vegetables
+        'Tomato' => '#FF8A80', 'Eggplant' => '#D1C4E9', 'Okra' => '#C8E6C9',
+        'String Bean' => '#A5D6A7', 'Squash' => '#FFE082', 'Ampalaya' => '#A5D6A7',
+        'Pepper' => '#FF8A80', 'Cabbage' => '#C8E6C9', 'Sayote' => '#DCEDC8',
+        'Luffa' => '#C8E6C9', 'Cucumber' => '#A5D6A7', 'Lettuce' => '#DCEDC8',
+        'Malunggay' => '#A5D6A7', 'Kangkong' => '#C8E6C9',
+        // Root Crops
+        'Cassava' => '#D7CCC8', 'Sweet Potato' => '#E1BEE7', 'Taro' => '#E1BEE7',
+        'Potato' => '#F5E6CA', 'Carrot' => '#FFCC80',
+        // Herbs & Spices
+        'Onion' => '#F8BBD0', 'Garlic' => '#F5F5F5', 'Ginger' => '#E0D5C1',
+        'Turmeric' => '#FFE082', 'Lemongrass' => '#DCEDC8',
+        // Legumes
+        'Mung Bean' => '#C8E6C9', 'Soybean' => '#FFF59D', 'Peanut' => '#E0D5C1',
+        // Fiber & Industrial
+        'Abaca' => '#D7CCC8', 'Coffee' => '#D7CCC8', 'Cacao' => '#CFD8DC',
+        'Rubber' => '#ECEFF1', 'Sugarcane' => '#DCEDC8', 'Tobacco' => '#D7CCC8',
+        'Cotton' => '#FAFAFA',
+        // Unknown / catch-all
+        'default' => '#C8E6C9',
+    ];
+
+    // Case-insensitive lookup with a soft pastel green fallback.
+    $getCropColor = function ($name) use ($cropColors) {
+        $name = trim((string) $name);
+        if ($name === '') return '#C8E6C9';
+        foreach ($cropColors as $key => $hex) {
+            if (strcasecmp($key, $name) === 0) return $hex;
+        }
+        return '#C8E6C9';
+    };
+
     $featuredCrops = array_filter($crops, function($c) { return $c['featured'] ?? false; });
 @endphp
 
@@ -521,10 +563,11 @@
               $bg = $tagBg[$category] ?? '#f1f5f9';
               $fg = $tagFg[$category] ?? '#475569';
               $borderColor = $fg . '30';
+              $cropColor = $getCropColor($crop['name']);
           @endphp
           <div class="cd-featured-card">
             <div class="cd-featured-top">
-              <div class="cd-featured-icon">
+              <div class="cd-featured-icon" style="background:{{ $cropColor }}; border-color: rgba(0,0,0,0.12);">
                 <img src="{{ asset($imgSrc) }}" alt="{{ $crop['name'] }}">
               </div>
               <div class="cd-featured-meta">
@@ -579,12 +622,13 @@
             $bg = $tagBg[$category] ?? '#f1f5f9';
             $fg = $tagFg[$category] ?? '#475569';
             $borderColor = $fg . '30';
+            $cropColor = $getCropColor($crop['name']);
         @endphp
         <div class="cd-card"
              data-category="{{ $category }}"
              data-name="{{ strtolower($crop['name']) }}">
           <div class="cd-card-top">
-            <div class="cd-card-icon">
+            <div class="cd-card-icon" style="background:{{ $cropColor }}; border-color: rgba(0,0,0,0.12);">
               <img src="{{ asset($imgSrc) }}" alt="{{ $crop['name'] }}">
             </div>
             <div class="cd-card-meta">
