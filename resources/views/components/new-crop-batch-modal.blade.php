@@ -647,7 +647,7 @@ span.flatpickr-weekday {
         if (!_PICKED_PRODUCT || !info) {
             hintEl.textContent = _PICKED_PRODUCT
                 ? 'We don\'t have a planting rate for this product yet — no problem, just type the cost you expect.'
-                : 'Optional: choose a seed product above and we\'ll estimate the total cost for your land area automatically.';
+                : 'Optional: Choose a seed product above and we\'ll estimate the total cost for your land area automatically.';
             return;
         }
 
