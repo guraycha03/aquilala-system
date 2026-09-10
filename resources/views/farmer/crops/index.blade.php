@@ -137,7 +137,7 @@
     /* ── Modal Overlay Fixed Target ── */
     .modal-overlay {
         display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(15,41,24,0.6); z-index: 99999; overflow-y: auto; padding: 40px 0;
+        background: rgba(15,41,24,0.18); z-index: 99999; overflow-y: auto; padding: 40px 0;
         backdrop-filter: blur(4px);
     }
     .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
@@ -210,7 +210,7 @@
     .land-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
     /* ── Farm Plot Fullscreen ── */
-    .farm-fullscreen-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; background: rgba(15,41,24,0.65); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+    .farm-fullscreen-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; background: rgba(15,41,24,0.18); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
     .farm-fullscreen-overlay.active { display: flex; }
     .farm-fullscreen-box { background: #fff; border-radius: 20px; width: 95vw; height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.3); animation: modalIn 0.18s ease-out; }
     .farm-fs-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
@@ -317,7 +317,7 @@
 
     $cropColors = [
         // Grains
-        'Rice' => '#E8EED0', 'Corn' => '#FFE082', 'Wheat' => '#EFE0C8',
+        'Rice' => 'rgb(245, 238, 142)', 'Corn' => '#FFE082', 'Wheat' => '#EFE0C8',
         'Mung Bean' => '#C8E6C9', 'Soybean' => '#DCE8B9', 'Peanut' => '#E4D5BB',
         'Cassava' => '#DCC9B8',
         // Fruits
@@ -335,7 +335,7 @@
         'Sweet Potato' => '#FFE0B2', 'Taro' => '#E1BEE7', 'Potato' => '#F5E6CA',
         'Ginger' => '#F0E6C9', 'Turmeric' => '#FFD54F', 'Lemongrass' => '#DCEDC8',
         // Trees & Perennials
-        'Coconut' => '#D9C4A8', 'Pili' => '#CDB79E', 'Cacao' => '#C98E5B',
+        'Coconut' => 'rgb(218, 190, 131)', 'Pili' => '#CDB79E', 'Cacao' => '#dda879',
         'Coffee' => '#A97C50', 'Rubber' => '#E3E7EA', 'Abaca' => '#E2D5BC',
         'Sugarcane' => '#DCEDC8', 'Tobacco' => '#C5A98E', 'Cotton' => '#FAFAFA',
         'default' => '#C8E6C9',
@@ -621,6 +621,12 @@
     :user="$user"
     :alloc-pct="$allocPct"
     :unit-label="$unitLabel"
+    :crop-defaults="$cropDefaults"
+    :seed-products="$seedProducts"
+    :product-yields="$productYields"
+    :product-costs="$productCosts"
+    :crop-product-slugs="$cropProductSlugs"
+    :crop-product-keywords="$cropProductKeywords"
 />
 
 </div>

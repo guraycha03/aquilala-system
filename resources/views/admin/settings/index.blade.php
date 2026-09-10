@@ -16,8 +16,8 @@
         'timezone'       => 'Asia/Manila (UTC+8)',
 
         'wet_start'      => 'June',
-        'wet_end'        => 'October',
-        'dry_start'      => 'November',
+        'wet_end'        => 'January',
+        'dry_start'      => 'February',
         'dry_end'        => 'May',
         'active_season'  => 'wet',
         'quotation_days' => 5,
@@ -37,6 +37,12 @@
         'maintenance'    => false,
     ];
     $months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    // Live interface settings (persisted via admin.settings.interface)
+    $curUnit = \App\Helpers\SettingsHelper::yieldUnit();
+    $curDec  = \App\Helpers\SettingsHelper::yieldDecimals();
+    $curSep  = \App\Helpers\SettingsHelper::yieldSeparator();
+    $curZero = \App\Helpers\SettingsHelper::yieldZeroDash();
   @endphp
 
   <style>
@@ -137,6 +143,43 @@
     }
     .set-toast.show { opacity: 1; transform: translateY(0); }
     .set-toast svg { width: 16px; height: 16px; stroke: #6aeb2f; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Interface tab — radio unit selector */
+    .unit-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .unit-opt { position: relative; }
+    .unit-opt input { position: absolute; opacity: 0; pointer-events: none; }
+    .unit-opt .uo-box {
+      position: relative; display: flex; flex-direction: column; gap: 4px;
+      padding: 14px 44px 14px 14px; min-height: 92px;
+      border: 1.5px solid #e2e8f0; border-radius: 12px; background: #ffffff;
+      cursor: pointer; transition: all 0.15s ease;
+    }
+    .unit-opt .uo-box::after {
+      content: ""; position: absolute; top: 14px; right: 14px; width: 16px; height: 16px;
+      border-radius: 50%; border: 2px solid #cbd5e1; background: #ffffff;
+      box-sizing: border-box; transition: all 0.15s ease;
+    }
+    .unit-opt .uo-name { font-size: 13px; font-weight: 700; color: #334155; }
+    .unit-opt .uo-desc { font-size: 11px; color: #94a3b8; line-height: 1.4; }
+    .unit-opt .uo-tag {
+      width: fit-content; margin-top: 4px; font-size: 10px; font-weight: 700;
+      padding: 3px 8px; border-radius: 999px; background: #f1f5f9; color: #64748b;
+      font-variant-numeric: tabular-nums;
+    }
+    .unit-opt input:checked + .uo-box { border-color: #8fbf4d; background: #f7fbef; box-shadow: 0 0 0 3px rgba(143,191,77,0.14); }
+    .unit-opt input:checked + .uo-box .uo-name { color: #14532d; }
+    .unit-opt input:checked + .uo-box::after { border-color: #4d7c0f; border-width: 5px; }
+    .unit-opt:hover .uo-box { border-color: #cce5a3; }
+
+    .iface-preview {
+      margin-top: 16px; padding: 14px 16px; border-radius: 12px;
+      background: linear-gradient(135deg, #f7fbef, #eef6e3); border: 1px dashed #cbe3a8;
+    }
+    .iface-preview .pv-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #65a30d; margin-bottom: 8px; }
+    .iface-preview .pv-line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .iface-preview .pv-line + .pv-line { margin-top: 6px; }
+    .iface-preview .pv-name { font-size: 12px; color: #64748b; }
+    .iface-preview .pv-val { font-size: 16px; font-weight: 700; color: #14532d; font-variant-numeric: tabular-nums; }
 
     /* Map card */
     .map-card { padding: 0; overflow: hidden; }
@@ -251,6 +294,10 @@
           <button class="set-tab" data-tab="security">
             <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             Security &amp; System
+          </button>
+          <button class="set-tab" data-tab="interface">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            Interface
           </button>
         </div>
 
@@ -575,6 +622,94 @@
             </div>
           </div>
 
+          <!-- INTERFACE & DISPLAY -->
+          <div class="set-tab-panel" id="tab-interface">
+            <div class="set-section">
+              <div class="set-section-title">Harvest Report Summary Display</div>
+              <p style="font-size:12px;color:#64748b;margin:-8px 0 14px 0;max-width:760px;">
+                Controls how actual yields and expenses are presented across the dashboard.
+                More interface options will appear here over time.
+              </p>
+              <div class="set-grid">
+                <div class="set-card" style="grid-column:1 / -1;">
+                  <div class="set-field">
+                    <label>Yield quantity unit</label>
+                    <div class="unit-options">
+                      <label class="unit-opt">
+                        <input type="radio" name="yield_unit" value="mt" @checked($curUnit === 'mt')>
+                        <span class="uo-box">
+                          <span class="uo-name">Metric Tons</span>
+                          <span class="uo-desc">Standard Philippine farming unit. 1 MT = 1,000 kg.</span>
+                          <span class="uo-tag">e.g. 2.4 MT</span>
+                        </span>
+                      </label>
+                      <label class="unit-opt">
+                        <input type="radio" name="yield_unit" value="kg" @checked($curUnit === 'kg')>
+                        <span class="uo-box">
+                          <span class="uo-name">Kilograms</span>
+                          <span class="uo-desc">Fine-grained detail, ideal for smaller harvests.</span>
+                          <span class="uo-tag">e.g. 2,400 kg</span>
+                        </span>
+                      </label>
+                      <label class="unit-opt">
+                        <input type="radio" name="yield_unit" value="cavan" @checked($curUnit === 'cavan')>
+                        <span class="uo-box">
+                          <span class="uo-name">Cavan / Bag</span>
+                          <span class="uo-desc">Everyday trading unit farmers use. 1 cavan ≈ 50 kg.</span>
+                          <span class="uo-tag">e.g. 48 cavan</span>
+                        </span>
+                      </label>
+                      <label class="unit-opt">
+                        <input type="radio" name="yield_unit" value="auto" @checked($curUnit === 'auto')>
+                        <span class="uo-box">
+                          <span class="uo-name">Automatic</span>
+                          <span class="uo-desc">Show small yields in kg and large yields in MT.</span>
+                          <span class="uo-tag">switches below 1 MT</span>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="set-card">
+                  <div class="set-field">
+                    <label>Decimal places</label>
+                    <input type="number" name="yield_decimals" value="{{ $curDec }}" min="0" max="2">
+                    <div class="hint">Digits after the decimal point (0–2).</div>
+                  </div>
+                  <div class="set-field">
+                    <label>Thousands separator</label>
+                    <select name="yield_number_separator">
+                      <option value="comma" @selected($curSep === ',')>Comma — e.g. 2,400</option>
+                      <option value="period" @selected($curSep === '.')>Period — e.g. 2.400</option>
+                      <option value="none" @selected($curSep === '')>None — e.g. 2400</option>
+                    </select>
+                    <div class="hint">How large numbers are grouped. e.g. <b id="sepExample">2,400</b></div>
+                  </div>
+                </div>
+
+                <div class="set-card">
+                  <div class="set-field">
+                    <div class="set-row">
+                      <div class="info">
+                        <b>Dash when there are no reports</b>
+                        <span>Show — on the Total Yield row instead of 0 when no harvest reports exist.</span>
+                      </div>
+                      <label class="switch"><input type="checkbox" name="yield_zero_dash" @checked($curZero)><span class="slider"></span></label>
+                    </div>
+                  </div>
+                  <div class="iface-preview">
+                    <div class="pv-label">Live preview — Harvest Report Summary</div>
+                    <div class="pv-line"><span class="pv-name">Total Yield</span><span class="pv-val" id="pvTotal">2.4 MT</span></div>
+                    <div class="pv-line"><span class="pv-name">Rice</span><span class="pv-val" id="pvRice">1.6 MT</span></div>
+                    <div class="pv-line"><span class="pv-name">Sweet Corn</span><span class="pv-val" id="pvCorn">0.85 MT</span></div>
+                    <div class="pv-line" style="opacity:0.7;"><span class="pv-name">No reports yet</span><span class="pv-val" id="pvZero">—</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -584,6 +719,8 @@
     <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
     <span id="setToastMsg">Settings saved successfully.</span>
   </div>
+
+  <form id="csrfForm" style="display:none;">@csrf</form>
 
   <script>
     (function () {
@@ -600,6 +737,42 @@
       });
 
       // Reset to defaults
+      function csrfToken() {
+        var el = document.getElementById('csrfForm').querySelector('input[name=_token]');
+        return el ? el.value : '';
+      }
+
+      function fmtNum(n, dec, sepKey) {
+        var sep = sepKey === 'none' ? '' : (sepKey === 'period' ? '.' : ',');
+        var decPoint = sep === '.' ? ',' : '.';
+        var f = Number(n).toFixed(dec);
+        var parts = f.split('.');
+        return parts[1]
+          ? parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, sep) + decPoint + parts[1]
+          : parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+      }
+
+      function fmtYield(mt, unit, dec, sepKey) {
+        if (mt === 0) return '—';
+        if (unit === 'auto') unit = mt < 1 ? 'kg' : 'mt';
+        var num = unit === 'kg' ? mt * 1000 : (unit === 'cavan' ? mt * 20 : mt);
+        var suffix = unit === 'kg' ? 'kg' : (unit === 'cavan' ? 'cavan' : 'MT');
+        return fmtNum(num, dec, sepKey) + ' ' + suffix;
+      }
+
+      function updatePreview() {
+        var unit = document.querySelector('input[name=yield_unit]:checked');
+        if (!unit) return;
+        var dec = parseInt(document.querySelector('input[name=yield_decimals]').value, 10) || 0;
+        var sepKey = document.querySelector('select[name=yield_number_separator]').value;
+        var zeroDash = document.querySelector('input[name=yield_zero_dash]').checked;
+        document.getElementById('pvTotal').textContent = fmtYield(2.37, unit.value, dec, sepKey);
+        document.getElementById('pvRice').textContent = fmtYield(1.6, unit.value, dec, sepKey);
+        document.getElementById('pvCorn').textContent = fmtYield(0.85, unit.value, dec, sepKey);
+        document.getElementById('pvZero').textContent = zeroDash ? '—' : fmtYield(0, unit.value, dec, sepKey);
+        document.getElementById('sepExample').textContent = fmtNum(2400, 0, sepKey);
+      }
+
       function setDefaults() {
         document.querySelectorAll('[name]').forEach(function (el) {
           var map = {
@@ -620,7 +793,10 @@
             reorder_default: '{{ $defaults["reorder_default"] }}',
             session_min: '{{ $defaults["session_min"] }}',
             min_pass_len: '{{ $defaults["min_pass_len"] }}',
-            llm_key: '{{ $defaults["llm_key"] }}'
+            llm_key: '{{ $defaults["llm_key"] }}',
+            yield_unit: 'mt',
+            yield_decimals: '1',
+            yield_number_separator: 'comma'
           };
           if (el.type === 'checkbox') {
             var checks = {
@@ -633,9 +809,13 @@
               llm_fallback: {{ $defaults['llm_fallback'] ? 'true' : 'false' }},
               verify_farmers: {{ $defaults['verify_farmers'] ? 'true' : 'false' }},
               offline_cache: {{ $defaults['offline_cache'] ? 'true' : 'false' }},
-              maintenance: {{ $defaults['maintenance'] ? 'true' : 'false' }}
+              maintenance: {{ $defaults['maintenance'] ? 'true' : 'false' }},
+              yield_zero_dash: false
             };
             el.checked = checks[el.name] || false;
+          } else if (el.type === 'radio') {
+            var rv = map[el.name];
+            if (rv !== undefined) el.checked = (el.value === rv);
           } else if (el.tagName === 'SELECT') {
             var sv = map[el.name];
             if (sv) el.value = sv;
@@ -658,7 +838,30 @@
       }
 
       document.getElementById('saveBtn').addEventListener('click', function () {
-        showToast('Settings saved successfully.');
+        var btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        var payload = {
+          yield_unit: document.querySelector('input[name=yield_unit]:checked').value,
+          yield_decimals: document.querySelector('input[name=yield_decimals]').value,
+          yield_number_separator: document.querySelector('select[name=yield_number_separator]').value,
+          yield_zero_dash: document.querySelector('input[name=yield_zero_dash]').checked
+        };
+        fetch('{{ route("admin.settings.interface") }}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken() },
+          body: JSON.stringify(payload)
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (res) {
+            if (res.ok) showToast('Interface settings saved. They apply everywhere immediately.');
+            else showToast('Saved settings failed to apply.');
+          })
+          .catch(function () { showToast('Failed to save — check your connection.'); })
+          .finally(function () {
+            btn.disabled = false;
+            btn.textContent = 'Save Changes';
+          });
       });
       document.getElementById('resetBtn').addEventListener('click', function () {
         setDefaults();
@@ -666,8 +869,18 @@
           setOfficialAddress('{{ $defaults["official_address"] }}');
           placePin(ORG_LAT, ORG_LNG, true);
         }
-        showToast('Settings restored to defaults.');
+        updatePreview();
+        showToast('Settings restored to defaults. Click Save to apply.');
       });
+
+      // Live preview + interface field listeners
+      document.querySelectorAll('input[name=yield_unit]').forEach(function (r) {
+        r.addEventListener('change', updatePreview);
+      });
+      document.querySelector('input[name=yield_decimals]').addEventListener('input', updatePreview);
+      document.querySelector('select[name=yield_number_separator]').addEventListener('change', updatePreview);
+      document.querySelector('input[name=yield_zero_dash]').addEventListener('change', updatePreview);
+      updatePreview();
 
       // Organization location map (OpenStreetMap + Leaflet, free, no API key)
       var ORG_LAT = 12.6747;

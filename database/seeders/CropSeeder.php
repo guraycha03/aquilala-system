@@ -9,23 +9,26 @@ class CropSeeder extends Seeder
 {
     public function run(): void
     {
-        $crops = [
-            ['name' => 'Rice', 'category' => 'Cereal', 'description' => 'Palay / Rice (Oryza sativa)'],
-            ['name' => 'Corn', 'category' => 'Cereal', 'description' => 'Maize (Zea mays)'],
-            ['name' => 'Banana', 'category' => 'Fruit', 'description' => 'Banana (Musa spp.)'],
-            ['name' => 'Coconut', 'category' => 'Fruit', 'description' => 'Coconut (Cocos nucifera)'],
-            ['name' => 'Coffee', 'category' => 'Fruit', 'description' => 'Coffee (Coffea spp.)'],
-            ['name' => 'Sugarcane', 'category' => 'Cash Crop', 'description' => 'Sugarcane (Saccharum officinarum)'],
+        // Widened, reusable crop catalog for Bulan, Sorsogon (config/bulan_crops.php).
+        // Existing umbrella entries are preserved below so previously logged batches stay valid.
+        $umbrellaCrops = [
             ['name' => 'Vegetables', 'category' => 'Vegetable', 'description' => 'Leafy vegetables, fruiting vegetables, and root crops'],
-            ['name' => 'Root Crops', 'category' => 'Vegetable', 'description' => 'Cassava, sweet potato, potato, and other root crops'],
-            ['name' => 'Mango', 'category' => 'Fruit', 'description' => 'Mango (Mangifera indica)'],
-            ['name' => 'Pineapple', 'category' => 'Fruit', 'description' => 'Pineapple (Ananas comosus)'],
+            ['name' => 'Root Crops', 'category' => 'Root Crop', 'description' => 'Cassava, sweet potato, taro, and other root crops'],
             ['name' => 'Legumes', 'category' => 'Legume', 'description' => 'Beans, mungbean, peanut, and other legumes'],
-            ['name' => 'Cacao', 'category' => 'Fruit', 'description' => 'Cacao / Cocoa (Theobroma cacao)'],
+            ['name' => 'Other', 'category' => 'Other', 'description' => 'Other crops not listed in the Bulan catalog'],
         ];
 
-        foreach ($crops as $crop) {
+        foreach ($umbrellaCrops as $crop) {
             Crop::updateOrCreate(['name' => $crop['name']], $crop);
+        }
+
+        foreach (config('bulan_crops.crops') as $crop) {
+            $data = [
+                'name' => $crop['name'],
+                'category' => $crop['category'],
+                'description' => $crop['description'],
+            ];
+            Crop::updateOrCreate(['name' => $crop['name']], $data);
         }
     }
 }

@@ -112,10 +112,10 @@
   </div>
 @endif
 
-<!-- Farmer Request Details -->
+<!-- Farmer Quotation Details -->
 <div class="detail-card">
   <div class="detail-card-header">
-    <h2 style="font-size: 16px; font-weight: 700; color: #1a2b1e; margin: 0;">Farmer Request Details</h2>
+    <h2 style="font-size: 16px; font-weight: 700; color: #1a2b1e; margin: 0;">Farmer Quotation Details</h2>
   </div>
   <div class="detail-card-body">
     <div class="info-grid">

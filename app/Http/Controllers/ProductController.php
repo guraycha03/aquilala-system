@@ -33,26 +33,20 @@ class ProductController extends Controller
         $lowStockCount = $lowStockProducts->count();
 
         // ─── Quotation metrics for this store ──────────────────────
-        $storeQuoteScope = function ($query) {
-            return $query->where(function ($q) {
-                $q->whereNull('store_user_id')->orWhere('store_user_id', Auth::id());
-            });
-        };
+        // Quotations that use one of this store's products = demand signals
+        $involvedStoreQuery = fn ($andClause = null) => Quotation::query()
+            ->whereHas('items.product', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+            ->when($andClause, fn ($query, $status) => $query->where('status', $status));
 
-        $pendingQuotationsCount = $storeQuoteScope(Quotation::query())
-            ->where('status', Quotation::STATUS_PENDING)->count();
-        $computedQuotationsCount = $storeQuoteScope(Quotation::query())
-            ->where('status', Quotation::STATUS_COMPUTED)->count();
-        $dispatchedQuotationsCount = Quotation::where('store_user_id', Auth::id())
-            ->where('status', Quotation::STATUS_DISPATCHED)->count();
-        $acceptedQuotationsCount = Quotation::where('store_user_id', Auth::id())
-            ->where('status', Quotation::STATUS_ACCEPTED)->count();
+        $demandQuotationCount = $involvedStoreQuery()->count();
+        $computedQuotationCount = $involvedStoreQuery(Quotation::STATUS_COMPUTED)->count();
+        $viewedQuotationCount = $involvedStoreQuery(Quotation::STATUS_VIEWED)->count();
 
         // Recent quotation activity for this store
-        $recentStoreQuotations = Quotation::with(['farmer'])
-            ->where(function ($q) {
-                $q->whereNull('store_user_id')->orWhere('store_user_id', Auth::id());
-            })
+        $recentStoreQuotations = $involvedStoreQuery()
+            ->with(['farmer'])
             ->latest()
             ->take(5)
             ->get();
@@ -63,10 +57,9 @@ class ProductController extends Controller
             'productCount',
             'lowStockProducts',
             'lowStockCount',
-            'pendingQuotationsCount',
-            'computedQuotationsCount',
-            'dispatchedQuotationsCount',
-            'acceptedQuotationsCount',
+            'demandQuotationCount',
+            'computedQuotationCount',
+            'viewedQuotationCount',
             'recentStoreQuotations'
         ));
     }

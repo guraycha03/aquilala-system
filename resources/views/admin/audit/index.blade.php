@@ -7,7 +7,7 @@
     // SAMPLE placeholder data — replace with real audit-log model later.
     $events = [
         ['ts' => '2026-08-16 09:42:11', 'actor' => 'Charisse G. Guray', 'role' => 'Admin', 'type' => 'approve', 'cat' => 'approval', 'msg' => 'Approved store application — Rice Mill', 'module' => 'Store Approvals', 'ip' => '192.168.1.24'],
-        ['ts' => '2026-08-16 09:15:04', 'actor' => 'Juan Dela Cruz', 'role' => 'Farmer', 'type' => 'request', 'cat' => 'quotation', 'msg' => 'Requested quotation for 2.5 ha Rice', 'module' => 'Quotations', 'ip' => '192.168.1.108'],
+        ['ts' => '2026-08-16 09:15:04', 'actor' => 'Juan Dela Cruz', 'role' => 'Farmer', 'type' => 'request', 'cat' => 'quotation', 'msg' => 'Generated quotation for 2.5 ha Rice', 'module' => 'Quotations', 'ip' => '192.168.1.108'],
         ['ts' => '2026-08-16 08:58:47', 'actor' => 'Maria Santos', 'role' => 'Store Owner', 'type' => 'dispatch', 'cat' => 'quotation', 'msg' => 'Dispatched cost estimate #Q-1042', 'module' => 'Quotations', 'ip' => '192.168.1.91'],
         ['ts' => '2026-08-15 17:30:55', 'actor' => 'Charisse G. Guray', 'role' => 'Admin', 'type' => 'formula', 'cat' => 'formula', 'msg' => 'Adjusted Urea rate override (Wet Season)', 'module' => 'Formula Overrides', 'ip' => '192.168.1.24'],
         ['ts' => '2026-08-15 16:12:30', 'actor' => 'Pedro Ramos', 'role' => 'Store Owner', 'type' => 'login', 'cat' => 'auth', 'msg' => 'Signed in to the platform', 'module' => 'Authentication', 'ip' => '192.168.1.76'],
@@ -278,8 +278,22 @@
     </div>
   </div>
 
+  <div id="auditToast" style="position:fixed;bottom:24px;left:50%;transform:translate(-50%,16px);background:#143d23;color:#eaf7e3;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(20,61,35,0.28);opacity:0;pointer-events:none;transition:all .25s ease;z-index:9999;"></div>
+
   <script>
     (function () {
+      var toast = document.getElementById('auditToast');
+      var toastTimer = null;
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        toast.style.transform = 'translate(-50%, 0)';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translate(-50%, 16px)';
+        }, 2600);
+      }
       var rows = Array.prototype.slice.call(document.querySelectorAll('#auditRows tr'));
       var total = rows.length;
       var searchInput = document.getElementById('searchInput');
@@ -366,7 +380,7 @@
 
       document.getElementById('exportBtn').addEventListener('click', function () {
         var shown = visibleRows();
-        if (shown.length === 0) { alert('No records to export.'); return; }
+        if (shown.length === 0) { showToast('No records to export.'); return; }
         var lines = ['Timestamp,Actor,Role,Event,Module,IP Address'];
         shown.forEach(function (row) {
           var cells = row.querySelectorAll('td');

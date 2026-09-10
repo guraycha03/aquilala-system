@@ -7,17 +7,17 @@ use Carbon\Carbon;
 /**
  * SeasonHelper — Determines the current farming season based on the
  * Philippine climate calendar (Bicol Region / Bulan, Sorsogon context).
- * 
- * Wet Season: June to October (Tag-ulan)
- * Dry Season: November to May (Tag-init / Tag-araw)
- * 
+ *
+ * Wet Season: June to January (Tag-ulan)
+ * Dry Season: February to May (Tag-init / Tag-araw)
+ *
  * Also provides transitional periods and basic climate descriptions.
  */
 class SeasonHelper
 {
     /**
      * Determine the current season based on the month.
-     * 
+     *
      * @param Carbon|null $date Optional date (defaults to now)
      * @return string 'wet' | 'dry'
      */
@@ -25,12 +25,12 @@ class SeasonHelper
     {
         $month = ($date ?? Carbon::now())->month;
 
-        // Wet Season: June (6) to October (10)
-        if ($month >= 6 && $month <= 10) {
+        // Wet Season: June (6) through January (1)
+        if ($month >= 6 || $month <= 1) {
             return 'wet';
         }
 
-        // Dry Season: November (11) to May (5)
+        // Dry Season: February (2) to May (5)
         return 'dry';
     }
 
@@ -58,28 +58,35 @@ class SeasonHelper
         $season = self::getCurrentSeason($date);
 
         if ($season === 'wet') {
+            // Within the long wet season (Jun–Jan): the Habagat typhoon core
+            // runs Jun–Oct, while Nov–Jan is the cooler, still-rainy Amihan.
+            $subSeason = $month >= 6 && $month <= 10 ? 'Heavy Rain (Habagat)' : 'Cool Rainy (Amihan)';
+
             return [
                 'season'          => 'wet',
                 'label'           => 'Wet Season',
-                'months'          => 'June – October',
-                'typical_weather' => 'Heavy rainfall, high humidity, typhoon-prone. Ideal for flood-tolerant rice varieties.',
+                'months'          => 'June – January',
+                'sub_season'      => $subSeason,
+                'typical_weather' => $month >= 6 && $month <= 10
+                    ? 'Strong southwest monsoon (Habagat) with heavy rainfall and typhoons — the main cropping window.'
+                    : 'Northeast monsoon (Amihan) — still wet, but cooler and calmer. Good for a second crop.',
                 'icon'            => 'cloud-rain',
-                'temperature'     => '24°C – 32°C',
-                'humidity'        => '80% – 90%',
-                'recommendation'  => 'Use flood-tolerant rice varieties. Ensure proper drainage systems.',
+                'temperature'     => $month >= 6 && $month <= 10 ? '25°C – 32°C' : '22°C – 28°C',
+                'humidity'        => $month >= 6 && $month <= 10 ? '80% – 90%' : '75% – 88%',
+                'recommendation'  => $month >= 6 && $month <= 10
+                    ? 'Use flood-tolerant rice varieties. Ensure proper drainage systems.'
+                    : 'Second-cropping window — plant short-maturing, rain-fed varieties before the dry season.',
             ];
         }
 
-        // Check for dry season sub-periods
+        // Dry season sub-periods (Feb–May)
         $subSeason = match(true) {
-            $month >= 11 && $month <= 1 => 'Cool Dry (Amihan)',
             $month >= 2 && $month <= 4 => 'Hot Dry (Tag-init)',
             $month == 5                => 'Transition to Wet',
             default                    => 'Dry Season',
         };
 
         $weatherDesc = match(true) {
-            $month >= 11 && $month <= 1 => 'Cool northeast monsoon winds, minimal rainfall. Good for dry-season cropping.',
             $month >= 2 && $month <= 4 => 'High temperatures, very low rainfall. Requires irrigation for crops.',
             $month == 5                => 'End of dry season, increasing humidity, sporadic pre-monsoon rains.',
             default                    => 'Dry weather conditions.',
@@ -88,24 +95,15 @@ class SeasonHelper
         return [
             'season'          => 'dry',
             'label'           => 'Dry Season',
-            'months'          => 'November – May',
+            'months'          => 'February – May',
             'sub_season'      => $subSeason,
             'typical_weather' => $weatherDesc,
             'icon'            => 'sun',
-            'temperature'     => match(true) {
-                $month >= 11 && $month <= 1 => '22°C – 28°C',
-                $month >= 2 && $month <= 4 => '28°C – 36°C',
-                default                    => '25°C – 33°C',
-            },
-            'humidity'        => match(true) {
-                $month >= 11 && $month <= 1 => '70% – 80%',
-                $month >= 2 && $month <= 4 => '60% – 75%',
-                default                    => '65% – 80%',
-            },
+            'temperature'     => $month >= 2 && $month <= 4 ? '28°C – 36°C' : '25°C – 33°C',
+            'humidity'        => $month >= 2 && $month <= 4 ? '60% – 75%' : '65% – 80%',
             'recommendation'  => match(true) {
-                $month >= 11 && $month <= 1 => 'Ideal for rice and vegetable cropping with supplemental irrigation.',
                 $month >= 2 && $month <= 4 => 'Drought-resistant varieties recommended. Ensure adequate irrigation.',
-                $month == 5                => 'Prepare for wet season planting. Begin land preparation.',
+                $month == 5                => 'Prepare for wet-season planting. Begin land preparation.',
                 default                    => 'Good conditions for dry-season farming with irrigation support.',
             },
         ];
@@ -144,7 +142,7 @@ class SeasonHelper
      */
     public static function getSeasonMonths(string $season): string
     {
-        return $season === 'wet' ? 'June to October' : 'November to May';
+        return $season === 'wet' ? 'June to January' : 'February to May';
     }
 }
 

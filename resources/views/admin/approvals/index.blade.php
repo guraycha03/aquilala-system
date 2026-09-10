@@ -148,7 +148,7 @@
     .app-empty p { font-size: 13px; color: #64748b; margin: 10px 0 0 0; }
 
     .app-overlay {
-      position: fixed; inset: 0; background: rgba(15,23,42,0.35); z-index: 800;
+      position: fixed; inset: 0; background: rgba(15,23,42,0.15); z-index: 800;
       opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s;
     }
     .app-overlay.open { opacity: 1; visibility: visible; }

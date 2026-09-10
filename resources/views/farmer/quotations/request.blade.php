@@ -149,7 +149,7 @@
 
 <x-breadcrumb :items="[
   ['label' => 'My Cost Quotations', 'url' => route('farmer.quotations.index')],
-  ['label' => 'Request Quotation'],
+  ['label' => 'Generate Quotation'],
 ]"/>
 
 <div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; position: relative;">
@@ -228,14 +228,14 @@
             <input type="radio" name="season" value="wet" @checked((old('season') ?? $globalSeason) === 'wet') style="accent-color: #143d23;" required>
             <div>
               <div style="font-weight: 600; font-size: 14px; color: #1e2922;">Wet Season</div>
-              <div style="font-size: 12px; color: #94a3b8;">June – October</div>
+              <div style="font-size: 12px; color: #94a3b8;">June – January</div>
             </div>
           </label>
           <label data-inline-style="{{ $cardStyle('dry') }}">
             <input type="radio" name="season" value="dry" @checked((old('season') ?? $globalSeason) === 'dry') style="accent-color: #143d23;" required>
             <div>
               <div style="font-weight: 600; font-size: 14px; color: #1e2922;">Dry Season</div>
-              <div style="font-size: 12px; color: #94a3b8;">November – May</div>
+              <div style="font-size: 12px; color: #94a3b8;">February – May</div>
             </div>
           </label>
         </div>
@@ -306,7 +306,7 @@
 <!-- Info Modal -->
 <div id="info-modal" role="dialog" aria-modal="true" aria-label="Help and information"
      style="position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px;">
-  <div id="info-modal-backdrop" style="position: absolute; inset: 0; background: rgba(15, 30, 20, 0.5); backdrop-filter: blur(4px);"></div>
+  <div id="info-modal-backdrop" style="position: absolute; inset: 0; background: rgba(15, 30, 20, 0.18); backdrop-filter: blur(4px);"></div>
   <div style="position: relative; background: #ffffff; border-radius: 18px; max-width: 560px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,0.2);">
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #f0f2f1; position: sticky; top: 0; background: #ffffff;">
       <h2 style="font-size: 17px; font-weight: 800; color: #1a2b1e; margin: 0;">Need Some Help?</h2>

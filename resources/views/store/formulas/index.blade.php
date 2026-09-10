@@ -241,7 +241,7 @@
               @endif
               {{ $season === 'wet' ? 'Wet Season' : 'Dry Season' }}
             </span>
-            <span style="font-size: 12px; color: #94a3b8;">June – October</span>
+            <span style="font-size: 12px; color: #94a3b8;">{{ $season === 'wet' ? 'June – January' : 'February – May' }}</span>
           </div>
 
           @if($seasonFormulas->count() === 0)

@@ -530,7 +530,7 @@
     .product-modal-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.3);
+        background: rgba(15, 23, 42, 0.15);
         display: none;
         align-items: center;
         justify-content: center;
@@ -911,7 +911,7 @@
     .delete-modal-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.3);
+        background: rgba(15, 23, 42, 0.15);
         display: none;
         align-items: center;
         justify-content: center;

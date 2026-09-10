@@ -4,6 +4,12 @@
     'user' => null,
     'allocPct' => 0,
     'unitLabel' => 'ha',
+    'cropDefaults' => [],
+    'seedProducts' => [],
+    'productYields' => [],
+    'productCosts' => [],
+    'cropProductSlugs' => [],
+    'cropProductKeywords' => [],
 ])
 
 <!-- Load AlpineJS -->
@@ -82,6 +88,29 @@
     }
     .ncb-select-option:hover { background: #f1f5f9; color: #16a34a; }
     .ncb-select-option.selected { background: #f0fdf4; color: #16a34a; font-weight: 600; }
+
+    /* Yield Unit search-as-you-type combobox */
+    .ncb-unit-wrap { position: relative; }
+    .ncb-unit-wrap input { padding-right: 34px; }
+    .ncb-unit-arrow {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        color: #64748b; cursor: pointer; transition: transform 0.2s ease; pointer-events: none;
+    }
+    .ncb-unit-menu {
+        position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+        background: #fff; border: 1.5px solid #e2e8f0; border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+        max-height: 200px; overflow-y: auto; z-index: 600; padding: 4px;
+        display: none; scrollbar-width: thin;
+    }
+    .ncb-unit-option {
+        padding: 8px 12px; font-size: 13px; color: #1e293b; border-radius: 6px;
+        cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .ncb-unit-option:hover { background: #f1f5f9; color: #16a34a; }
+    .ncb-unit-option .ncb-unit-alias { font-size: 10.5px; color: #94a3b8; font-weight: 600; }
+    .ncb-unit-empty { padding: 10px 12px; font-size: 12.5px; color: #94a3b8; font-style: italic; }
 
     /* ── CUSTOM FLATPICKR DATEPICKER POPUP STYLES ── */
     /* ── CUSTOM FLATPICKR DATEPICKER POPUP STYLES ── */
@@ -174,6 +203,21 @@ span.flatpickr-weekday {
     .ncb-cap-warning { display: none; margin-top: 8px; margin-bottom: 14px; padding: 10px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; line-height: 1.4; }
     .ncb-cap-warning.warn { display: flex; align-items: center; gap: 6px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
     .ncb-cap-warning.over { display: flex; align-items: center; gap: 6px; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+    .ncb-yield-hint { display: block; margin-top: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.55; color: #16a34a; font-weight: 600; min-height: 16px; }
+    .ncb-yield-hint:empty { min-height: 0; }
+    .ncb-note { display: block; margin-top: 8px; margin-bottom: 8px; font-size: 12.5px; color: #64748b; line-height: 1.5; }
+
+    .ncb-cost-card {
+        display: flex; align-items: flex-start; gap: 9px;
+        margin-top: 12px; margin-bottom: 12px;
+        padding: 11px 13px;
+        background: #f0fdf4; border: 1px solid #bbe7c6; border-radius: 10px;
+        font-size: 13px; line-height: 1.55; color: #166534; font-weight: 600;
+        box-sizing: border-box;
+    }
+    .ncb-cost-card .ncb-cost-icon { flex-shrink: 0; color: #0284c7; margin-top: 2px; }
+    .ncb-cost-card .ncb-cost-text { flex: 1; min-width: 0; }
 </style>
 
 <!-- ── NEW CROP BATCH MODAL ── -->
@@ -204,7 +248,7 @@ span.flatpickr-weekday {
                         <div class="ncb-select-menu" x-show="open" x-cloak style="display: none;">
                             @foreach($allCrops as $crop)
                                 <div class="ncb-select-option" :class="{ 'selected': value === '{{ $crop->id }}' }"
-                                     @click="value = '{{ $crop->id }}'; label = '{{ $crop->name }}'; open = false">
+                                     @click="value = '{{ $crop->id }}'; label = '{{ $crop->name }}'; open = false; window.pickCrop({{ $crop->id }})">
                                     {{ $crop->name }}
                                 </div>
                             @endforeach
@@ -215,6 +259,33 @@ span.flatpickr-weekday {
                         <label>Batch Name</label>
                         <input type="text" name="batch_name" placeholder="e.g. North Field A">
                     </div>
+                </div>
+
+                <!-- Optional Field: Specific Product -->
+                <div class="ncb-group" x-data="{ open: false, selProd: '', label: 'None — crop type only (e.g. free seeds distributed)' }">
+                    <label>Specific Product (Optional)</label>
+                    <input type="hidden" name="product_id" id="cropProductId" :value="selProd">
+                    <div class="ncb-select-trigger" :class="{ 'active': open, 'placeholder': !selProd }" @click="open = !open" @click.outside="open = false" tabindex="0">
+                        <span x-text="label">None — crop type only (e.g. free seeds distributed)</span>
+                        <svg class="ncb-select-arrow" :class="{ 'rotate': open }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                    <div class="ncb-select-menu" id="prodList" x-show="open" x-cloak style="display: none;">
+                        <div class="ncb-select-option" id="prodNone" :class="{ 'selected': selProd === '' }" 
+                             @click="selProd = ''; label = 'None — crop type only (e.g. free seeds distributed)'; open = false; window.pickProduct(0)">None — crop type only (e.g. free seeds distributed)</div>
+                        @forelse($seedProducts as $product)
+                            <div class="ncb-select-option" data-pid="{{ $product['id'] }}" data-name="{{ mb_strtolower($product['name']) }}" data-catslug="{{ $product['category_slug'] }}" data-cropids="{{ implode(',', $product['crop_ids']) }}"
+                                 :class="{ 'selected': selProd === '{{ $product['id'] }}' }"
+                                 @click="selProd = '{{ $product['id'] }}'; label = '{{ addslashes($product['name']) }}'; open = false; window.pickProduct({{ $product['id'] }})">
+                                {{ $product['name'] }}
+                            </div>
+                        @empty
+                            <div class="ncb-select-option" style="color: #94a3b8; cursor: default;">No seed/planting products available in the stores yet.</div>
+                        @endforelse
+                        <div class="ncb-select-option" id="prodNoMatch" style="color: #94a3b8; cursor: default; display: none;">No applicable store products for this crop yet — leave None or pick another crop.</div>
+                    </div>
+                    <span class="ncb-note">Optional — picks only show products applicable to the selected crop. Right now the list is filtered as you choose a crop type.</span>
                 </div>
 
                 <div class="ncb-section-label">Land & Season</div>
@@ -233,7 +304,7 @@ span.flatpickr-weekday {
                 <div class="ncb-row">
                     <div class="ncb-group">
                         <label>Land Area *</label>
-                        <input type="number" name="land_area" id="addLandArea" step="0.01" min="0.01" value="{{ number_format($stats['remaining_land'] ?? 0, 2) }}" required oninput="checkLandCapacity(this.value)">
+                        <input type="number" name="land_area" id="addLandArea" step="0.01" min="0.01" value="{{ number_format($stats['remaining_land'] ?? 0, 2) }}" required oninput="checkLandCapacity(this.value); window.recalcYield()">
                     </div>
 
                     <!-- Area Unit Select -->
@@ -251,27 +322,27 @@ span.flatpickr-weekday {
                             </svg>
                         </div>
                         <div class="ncb-select-menu" x-show="open" x-cloak style="display: none;">
-                            <div class="ncb-select-option" :class="{ 'selected': value === 'ha' }" @click="value = 'ha'; label = 'Hectares (ha)'; open = false; checkLandCapacity(document.getElementById('addLandArea').value)">Hectares (ha)</div>
-                            <div class="ncb-select-option" :class="{ 'selected': value === 'sq_m' }" @click="value = 'sq_m'; label = 'Square Meters (m²)'; open = false; checkLandCapacity(document.getElementById('addLandArea').value)">Square Meters (m²)</div>
-                            <div class="ncb-select-option" :class="{ 'selected': value === 'sq_ft' }" @click="value = 'sq_ft'; label = 'Square Feet (ft²)'; open = false; checkLandCapacity(document.getElementById('addLandArea').value)">Square Feet (ft²)</div>
+                            <div class="ncb-select-option" :class="{ 'selected': value === 'ha' }" @click="value = 'ha'; label = 'Hectares (ha)'; open = false; checkLandCapacity(document.getElementById('addLandArea').value); window.recalcYield()">Hectares (ha)</div>
+                            <div class="ncb-select-option" :class="{ 'selected': value === 'sq_m' }" @click="value = 'sq_m'; label = 'Square Meters (m²)'; open = false; checkLandCapacity(document.getElementById('addLandArea').value); window.recalcYield()">Square Meters (m²)</div>
+                            <div class="ncb-select-option" :class="{ 'selected': value === 'sq_ft' }" @click="value = 'sq_ft'; label = 'Square Feet (ft²)'; open = false; checkLandCapacity(document.getElementById('addLandArea').value); window.recalcYield()">Square Feet (ft²)</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="ncb-row">
                     <!-- Season Select -->
-                    <div class="ncb-group" x-data="{ open: false, value: 'wet', label: 'Wet Season (Jun–Oct)' }">
+                    <div class="ncb-group" x-data="{ open: false, value: 'wet', label: 'Wet Season (Jun–Jan)' }">
                         <label>Season *</label>
                         <input type="hidden" name="season" :value="value" required>
                         <div class="ncb-select-trigger" :class="{ 'active': open }" @click="open = !open" @click.outside="open = false" tabindex="0">
-                            <span x-text="label">Wet Season (Jun–Oct)</span>
+                            <span x-text="label">Wet Season (Jun–Jan)</span>
                             <svg class="ncb-select-arrow" :class="{ 'rotate': open }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                             </svg>
                         </div>
                         <div class="ncb-select-menu" x-show="open" x-cloak style="display: none;">
-                            <div class="ncb-select-option" :class="{ 'selected': value === 'wet' }" @click="value = 'wet'; label = 'Wet Season (Jun–Oct)'; open = false">Wet Season (Jun–Oct)</div>
-                            <div class="ncb-select-option" :class="{ 'selected': value === 'dry' }" @click="value = 'dry'; label = 'Dry Season (Nov–May)'; open = false">Dry Season (Nov–May)</div>
+                            <div class="ncb-select-option" :class="{ 'selected': value === 'wet' }" @click="value = 'wet'; label = 'Wet Season (Jun–Jan)'; open = false">Wet Season (Jun–Jan)</div>
+                            <div class="ncb-select-option" :class="{ 'selected': value === 'dry' }" @click="value = 'dry'; label = 'Dry Season (Feb–May)'; open = false">Dry Season (Feb–May)</div>
                         </div>
                     </div>
 
@@ -279,7 +350,7 @@ span.flatpickr-weekday {
                     <div class="ncb-group">
                         <label>Planting Date *</label>
                         <div class="ncb-date-wrapper">
-                            <input type="text" class="custom-datepicker" name="planting_date" value="{{ now()->format('Y-m-d') }}" required placeholder="Select date">
+                            <input type="text" class="custom-datepicker" id="plantingDate" name="planting_date" value="{{ now()->format('Y-m-d') }}" required placeholder="Select date">
                             <svg class="ncb-date-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
                             </svg>
@@ -293,25 +364,37 @@ span.flatpickr-weekday {
                     <div class="ncb-group">
                         <label>Expected Harvest Date</label>
                         <div class="ncb-date-wrapper">
-                            <input type="text" class="custom-datepicker" name="expected_harvest_date" placeholder="Select date">
+                            <input type="text" class="custom-datepicker" id="estHarvest" name="expected_harvest_date" placeholder="Select date">
                             <svg class="ncb-date-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
                             </svg>
                         </div>
+                        <span class="ncb-yield-hint" id="harvestHint"></span>
                     </div>
                     <div class="ncb-group">
                         <label>Estimated Cost (₱)</label>
-                        <input type="number" name="estimated_cost" step="0.01" min="0" placeholder="0.00">
+                        <input type="number" name="estimated_cost" id="estCost" step="0.01" min="0" placeholder="Auto-fills when a product is selected">
                     </div>
+                </div>
+                <div class="ncb-cost-card">
+                    <img class="ncb-cost-icon" src="{{ asset('images/information.png') }}" alt="info" width="16" height="16">
+                    <span class="ncb-cost-text" id="costHint"></span>
                 </div>
                 <div class="ncb-row">
                     <div class="ncb-group">
                         <label>Estimated Yield</label>
-                        <input type="number" name="estimated_yield" step="0.01" min="0" placeholder="0">
+                        <input type="number" name="estimated_yield" id="estYield" step="0.01" min="0" placeholder="Auto-fills when a crop is selected">
+                        <span class="ncb-yield-hint" id="yieldHint"></span>
                     </div>
                     <div class="ncb-group">
-                        <label>Yield Unit</label>
-                        <input type="text" name="yield_unit" placeholder="e.g. sacks, kg, tons">
+                        <label>Yield Unit <span style="font-weight:500;color:#94a3b8;">(search as you type)</span></label>
+                        <div class="ncb-unit-wrap">
+                            <input type="text" name="yield_unit" id="estUnit" placeholder="e.g. kg, tons, sacks, nuts" autocomplete="off" spellcheck="false">
+                            <svg class="ncb-unit-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                            <div class="ncb-unit-menu" id="unitMenu"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="ncb-group">
@@ -377,4 +460,319 @@ span.flatpickr-weekday {
             rem.textContent = newRem.toFixed(1) + ' ' + _capUnit + ' remaining';
         }
     }
+
+    /* ── Yield auto-estimation ── */
+    var _CROP_DEFAULTS = @json($cropDefaults);
+    var _PRODUCT_YIELDS = @json($productYields);
+    var _PRODUCT_COSTS = @json($productCosts);
+    var _CROP_PRODUCT_SLUGS = @json($cropProductSlugs);
+    var _CROP_PRODUCT_KEYWORDS = @json($cropProductKeywords);
+    var _PICKED_CROP = '';
+    var _PICKED_PRODUCT = '';
+    var _harvestAuto = false;
+
+    /* Mass units convertible to kilograms (used when the user switches the
+       Yield Unit — the estimate is re-converted so the amount stays equal). */
+    var _KG_PER_UNIT = { kg: 1, tons: 1000, grams: 0.001, quintal: 100, sacks: 50, cavans: 50 };
+    var _lastKgEst = null;
+
+    /* ── Expected Harvest Date auto-estimation ── */
+    var _HARVEST_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function _harvestFmt(d) { return _HARVEST_MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
+    function _harvestYmd(d) { return d.getFullYear() + '-' + (d.getMonth() + 1 < 10 ? '0' : '') + (d.getMonth() + 1) + '-' + (d.getDate() < 10 ? '0' : '') + d.getDate(); }
+
+    window.recalcHarvest = function () {
+        var el = document.getElementById('estHarvest');
+        var hintEl = document.getElementById('harvestHint');
+        if (!el || !hintEl) return;
+
+        var crop = _CROP_DEFAULTS[_PICKED_CROP];
+        if (!_PICKED_CROP || !crop) {
+            hintEl.textContent = 'Optional — choose a crop type and we\'ll estimate the harvest date for you.';
+            return;
+        }
+
+        var mdays = parseFloat(crop.maturity_days) || 0;
+        if (_PICKED_PRODUCT && _PRODUCT_YIELDS[_PICKED_PRODUCT] && _PRODUCT_YIELDS[_PICKED_PRODUCT].maturity_days) {
+            mdays = parseFloat(_PRODUCT_YIELDS[_PICKED_PRODUCT].maturity_days) || 0;
+        }
+
+        var plantEl = document.getElementById('plantingDate');
+        var date = new Date((plantEl ? plantEl.value : '') + 'T00:00:00');
+        if (!mdays || isNaN(date.getTime())) {
+            hintEl.textContent = mdays
+                ? 'Enter a planting date above and we\'ll estimate when harvest comes.'
+                : 'No maturity data for this crop yet — enter the date yourself.';
+            return;
+        }
+
+        date.setDate(date.getDate() + mdays);
+        var suggested = _harvestFmt(date);
+
+        if (!el.value || _harvestAuto) {
+            el.value = _harvestYmd(date);
+            _harvestAuto = true;
+            hintEl.textContent = 'Auto-set: ' + crop.name + ' usually matures in about ' + mdays +
+                ' days → ' + suggested + '. Change it anytime.';
+        } else {
+            hintEl.textContent = 'You set your own harvest date. We\'d suggest about ' + mdays +
+                ' days after planting → ' + suggested + '.';
+        }
+    };
+
+    window.pickCrop = function (id) {
+        _PICKED_CROP = String(id);
+        filterProducts();
+        window.recalcYield();
+        window.recalcHarvest();
+    };
+
+    window.pickProduct = function (id) {
+        _PICKED_PRODUCT = id ? String(id) : '';
+        window.recalcYield();
+        window.recalcHarvest();
+    };
+
+    /* Filter the Specific Product dropdown so only seeds genuinely meant for the
+       selected crop show. A product is applicable when:
+         - it is directly linked to the crop (product_applications.crop_id), or
+         - its name contains one of the crop's curated keywords, or
+         - the crop declares no keywords AND its category is an allowed fallback. */
+    function filterProducts() {
+        var cropId = _PICKED_CROP;
+        var allowed = _CROP_PRODUCT_SLUGS[cropId] || [];
+        var keywords = _CROP_PRODUCT_KEYWORDS[cropId] || [];
+        var opts = document.querySelectorAll('#prodList .ncb-select-option[data-pid]');
+        var anyVisible = false;
+        for (var i = 0; i < opts.length; i++) {
+            var opt = opts[i];
+            var cat = opt.getAttribute('data-catslug') || '';
+            var name = opt.getAttribute('data-name') || '';
+            var cropIds = (opt.getAttribute('data-cropids') || '')
+                .split(',').filter(function (x) { return x.trim() !== ''; });
+
+            var linked = cropIds.indexOf(cropId) !== -1;
+            var keywordHit = keywords.length > 0 && keywords.indexOf('') === -1 &&
+                keywords.some(function (kw) { return name.indexOf(kw) !== -1; });
+            var catFallback = keywords.length === 0 && allowed.indexOf(cat) !== -1;
+
+            var show = linked || keywordHit || catFallback;
+            opt.style.display = show ? 'block' : 'none';
+            if (show) anyVisible = true;
+        }
+        var emptyEl = document.getElementById('prodNoMatch');
+        if (emptyEl) emptyEl.style.display = (cropId && !anyVisible) ? 'block' : 'none';
+        if (_PICKED_PRODUCT) {
+            var selOpt = document.querySelector('#prodList .ncb-select-option[data-pid="' + _PICKED_PRODUCT + '"]');
+            if (selOpt && selOpt.style.display === 'none') {
+                var noneBtn = document.getElementById('prodNone');
+                if (noneBtn) noneBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+            }
+        }
+    }
+
+    window.recalcYield = function () {
+        var yieldEl = document.getElementById('estYield');
+        var unitEl = document.getElementById('estUnit');
+        var hintEl = document.getElementById('yieldHint');
+        if (!yieldEl || !unitEl || !hintEl) return;
+
+        window.recalcCost();
+
+        var areaInput = document.getElementById('addLandArea');
+        var unitInput = document.getElementById('landAreaUnit');
+        var area = parseFloat(areaInput ? areaInput.value : 0) || 0;
+        var unit = unitInput ? unitInput.value : 'ha';
+        var crop = _CROP_DEFAULTS[_PICKED_CROP];
+
+        if (!crop || !_PICKED_CROP) {
+            hintEl.textContent = _PICKED_CROP
+                ? 'No built-in yield rate for this crop yet — enter the estimate manually, or leave blank (optional).'
+                : '';
+            return;
+        }
+
+        var base = parseFloat(crop.default_yield_per_ha) || 0;
+        var yieldUnit = crop.yield_unit || 'kg';
+        var srcName = crop.name;
+
+        if (_PICKED_PRODUCT && _PRODUCT_YIELDS[_PICKED_PRODUCT]) {
+            var pv = _PRODUCT_YIELDS[_PICKED_PRODUCT];
+            base = parseFloat(pv.default_yield_per_ha) || base;
+            yieldUnit = pv.yield_unit || yieldUnit;
+            srcName = pv.variety + ' → ' + crop.name;
+        }
+
+        if (!base) {
+            hintEl.textContent = 'No built-in yield rate for this crop yet — enter the estimate manually, or leave blank (optional).';
+            return;
+        }
+
+        var ha = unit === 'ha' ? area
+            : (unit === 'sq_m' ? area / 10000 : area / 107639.104);
+        var kgEst = base * ha;
+        _lastKgEst = kgEst;
+
+        var curUnit = (unitEl.value || '').trim().toLowerCase();
+        var est, outUnit;
+        if (!curUnit) {
+            outUnit = _KG_PER_UNIT[yieldUnit] !== undefined ? yieldUnit : 'kg';
+            est = kgEst / (_KG_PER_UNIT[outUnit] || 1);
+            if (outUnit === 'kg' && est >= 1000) { est = est / 1000; outUnit = 'tons'; }
+        } else if (_KG_PER_UNIT[curUnit] !== undefined) {
+            outUnit = curUnit;
+            est = kgEst / _KG_PER_UNIT[curUnit];
+        } else {
+            hintEl.textContent = 'Your estimate is about ' + Number(kgEst).toLocaleString() + ' kg — ' +
+                'pick a standard unit above or just type your own.';
+            return;
+        }
+        est = (est < 10) ? Math.round(est * 100) / 100 : Math.round(est);
+
+        yieldEl.value = est;
+        unitEl.value = outUnit;
+
+        var areaLabel = unit === 'ha' ? area + ' ha' : (unit === 'sq_m' ? area + ' m²' : area + ' ft²');
+        hintEl.textContent = 'Auto-estimated ~' + Number(est).toLocaleString() + ' ' + outUnit + ' using ' +
+            Number(base).toLocaleString() + ' ' + yieldUnit + '/ha for ' + srcName + ' × ' + areaLabel + '.';
+    };
+
+    /* ── Estimated cost auto-calculation ── */
+    window.recalcCost = function () {
+        var costEl = document.getElementById('estCost');
+        var hintEl = document.getElementById('costHint');
+        if (!costEl || !hintEl) return;
+
+        var info = _PRODUCT_COSTS[_PICKED_PRODUCT];
+        if (!_PICKED_PRODUCT || !info) {
+            hintEl.textContent = _PICKED_PRODUCT
+                ? 'We don\'t have a planting rate for this product yet — no problem, just type the cost you expect.'
+                : 'Optional: choose a seed product above and we\'ll estimate the total cost for your land area automatically.';
+            return;
+        }
+
+        var areaInput = document.getElementById('addLandArea');
+        var unitInput = document.getElementById('landAreaUnit');
+        var area = parseFloat(areaInput ? areaInput.value : 0) || 0;
+        var unit = unitInput ? unitInput.value : 'ha';
+        if (!area) return;
+
+        var ha = unit === 'ha' ? area : (unit === 'sq_m' ? area / 10000 : area / 107639.104);
+        var rateUnit = info.rate_unit || 'kg/ha';
+        var factor = 1;
+        if (info.package_unit === 'g' && rateUnit.indexOf('kg') === 0) factor = 1000;
+        else if (info.package_unit === 'kg' && rateUnit.indexOf('g') === 0) factor = 0.001;
+        var pkgSize = parseFloat(info.package_size) || 1;
+        var price = parseFloat(info.price) || 0;
+        var rateMin = parseFloat(info.rate_min) || 0;
+        var rateMax = parseFloat(info.rate_max) || rateMin;
+        var label = (info.package_label || 'package').toLowerCase();
+
+        function packsFor(rate) { return rate > 0 ? Math.ceil((ha * rate * factor) / pkgSize) : 1; }
+
+        var packs = packsFor(rateMax);
+        var cost = Math.round(packs * price * 100) / 100;
+        costEl.value = cost.toFixed(2);
+
+        var fmt = function (n) { return Number(n).toLocaleString('en-US'); };
+        var plural = function (n, s) { return n === 1 ? s : (s.slice(-1) === 's' ? s : s + 's'); };
+        var needUnits = Math.round(ha * rateMax * factor);
+
+        if (rateMax > 0) {
+            var rateLabel = rateMax === rateMin
+                ? fmt(rateMax) + ' ' + rateUnit
+                : fmt(rateMin) + '–' + fmt(rateMax) + ' ' + rateUnit;
+            var perWord = (info.price_unit || '').replace(/^per\s+/i, '') ||
+                (info.package_unit === 'piece' ? 'piece' : label);
+            var nounWord = plural(packs, info.package_unit === 'piece' ? 'unit' : label);
+
+            hintEl.textContent = 'Your seeds for this batch will cost about ₱' + fmt(cost) + '. ' +
+                'For ' + fmt(ha) + ' hectar' + (ha === 1 ? 'e' : 'es') + ' at the usual planting rate of ' + rateLabel +
+                ', you\'ll need around ' + fmt(needUnits) + ' ' + plural(needUnits, info.package_unit) +
+                ' — about ' + packs + ' ' + nounWord + ' at ₱' + fmt(price) + ' per ' + perWord + '.';
+        } else {
+            hintEl.textContent = 'We don\'t have a planting rate for this product yet — this is just the price of one ' +
+                label + ': ₱' + fmt(price) + '. Enter the real cost you expect below.';
+        }
+    };
+
+    /* ── Yield Unit search-as-you-type combobox ── */
+    var _UNIT_OPTIONS = [
+        ['kg', 'kilograms'],
+        ['tons', 'tonnes / metric tons'],
+        ['sacks', 'sacks (rice ≈ 50 kg)'],
+        ['cavans', 'cavan (palay ≈ 50 kg)'],
+        ['quintal', '100 kg'],
+        ['pieces', 'count'],
+        ['nuts', 'coconut / pili nuts'],
+        ['bunches', 'bananas'],
+        ['heads', 'cabbage / lettuce heads'],
+        ['bundles', 'bounded leafy greens'],
+        ['crates', 'packed produce'],
+        ['bales', 'abaca / hay'],
+        ['stalks', 'corn plants'],
+        ['trees', 'perennial trees'],
+        ['liters', 'liquid measure'],
+        ['grams', 'small weights'],
+    ];
+    var _estUnitEl = document.getElementById('estUnit');
+    var _unitMenuEl = document.getElementById('unitMenu');
+
+    function renderUnitMenu() {
+        var f = (_estUnitEl.value || '').trim().toLowerCase();
+        var items = _UNIT_OPTIONS.filter(function (u) { return !f || u[0].indexOf(f) !== -1 || u[1].indexOf(f) !== -1; });
+        if (!items.length) {
+            _unitMenuEl.style.display = 'block';
+            _unitMenuEl.innerHTML = '<div class="ncb-unit-empty">No matching units — just type your own.</div>';
+            return;
+        }
+        _unitMenuEl.innerHTML = items.map(function (u) {
+            return '<div class="ncb-unit-option" data-unit="' + u[0] + '">' +
+                '<span>' + u[0] + '</span><span class="ncb-unit-alias">' + u[1] + '</span></div>';
+        }).join('');
+        _unitMenuEl.style.display = 'block';
+    }
+
+    function closeUnitMenu() { _unitMenuEl.style.display = 'none'; }
+
+    if (_estUnitEl && _unitMenuEl) {
+        _unitMenuEl.addEventListener('mousedown', function (e) {
+            var opt = e.target.closest('.ncb-unit-option');
+            if (!opt) return;
+            e.preventDefault();
+            _estUnitEl.value = opt.getAttribute('data-unit');
+            closeUnitMenu();
+            window.recalcYield && window.recalcYield();
+        });
+        _estUnitEl.addEventListener('focus', function () { renderUnitMenu(); });
+        _estUnitEl.addEventListener('input', function () { renderUnitMenu(); });
+        _estUnitEl.addEventListener('change', function () { window.recalcYield && window.recalcYield(); });
+        _estUnitEl.addEventListener('blur', function () { setTimeout(closeUnitMenu, 150); });
+        _estUnitEl.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { closeUnitMenu(); _estUnitEl.blur(); }
+            if (e.key === 'Enter') {
+                var sel = _unitMenuEl.querySelector('.ncb-unit-option');
+                if (sel) { _estUnitEl.value = sel.getAttribute('data-unit'); }
+                closeUnitMenu();
+                window.recalcYield && window.recalcYield();
+            }
+        });
+    }
+
+    var _plantingEl = document.getElementById('plantingDate');
+    var _harvestEl = document.getElementById('estHarvest');
+    if (_plantingEl) {
+        _plantingEl.addEventListener('change', function () {
+            window.recalcHarvest && window.recalcHarvest();
+        });
+    }
+    if (_harvestEl) {
+        _harvestEl.addEventListener('change', function () {
+            _harvestAuto = false;
+            if (!_harvestEl.value) { window.recalcHarvest && window.recalcHarvest(); }
+        });
+    }
+
+    window.recalcCost && window.recalcCost();
+    window.recalcHarvest && window.recalcHarvest();
 </script>

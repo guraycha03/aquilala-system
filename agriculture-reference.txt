@@ -1,0 +1,280 @@
+==============================================================================
+AGRICULTURE REFERENCE — KNOWLEDGE BASE FOR THE AQUILALA SYSTEM
+Compiled for the developer to understand the domain behind the capstone.
+==============================================================================
+
+NOTE: Most figures are Philippine-specific averages/rules-of-thumb used by the
+DA (Department of Agriculture), PhilRice, PhilMech, and FAO. Use them as
+explanatory context, not as strict agronomic prescriptions for your data.
+
+------------------------------------------------------------------------------
+1. WHAT THIS SYSTEM IS ABOUT (LANDSCAPE)
+------------------------------------------------------------------------------
+- Aquilala is an IRRIGATORS ASSOCIATION: a group of farmers sharing an
+  irrigation facility (canal, pump, small reservoir). Farmer-members grow
+  seasonal crops, mostly PALAY (rice) with corn and vegetables where water
+  allows.
+- The system digitizes three core loops:
+  a) LEARNING: farmers get AI-driven recommendations and input formulas
+     (product x rate per hectare per season) from store owners.
+  b) BUYING: farmers request quotations / cost estimates from stores; stores
+     manage inventory.
+  c) REPORTING: farmers track crops through growth stages and submit HARVEST
+     REPORTS (actual yield + actual expenses) afterward.
+- Analytics pages summarize these loops for the admin.
+
+------------------------------------------------------------------------------
+2. UNITS & MEASUREMENTS (WHY "METRIC TONS")
+------------------------------------------------------------------------------
+- HECTARE (ha): standard area unit. 1 ha = 10,000 m² = about 2.5 acres
+  (~1 football field is roughly 0.7 ha). Typical smallholder rice farms are
+  0.5–3 ha.
+- METRIC TON (MT): 1 MT = 1,000 kilograms = ~2,204 lbs.
+- YIELD is conventionally reported as metric tons PER HECTARE (t/ha or the
+  Philippine-derived /ha). Examples of national averages/philosophy:
+    - Rice (palay): ~3.5–4.5 t/ha for irrigated lowland.
+      Our "Total Yield" card = SUM of actual_yield_metric_tons (total weight
+      across all reports, NOT divided by ha).
+    - Corn: ~3–5 t/ha (hybrid yellow, irrigated/fertilized).
+- Why MT? It's the international + DA standard for bulk crops. For vegetables
+  or small plots, kg is more natural. A 0.0 MT reading simply means a report
+  recorded less than ~50 kg, or none was submitted yet.
+- Other units common in the field:
+    - CAVAN (rice): ~50 kg of palay (unhusked paddy).
+    - SACK/BAG: ~50 kg (fertilizer commonly in 50-kg bags).
+    - LITERS PER HECTARE (L/ha) or MILLILITERS per 16-L knapsack sprayer for
+      liquid pesticides/foliar.
+    - KILOGRAMS PER HECTARE (kg/ha) for granule fertilizers and seed rates.
+- SEED RATE (how much seed to plant per ha):
+    - Rice: ~40–60 kg/ha for transplanted, 80–120 kg/ha for direct seeding.
+    - Corn: ~15–20 kg/ha.  Vegetables: varies widely (pechay ~1–2 kg/ha,
+      eggplant ~200–400 g/ha of hybrid seed).
+
+------------------------------------------------------------------------------
+3. WET & DRY SEASON — WHY THE SYSTEM TAGS EVERYTHING BY SEASON
+------------------------------------------------------------------------------
+The Philippines has two main monsoons that define the cropping calendar:
+- WET SEASON ("tagulan") — roughly JUNE to OCTOBER.
+  Brought by the southwest monsoon (HABAGAT). Heavy rains, high humidity.
+  Favors rice; but typhoons/flooding and more pest pressure (bacterial leaf
+  blight, blast) are risks.
+- DRY SEASON ("tag-araw") — roughly NOVEMBER to MAY.
+  Brought by the northeast monsoon (AMIHAN) - cooler mornings, then hot
+  drought stretch March–May. Higher solar radiation. Generally HIGHER rice
+  yields and cleaner harvests; but irrigation water becomes critical.
+
+Why it matters to your data model:
+- Aquilala is IRRIGATED, so farmers can plant in BOTH seasons
+  (irrigated): dry-season rice then wet-season rice, or rice-corn/vegetable
+  rotation. Rainfed farms can typically only manage a wet-season crop.
+- Some crops are season-gated:
+    - Wet season: rice (especially rainfed/transplanted), sweet potato,
+      ginger, eggplant (starts wet), corn for silage.
+    - Dry season: corn (yellow/white), munggo, watermelon/melon, garlic,
+      onion, tomato, red pepper, peanut, and rice (irrigated).
+- The "Crops by Season" donut and the season tag on quotations/formulas exist
+  because INPUT RATES legitimately differ between seasons: e.g., wet-season
+  rice needs more fertilizer (rain leaches nutrients) and more fungicide;
+  dry-season often uses less insecticide but more water management.
+- PHILIPPINE CLIMATE HAZARDS to keep in mind for explanations:
+  EL NIÑO = drought / delayed rains -> dry-season water stress, crop failure.
+  LA NIÑA = above-normal rain -> flooding, seedling damage, higher disease.
+
+------------------------------------------------------------------------------
+4. RICE (PALAY) — THE CORE CROP
+------------------------------------------------------------------------------
+- Growth stages used in this system (aligns with what farmers know):
+    LAND PREPARATION -> SEEDING/SOWING -> VEGETATIVE GROWTH ->
+    FLOWERING/FRUITING (panicle initiation -> heading) -> RIPENING ->
+    HARVESTED  (FAILED = crop lost, e.g., drought/flood/pest).
+- Duration: lowland palay ~ 100–120 days (short varieties ~105 days).
+  Mapping: land prep ~2 weeks; vegetative ~40–50 days; reproductive
+  (flowering) ~30–40 days; ripening ~25–35 days.
+- Watering needs: irrigated lowland keeps 2–5 cm standing water during
+  vegetative growth, drains before harvest.
+- Fertilizer typical for 1 ha irrigated dry-season rice:
+    Basal (transplant): Complete 14-14-14  ~100–150 kg/ha
+    Urea (46-0-0) splits: ~2–3 bags around tillering + panicle initiation
+    TOTAL N roughly 90–130 kg/ha.
+  Advisories change by soil test / leaf color chart (LCC).
+- Pests/diseases to reference: stem borer, leaf folder, rice blast
+  (Pyricularia), bacterial leaf blight, tungro virus.
+- Harvest: palay at ~20–24% moisture, dried to ~14% for storage.
+  Rough rule: 1 ha of good palay ≈ 80–90 cavans * 50 kg ≈ 4–4.5 MT.
+
+------------------------------------------------------------------------------
+5. CORN
+------------------------------------------------------------------------------
+- Types:
+    - YELLOW CORN (feed/industrial) — almost always HYBRID.
+    - WHITE CORN (as food "mais") — hybrid or open-pollinated (e.g., IPB Var 6).
+    - SWEET CORN (table/whole) — short-season, harvested soft-cob.
+    - GLUTINOUS/CORNFLIK — native types for "binatog"/"tamales".
+- Days to harvest: ~90–110 days (grain), ~75–90 days (sweet, fresh).
+- Season: dry season preferred (needs less water; warm sunny weather).
+- Seeding: 1 seed per hill, 75 cm between rows, 20–25 cm between hills.
+- Fertilizer (hybrid yellow): 14-14-14 basal ~100–150 kg/ha + urea splits.
+  Careful: N beyond optimum causes lodging and poorer grain fill.
+
+------------------------------------------------------------------------------
+6. VEGETABLES & OTHER CROPS (SHORT EXTRACTS FOR REFERENCE)
+------------------------------------------------------------------------------
+- EGGPLANT ("talong") : dry-season crop; ~4–5 months; trellised.
+- TOMATO: dry season; temperature ~20–28°C nights cool. Highly disease-prone
+  (wilts) — rotation advised.
+- AMPALAYA (bitter gourd): trellised; wet to dry transition; long harvest window.
+- PECHAY / BOK CHOY: cool~warm, fast (25–35 days); heavy N feeder, leafy.
+- GARLIC & ONION: strictly dry-season (Ilocos); daylength + cool dry conditions.
+- WATERMELON / MELON: dry season, deep sandy-loam, irrigation critical at
+  fruit set.
+- PEANUT / MUNGGO (mungbean): dry season, low inputs, soil-improving (fix N).
+- GINGER ("luya"): 8–10 months, moist fertile soil, prefers wet-season start.
+- SWEET POTATO ("kamote"): drought-tolerant, low input, ~4 months.
+
+------------------------------------------------------------------------------
+7. HYBRID vs INBRED vs OPEN-POLLINATED vs GMO — "SEED CLASSES"
+------------------------------------------------------------------------------
+SEED TYPE                | WHAT IT IS                          | KEY TRADE-OFF
+-------------------------|-------------------------------------|-------------
+INBRED (certified,       | First filial of naturally           | Cheaper; farmer can
+ pure-line)              | self-pollinated selection           | save seed; lower yield
+-------------------------|-------------------------------------|-------------
+HYBRID (F1)              | Cross of two inbred parents         | Higher yield & uniform;
+                         |                                    | seed must be RE-BOUGHT
+                         |                                    | every season (saving
+                         |                                    | seed = quality loss)
+-------------------------|-------------------------------------|-------------
+OPEN-POLLINATED (OPV)    | Varieties that pollinate freely     | Adaptable, saveable,
+                         |                                    | moderate yield
+-------------------------|-------------------------------------|-------------
+GMO (GM/Bt)              | Gene-modified (e.g., Bt corn)       | Pest-resistant trait;
+                         |                                    | regulatory + market
+                         |                                    | considerations
+
+COMMON nomenclatures to encounter in stores:
+- "Hybrid corn seed" vs "OPV corn seed" — price difference is large.
+- Rice variety names like NSIC Rc222/Rc160/Rc216 (inbred) vs commercial
+  hybrids (e.g., SL-8H, US-2H, Mestiso series) — hybrid rice yields ~15–25%
+  higher but needs more inputs + careful water management.
+- Bt CORN: carries a gene against corn borer larvae; marketed for yellow feed
+  corn.
+- FOUNDATION vs CERTIFIED seed: seed classes in certified seed production —
+  breeders' seed -> foundation -> registered -> certified. A label matters
+  for germination % and purity.
+
+IMPACT ON YOUR SYSTEM: "crop variety / variety name" on the crop card and
+seed-type awareness helps explain price differences in quotations. Hybrids
+are bought every season -> that is recurring store revenue and recurring
+farmer input expense.
+
+------------------------------------------------------------------------------
+8. PLANTING CONDITIONS — WHAT VARIES AND WHY IT MATTERS
+------------------------------------------------------------------------------
+Four big levers: WATER, TEMPERATURE, SUNLIGHT, SOIL.
+
+- WATER:
+    - Irrigated vs rainfed is THE biggest yield divider.
+    - Rice = water-loving during growth; corn/vegetables = sensitive to
+      flooding.
+    - Timing of water stress matters: flowering stage is the most
+      drought-sensitive in rice and corn.
+- TEMPERATURE:
+    - Rice: 20–35°C; stress spikes reduce fertility (spikelet sterility).
+    - Corn: warm 20–30°C; needs warm nights for grain fill.
+    - High night temps during flowering reduce yield in both.
+- SUNLIGHT/DAYLENGTH:
+    - Rice is mostly day-neutral; crops like onion/garlic need specific
+      photoperiods -> "short-day" crops grown in dry season.
+- SOIL:
+    - pH 5.5–7.0 ideal for most crops; rice tolerates slightly acidic wet
+      soils (4.5–6.5).
+    - Texture: clay-loam for rice; sandy-loam for root crops/watermelon.
+    - Organic matter improves water holding & nutrient release.
+
+PLANTING SEASONALITY (rule of thumb table for the panel):
+    Crop        | Best window (PH)         | Notes
+    ------------|--------------------------|---------------------------------
+    Rice (palay)| Wet & Dry (irrigated)    | Dry season = higher yield
+    Corn        | Dry                     | Hybrid yellow for feed
+    Eggplant    | Wet start -> Dry       | Long season, trellised
+    Tomato      | Dry (cool nights)       | Wilt-sensitive, rotate
+    Garlic/Onion| Dry (strictly)          | Daylength-gated
+    Watermelon  | Dry                     | Needs irrigation at fruit set
+    Pechay      | Dry                                           | Fast, leafy
+    Peanut/Mung | Dry                     | Low input, fixes N
+
+------------------------------------------------------------------------------
+9. INPUTS (STORE CATALOG) — WHAT FARMERS BUY
+------------------------------------------------------------------------------
+- FERTILIZERS: complete (14-14-14, 17-17-17), UREA (46-0-0), MOP/Amonia
+  (0-0-60 / 20-0-0-24S ammonium sulfate), ammonium phosphate (16-20-0),
+  foliar/liquid (macro + micro), organic fertilizer (chicken manure, compost).
+  NPK = the three numbers: Nitrogen-Phosphorus-Potassium.
+- PESTICIDES (categorized in your system): INSECTICIDES (for stem borer,
+  leaf folder), FUNGICIDES (blast, blight), HERBICIDES (weed control: pre- and
+  post-emergence), MOLLUSCICIDES (golden apple snail).
+- GROWTH REGULATORS & FOLIARS: micronutrient mixes, biostimulants.
+- TOOLS/OTHER: knapsack sprayer, trellis materials, irrigation pipes,
+  protective gear.
+- Categories in your products table map to: Fertilizer, Seeds, Pesticide,
+  Herbicide, Tools, Other — pesticides vs herbicides are separate because
+  they act on insects/fungi vs plants.
+
+------------------------------------------------------------------------------
+10. QUOTATIONS = COST ESTIMATES (NOT REVENUE)
+------------------------------------------------------------------------------
+- A QUOTATION in this system is the STORE OWNER's cost estimate for a
+  farmer's input list: product x quantity x price summarized, optionally
+  split by season (wet/dry) because rates differ per season.
+- It is NOT a sale/invoice and creates NO revenue tie-in. Keep this framing
+  in every dashboard/analytics explanation.
+
+------------------------------------------------------------------------------
+11. HARVEST REPORTS & "ACTUAL" vs "ESTIMATED"
+------------------------------------------------------------------------------
+- The LEARNING/FORMULA side is ESTIMATED (planned inputs and rates).
+- The HARVEST REPORT captures ACTUALS after the season:
+    crop_type, actual_yield_metric_tons, actual_total_expenses.
+- Comparing actual vs estimated is how a farmer learns (and how the system
+  refines recommendations). Actual expenses rarely equal the quotation:
+  prices move, sprays are skipped, damage forces re-entry, etc.
+
+------------------------------------------------------------------------------
+12. GLOSSARY (USE CONSISTENTLY IN UI/EXPLAINERS)
+------------------------------------------------------------------------------
+Palay       - unhusked rice (paddy)
+Bigas       - milled/white rice
+Bayanihan   - not agronomic; just note cooperative spirit of associations
+Amihan      - NE monsoon (dry-season cooler winds)
+Habagat     - SW monsoon (wet-season rains)
+Tag-araw    - dry season;  Tagulan - wet season
+Irrigated   - water supplied by canal/pump (Aquilala's case)
+Rainfed     - depending on rainfall alone
+T/ha, MT/ha - metric tons per hectare (yield standard)
+Basal       - fertilizer applied at planting/transplanting
+Topdress    - fertilizer applied later in the season (split dosing)
+Cavans/ha   - rice yield in 50-kg units
+Transplant  - raising seedlings then planting out (vs direct seeding)
+Lodging     - crops falling over (weak straw / excess N / wind)
+Tiller       - productive shoot of rice (more tillers = more panicles)
+Panicle     - rice "head" bearing the grains
+GDD/PH      - growing degree days / photoperiod (advanced concepts)
+NSIC        - National Seed Industry Council (variety registry)
+LCC         - Leaf Color Chart (N management tool)
+
+------------------------------------------------------------------------------
+13. QUICK "HELP ME EXPLAIN THIS CARD" NOTES
+------------------------------------------------------------------------------
+- "Total Yield 0.0 MT": no harvest reports recorded yet; small yields show
+  as 0.0 because display is in whole MT. Consider auto-switching to kg when
+  actual < 1 MT (suggested improvement).
+- "0.0 MT" vs "—": you could show "—" instead of 0.0 when there are zero
+  reports at all, to avoid implying a real reading of zero.
+
+==============================================================================
+END OF REFERENCE
+==============================================================================
+
+FURTHER READING (official sources, don't guess URLs beyond these known sites):
+- DA Philippines (da.gov.ph), PhilRice (philrice.gov.ph),
+  PhilMech (philmech.gov.ph), FAO FAOSTAT explainers.

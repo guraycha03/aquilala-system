@@ -16,6 +16,30 @@
         'store_owner' => ['Store Owner', '#a57f43', '#f6f0e6'],
         'farmer'      => ['Farmer', '#63856c', '#eef3ef'],
     ];
+
+    $profileData = $users->mapWithKeys(function ($u) {
+        return [
+            $u->id => [
+                'name'          => $u->name,
+                'email'         => $u->email,
+                'role'          => ucwords(str_replace('_', ' ', $u->role)),
+                'status'        => $u->status,
+                'phone'         => $u->phone,
+                'barangay'      => $u->barangay,
+                'city'          => $u->city,
+                'province'      => $u->province,
+                'sex'           => $u->sex,
+                'birth_date'    => $u->birth_date?->format('M d, Y'),
+                'civil_status'  => $u->civil_status,
+                'farm_location' => $u->farm_location,
+                'land_ownership'=> $u->land_ownership,
+                'years_farming' => $u->years_farming,
+                'assoc_member_no' => $u->assoc_member_no,
+                'joined'        => $u->created_at?->format('M d, Y'),
+                'products'      => $u->products_count,
+            ],
+        ];
+    })->all();
   @endphp
 
   <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -123,6 +147,70 @@
       opacity: 0; pointer-events: none; transition: all 0.25s ease; z-index: 9999;
     }
     .user-toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    /* Modal overlay + dialogs */
+    .umodal-overlay {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px);
+      z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .umodal-overlay.open { opacity: 1; visibility: visible; }
+    .umodal {
+      background: #ffffff; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.24);
+      width: 100%; max-width: 440px; max-height: 88vh; overflow: auto; transform: translateY(12px);
+      transition: transform 0.22s ease;
+    }
+    .umodal-overlay.open .umodal { transform: translateY(0); }
+    .umodal-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 18px 20px 0 20px;
+    }
+    .umodal-head h3 { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0; }
+    .umodal-close {
+      width: 30px; height: 30px; border: none; border-radius: 8px; background: #f1f5f9; color: #64748b;
+      cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .umodal-close:hover { background: #e2e8f0; }
+    .umodal-close svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .umodal-body { padding: 14px 20px 20px 20px; }
+    .umodal-actions {
+      display: flex; justify-content: flex-end; gap: 10px; padding: 0 0 20px 0;
+    }
+    .btn-modal {
+      display: inline-flex; align-items: center; gap: 7px; border: none; cursor: pointer;
+      font-family: inherit; font-size: 13px; font-weight: 700; padding: 9px 16px; border-radius: 10px;
+      transition: all 0.15s ease;
+    }
+    .btn-modal svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .btn-modal.cancel { background: #f1f5f9; color: #475569; }
+    .btn-modal.cancel:hover { background: #e2e8f0; }
+    .btn-modal.ok { background: rgb(172, 242, 121); color: #14532d; }
+    .btn-modal.ok:hover { background: rgb(160, 232, 108); }
+    .btn-modal.danger { background: #b91c1c; color: #ffffff; }
+    .btn-modal.danger:hover { background: #991b1b; }
+    .btn-modal[disabled] { opacity: 0.6; cursor: not-allowed; }
+
+    /* Profile modal specific */
+    .profile-hero {
+      display: flex; align-items: center; gap: 13px; padding: 4px 2px 14px 2px;
+      border-bottom: 1px solid #f1f5f9; margin-bottom: 14px;
+    }
+    .profile-avatar {
+      width: 46px; height: 46px; border-radius: 12px; background: rgb(172, 242, 121); color: #14532d;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; font-weight: 800;
+    }
+    .profile-hero .p-name { font-size: 15px; font-weight: 700; color: #0f172a; }
+    .profile-hero .p-mail { font-size: 12px; color: #94a3b8; }
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+    .profile-grid .wide { grid-column: 1 / -1; }
+    .p-item .p-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; margin-bottom: 3px; }
+    .p-item .p-value { font-size: 13px; color: #334155; font-weight: 600; word-break: break-word; }
+    .p-item .p-value .muted { color: #cbd5e1; font-weight: 400; }
+    .p-status-pill {
+      display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+    }
+    .p-status-pill svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 
     @media (max-width: 768px) {
       .users-table th:nth-child(3), .users-table td:nth-child(3),
@@ -285,14 +373,14 @@
                             <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                           </button>
                         @elseif($accountState === 'pending')
-                          <button class="icon-btn resend-btn" title="Resend activation email" data-user-id="{{ $u->id }}" data-user-name="{{ $u->name }}">
+                          <button class="icon-btn resend-btn" title="Resend activation email" data-user-id="{{ $u->id }}" data-user-name="{{ $u->name }}" data-user-email="{{ $u->email }}">
                             <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                           </button>
                         @endif
-                        <button class="icon-btn" title="Edit user" data-toast="Edit profile flow coming soon">
+                        <a class="icon-btn" href="{{ route('admin.users.edit', $u) }}" title="Edit user">
                           <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        <button class="icon-btn" title="View profile" data-toast="Profile view coming soon">
+                        </a>
+                        <button class="icon-btn profile-btn" title="View profile" data-profile-id="{{ $u->id }}">
                           <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
                       </div>
@@ -330,6 +418,42 @@
 
   <div class="user-toast" id="userToast"></div>
 
+  <!-- Profile detail modal -->
+  <div class="umodal-overlay" id="profileOverlay" aria-hidden="true">
+    <div class="umodal" role="dialog" aria-modal="true">
+      <div class="umodal-head">
+        <h3>Account Profile</h3>
+        <button type="button" class="umodal-close" id="profileClose" aria-label="Close">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="umodal-body" id="profileBody"></div>
+    </div>
+  </div>
+
+  <!-- In-app confirmation dialog (replaces browser confirm) -->
+  <div class="umodal-overlay" id="confirmOverlay" aria-hidden="true">
+    <div class="umodal" role="dialog" aria-modal="true">
+      <div class="umodal-head">
+        <h3 id="confirmTitle">Are you sure?</h3>
+        <button type="button" class="umodal-close" id="confirmClose" aria-label="Close">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="umodal-body" id="confirmBody">
+        <p style="font-size:13px;color:#475569;line-height:1.55;margin:0 0 4px 0;" id="confirmMessage"></p>
+        <div class="umodal-actions">
+          <button type="button" class="btn-modal cancel" id="confirmCancel">Cancel</button>
+          <button type="button" class="btn-modal ok" id="confirmOk">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script id="usersProfiles" type="application/json">
+    @json($profileData)
+  </script>
+
   <script>
     (function () {
       var rows = Array.prototype.slice.call(document.querySelectorAll('#usersRows tr'));
@@ -347,7 +471,7 @@
         toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 2600);
       }
 
-      // Flash message after redirect from the Register User page
+      // ── Flash message after redirect from the Register/Edit User page ──
       @if (session('success'))
         showToast(@js(session('success')));
       @endif
@@ -355,16 +479,167 @@
         showToast(@js(session('error')));
       @endif
 
+      // ── In-app confirm dialog ──
+      var confirmOverlay = document.getElementById('confirmOverlay');
+      var confirmTitle = document.getElementById('confirmTitle');
+      var confirmMessage = document.getElementById('confirmMessage');
+      var confirmOk = document.getElementById('confirmOk');
+      var confirmCancel = document.getElementById('confirmCancel');
+      var confirmClose = document.getElementById('confirmClose');
+      var confirmResolver = null;
+
+      function askConfirm(opts) {
+        confirmTitle.textContent = opts.title || 'Are you sure?';
+        confirmMessage.textContent = opts.message || '';
+        confirmOk.className = 'btn-modal ' + (opts.danger ? 'danger' : 'ok');
+        confirmOk.textContent = opts.confirmLabel || 'Confirm';
+        confirmOk.classList.remove('ok');
+        confirmOverlay.classList.add('open');
+        confirmOverlay.setAttribute('aria-hidden', 'false');
+        return new Promise(function (resolve) {
+          confirmResolver = resolve;
+        });
+      }
+      function settleConfirm(value) {
+        confirmOverlay.classList.remove('open');
+        confirmOverlay.setAttribute('aria-hidden', 'true');
+        if (confirmResolver) { confirmResolver(value); confirmResolver = null; }
+      }
+      confirmOk.addEventListener('click', function () { settleConfirm(true); });
+      confirmCancel.addEventListener('click', function () { settleConfirm(false); });
+      confirmClose.addEventListener('click', function () { settleConfirm(false); });
+      confirmOverlay.addEventListener('click', function (e) {
+        if (e.target === confirmOverlay) settleConfirm(false);
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && confirmOverlay.classList.contains('open')) settleConfirm(false);
+      });
+
       document.querySelectorAll('.icon-btn[data-toast]').forEach(function (btn) {
         btn.addEventListener('click', function () { showToast(btn.dataset.toast); });
+      });
+
+      // ── Profile modal (real data) ──
+      var profiles = {};
+      try { profiles = JSON.parse(document.getElementById('usersProfiles').textContent); } catch (e) {}
+
+      var profileOverlay = document.getElementById('profileOverlay');
+      var profileBody = document.getElementById('profileBody');
+      var profileClose = document.getElementById('profileClose');
+
+      function statusPill(status) {
+        var map = {
+          active:                  ['Active',       '#eef3ef', '#3f7a4f', '<polyline points="20 6 9 17 4 12"/>'],
+          suspended:               ['Suspended',    '#fdf2f2', '#b91c1c', '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>'],
+          pending_approval:        ['Pending Approval', '#eef4ff', '#3b6bb5', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'],
+          pending_verification:    ['Pending',      '#fef9ec', '#a57f43', '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>']
+        };
+        var m = map[status] || ['Unverified', '#f1f5f9', '#94a3b8', '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'];
+        return '<span class="p-status-pill" style="background:' + m[1] + ';color:' + m[2] + ';">' +
+               '<svg viewBox="0 0 24 24">' + m[3] + '</svg> ' + m[0] + '</span>';
+      }
+
+      function item(label, value, wide) {
+        value = value || value === 0 ? value : null;
+        return '<div class="p-item' + (wide ? ' wide' : '') + '">' +
+               '<div class="p-label">' + label + '</div>' +
+               '<div class="p-value">' + (value !== null ? String(value).replace(/</g, '&lt;') : '<span class="muted">—</span>') + '</div></div>';
+      }
+
+      function openProfile(id) {
+        var p = profiles[id];
+        if (!p) { showToast('Profile data not found.'); return; }
+        var initials = (p.name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) {
+          return w.charAt(0).toUpperCase();
+        }).join('');
+        var hero = '<div class="profile-hero">' +
+          '<div class="profile-avatar">' + initials + '</div>' +
+          '<div><div class="p-name">' + p.name + '</div>' +
+          '<div class="p-mail">' + p.email + '</div></div></div>';
+        var body = hero +
+          '<div class="profile-grid">' +
+          item('Role', p.role) +
+          '<div class="p-item"><div class="p-label">Status</div><div class="p-value">' + statusPill(p.status) + '</div></div>' +
+          item('Phone', p.phone) +
+          item('Joined', p.joined) +
+          item('Barangay / District', p.barangay) +
+          item('City / Municipality', p.city) +
+          item('Province', p.province, true) +
+          item('Sex', p.sex) +
+          item('Birth Date', p.birth_date) +
+          item('Civil Status', p.civil_status) +
+          item('Farm Location', p.farm_location, true) +
+          item('Land Ownership', p.land_ownership) +
+          item('Years Farming', p.years_farming) +
+          item('Association No.', p.assoc_member_no) +
+          (p.products != null ? item('Listed Products', p.products) : '') +
+          '</div>';
+        profileBody.innerHTML = body;
+        profileOverlay.classList.add('open');
+        profileOverlay.setAttribute('aria-hidden', 'false');
+      }
+      function closeProfile() {
+        profileOverlay.classList.remove('open');
+        profileOverlay.setAttribute('aria-hidden', 'true');
+      }
+      document.querySelectorAll('.profile-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () { openProfile(btn.dataset.profileId); });
+      });
+      profileClose.addEventListener('click', closeProfile);
+      profileOverlay.addEventListener('click', function (e) {
+        if (e.target === profileOverlay) closeProfile();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && profileOverlay.classList.contains('open')) closeProfile();
       });
 
       // ── Resend activation email for pending accounts ──
       document.querySelectorAll('.resend-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          if (!confirm('Resend the activation email to ' + btn.dataset.userName + '?')) return;
+          askConfirm({
+            title: 'Resend activation email?',
+            message: 'A new activation link will be sent to ' + btn.dataset.userName +
+              ' (' + btn.dataset.userEmail + '). Any previously sent link becomes void.',
+            confirmLabel: 'Resend Link'
+          }).then(function (ok) {
+            if (!ok) return;
+            btn.disabled = true;
+            fetch('/admin/users/' + btn.dataset.userId + '/resend-invitation', {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+              }
+            })
+            .then(function (response) { return response.json().then(function (d) { return { ok: response.ok, data: d }; }); })
+            .then(function (result) {
+              showToast(result.data.message || (result.ok ? 'Invitation resent.' : 'Could not resend invitation.'));
+              btn.disabled = false;
+            })
+            .catch(function () {
+              showToast('Network failure — please try again.');
+              btn.disabled = false;
+            });
+          });
+        });
+      });
+
+      // ── Approve / reject pending registration requests ──
+      function runApprovalAction(btn, act) {
+        askConfirm({
+          title: (act === 'approve' ? 'Approve' : 'Reject') + ' registration?',
+          message: (act === 'approve'
+            ? 'Approve the registration of ' + btn.dataset.userName +
+              '? A secure link to set their password will be emailed to them.'
+            : 'Reject the registration of ' + btn.dataset.userName +
+              '? The account will be removed from the platform.'),
+          confirmLabel: act === 'approve' ? 'Approve' : 'Reject',
+          danger: act !== 'approve'
+        }).then(function (ok) {
+          if (!ok) return;
           btn.disabled = true;
-          fetch('/admin/users/' + btn.dataset.userId + '/resend-invitation', {
+          fetch('/admin/users/' + btn.dataset.userId + '/' + act, {
             method: 'POST',
             headers: {
               'Accept': 'application/json',
@@ -374,37 +649,14 @@
           })
           .then(function (response) { return response.json().then(function (d) { return { ok: response.ok, data: d }; }); })
           .then(function (result) {
-            showToast(result.data.message || (result.ok ? 'Invitation resent.' : 'Could not resend invitation.'));
-            btn.disabled = false;
+            if (!result.ok) { showToast(result.data.message || 'Could not complete the action.'); btn.disabled = false; return; }
+            showToast(result.data.message || (act === 'approve' ? 'Registration approved.' : 'Registration rejected.'));
+            setTimeout(function () { window.location.reload(); }, 900);
           })
           .catch(function () {
             showToast('Network failure — please try again.');
             btn.disabled = false;
           });
-        });
-      });
-
-      // ── Approve / reject pending registration requests ──
-      function runApprovalAction(btn, act) {
-        if (!confirm((act === 'approve' ? 'Approve' : 'Reject') + ' the registration of ' + btn.dataset.userName + '?')) return;
-        btn.disabled = true;
-        fetch('/admin/users/' + btn.dataset.userId + '/' + act, {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        })
-        .then(function (response) { return response.json().then(function (d) { return { ok: response.ok, data: d }; }); })
-        .then(function (result) {
-          if (!result.ok) { showToast(result.data.message || 'Could not complete the action.'); btn.disabled = false; return; }
-          showToast(result.data.message || (act === 'approve' ? 'Registration approved.' : 'Registration rejected.'));
-          setTimeout(function () { window.location.reload(); }, 900);
-        })
-        .catch(function () {
-          showToast('Network failure — please try again.');
-          btn.disabled = false;
         });
       }
       document.querySelectorAll('.approve-btn').forEach(function (btn) {

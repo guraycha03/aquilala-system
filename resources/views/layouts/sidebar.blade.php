@@ -143,9 +143,39 @@
     /* Continuous Active Hook */
     .nav-links li a.active { background: #f3f6f4; color: #143d23; font-weight: 700; position: relative; margin-right: -1px; z-index: 10; }
     .nav-links li a.active svg { stroke: #143d23; }
-    .nav-links li:has(a.active) { z-index: 12; }
-    .nav-links li:has(a.active)::before { content: ""; position: absolute; top: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-bottom-right-radius: 20px; box-shadow: 10px 10px 0 10px #f3f6f4; pointer-events: none; z-index: 12; }
-    .nav-links li:has(a.active)::after { content: ""; position: absolute; bottom: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-top-right-radius: 20px; box-shadow: 10px -10px 0 10px #f3f6f4; pointer-events: none; z-index: 12; }
+    .nav-links li:not(.nav-dropdown):has(a.active) { z-index: 12; }
+    .nav-links li:not(.nav-dropdown):has(a.active)::before { content: ""; position: absolute; top: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-bottom-right-radius: 20px; box-shadow: 10px 10px 0 10px #f3f6f4; pointer-events: none; z-index: 12; }
+    .nav-links li:not(.nav-dropdown):has(a.active)::after { content: ""; position: absolute; bottom: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-top-right-radius: 20px; box-shadow: 10px -10px 0 10px #f3f6f4; pointer-events: none; z-index: 12; }
+
+    /* Dropdown Sub-Navigation */
+    .nav-dropdown { display: flex; flex-direction: column; }
+    .nav-dropdown-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      color: #b9cfc0;
+      background: transparent;
+      border: none;
+      border-top-left-radius: 12px;
+      border-bottom-left-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s ease, background 0.2s ease;
+      font-family: inherit;
+    }
+    .nav-dropdown-btn:hover { background: rgba(255, 255, 255, 0.05); color: #ffffff; }
+    .nav-dropdown-title { display: flex; align-items: center; gap: 12px; }
+    .nav-dropdown-title svg { width: 18px; height: 18px; stroke: #b9cfc0; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .nav-dropdown-btn:hover .nav-dropdown-title svg { stroke: #ffffff; }
+    .dropdown-chevron { width: 16px; height: 16px; stroke: #87a992; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.25s ease; }
+    .nav-dropdown.open .dropdown-chevron { transform: rotate(180deg); }
+    .sub-nav-links { list-style: none; display: none; padding-left: 20px; margin-top: 2px; }
+    .nav-dropdown.open .sub-nav-links { display: block; }
+    .sub-nav-links li a { padding: 10px 14px; font-size: 13px; color: #87a992; }
+    .sub-nav-links li a svg { width: 16px; height: 16px; }
 
     /* Footer badge and logout */
     .sidebar-footer { padding: 16px; background: #0d2917; border-top: 1px solid rgba(255, 255, 255, 0.08); position: relative; z-index: 110; }
@@ -287,7 +317,7 @@
       </span>
       <div class="climate-season-info">
         <div class="climate-season-label">{{ $climate['label'] ?? 'Dry Season' }}</div>
-        <div class="climate-season-sub">{{ $climate['months'] ?? ($isWet ? 'June – October' : 'November – May') }}</div>
+        <div class="climate-season-sub">{{ $climate['months'] ?? ($isWet ? 'June – January' : 'February – May') }}</div>
       </div>
     </div>
   </div>
@@ -326,14 +356,15 @@
           <li>
             <a href="{{ route('farmer.quotations.request') }}" class="{{ request()->is('farmer/quotations/request*') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              Request Quotation
+              Generate Quotation
             </a>
           </li>
-          <li>
+            <li>
             <a href="{{ route('farmer.quotations.index') }}" class="{{ request()->routeIs('farmer.quotations.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               My Cost Quotations
             </a>
+          </li>
           </li>
           <li>
             <a href="{{ route('farmer.stores.index') }}" class="{{ request()->is('farmer/stores*') ? 'active' : '' }}">
@@ -412,7 +443,7 @@
             </a>
           </li>
           <li>
-            <a href="{{ route('admin.analytics.index') }}" class="{{ request()->routeIs('admin.analytics.index') ? 'active' : '' }}">
+            <a href="{{ route('admin.analytics.index') }}" class="{{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
               Analytics
             </a>
@@ -423,17 +454,28 @@
               Settings
             </a>
           </li>
-          <li>
-            <a href="{{ route('admin.activity.index') }}" class="{{ request()->routeIs('admin.activity.index') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Activity Audit
-            </a>
-          </li>
-          <li>
-            <a href="{{ route('admin.audit.index') }}" class="{{ request()->routeIs('admin.audit.index') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Audit
-            </a>
+          <li class="nav-dropdown {{ request()->is('admin/activity*') || request()->is('admin/audit*') ? 'open' : '' }}">
+            <button type="button" class="nav-dropdown-btn" onclick="toggleNavDropdown(this)">
+              <div class="nav-dropdown-title">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <span>System Logs</span>
+              </div>
+              <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <ul class="sub-nav-links">
+              <li>
+                <a href="{{ route('admin.activity.index') }}" class="{{ request()->routeIs('admin.activity.index') ? 'active' : '' }}">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 16 14"/></svg>
+                  User Activity Log
+                </a>
+              </li>
+              <li>
+                <a href="{{ route('admin.audit.index') }}" class="{{ request()->routeIs('admin.audit.index') ? 'active' : '' }}">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  Login & Auth Logs
+                </a>
+              </li>
+            </ul>
           </li>
         @endif
 
@@ -612,6 +654,11 @@ updateLiveTime();
       document.getElementById('overlay').classList.toggle('open');
       // Re-center when the mobile sidebar is opened
       setTimeout(centerActiveNav, 250);
+    }
+
+    function toggleNavDropdown(btn) {
+      var li = btn.closest('.nav-dropdown');
+      if (li) li.classList.toggle('open');
     }
 
     // Climate widget: click/tap toggles open/closed (pins it; hover also expands on desktop)

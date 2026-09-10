@@ -98,8 +98,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/quotations/{quotation}', [App\Http\Controllers\QuotationController::class, 'farmerShow'])->name('quotations.show');
         Route::post('/quotations', [App\Http\Controllers\QuotationController::class, 'farmerStore'])->name('quotations.store');
         Route::delete('/quotations/{quotation}', [App\Http\Controllers\QuotationController::class, 'farmerDestroy'])->name('quotations.destroy');
-        Route::post('/quotations/{quotation}/accept', [App\Http\Controllers\QuotationController::class, 'acceptQuotation'])->name('quotations.accept');
-        Route::post('/quotations/{quotation}/reject', [App\Http\Controllers\QuotationController::class, 'rejectQuotation'])->name('quotations.reject');
 
         // Activity Log
         Route::get('/activity', [App\Http\Controllers\QuotationController::class, 'farmerActivity'])->name('activity.index');
@@ -122,10 +120,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/inventory/{product}/update-stock', [App\Http\Controllers\InventoryController::class, 'updateStock'])->name('inventory.update');
         Route::get('/quotations', [App\Http\Controllers\QuotationController::class, 'storeIndex'])->name('quotations.index');
         Route::get('/quotations/{quotation}', [App\Http\Controllers\QuotationController::class, 'storeShow'])->name('quotations.show');
-        Route::post('/quotations/{quotation}/claim', [App\Http\Controllers\QuotationController::class, 'claimQuotation'])->name('quotations.claim');
-        Route::post('/quotations/{quotation}/compute', [App\Http\Controllers\QuotationController::class, 'computePrices'])->name('quotations.compute');
-        Route::post('/quotations/{quotation}/dispatch', [App\Http\Controllers\QuotationController::class, 'dispatchQuotation'])->name('quotations.dispatch');
-        Route::post('/quotations/{item}/update-item', [App\Http\Controllers\QuotationController::class, 'updateItem'])->name('quotations.update-item');
+        Route::post('/quotations/ai-overview', [App\Http\Controllers\QuotationController::class, 'storeAiOverview'])->name('quotations.ai-overview');
         Route::get('/storefront', [App\Http\Controllers\ProductController::class, 'storefront'])->name('storefront.index');
 
         // DSS Input Formulas (rule matrix management)
@@ -153,14 +148,13 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AuthController::class, 'showAdminDashboard'])->name('dashboard');
 
-        Route::get('/users', function () {
-            $users = \App\Models\User::orderBy('created_at', 'desc')->get();
-            return view('admin.users.index', compact('users'));
-        })->name('users.index');
+        Route::get('/users', [App\Http\Controllers\AdminUserController::class, 'index'])->name('users.index');
 
         // Admin pre-registration with phone/email uniqueness check + free email activation flow
         Route::get('/users/create', [App\Http\Controllers\AdminUserController::class, 'create'])->name('users.create');
         Route::post('/users', [App\Http\Controllers\AdminUserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [App\Http\Controllers\AdminUserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [App\Http\Controllers\AdminUserController::class, 'update'])->name('users.update');
         Route::post('/users/{user}/resend-invitation', [App\Http\Controllers\AdminUserController::class, 'resend'])
             ->name('users.resend');
         Route::post('/users/{user}/approve', [App\Http\Controllers\AdminUserController::class, 'approve'])
@@ -182,9 +176,148 @@ Route::middleware('auth')->group(function () {
                 return $cropFormulas->groupBy('season');
             });
 
-            return view('admin.analytics.index', compact('formulas', 'grouped'));
+            $days = 30;
+            $startDate = now()->subDays($days);
+
+            // ── User Stats ──
+            $totalUsers = \App\Models\User::count();
+            $farmers = \App\Models\User::where('role', 'farmer')->count();
+            $storeOwners = \App\Models\User::where('role', 'store_owner')->count();
+            $activeUsers = \App\Models\User::where('status', 'active')->count();
+
+            // User signups by day (120 days so the chart can page back through past months)
+            $userSignups = \App\Models\User::where('created_at', '>=', now()->subDays(120))
+                ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+
+            // ── Quotation Stats (Cost Estimates) ──
+            $totalQuotations = \App\Models\Quotation::count();
+            $quotationsThisMonth = \App\Models\Quotation::where('created_at', '>=', $startDate)->count();
+            $quotationsBySeason = \App\Models\Quotation::selectRaw('season, COUNT(*) as count')
+                ->groupBy('season')
+                ->get();
+
+            // Quotations by status
+            $quotationsByStatus = \App\Models\Quotation::selectRaw('status, COUNT(*) as count')
+                ->groupBy('status')
+                ->get();
+
+            // Quotations by day
+            $quotationsByDay = \App\Models\Quotation::where('created_at', '>=', $startDate)
+                ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+
+            // ── Crop Tracking ──
+            $totalCrops = \App\Models\FarmerCrop::count();
+            $activeCrops = \App\Models\FarmerCrop::whereNotIn('growth_stage', ['harvested', 'failed'])->count();
+            $harvestedCrops = \App\Models\FarmerCrop::where('growth_stage', 'harvested')->count();
+
+            // Crops by season
+            $cropsBySeason = \App\Models\FarmerCrop::selectRaw('season, COUNT(*) as count')
+                ->groupBy('season')
+                ->get();
+
+            // Crops by growth stage
+            $cropsByStage = \App\Models\FarmerCrop::selectRaw('growth_stage, COUNT(*) as count')
+                ->groupBy('growth_stage')
+                ->orderByDesc('count')
+                ->get();
+
+            // Crops tracked by day
+            $cropsByDay = \App\Models\FarmerCrop::where('created_at', '>=', $startDate)
+                ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+
+            // ── Harvest Reports ──
+            $totalHarvests = \App\Models\HarvestReport::count();
+            $totalYield = \App\Models\HarvestReport::sum('actual_yield_metric_tons');
+            $totalExpenses = \App\Models\HarvestReport::sum('actual_total_expenses');
+
+            // Harvests by crop type
+            $harvestsByCrop = \App\Models\HarvestReport::selectRaw('crop_type, COUNT(*) as count, SUM(actual_yield_metric_tons) as yield, SUM(actual_total_expenses) as expenses')
+                ->groupBy('crop_type')
+                ->get();
+
+            // ── Product Stats ──
+            $totalProducts = \App\Models\Product::count();
+            $activeProducts = \App\Models\Product::where('status', 'active')->count();
+            $lowStockProducts = \App\Models\Product::whereColumn('stock_quantity', '<=', 'reorder_threshold')
+                ->where('reorder_threshold', '>', 0)
+                ->count();
+
+            // Products by category
+            $productsByCategory = \App\Models\Product::join('categories', 'products.category_id', '=', 'categories.id')
+                ->selectRaw('categories.name as category, COUNT(*) as count')
+                ->groupBy('categories.name')
+                ->get();
+
+            // ── Activity Stats ──
+            $totalActivities = \App\Models\ActivityLog::count();
+            $activitiesThisMonth = \App\Models\ActivityLog::where('created_at', '>=', $startDate)->count();
+
+            // Activities by type
+            $activitiesByType = \App\Models\ActivityLog::selectRaw('type, COUNT(*) as count')
+                ->groupBy('type')
+                ->orderByDesc('count')
+                ->get();
+
+            // Activities by day
+            $activitiesByDay = \App\Models\ActivityLog::where('created_at', '>=', $startDate)
+                ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+
+            return view('admin.analytics.index', compact(
+                'formulas', 'grouped',
+                'totalUsers', 'farmers', 'storeOwners', 'activeUsers', 'userSignups',
+                'totalQuotations', 'quotationsThisMonth', 'quotationsBySeason', 'quotationsByStatus', 'quotationsByDay',
+                'totalCrops', 'activeCrops', 'harvestedCrops', 'cropsBySeason', 'cropsByStage', 'cropsByDay',
+                'totalHarvests', 'totalYield', 'totalExpenses', 'harvestsByCrop',
+                'totalProducts', 'activeProducts', 'lowStockProducts', 'productsByCategory',
+                'totalActivities', 'activitiesThisMonth', 'activitiesByType', 'activitiesByDay'
+            ));
         })->name('analytics.index');
+        Route::get('/analytics/matrix', function () {
+            $formulas = \App\Models\DecisionFormula::with('product.category')
+                ->orderBy('crop_type')
+                ->orderBy('season')
+                ->get();
+
+            $grouped = $formulas->groupBy('crop_type')->map(function ($cropFormulas) {
+                return $cropFormulas->groupBy('season');
+            });
+
+            $ruleCount = $formulas->count();
+            $cropCount = $grouped->count();
+            $seasonLabels = $grouped->flatMap(fn($s) => $s->keys())->unique()->values()->map(fn($n) => ucfirst($n))->implode(' · ');
+
+            return view('admin.analytics.matrix', compact('formulas', 'grouped', 'ruleCount', 'cropCount', 'seasonLabels'));
+        })->name('analytics.matrix');
         Route::get('/settings', function () { return view('admin.settings.index'); })->name('settings.index');
+        Route::post('/settings/interface', function (\Illuminate\Http\Request $request) {
+            $data = $request->validate([
+                'yield_unit'            => ['required', 'in:auto,mt,kg,cavan'],
+                'yield_decimals'        => ['required', 'integer', 'min:0', 'max:2'],
+                'yield_number_separator'=> ['required', 'in:comma,period,none'],
+                'yield_zero_dash'       => ['sometimes', 'boolean'],
+            ]);
+
+            $separators = ['comma' => ',', 'period' => '.', 'none' => ''];
+
+            \App\Helpers\SettingsHelper::set('yield_unit', $data['yield_unit']);
+            \App\Helpers\SettingsHelper::set('yield_decimals', (string) $data['yield_decimals']);
+            \App\Helpers\SettingsHelper::set('yield_number_separator', $separators[$data['yield_number_separator']]);
+            \App\Helpers\SettingsHelper::set('yield_zero_dash', ($data['yield_zero_dash'] ?? false) ? '1' : '0');
+
+            return response()->json(['ok' => true, 'preview' => \App\Helpers\SettingsHelper::formatYield(2.45)]);
+        })->name('settings.interface');
         Route::get('/audit', function () { return view('admin.audit.index'); })->name('audit.index');
     });
 

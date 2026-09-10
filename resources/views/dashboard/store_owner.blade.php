@@ -238,7 +238,7 @@
       <x-kpi-card title="Low Stock Items" value="{{ $lowStockCount }}" trendValue="{{ $lowStockCount > 0 ? 'reorder soon' : 'all healthy' }}" trendDirection="{{ $lowStockCount > 0 ? 'down' : 'up' }}" trendLabel="alert threshold" accent="#d97706" link="{{ route('store.inventory.index') }}">
         <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Pending Quotations" value="{{ $pendingQuotationsCount }}" trendValue="{{ $computedQuotationsCount }} computed" trendDirection="{{ $pendingQuotationsCount > 0 ? 'up' : 'neutral' }}" trendLabel="awaiting response" accent="#7c3aed" link="{{ route('store.quotations.index') }}">
+      <x-kpi-card title="Demand Signals" value="{{ $demandQuotationCount }}" trendValue="{{ $computedQuotationCount }} estimate-ready" trendDirection="{{ $demandQuotationCount > 0 ? 'up' : 'neutral' }}" trendLabel="{{ $viewedQuotationCount }} viewed by you" accent="#7c3aed" link="{{ route('store.quotations.index') }}">
         <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></x-slot:icon>
       </x-kpi-card>
     </section>
@@ -346,7 +346,7 @@
           <div class="panel-head">
             <div>
               <h3>Store Activity</h3>
-              <p>Alerts and recent quotation flow</p>
+              <p>Alerts and recent demand signals</p>
             </div>
           </div>
           <div style="padding:12px 16px;">
@@ -428,8 +428,8 @@
               @else
                 <div style="text-align:center;padding:32px 16px;">
                   <svg viewBox="0 0 24 24" width="34" height="34" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-                  <p style="font-size:13px;color:#64748b;margin:8px 0 0 0;">No quotation requests yet.</p>
-                  <p style="font-size:12px;color:#94a3b8;margin:4px 0 0 0;">New farmer requests will appear here.</p>
+                  <p style="font-size:13px;color:#64748b;margin:8px 0 0 0;">No demand signals yet.</p>
+                  <p style="font-size:12px;color:#94a3b8;margin:4px 0 0 0;">When farmers generate quotations using your products, they'll appear here.</p>
                 </div>
               @endif
             </div>

@@ -286,17 +286,15 @@ class AuthController extends Controller
 
         $totalQuotations = Quotation::count();
         $quotationStatusCounts = [
-            'pending'    => Quotation::where('status', Quotation::STATUS_PENDING)->count(),
-            'computed'   => Quotation::where('status', Quotation::STATUS_COMPUTED)->count(),
-            'dispatched' => Quotation::where('status', Quotation::STATUS_DISPATCHED)->count(),
-            'accepted'   => Quotation::where('status', Quotation::STATUS_ACCEPTED)->count(),
-            'rejected'   => Quotation::where('status', Quotation::STATUS_REJECTED)->count(),
+            'computed' => Quotation::where('status', Quotation::STATUS_COMPUTED)->count(),
+            'viewed'   => Quotation::where('status', Quotation::STATUS_VIEWED)->count(),
+            'expired'  => Quotation::where('status', Quotation::STATUS_EXPIRED)->count(),
         ];
-        $pendingQuotations = $quotationStatusCounts['pending'];
-        $acceptedQuotations = $quotationStatusCounts['accepted'];
+        $computedQuotations = $quotationStatusCounts['computed'];
+        $viewedQuotations = $quotationStatusCounts['viewed'];
 
         // Recent platform-wide quotation activity
-        $recentPlatformQuotations = Quotation::with(['farmer', 'storeOwner'])
+        $recentPlatformQuotations = Quotation::with(['farmer', 'items.product.storeOwner'])
             ->latest()
             ->take(5)
             ->get();
@@ -321,8 +319,8 @@ class AuthController extends Controller
             'discontinuedProducts',
             'totalQuotations',
             'quotationStatusCounts',
-            'pendingQuotations',
-            'acceptedQuotations',
+            'computedQuotations',
+            'viewedQuotations',
             'recentPlatformQuotations',
             'recentProducts'
         ));

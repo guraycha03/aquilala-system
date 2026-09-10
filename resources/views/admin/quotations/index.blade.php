@@ -144,7 +144,7 @@
         @foreach($cropDemand as $crop)
           <div style="{{ !$loop->last ? 'margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;' : '' }}">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span style="font-weight: 600; color: #1e2922; font-size: 14px; text-transform: capitalize;">{{ $crop['count'] > 0 ? $crop['count'] : '' }} {{ Str::plural($loop->key, $crop['count']) }}</span>
+              <span style="font-weight: 600; color: #1e2922; font-size: 14px; text-transform: capitalize;">{{ $crop['crop'] ?? 'Unspecified' }}</span>
               <span style="font-size: 13px; color: #64748b;">{{ $crop['count'] }} estimate(s)</span>
             </div>
             <div class="demand-bar">

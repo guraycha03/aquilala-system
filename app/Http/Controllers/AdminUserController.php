@@ -14,11 +14,93 @@ use Illuminate\Validation\Rule;
 class AdminUserController extends Controller
 {
     /**
+     * List every account on the platform with live profile data.
+     */
+    public function index()
+    {
+        $users = User::withCount('products')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.users.index', compact('users'));
+    }
+
+    /**
      * Show the Register User page.
      */
     public function create()
     {
         return view('admin.users.create');
+    }
+
+    /**
+     * Show the Edit User page for an existing account.
+     */
+    public function edit(User $user)
+    {
+        return view('admin.users.edit', ['user' => $user]);
+    }
+
+    /**
+     * Update an existing account's profile, role, or status.
+     */
+    public function update(Request $request, User $user): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name'       => ['required', 'string', 'max:255'],
+            'email'      => ['required', 'string', 'max:254', 'email:rfc', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone'      => ['nullable', 'string', 'max:25', Rule::unique('users', 'phone')->ignore($user->id)],
+            'role'       => ['nullable', Rule::in(['farmer', 'store_owner'])],
+            'status'     => ['nullable', Rule::in([
+                User::STATUS_ACTIVE,
+                User::STATUS_SUSPENDED,
+                User::STATUS_PENDING_APPROVAL,
+                User::STATUS_PENDING_VERIFICATION,
+            ])],
+            'barangay'   => ['nullable', 'string', 'max:120'],
+            'city'       => ['nullable', 'string', 'max:120'],
+            'province'   => ['nullable', 'string', 'max:120'],
+        ], [
+            'name.required'   => 'Please enter the user\'s full name.',
+            'email.required'  => 'Please enter the user\'s email address.',
+            'email.unique'    => 'That email address is already in use by another account.',
+            'phone.unique'    => 'That phone number is already in use by another account.',
+            'email.email'     => 'Enter a valid email address.',
+        ]);
+
+        // Role is only reassignable for non-admin accounts.
+        if (empty($validated['role']) && $user->role === 'admin') {
+            $validated['role'] = 'admin';
+        }
+
+        // Normalise blank contact/address fields to NULL so the unique
+        // phone index can hold multiple blank rows.
+        foreach (['phone', 'barangay', 'city', 'province'] as $field) {
+            if (isset($validated[$field]) && trim((string) $validated[$field]) === '') {
+                $validated[$field] = null;
+            }
+        }
+
+        $fill = function (string $field) use ($validated, $user) {
+            return array_key_exists($field, $validated)
+                ? $validated[$field]
+                : $user->getAttribute($field);
+        };
+
+        $user->update([
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
+            'phone'    => $fill('phone'),
+            'role'     => $fill('role'),
+            'status'   => $fill('status'),
+            'barangay' => $fill('barangay'),
+            'city'     => $fill('city'),
+            'province' => $fill('province'),
+        ]);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', "{$user->name}'s profile was updated.");
     }
 
     /**

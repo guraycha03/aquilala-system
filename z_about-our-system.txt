@@ -395,7 +395,7 @@
      Form Fields:
        a. Crop Type — searchable dropdown with all supported crops,
           supports custom entry
-       b. Farming Season — two radio cards (Wet Jun-Oct / Dry Nov-May),
+       b. Farming Season — two radio cards (Wet Jun-Jan / Dry Feb-May),
           auto-detected from current date
        c. Land Area (Hectares) — number input
        d. Select Products (Optional) — dynamic AJAX loader that fetches
@@ -923,7 +923,7 @@
 
   FORM FIELDS:
     - Crop Type (searchable with datalist from existing crops)
-    - Season (Wet Jun-Oct / Dry Nov-May)
+    - Season (Wet Jun-Jan / Dry Feb-May)
     - Product (dropdown grouped by category, showing price per unit)
     - Application Rate per Hectare (0.01-999.99)
     - Unit (Bags, Sacks, Kilograms, Liters, Pieces, Sachets, etc.)
@@ -1176,8 +1176,8 @@
 
   TAB 2: SEASONS & QUOTATION
     Cropping Seasons:
-      - Wet Season window (month selects, default Jun-Oct)
-      - Dry Season window (default Nov-May)
+      - Wet Season window (month selects, default Jun-Jan)
+      - Dry Season window (default Feb-May)
       - Active Season (Auto-detect / Wet / Dry)
       - Toggle: "Recommend seasonal varieties automatically"
     Quotation Rules:
@@ -1350,8 +1350,8 @@
     defaults when API key is not configured.
 
   SEASON CALENDAR:
-    Wet Season: June - October (Tag-ulan)
-    Dry Season: November - May (Tag-init)
+    Wet Season: June - January (Tag-ulan)
+    Dry Season: February - May (Tag-init)
 
 ================================================================================
   END OF PRESENTATION DOCUMENT

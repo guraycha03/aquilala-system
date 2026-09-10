@@ -162,7 +162,7 @@
         <div class="hero-actions">
           <a href="{{ route('farmer.quotations.request') }}" class="btn-hero">
             <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            Request Quotation
+            Generate Quotation
           </a>
           <a href="{{ route('farmer.products.browse') }}" class="btn-hero">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -180,7 +180,7 @@
       <x-kpi-card title="Recommended Products" value="{{ $recommendedCount }}" trendValue="{{ $activeProductCount }} active" trendDirection="up" trendLabel="in marketplace" accent="#16a34a" link="{{ route('farmer.products.browse') }}">
         <x-slot:icon><img src="{{ asset('images/product.png') }}" alt="Product" width="22" height="22" style="object-fit:contain;"></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Quotation Requests" value="{{ $quotationCount }}" trendValue="{{ $pendingQuotations }} pending" trendDirection="{{ $pendingQuotations > 0 ? 'up' : 'neutral' }}" trendLabel="{{ $dispatchedQuotations }} dispatched" accent="#7c3aed" link="{{ route('farmer.quotations.index') }}">
+      <x-kpi-card title="Cost Quotations" value="{{ $quotationCount }}" trendValue="{{ $viewedQuotations }} seen by stores" trendDirection="{{ $viewedQuotations > 0 ? 'up' : 'neutral' }}" trendLabel="{{ number_format($quotationValue, 2) }} total" accent="#7c3aed" link="{{ route('farmer.quotations.index') }}">
         <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></x-slot:icon>
       </x-kpi-card>
       <x-kpi-card title="Stores Directory" value="{{ $storeCount }}" trendValue="registered" trendDirection="neutral" trendLabel="store owners" accent="#d97706" link="{{ route('farmer.stores.index') }}">
@@ -196,7 +196,7 @@
         <div class="panel-head" style="border-bottom:none;padding-bottom:0;">
           <div>
             <h3 style="font-size:16px;">Current Season</h3>
-            <p style="margin-top:3px;">{{ $climateInfo['months'] ?? ($season === 'wet' ? 'June – October' : 'November – May') }}</p>
+            <p style="margin-top:3px;">{{ $climateInfo['months'] ?? ($season === 'wet' ? 'June – January' : 'February – May') }}</p>
           </div>
           <span data-inline-style="{{ $seasonPillStyle }}">
             @if($season === 'wet')
@@ -218,7 +218,7 @@
                 <svg viewBox="0 0 24 24" width="14" height="14" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 <span style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Months</span>
               </div>
-              <div style="font-size:14px;font-weight:700;color:#1e293b;line-height:1.3;">{{ $climateInfo['months'] ?? ($season === 'wet' ? 'June – October' : 'November – May') }}</div>
+              <div style="font-size:14px;font-weight:700;color:#1e293b;line-height:1.3;">{{ $climateInfo['months'] ?? ($season === 'wet' ? 'June – January' : 'February – May') }}</div>
             </div>
             <div style="flex:1;padding:16px 18px;text-align:center;border-right:1px solid #e8eaed;">
               <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:6px;">
@@ -283,7 +283,7 @@
                     'eggplant' => 'crops/eggplant.png',
                     'talong' => 'crops/eggplant.png',
                     'chili' => 'crops/chili.png',
-                    'pepper' => 'crops/chili.png',
+                    'pepper' => 'crops/capsicum.png',
                     'siling labuyo' => 'crops/chili.png',
                     'cacao' => 'crops/cacao.png',
                     'pineapple' => 'crops/pineapple.png',
@@ -366,41 +366,8 @@
       </div>
     </section>
 
-    <!-- 4. STORES + WORKFLOW -->
+    <!-- 4. WORKFLOW -->
     <section class="dash-grid">
-      <!-- Stores directory -->
-      <div class="dash-panel reveal" data-reveal>
-        <div class="panel-head">
-          <div>
-            <h3>Nearby Stores</h3>
-            <p>Registered input suppliers</p>
-          </div>
-          <a href="{{ route('farmer.stores.index') }}" class="btn-ghost">View Directory <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
-        </div>
-        <div class="panel-body">
-          @if($stores->isNotEmpty())
-            @foreach($stores->take(5) as $store)
-              <div class="store-card">
-                <div class="store-avatar">{{ Str::upper(mb_substr($store->store_name ?? $store->name, 0, 1)) }}</div>
-                <div style="flex:1;min-width:0;">
-                  <b>{{ $store->store_name ?? $store->name }}</b>
-                  <span class="store-meta">
-                    {{ $store->products_count ?? $store->products->count() }} products
-                    @if($store->city || $store->province) · {{ trim(implode(', ', array_filter([$store->city, $store->province]))) }}@endif
-                  </span>
-                </div>
-                <span style="font-size:11px;font-weight:700;color:#16a34a;background:#f0fdf4;padding:4px 10px;border-radius:8px;">Open</span>
-              </div>
-            @endforeach
-          @else
-            <div style="text-align:center;padding:34px 16px;">
-              <svg viewBox="0 0 24 24" width="34" height="34" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <p style="font-size:13px;color:#64748b;margin:8px 0 0 0;">No registered stores yet.</p>
-            </div>
-          @endif
-        </div>
-      </div>
-
       <!-- From Planning to Harvest -->
       <div class="dash-panel reveal" data-reveal>
         <div class="panel-head">
@@ -421,11 +388,11 @@
             </li>
             <li style="display:flex;gap:12px;align-items:flex-start;">
               <span style="width:26px;height:26px;border-radius:50%;background:rgba(22,163,74,0.1);color:#16a34a;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
-              <div style="font-size:13px;color:#475569;line-height:1.5;"><strong style="color:#0f172a;">Request a cost quotation</strong><br>Itemized prices from the store, valid for 3–7 days.</div>
+              <div style="font-size:13px;color:#475569;line-height:1.5;"><strong style="color:#0f172a;">Generate a cost quotation</strong><br>Get instant itemized costs for your land area, valid for 14 days.</div>
             </li>
             <li style="display:flex;gap:12px;align-items:flex-start;">
               <span style="width:26px;height:26px;border-radius:50%;background:rgba(22,163,74,0.1);color:#16a34a;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</span>
-              <div style="font-size:13px;color:#475569;line-height:1.5;"><strong style="color:#0f172a;">Store prepares your supplies</strong><br>The store owner computes prices and dispatches your order.</div>
+              <div style="font-size:13px;color:#475569;line-height:1.5;"><strong style="color:#0f172a;">Stores see your demand</strong><br>Store owners view your quotation as demand intel — no approval needed.</div>
             </li>
             <li style="display:flex;gap:12px;align-items:flex-start;">
               <span style="width:26px;height:26px;border-radius:50%;background:rgba(22,163,74,0.1);color:#16a34a;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">5</span>
@@ -447,7 +414,7 @@
         <div class="panel-head">
           <div>
             <h3>Quotation Activity</h3>
-            <p>Step-tracker of your requests</p>
+            <p>Instantly generated cost estimates</p>
           </div>
           <a href="{{ route('farmer.quotations.index') }}" class="btn-ghost">View All <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
         </div>
@@ -472,8 +439,8 @@
                   </div>
                   <div style="font-size:12px;color:#64748b;margin-top:4px;line-height:1.4;">
                     <strong>{{ $qt->crop_type }}</strong> · {{ ucfirst($qt->season) }} Season · {{ $qt->land_area }} ha
-                    @if($qt->storeOwner)
-                      <br><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2" fill="none" style="vertical-align:-1px;margin-right:2px;"><path d="M3 9l1-5h16l1 5"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/></svg> {{ $qt->storeOwner->store_name ?? $qt->storeOwner->name }}
+                    @if($qt->items->count() > 0)
+                      <br><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2" fill="none" style="vertical-align:-1px;margin-right:2px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> {{ $qt->items->count() }} input lines
                     @endif
                   </div>
                   @if($qt->estimated_total_cost > 0)
@@ -485,10 +452,10 @@
           @else
             <div style="text-align:center;padding:34px 16px;">
               <svg viewBox="0 0 24 24" width="34" height="34" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-              <p style="font-size:13px;color:#64748b;margin:8px 0 0 0;">No quotation requests yet.</p>
+              <p style="font-size:13px;color:#64748b;margin:8px 0 0 0;">No cost quotations yet.</p>
               <a href="{{ route('farmer.quotations.request') }}" class="btn-primary" style="margin-top:14px;">
                 <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Request a Quotation
+                Generate a Quotation
               </a>
             </div>
           @endif

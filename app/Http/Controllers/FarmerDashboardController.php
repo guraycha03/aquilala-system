@@ -29,13 +29,12 @@ class FarmerDashboardController extends Controller
             ->count();
         $activeProductCount = Product::active()->count();
 
-        // 3. Quotations — farmer's own quotation requests
+        // 3. Quotations — farmer's own generated quotations
         $quotationCount = Quotation::where('user_id', $farmerId)->count();
-        $pendingQuotations = Quotation::where('user_id', $farmerId)
-            ->where('status', Quotation::STATUS_PENDING)
-            ->count();
-        $dispatchedQuotations = Quotation::where('user_id', $farmerId)
-            ->where('status', Quotation::STATUS_DISPATCHED)
+        $quotationValue = Quotation::where('user_id', $farmerId)
+            ->sum('estimated_total_cost');
+        $viewedQuotations = Quotation::where('user_id', $farmerId)
+            ->where('status', Quotation::STATUS_VIEWED)
             ->count();
 
         // 4. Stores — count of registered store owners
@@ -48,7 +47,7 @@ class FarmerDashboardController extends Controller
             ->get();
 
         // ─── Recent Quotations ─────────────────────────────────────
-        $recentQuotations = Quotation::with('storeOwner')
+        $recentQuotations = Quotation::with(['items.product'])
             ->where('user_id', $farmerId)
             ->latest()
             ->take(5)
@@ -64,8 +63,8 @@ class FarmerDashboardController extends Controller
             'recommendedCount',
             'activeProductCount',
             'quotationCount',
-            'pendingQuotations',
-            'dispatchedQuotations',
+            'quotationValue',
+            'viewedQuotations',
             'storeCount',
             'stores',
             'recentQuotations',

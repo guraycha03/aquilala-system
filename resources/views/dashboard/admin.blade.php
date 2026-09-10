@@ -145,7 +145,7 @@
       <x-kpi-card title="Store Owners" value="{{ $storeOwnersCount }}" trendValue="{{ $activeProducts }} active" trendDirection="{{ $activeProducts > 0 ? 'up' : 'neutral' }}" trendLabel="products listed" accent="#d97706" link="{{ route('admin.users.index') }}">
         <x-slot:icon><img src="{{ asset('images/store.png') }}" alt="Store" width="22" height="22" style="object-fit:contain;"></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Quotations" value="{{ $totalQuotations }}" trendValue="{{ $pendingQuotations }} pending" trendDirection="{{ $pendingQuotations > 0 ? 'up' : 'neutral' }}" trendLabel="platform-wide" accent="#7c3aed" link="{{ route('admin.quotations.index') }}">
+      <x-kpi-card title="Quotations" value="{{ $totalQuotations }}" trendValue="{{ $computedQuotations }} estimate-ready" trendDirection="{{ $computedQuotations > 0 ? 'up' : 'neutral' }}" trendLabel="{{ $viewedQuotations }} viewed" accent="#7c3aed" link="{{ route('admin.quotations.index') }}">
         <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></x-slot:icon>
       </x-kpi-card>
       <x-kpi-card title="Active Products" value="{{ $activeProducts }}" trendValue="{{ $outOfStockProducts }} out of stock" trendDirection="{{ $outOfStockProducts > 0 ? 'down' : 'up' }}" trendLabel="needs restocking" accent="#16a34a" link="{{ route('admin.analytics.index') }}">
@@ -265,7 +265,7 @@
         <div class="panel-head">
           <div>
             <h3>Quotation Activity</h3>
-            <p>Recent requests across the entire platform</p>
+            <p>Recent quotations across the entire platform</p>
           </div>
           <a href="{{ route('admin.quotations.index') }}" class="btn-ghost">View All <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
         </div>
@@ -290,9 +290,6 @@
                     <strong>{{ $qt->crop_type }}</strong> · {{ ucfirst($qt->season) }} Season · {{ $qt->land_area }} ha
                     @if($qt->farmer)
                       <br><svg viewBox="0 0 24 24" width="12" height="12" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> {{ $qt->farmer->name }}
-                      @if($qt->storeOwner)
-                        → <svg viewBox="0 0 24 24" width="12" height="12" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px;"><path d="M3 9l1.5-4.5h15L21 9"/><path d="M3 9v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"/><path d="M3 9h18"/><path d="M6 14h4v4H6z"/><path d="M14 14h4v6h-4z"/></svg> {{ $qt->storeOwner->store_name ?? $qt->storeOwner->name }}
-                      @endif
                     @endif
                   </div>
                 </div>

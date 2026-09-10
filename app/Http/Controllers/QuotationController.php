@@ -12,6 +12,7 @@ use App\Services\CostQuotationEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class QuotationController extends Controller
@@ -376,19 +377,32 @@ class QuotationController extends Controller
             ->latest()
             ->get();
 
+        // Only the items that belong to this store (demand value attributable to this store)
+        $storeItems = $quotations->pluck('items')
+            ->flatten()
+            ->filter(fn ($item) => $item->product && $item->product->user_id === $storeUserId);
+
         // Demand metrics
-        $totalQuotations = $quotations->count();
+        $totalQuotations  = $quotations->count();
+        $uniqueFarmers    = $quotations->pluck('user_id')->filter()->unique()->count();
+
         $recentQuotations = $quotations->where('created_at', '>=', now()->subDays(7))->count();
-        $totalDemandValue = $quotations->sum('estimated_total_cost');
+        $priorQuotations  = $quotations->filter(fn ($q) =>
+            $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
+        )->count();
+        $weekTrend = $priorQuotations > 0
+            ? (int) round(($recentQuotations - $priorQuotations) / $priorQuotations * 100)
+            : ($recentQuotations > 0 ? 100 : 0);
+
+        $ownDemandValue     = $storeItems->sum('subtotal');
+        $demandProductCount = $storeItems->pluck('product_id')->unique()->count();
 
         // Products from this store that appear in quotations
-        $productDemand = $quotations->pluck('items')
-            ->flatten()
-            ->filter(fn ($item) => $item->product && $item->product->user_id === $storeUserId)
+        $productDemand = $storeItems
             ->groupBy('product_name')
             ->map(fn ($items) => [
-                'count' => $items->count(),
-                'total_qty' => $items->sum('calculated_quantity'),
+                'count'       => $items->count(),
+                'total_qty'   => $items->sum('calculated_quantity'),
                 'total_value' => $items->sum('subtotal'),
             ])
             ->sortByDesc('count')
@@ -398,8 +412,12 @@ class QuotationController extends Controller
         return view('store.quotations.index', compact(
             'quotations',
             'totalQuotations',
+            'uniqueFarmers',
             'recentQuotations',
-            'totalDemandValue',
+            'priorQuotations',
+            'weekTrend',
+            'ownDemandValue',
+            'demandProductCount',
             'productDemand'
         ));
     }
@@ -429,6 +447,105 @@ class QuotationController extends Controller
         );
 
         return view('store.quotations.show', compact('quotation', 'storeItems'));
+    }
+
+    /**
+     * Generate an AI plain-language overview of this store's demand (Groq API).
+     */
+    public function storeAiOverview(Request $request)
+    {
+        abort_unless($request->user()?->role === 'store_owner', 403);
+
+        $apiKey = config('services.groq.key');
+        if (!$apiKey) {
+            return response()->json(['error' => 'AI service is not configured yet.'], 500);
+        }
+
+        $storeUserId = Auth::id();
+
+        $quotations = Quotation::involvingStore($storeUserId)
+            ->with(['items.product'])
+            ->latest()
+            ->get();
+
+        $storeItems = $quotations->pluck('items')
+            ->flatten()
+            ->filter(fn ($item) => $item->product && $item->product->user_id === $storeUserId);
+
+        $recentQuotations = $quotations->where('created_at', '>=', now()->subDays(7))->count();
+        $priorQuotations  = $quotations->filter(fn ($q) =>
+            $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
+        )->count();
+
+        $topProducts = $storeItems
+            ->groupBy('product_name')
+            ->map(fn ($items) => [
+                'name'  => $items->first()->product_name,
+                'count' => $items->count(),
+                'qty'   => round($items->sum('calculated_quantity'), 1),
+                'value' => round($items->sum('subtotal'), 2),
+            ])
+            ->sortByDesc('count')
+            ->take(6)
+            ->values()
+            ->toArray();
+
+        $topCrops = $quotations
+            ->groupBy('crop_type')
+            ->map(fn ($qs, $crop) => [
+                'crop'  => $crop,
+                'count' => $qs->count(),
+                'area'  => $qs->sum('land_area'),
+            ])
+            ->sortByDesc('count')
+            ->take(5)
+            ->values()
+            ->toArray();
+
+        $context = [
+            'store'               => Auth::user()->name,
+            'total_signals'       => $quotations->count(),
+            'unique_farmers'      => $quotations->pluck('user_id')->filter()->unique()->count(),
+            'this_week'           => $recentQuotations,
+            'last_week'           => $priorQuotations,
+            'own_products_value'  => round($storeItems->sum('subtotal'), 2),
+            'signals_total_value' => round($quotations->sum('estimated_total_cost'), 2),
+            'top_products'        => $topProducts,
+            'top_crops'           => $topCrops,
+        ];
+
+        $system = 'You are a concise business analyst for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Farmers generate cost quotations and stores see them as "demand signals" - demand visibility, no action required. Write a short store demand overview (120-170 words) using only the JSON telemetry provided. Rules:
+1. Start with ONE sentence executive takeaway.
+2. Follow with 3-6 very short bullet points (- ) covering: demand volume and farmer interest, week-over-week change, top products and top crops (quote quantities and PHP peso values), and one practical suggestion. Report total_signals, this_week and last_week EXACTLY as given — this_week/last_week are the last 7 and previous 7 days respectively, distinct from total_signals.
+3. Use **bold** for key numbers, product names, and crops. No emojis, no tables, no markdown headings. Never invent numbers.';
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Content-Type'  => 'application/json',
+            ])->withoutVerifying()->timeout(90)->post('https://api.groq.com/openai/v1/chat/completions', [
+                'model'       => 'openai/gpt-oss-20b',
+                'messages'    => [
+                    ['role' => 'system', 'content' => $system],
+                    ['role' => 'user', 'content' => json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)],
+                ],
+                'temperature'     => 0.4,
+                'max_tokens'      => 8192,
+                'reasoning_effort'=> 'low',
+            ]);
+
+            if ($response->failed()) {
+                return response()->json([
+                    'error' => $response->json('error.message') ?? 'AI service returned an error.',
+                ], 502);
+            }
+
+            return response()->json([
+                'overview' => trim((string) $response->json('choices.0.message.content', '')),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'Failed to reach the AI service. Please try again.'], 500);
+        }
     }
 
     // ────────────────────────────────────────────────────────────────
@@ -477,7 +594,8 @@ class QuotationController extends Controller
         // Crop demand breakdown
         $cropDemand = $quotations
             ->groupBy('crop_type')
-            ->map(fn ($qs) => [
+            ->map(fn ($qs, $crop) => [
+                'crop' => $crop,
                 'count' => $qs->count(),
                 'total_area' => $qs->sum('land_area'),
                 'total_value' => $qs->sum('estimated_total_cost'),
@@ -522,39 +640,5 @@ class QuotationController extends Controller
         $activityTypes = \App\Models\ActivityLog::select('type')->distinct()->pluck('type')->sort()->toArray();
 
         return view('admin.activity.index', compact('activities', 'users', 'activityTypes', 'userFilter', 'typeFilter'));
-    }
-
-    // ────────────────────────────────────────────────────────────────
-    //  LEGACY STUBS — Backward compatibility for old routes
-    // ────────────────────────────────────────────────────────────────
-
-    public function acceptQuotation(Quotation $quotation)
-    {
-        return back()->with('success', 'This quotation is an informational estimate. Contact the store directly to proceed with a purchase.');
-    }
-
-    public function rejectQuotation(Request $request, Quotation $quotation)
-    {
-        return back()->with('success', 'This quotation is an informational estimate. No action needed.');
-    }
-
-    public function claimQuotation(Quotation $quotation)
-    {
-        return back()->with('success', 'Quotations are now auto-computed. No claiming needed — you can view demand intel directly.');
-    }
-
-    public function computePrices(Request $request, Quotation $quotation)
-    {
-        return back()->with('success', 'Quotations are now auto-computed when farmers submit them.');
-    }
-
-    public function dispatchQuotation(Quotation $quotation)
-    {
-        return back()->with('success', 'Quotations are now instantly available to farmers. No dispatch step needed.');
-    }
-
-    public function updateItem(Request $request, QuotationItem $item)
-    {
-        return back()->with('success', 'Quotation items are now auto-computed. Overrides are no longer needed.');
     }
 }

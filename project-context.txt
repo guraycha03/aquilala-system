@@ -40,7 +40,7 @@ processes, word-of-mouth information, and rough estimates for planning and budge
 Focusing on the province of Sorsogon in the Bicol Region, agriculture is the primary source
 of livelihood for the majority of rural households. Within Sorsogon, the municipality of Bulan
 is identified as an agricultural area where farming serves as one of the main sources of income
-for local residents. Farmers in Bulan typically follow two major cropping seasons: the Wet Season (June to October) and the Dry Season (November to May). During the wet season, farmers
+for local residents. Farmers in Bulan typically follow two major cropping seasons: the Wet Season (June to January) and the Dry Season (February to May). During the wet season, farmers
 cultivate rice varieties that are tolerant to flooding and heavy rainfall. During the dry season,
 farmers may plant rice, corn, or high-value crops depending on water availability from irrigation
 systems. The Aquilala Irrigators Association plays a critical role in managing water distribution

@@ -645,7 +645,7 @@ class SystemDataSeeder extends Seeder
                 'application_rate_max' => 30,
                 'application_rate_unit' => 'kg/ha',
                 'application_method' => 'Drum seeding or transplanting',
-                'application_timing' => 'Dry season (November–January planting window)',
+                'application_timing' => 'Dry season (February–April planting window)',
                 'notes' => 'Seed rate: 25–30 kg/ha for dry season. Requires good irrigation.',
             ]
         );

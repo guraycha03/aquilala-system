@@ -10,6 +10,7 @@ class FarmerCrop extends Model
     protected $fillable = [
         'user_id',
         'crop_id',
+        'product_id',
         'batch_name',
         'land_area',
         'land_area_unit',
@@ -43,6 +44,11 @@ class FarmerCrop extends Model
     public function crop(): BelongsTo
     {
         return $this->belongsTo(Crop::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 
     public function getGrowthStageLabelAttribute(): string
