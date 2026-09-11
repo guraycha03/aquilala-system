@@ -319,7 +319,7 @@
 
   <!-- Horizontal bar: top stock vs minimum limits by product -->
   @php
-    $chartProducts = $products->sortByDesc(fn ($p) => (int) ($p->stock_quantity ?? 0))->take(5)->values();
+    $chartProducts = $allProducts->sortByDesc(fn ($p) => (int) ($p->stock_quantity ?? 0))->take(5)->values();
     $barLabels = $chartProducts->pluck('name')->toArray();
     $barQtys = $chartProducts->map(fn ($p) => (int) ($p->stock_quantity ?? 0))->toArray();
     $barThresholds = $chartProducts->map(fn ($p) => (int) ($p->reorder_threshold ?? 0))->toArray();
@@ -371,6 +371,7 @@
     </select>
   </div>
 
+  <div data-paginated>
   <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
     <div class="app-scroll">
     @if($products->count() > 0)
@@ -445,6 +446,9 @@
         @endforeach
       </tbody>
     </table>
+    @if($products->hasPages())
+      {{ $products->links('partials.pagination') }}
+    @endif
     @else
     <div class="empty-state">
       <h3>No Inventory Data</h3>
@@ -456,6 +460,7 @@
       <div class="app-scrollbar-track"></div>
       <div class="app-scrollbar-thumb"></div>
     </div>
+  </div>
   </div>
 </div>
 
@@ -469,7 +474,7 @@
     <button class="modal-close" onclick="closeStockBreakdown()" aria-label="Close">×</button>
   </div>
   <div class="info-modal-body">
-    @if($products->count() > 0)
+    @if($allProducts->count() > 0)
     <table>
       <thead>
         <tr>
@@ -481,7 +486,7 @@
         </tr>
       </thead>
       <tbody>
-        @foreach($products as $product)
+        @foreach($allProducts as $product)
         @php
           $mQty = $product->stock_quantity ?? 0;
           $mThresh = $product->reorder_threshold ?? 1;
@@ -674,12 +679,11 @@
   // ---- Live search + status filter ----
   const searchInput = document.getElementById('invSearch');
   const statusFilter = document.getElementById('statusFilter');
-  const rows = document.querySelectorAll('#invTable tr');
 
   function applyFilters() {
+    const rows = document.querySelectorAll('#invTable tr');
     const q = (searchInput.value || '').toLowerCase().trim();
     const status = statusFilter.value;
-    rows.forEach(function (row) {
       const matchQ = !q || (row.dataset.name || '').includes(q);
       const matchS = status === 'all' || row.dataset.status === status;
       row.style.display = (matchQ && matchS) ? '' : 'none';
@@ -687,6 +691,9 @@
   }
   searchInput.addEventListener('input', applyFilters);
   statusFilter.addEventListener('change', applyFilters);
+
+  // Re-apply client-side filters after AJAX pagination replaces the table
+  window.initAjaxPage = function () { applyFilters(); };
 
   // ---- Quick adjust modal ----
   const adjustForm = document.getElementById('adjustForm');
@@ -712,4 +719,8 @@
     if (e.key === 'Escape') closeStockBreakdown();
   });
 </script>
+
+@push('scripts')
+  @include('partials.ajax-pagination')
+@endpush
 @endsection

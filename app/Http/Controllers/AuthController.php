@@ -8,6 +8,7 @@ use App\Models\Quotation;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -271,6 +272,25 @@ class AuthController extends Controller
         $storeOwnersCount = User::where('role', 'store_owner')->count();
         $farmersCount = User::where('role', 'farmer')->count();
 
+        // 1b. Registration activity over the past 14 days
+        $registrationCountsByDate = DB::table('users')
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as total')
+            ->where('created_at', '>=', now()->subDays(13)->startOfDay())
+            ->groupBy('date')
+            ->pluck('total', 'date');
+
+        $registrationTrend = collect(range(13, 0))
+            ->map(function ($offset) use ($registrationCountsByDate) {
+                $day = now()->subDays($offset);
+
+                return [
+                    'date'  => $day->toDateString(),
+                    'label' => $day->format('M j'),
+                    'count' => (int) ($registrationCountsByDate[$day->toDateString()] ?? 0),
+                ];
+            })
+            ->values();
+
         // 2. Fetch the latest 10 profile registrations
         $recentUsers = User::latest()->take(10)->get();
 
@@ -305,12 +325,24 @@ class AuthController extends Controller
             ->take(5)
             ->get();
 
+        // Stock health summary (matches the per-product status logic)
+        $stockCounts = [
+            'in_stock'    => Product::where('stock_quantity', '>', 0)
+                ->whereColumn('stock_quantity', '>', 'reorder_threshold')
+                ->count(),
+            'low_stock'   => Product::where('stock_quantity', '>', 0)
+                ->whereColumn('stock_quantity', '<=', 'reorder_threshold')
+                ->count(),
+            'out_of_stock' => Product::where('stock_quantity', '<=', 0)->count(),
+        ];
+
         // 3. Render the administration dashboard layout view safely with variables
         return view('dashboard.admin', compact(
             'totalUsers',
             'adminCount',
             'storeOwnersCount',
             'farmersCount',
+            'registrationTrend',
             'recentUsers',
             'totalCategories',
             'totalProducts',
@@ -322,7 +354,8 @@ class AuthController extends Controller
             'computedQuotations',
             'viewedQuotations',
             'recentPlatformQuotations',
-            'recentProducts'
+            'recentProducts',
+            'stockCounts'
         ));
     }
 }

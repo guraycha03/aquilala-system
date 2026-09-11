@@ -726,5 +726,6 @@ updateLiveTime();
       }, { passive: true });
     });
   </script>
+  @stack('scripts')
 </body>
 </html>

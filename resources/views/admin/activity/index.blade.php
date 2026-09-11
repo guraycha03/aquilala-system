@@ -112,6 +112,7 @@
 
 <!-- Activity Timeline -->
 <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+  <div data-paginated>
   @if($activities->count() > 0)
     @foreach($activities as $activity)
       <div class="activity-item">
@@ -136,9 +137,7 @@
     @endforeach
 
     <!-- Pagination -->
-    <div style="padding: 16px 20px; border-top: 1px solid #e5e7eb; text-align: center;">
-      {{ $activities->withQueryString()->links() }}
-    </div>
+    {{ $activities->withQueryString()->links('partials.pagination') }}
   @else
     <div style="text-align: center; padding: 64px 20px; color: #94a3b8;">
       <svg viewBox="0 0 24 24" width="40" height="40" stroke="#cbd5e1" stroke-width="1.5" fill="none" style="margin-bottom: 12px;">
@@ -154,5 +153,10 @@
       </p>
     </div>
   @endif
+  </div>
 </div>
 @endsection
+
+@push('scripts')
+  @include('partials.ajax-pagination')
+@endpush

@@ -29,9 +29,19 @@ class QuotationController extends Controller
         $quotations = Quotation::with('items.product.storeOwner')
             ->where('user_id', Auth::id())
             ->latest()
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
-        return view('farmer.quotations.index', compact('quotations'));
+        $allQuotes = Quotation::where('user_id', Auth::id())->get();
+
+        $totalQuotes = $allQuotes->count();
+        $computedCount = $allQuotes->where('status', 'computed')->count();
+        $viewedCount = $allQuotes->where('status', 'viewed')->count();
+        $totalValue = $allQuotes->sum('estimated_total_cost');
+
+        return view('farmer.quotations.index', compact(
+            'quotations', 'totalQuotes', 'computedCount', 'viewedCount', 'totalValue'
+        ));
     }
 
     /**
@@ -326,7 +336,7 @@ class QuotationController extends Controller
             $query->where('type', $type);
         }
 
-        $activities = $query->latest()->paginate(20)->withQueryString();
+        $activities = $query->latest()->paginate(10)->withQueryString();
 
         // ── Aggregate stats from the farmer's FULL (unfiltered) history ──
         // So the summary cards reflect their real totals regardless of active filters.
@@ -370,24 +380,24 @@ class QuotationController extends Controller
     {
         $storeUserId = Auth::id();
 
-        // Quotations where this store's products were used
-        $quotations = Quotation::involvingStore($storeUserId)
+        // Full dataset for metrics and recent activity
+        $allQuotations = Quotation::involvingStore($storeUserId)
             ->with(['farmer', 'items.product'])
             ->orderByRaw("FIELD(status, 'computed', 'viewed', 'expired')")
             ->latest()
             ->get();
 
         // Only the items that belong to this store (demand value attributable to this store)
-        $storeItems = $quotations->pluck('items')
+        $storeItems = $allQuotations->pluck('items')
             ->flatten()
             ->filter(fn ($item) => $item->product && $item->product->user_id === $storeUserId);
 
         // Demand metrics
-        $totalQuotations  = $quotations->count();
-        $uniqueFarmers    = $quotations->pluck('user_id')->filter()->unique()->count();
+        $totalQuotations  = $allQuotations->count();
+        $uniqueFarmers    = $allQuotations->pluck('user_id')->filter()->unique()->count();
 
-        $recentQuotations = $quotations->where('created_at', '>=', now()->subDays(7))->count();
-        $priorQuotations  = $quotations->filter(fn ($q) =>
+        $recentQuotations = $allQuotations->where('created_at', '>=', now()->subDays(7))->count();
+        $priorQuotations  = $allQuotations->filter(fn ($q) =>
             $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
         )->count();
         $weekTrend = $priorQuotations > 0
@@ -409,8 +419,19 @@ class QuotationController extends Controller
             ->take(10)
             ->toArray();
 
+        // Recent farmer activity (top 8)
+        $recentActivity = $allQuotations->take(8);
+
+        // Paginated for the main table
+        $quotations = Quotation::involvingStore($storeUserId)
+            ->with(['farmer', 'items.product'])
+            ->orderByRaw("FIELD(status, 'computed', 'viewed', 'expired')")
+            ->latest()
+            ->paginate(10);
+
         return view('store.quotations.index', compact(
             'quotations',
+            'recentActivity',
             'totalQuotations',
             'uniqueFarmers',
             'recentQuotations',
@@ -542,6 +563,16 @@ class QuotationController extends Controller
 
             return response()->json([
                 'overview' => trim((string) $response->json('choices.0.message.content', '')),
+                'metrics' => [
+                    'total_signals'       => $quotations->count(),
+                    'unique_farmers'      => $quotations->pluck('user_id')->filter()->unique()->count(),
+                    'this_week'           => $recentQuotations,
+                    'last_week'           => $priorQuotations,
+                    'own_products_value'  => round($storeItems->sum('subtotal'), 2),
+                    'signals_total_value' => round($quotations->sum('estimated_total_cost'), 2),
+                    'top_products'        => $topProducts,
+                    'top_crops'           => $topCrops,
+                ],
             ]);
         } catch (\Throwable $e) {
             return response()->json(['error' => 'Failed to reach the AI service. Please try again.'], 500);
@@ -557,21 +588,22 @@ class QuotationController extends Controller
      */
     public function adminIndex()
     {
-        $quotations = Quotation::with(['farmer', 'items.product.storeOwner'])
+        // Full dataset for metrics, store performance, crop demand
+        $allQuotations = Quotation::with(['farmer', 'items.product.storeOwner'])
             ->latest()
             ->get();
 
         // Global metrics
         $metrics = [
-            'total'      => $quotations->count(),
-            'computed'   => $quotations->where('status', Quotation::STATUS_COMPUTED)->count(),
-            'viewed'     => $quotations->where('status', Quotation::STATUS_VIEWED)->count(),
-            'expired'    => $quotations->where('status', Quotation::STATUS_EXPIRED)->count(),
-            'totalValue' => $quotations->sum('estimated_total_cost'),
+            'total'      => $allQuotations->count(),
+            'computed'   => $allQuotations->where('status', Quotation::STATUS_COMPUTED)->count(),
+            'viewed'     => $allQuotations->where('status', Quotation::STATUS_VIEWED)->count(),
+            'expired'    => $allQuotations->where('status', Quotation::STATUS_EXPIRED)->count(),
+            'totalValue' => $allQuotations->sum('estimated_total_cost'),
         ];
 
         // Per-store demand performance
-        $storePerformance = $quotations
+        $storePerformance = $allQuotations
             ->pluck('items')
             ->flatten()
             ->filter(fn ($item) => $item->product && $item->product->storeOwner)
@@ -592,7 +624,7 @@ class QuotationController extends Controller
             ->toArray();
 
         // Crop demand breakdown
-        $cropDemand = $quotations
+        $cropDemand = $allQuotations
             ->groupBy('crop_type')
             ->map(fn ($qs, $crop) => [
                 'crop' => $crop,
@@ -603,6 +635,11 @@ class QuotationController extends Controller
             ->sortByDesc('count')
             ->values()
             ->toArray();
+
+        // Paginated for the table
+        $quotations = Quotation::with(['farmer', 'items.product.storeOwner'])
+            ->latest()
+            ->paginate(10);
 
         return view('admin.quotations.index', compact('quotations', 'metrics', 'storePerformance', 'cropDemand'));
     }
@@ -616,10 +653,6 @@ class QuotationController extends Controller
      */
     public function adminActivity()
     {
-        $activities = \App\Models\ActivityLog::with('user')
-            ->latest()
-            ->paginate(20);
-
         // Filter options
         $userFilter = request('user_id');
         $typeFilter = request('type');
@@ -633,7 +666,7 @@ class QuotationController extends Controller
             $query->where('type', $typeFilter);
         }
 
-        $activities = $query->latest()->paginate(20);
+        $activities = $query->latest()->paginate(10)->withQueryString();
 
         // For the filter dropdown
         $users = \App\Models\User::orderBy('name')->get();

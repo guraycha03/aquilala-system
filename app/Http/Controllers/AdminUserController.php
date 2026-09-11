@@ -20,9 +20,53 @@ class AdminUserController extends Controller
     {
         $users = User::withCount('products')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
-        return view('admin.users.index', compact('users'));
+        $totalUsers    = User::count();
+        $ownerCount    = User::where('role', 'store_owner')->count();
+        $farmerCount   = User::where('role', 'farmer')->count();
+        $adminCount    = User::where('role', 'admin')->count();
+        $activatedCount = User::where('status', User::STATUS_ACTIVE)->count();
+        $pendingCount  = User::where(fn ($q) => $q
+            ->where('status', User::STATUS_PENDING_VERIFICATION)
+            ->orWhere('status', User::STATUS_PENDING_APPROVAL)
+        )->count();
+
+        $roleMeta = [
+            'admin'       => ['Administrator', '#86799f', '#f1eef6'],
+            'store_owner' => ['Store Owner', '#a57f43', '#f6f0e6'],
+            'farmer'      => ['Farmer', '#63856c', '#eef3ef'],
+        ];
+
+        $profileData = $users->getCollection()->mapWithKeys(function ($u) {
+            return [
+                $u->id => [
+                    'name'          => $u->name,
+                    'email'         => $u->email,
+                    'role'          => ucwords(str_replace('_', ' ', $u->role)),
+                    'status'        => $u->status,
+                    'phone'         => $u->phone,
+                    'barangay'      => $u->barangay,
+                    'city'          => $u->city,
+                    'province'      => $u->province,
+                    'sex'           => $u->sex,
+                    'birth_date'    => $u->birth_date?->format('M d, Y'),
+                    'civil_status'  => $u->civil_status,
+                    'farm_location' => $u->farm_location,
+                    'land_ownership'=> $u->land_ownership,
+                    'years_farming' => $u->years_farming,
+                    'assoc_member_no' => $u->assoc_member_no,
+                    'joined'        => $u->created_at?->format('M d, Y'),
+                    'products'      => $u->products_count,
+                ],
+            ];
+        })->all();
+
+        return view('admin.users.index', compact(
+            'users', 'totalUsers', 'ownerCount', 'farmerCount', 'adminCount',
+            'activatedCount', 'pendingCount', 'roleMeta', 'profileData'
+        ));
     }
 
     /**

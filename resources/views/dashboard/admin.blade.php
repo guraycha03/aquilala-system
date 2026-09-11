@@ -103,6 +103,38 @@
   .prod-thumb img { width: 100%; height: 100%; object-fit: cover; }
   .prod-thumb svg { width: 20px; height: 20px; stroke: #94a3b8; }
 
+  /* Chart summary panels */
+  .chart-grid { display: flex; gap: 28px; padding: 24px 26px; align-items: center; flex-wrap: wrap; }
+  .chart-box { flex: 0 1 170px; max-width: 170px; position: relative; }
+  .chart-legend { flex: 1 1 180px; display: flex; flex-direction: column; gap: 11px; }
+  .legend-row { display: flex; align-items: center; gap: 10px; }
+  .legend-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+  .legend-label { font-size: 13px; color: #64748b; flex: 1; }
+  .legend-value { font-size: 14px; font-weight: 800; color: #1e2922; }
+  .legend-pct { font-size: 11px; color: #94a3b8; width: 40px; text-align: right; }
+
+  .bar-list { padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .bar-row { display: flex; align-items: center; gap: 12px; }
+  .bar-label { font-size: 12px; font-weight: 600; color: #475569; width: 86px; flex-shrink: 0; text-align: right; }
+  .bar-track { flex: 1; height: 24px; background: #f1f5f9; border-radius: 8px; overflow: hidden; }
+  .bar-fill { width: 0; height: 100%; border-radius: 8px; transition: width 0.75s cubic-bezier(0.4,0,0.2,1); min-width: 0; }
+  .bar-fill.empty { background: transparent !important; }
+  .bar-val { font-size: 13px; font-weight: 800; color: #1e2922; width: 30px; }
+  .bar-pct { font-size: 11px; color: #94a3b8; width: 42px; text-align: right; }
+
+  .chart-grid canvas { max-height: 220px; min-height: 200px; }
+  .chart-caption { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+
+  @media (min-width: 981px) {
+    .chart-legend {
+      background: #f8fafc;
+      border: 1px solid rgba(0,0,0,0.05);
+      border-radius: 14px;
+      padding: 16px 20px;
+      max-width: 220px;
+    }
+  }
+
   @media (max-width: 980px) {
     .dash-grid, .dash-grid.equal { grid-template-columns: 1fr; }
   }
@@ -153,160 +185,107 @@
       </x-kpi-card>
     </section>
 
-    <!-- 3. RECENT REGISTRATIONS -->
-    <section style="margin-bottom:22px;">
-      <!-- Recent registrations -->
-      <div class="dash-panel reveal" data-reveal>
-        <div class="panel-head">
-          <div>
-            <h3>Recent Registrations</h3>
-            <p>Latest accounts created on the platform</p>
-          </div>
-          <a href="{{ route('admin.users.index') }}" class="btn-ghost">View All <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
-        </div>
-        <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
-          <div class="app-scroll">
-            @if($recentUsers->isNotEmpty())
-            <table class="admin-table">
-              <thead>
-                <tr><th>User</th><th>Role</th><th>Joined</th></tr>
-              </thead>
-              <tbody>
-                @foreach($recentUsers as $ru)
-                  <tr>
-                    <td>
-                      <div style="display:flex;align-items:center;gap:11px;">
-                        <div class="table-avatar">
-                          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </div>
-                        <div>
-                          <div style="font-weight:600;color:#1e2922;">{{ $ru->name }}</div>
-                          <div style="font-size:11px;color:#94a3b8;">{{ $ru->email }}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      @if($ru->role === 'admin')
-                        <span class="role-badge role-admin">Admin</span>
-                      @elseif($ru->role === 'store_owner')
-                        <span class="role-badge role-owner">Store Owner</span>
-                      @else
-                        <span class="role-badge role-farmer">Farmer</span>
-                      @endif
-                    </td>
-                    <td style="color:#718096;font-size:12px;">{{ $ru->created_at->diffForHumans() }}</td>
-                  </tr>
-                @endforeach
-              </tbody>
-            </table>
-          @else
-            <div class="panel-body" style="text-align:center;padding:34px 16px;">
-              <svg viewBox="0 0 24 24" width="34" height="34" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-              <p style="font-size:13px;color:#64748b;margin:8px 0 0 0;">No platform registrations yet.</p>
-            </div>
-          @endif
-          </div>
-        </div>
+<!-- 3. REGISTRATION OVERVIEW -->
+<section style="margin-bottom:22px;">
+  <div class="dash-panel reveal" data-reveal>
+    <div class="panel-head">
+      <div>
+        <h3>Registration Overview</h3>
+        <p>Account distribution across the platform</p>
       </div>
-    </section>
+      <a href="{{ route('admin.users.index') }}" class="btn-ghost">
+        Full View
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+    @if($totalUsers > 0)
+      <div class="chart-grid" style="align-items:stretch;">
+        <div class="chart-box" style="flex:1 1 340px; max-width:none; min-width:260px;">
+          <div class="chart-caption">New accounts &middot; last 14 days</div>
+          <canvas id="roleChart"></canvas>
+        </div>
+        <div class="chart-legend" id="roleLegend" style="justify-content:center;"></div>
+      </div>
+    @else
+      <div class="panel-body" style="text-align:center;padding:34px 16px;">
+        <svg viewBox="0 0 24 24" width="34" height="34" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <p style="font-size:13px;color:#64748b;margin:8px 0 0 0;">No platform registrations yet.</p>
+      </div>
+    @endif
+  </div>
+</section>
 
-    <!-- 4. MARKETPLACE + QUOTATION ACTIVITY -->
-    <section class="dash-grid equal">
-      <!-- Marketplace listings -->
-      <div class="dash-panel reveal" data-reveal>
-        <div class="panel-head">
-          <div>
-            <h3>Marketplace Listings</h3>
-            <p>Most recent products across stores</p>
-          </div>
-        </div>
-        <div class="panel-body">
-          @if($recentProducts->isNotEmpty())
-            @foreach($recentProducts as $prod)
-              @php
-                $prodStatusStyle = 'font-size:10px;font-weight:700;color:' . ($prod->status === 'active' ? '#16a34a' : '#d97706') . ';';
-                $pQty = (int) ($prod->stock_quantity ?? 0);
-                $pTh = (int) ($prod->reorder_threshold ?? 5);
-                $pStockClass = $pQty <= 0 ? 'stock-out' : ($pQty <= $pTh ? 'stock-low' : 'stock-ok');
-                $pStockLabel = $pQty <= 0 ? 'Out of stock' : ($pQty <= $pTh ? 'Low stock' : 'In stock');
-              @endphp
-              <div class="prod-row">
-                <div class="prod-thumb">
-                  @if($prod->mainImage && !empty($prod->mainImage->file_path))
-                    <img src="{{ asset('storage/' . $prod->mainImage->file_path) }}" alt="{{ $prod->name }}" loading="lazy">
-                  @else
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                  @endif
-                </div>
-                <div style="flex:1;min-width:0;">
-                  <div style="font-size:13px;font-weight:700;color:#1e2922;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $prod->name }}</div>
-                  <div style="font-size:11px;color:#94a3b8;">{{ $prod->storeOwner->store_name ?? $prod->storeOwner->name ?? 'Unknown store' }}</div>
-                </div>
-                <div style="text-align:right;">
-                  <div style="font-size:13px;font-weight:800;color:#0f172a;">₱{{ number_format($prod->price, 2) }}</div>
-                  <div style="margin-top:4px;display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap;">
-                    <span class="stock-pill {{ $pStockClass }}">{{ $pStockLabel }}</span>
-                    <span data-inline-style="{{ $prodStatusStyle }}">{{ ucwords(str_replace('_', ' ', $prod->status)) }}</span>
-                  </div>
-                </div>
-              </div>
-            @endforeach
-          @else
-            <div style="text-align:center;padding:34px 16px;">
-              <svg viewBox="0 0 24 24" width="34" height="34" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-              <p style="font-size:13px;color:#64748b;margin:8px 0 0 0;">No products listed yet.</p>
-            </div>
-          @endif
-        </div>
+<!-- 4. MARKETPLACE + QUOTATION SUMMARIES -->
+<section class="dash-grid equal">
+  <!-- Marketplace stock health -->
+  <div class="dash-panel reveal" data-reveal>
+    <div class="panel-head">
+      <div>
+        <h3>Marketplace Stock</h3>
+        <p>Inventory health across stores</p>
       </div>
+      <a href="{{ route('admin.analytics.index') }}" class="btn-ghost">
+        Full View
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+    <div class="bar-list">
+      @php $stockMax = max(1, $stockCounts['in_stock'], $stockCounts['low_stock'], $stockCounts['out_of_stock']); @endphp
+      @foreach([
+        ['label' => 'In stock', 'count' => $stockCounts['in_stock'], 'color' => '#16a34a'],
+        ['label' => 'Low stock', 'count' => $stockCounts['low_stock'], 'color' => '#f59e0b'],
+        ['label' => 'Out of stock', 'count' => $stockCounts['out_of_stock'], 'color' => '#94a3b8'],
+      ] as $stockRow)
+        <div class="bar-row">
+          <span class="bar-label">{{ $stockRow['label'] }}</span>
+          <div class="bar-track">
+            <div class="bar-fill {{ $stockRow['count'] > 0 ? '' : 'empty' }}"
+                 style="background:{{ $stockRow['color'] }};" data-w="{{ $stockRow['count'] > 0 ? round($stockRow['count'] / $stockMax * 100) : 0 }}"></div>
+          </div>
+          <span class="bar-val">{{ $stockRow['count'] }}</span>
+          <span class="bar-pct">{{ $stockRow['count'] > 0 ? round($stockRow['count'] / $stockMax * 100) : 0 }}%</span>
+        </div>
+      @endforeach
+    </div>
+  </div>
 
-      <!-- Quotation activity -->
-      <div class="dash-panel reveal" data-reveal>
-        <div class="panel-head">
-          <div>
-            <h3>Quotation Activity</h3>
-            <p>Recent quotations across the entire platform</p>
-          </div>
-          <a href="{{ route('admin.quotations.index') }}" class="btn-ghost">View All <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
-        </div>
-        <div class="panel-body">
-          @if($recentPlatformQuotations->isNotEmpty())
-            <div style="position:relative;column-count:1;">
-              @foreach($recentPlatformQuotations as $qt)
-                @php
-                  $qtDotStyle = 'border-color:' . $qt->status_color . ';';
-                  $qtBadgeStyle = 'font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;background:' . $qt->status_bg . ';color:' . $qt->status_color . ';';
-                @endphp
-                <div class="qt-item" style="break-inside:avoid;">
-                  <div class="qt-dot" data-inline-style="{{ $qtDotStyle }}"></div>
-                  @if(!$loop->last)
-                    <div style="position:absolute;left:5px;top:30px;bottom:-16px;width:2px;background:rgba(0,0,0,0.06);"></div>
-                  @endif
-                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                    <span style="font-weight:700;font-size:12px;color:#0f172a;font-family:monospace;">{{ $qt->quotation_number }}</span>
-                    <span data-inline-style="{{ $qtBadgeStyle }}">{{ $qt->status_label }}</span>
-                  </div>
-                  <div style="font-size:12px;color:#64748b;margin-top:4px;line-height:1.4;">
-                    <strong>{{ $qt->crop_type }}</strong> · {{ ucfirst($qt->season) }} Season · {{ $qt->land_area }} ha
-                    @if($qt->farmer)
-                      <br><svg viewBox="0 0 24 24" width="12" height="12" stroke="#64748b" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:2px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> {{ $qt->farmer->name }}
-                    @endif
-                  </div>
-                </div>
-              @endforeach
-            </div>
-          @else
-            <div style="text-align:center;padding:36px 16px;">
-              <svg viewBox="0 0 24 24" width="36" height="36" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-              <p style="font-size:13px;color:#64748b;margin:10px 0 0 0;">No quotation activity yet.</p>
-            </div>
-          @endif
-        </div>
+  <!-- Quotation status summary -->
+  <div class="dash-panel reveal" data-reveal>
+    <div class="panel-head">
+      <div>
+        <h3>Quotation Status</h3>
+        <p>Current state of platform quotations</p>
       </div>
-    </section>
+      <a href="{{ route('admin.quotations.index') }}" class="btn-ghost">
+        Full View
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+    <div class="bar-list">
+      @php $qtMax = max(1, $quotationStatusCounts['computed'], $quotationStatusCounts['viewed'], $quotationStatusCounts['expired']); @endphp
+      @foreach([
+        ['label' => 'Estimate-ready', 'key' => 'computed', 'color' => '#16a34a'],
+        ['label' => 'Viewed', 'key' => 'viewed', 'color' => '#2563eb'],
+        ['label' => 'Expired', 'key' => 'expired', 'color' => '#94a3b8'],
+      ] as $qtRow)
+        @php $qtCount = $quotationStatusCounts[$qtRow['key']]; @endphp
+        <div class="bar-row">
+          <span class="bar-label">{{ $qtRow['label'] }}</span>
+          <div class="bar-track">
+            <div class="bar-fill {{ $qtCount > 0 ? '' : 'empty' }}"
+                 style="background:{{ $qtRow['color'] }};" data-w="{{ $qtCount > 0 ? round($qtCount / $qtMax * 100) : 0 }}"></div>
+          </div>
+          <span class="bar-val">{{ $qtCount }}</span>
+          <span class="bar-pct">{{ $qtCount > 0 ? round($qtCount / $qtMax * 100) : 0 }}%</span>
+        </div>
+      @endforeach
+    </div>
+  </div>
+</section>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     function setGreeting() {
@@ -333,13 +312,86 @@
       revealEls.forEach(function (el) { el.classList.add('in'); });
     }
 
-    // Quotation pipeline fills
-    document.querySelectorAll('.pipe-fill').forEach(function (fill, i) {
-      if (fill.dataset.fill) fill.style.setProperty('--fill', fill.dataset.fill);
+    // Animated summary bar fills
+    document.querySelectorAll('.bar-fill').forEach(function (fill, i) {
       setTimeout(function () {
         fill.style.width = (fill.dataset.w || '0') + '%';
-      }, 250 + i * 90);
+      }, 350 + i * 120);
     });
+
+    // Registration activity over the past 14 days + account distribution
+    var regData = @js($registrationTrend);
+    var roleData = @js([
+      ['label' => 'Admins', 'value' => $adminCount, 'color' => '#0369a1'],
+      ['label' => 'Store Owners', 'value' => $storeOwnersCount, 'color' => '#d97706'],
+      ['label' => 'Farmers', 'value' => $farmersCount, 'color' => '#16a34a'],
+    ]);
+    var regCanvas = document.getElementById('roleChart');
+    if (regCanvas && window.Chart) {
+      new Chart(regCanvas, {
+        type: 'line',
+        data: {
+          labels: regData.map(function (d) { return d.label; }),
+          datasets: [{
+            label: 'New accounts',
+            data: regData.map(function (d) { return d.count; }),
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.12)',
+            fill: true,
+            tension: 0.35,
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: '#2563eb',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 1.5,
+            hoverRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: function (items) {
+                  var idx = items[0].dataIndex;
+                  return regData[idx].date;
+                },
+                label: function (ctx) {
+                  return ctx.parsed.y + (ctx.parsed.y === 1 ? ' new account' : ' new accounts');
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#94a3b8', maxTicksLimit: 7, maxRotation: 0, autoSkipPadding: 14 },
+              border: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { precision: 0, color: '#94a3b8', maxTicksLimit: 5 },
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              border: { display: false }
+            }
+          }
+        }
+      });
+
+      var legend = document.getElementById('roleLegend');
+      var total = roleData.reduce(function (sum, r) { return sum + r.value; }, 0);
+      roleData.forEach(function (r) {
+        var row = document.createElement('div');
+        row.className = 'legend-row';
+        row.innerHTML =
+          '<span class="legend-dot" style="background:' + r.color + '"></span>' +
+          '<span class="legend-label">' + r.label + '</span>' +
+          '<span class="legend-value">' + r.value + '</span>' +
+          '<span class="legend-pct">' + (total > 0 ? Math.round(r.value / total * 100) : 0) + '%</span>';
+        legend.appendChild(row);
+      });
+    }
   });
 </script>
 @endsection

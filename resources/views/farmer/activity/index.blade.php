@@ -529,6 +529,7 @@
 
 <!-- Activity Timeline -->
 <div class="timeline-card">
+  <div data-paginated>
   @if(isset($activities) && $activities->count() > 0)
     @foreach($activities as $activity)
       <div class="activity-item">
@@ -551,9 +552,7 @@
       </div>
     @endforeach
 
-    <div style="padding: 16px 20px; border-top: 1px solid #e2e8f0; background: #ffffff;">
-      {{ $activities->withQueryString()->links() }}
-    </div>
+    {{ $activities->withQueryString()->links('partials.pagination') }}
   @else
     <div class="empty-state">
       <div class="empty-icon">
@@ -571,6 +570,7 @@
       </p>
     </div>
   @endif
+  </div>
 </div>
 
 <!-- Scripts for Flatpickr Initialization and Drawer Toggle -->
@@ -611,4 +611,8 @@
     }
   });
 </script>
+
+@push('scripts')
+  @include('partials.ajax-pagination')
+@endpush
 @endsection

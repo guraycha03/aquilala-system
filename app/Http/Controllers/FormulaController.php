@@ -17,13 +17,13 @@ class FormulaController extends Controller
         $formulas = DecisionFormula::with('product.category')
             ->orderBy('crop_type')
             ->orderBy('season')
-            ->get();
+            ->paginate(10);
 
         $stats = [
-            'total'    => $formulas->count(),
-            'crops'    => $formulas->pluck('crop_type')->unique()->count(),
-            'products' => $formulas->pluck('product_id')->unique()->count(),
-            'seasons'  => $formulas->pluck('season')->unique()->count(),
+            'total'    => DecisionFormula::count(),
+            'crops'    => DecisionFormula::distinct()->count('crop_type'),
+            'products' => DecisionFormula::distinct()->count('product_id'),
+            'seasons'  => DecisionFormula::distinct()->count('season'),
         ];
 
         $grouped = $this->groupFormulas($formulas);

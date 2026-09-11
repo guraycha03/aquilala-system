@@ -200,6 +200,7 @@
     </div>
   </div>
 @else
+  <div data-paginated>
   <div class="kpi-grid">
     <div class="kpi-card">
       <div class="kpi-label">Active Formulas</div>
@@ -310,5 +311,14 @@
       </div>
     </div>
   @endforeach
+
+  @if($formulas->hasPages())
+    {{ $formulas->links('partials.pagination') }}
+  @endif
+  </div>
 @endif
 @endsection
+
+@push('scripts')
+  @include('partials.ajax-pagination')
+@endpush

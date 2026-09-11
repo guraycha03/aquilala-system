@@ -170,6 +170,7 @@
   <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
     <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Global Quotation Log</h2>
   </div>
+  <div data-paginated>
   <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
     <div class="app-scroll">
       <table>
@@ -232,5 +233,13 @@
       <div class="app-scrollbar-thumb"></div>
     </div>
   </div>
+  @if($quotations->hasPages())
+    {{ $quotations->links('partials.pagination') }}
+  @endif
+  </div>
 </div>
 @endsection
+
+@push('scripts')
+  @include('partials.ajax-pagination')
+@endpush

@@ -200,10 +200,10 @@
 @endif
 
 @php
-  $totalQuotes = $quotations->count();
-  $computedCount = $quotations->where('status', 'computed')->count();
-  $viewedCount = $quotations->where('status', 'viewed')->count();
-  $totalValue = $quotations->sum('estimated_total_cost');
+  $totalQuotes = $totalQuotes ?? $quotations->count();
+  $computedCount = $computedCount ?? $quotations->where('status', 'computed')->count();
+  $viewedCount = $viewedCount ?? $quotations->where('status', 'viewed')->count();
+  $totalValue = $totalValue ?? $quotations->sum('estimated_total_cost');
 @endphp
 
 <!-- Stats -->
@@ -241,6 +241,7 @@
 <!-- Quotations List -->
 <div class="table-card">
   @if($quotations->count() > 0)
+    <div data-paginated>
     <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
       <div class="app-scroll">
         <table class="quote-table">
@@ -310,6 +311,10 @@
         <div class="app-scrollbar-thumb"></div>
       </div>
     </div>
+    @if($quotations->hasPages())
+      {{ $quotations->links('partials.pagination') }}
+    @endif
+    </div>
   @else
     <div class="empty-state">
       <div class="empty-icon">
@@ -326,4 +331,8 @@
     </div>
   @endif
 </div>
+
+@push('scripts')
+  @include('partials.ajax-pagination')
+@endpush
 @endsection

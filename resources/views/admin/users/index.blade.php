@@ -4,42 +4,11 @@
 
 @section('content')
   @php
-    $totalUsers = $users->count();
-    $ownerCount = $users->where('role', 'store_owner')->count();
-    $farmerCount = $users->where('role', 'farmer')->count();
-    $adminCount = $users->where('role', 'admin')->count();
-    $activatedCount = $users->where('status', \App\Models\User::STATUS_ACTIVE)->count();
-    $pendingCount = $users->filter(fn($u) => $u->isPendingVerification() || $u->isPendingApproval())->count();
-
-    $roleMeta = [
+    $roleMeta = $roleMeta ?? [
         'admin'       => ['Administrator', '#86799f', '#f1eef6'],
         'store_owner' => ['Store Owner', '#a57f43', '#f6f0e6'],
         'farmer'      => ['Farmer', '#63856c', '#eef3ef'],
     ];
-
-    $profileData = $users->mapWithKeys(function ($u) {
-        return [
-            $u->id => [
-                'name'          => $u->name,
-                'email'         => $u->email,
-                'role'          => ucwords(str_replace('_', ' ', $u->role)),
-                'status'        => $u->status,
-                'phone'         => $u->phone,
-                'barangay'      => $u->barangay,
-                'city'          => $u->city,
-                'province'      => $u->province,
-                'sex'           => $u->sex,
-                'birth_date'    => $u->birth_date?->format('M d, Y'),
-                'civil_status'  => $u->civil_status,
-                'farm_location' => $u->farm_location,
-                'land_ownership'=> $u->land_ownership,
-                'years_farming' => $u->years_farming,
-                'assoc_member_no' => $u->assoc_member_no,
-                'joined'        => $u->created_at?->format('M d, Y'),
-                'products'      => $u->products_count,
-            ],
-        ];
-    })->all();
   @endphp
 
   <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -283,6 +252,7 @@
           </select>
         </div>
 
+        <div data-paginated>
         <div class="app-scroll-wrap" style="--sb-bottom: 18px;">
           <div class="app-scroll" id="usersScroll">
           @if($users->isNotEmpty())
@@ -405,6 +375,11 @@
           @endif
         </div>
 
+        @if($users->hasPages())
+          {{ $users->links('partials.pagination') }}
+        @endif
+        </div>
+
         <div class="users-footer">
           <span class="rows-info" id="rowsInfo"></span>
           <button id="clearFiltersBtn" class="btn-users ghost">
@@ -456,7 +431,8 @@
 
   <script>
     (function () {
-      var rows = Array.prototype.slice.call(document.querySelectorAll('#usersRows tr'));
+      var rows = [];
+      function refreshRows() { rows = Array.prototype.slice.call(document.querySelectorAll('#usersRows tr')); }
       var searchInput = document.getElementById('searchInput');
       var roleFilter = document.getElementById('roleFilter');
       var verifyFilter = document.getElementById('verifyFilter');
@@ -515,9 +491,12 @@
         if (e.key === 'Escape' && confirmOverlay.classList.contains('open')) settleConfirm(false);
       });
 
-      document.querySelectorAll('.icon-btn[data-toast]').forEach(function (btn) {
-        btn.addEventListener('click', function () { showToast(btn.dataset.toast); });
-      });
+      function bindToastButtons() {
+        document.querySelectorAll('.icon-btn[data-toast]').forEach(function (btn) {
+          btn.addEventListener('click', function () { showToast(btn.dataset.toast); });
+        });
+      }
+      bindToastButtons();
 
       // ── Profile modal (real data) ──
       var profiles = {};
@@ -582,9 +561,12 @@
         profileOverlay.classList.remove('open');
         profileOverlay.setAttribute('aria-hidden', 'true');
       }
-      document.querySelectorAll('.profile-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () { openProfile(btn.dataset.profileId); });
-      });
+      function bindProfileButtons() {
+        document.querySelectorAll('.profile-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () { openProfile(btn.dataset.profileId); });
+        });
+      }
+      bindProfileButtons();
       profileClose.addEventListener('click', closeProfile);
       profileOverlay.addEventListener('click', function (e) {
         if (e.target === profileOverlay) closeProfile();
@@ -594,7 +576,8 @@
       });
 
       // ── Resend activation email for pending accounts ──
-      document.querySelectorAll('.resend-btn').forEach(function (btn) {
+      function bindResendButtons() {
+        document.querySelectorAll('.resend-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
           askConfirm({
             title: 'Resend activation email?',
@@ -623,7 +606,8 @@
             });
           });
         });
-      });
+      }
+      bindResendButtons();
 
       // ── Approve / reject pending registration requests ──
       function runApprovalAction(btn, act) {
@@ -659,14 +643,18 @@
           });
         });
       }
-      document.querySelectorAll('.approve-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () { runApprovalAction(btn, 'approve'); });
-      });
-      document.querySelectorAll('.reject-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () { runApprovalAction(btn, 'reject'); });
-      });
+      function bindApprovalButtons() {
+        document.querySelectorAll('.approve-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () { runApprovalAction(btn, 'approve'); });
+        });
+        document.querySelectorAll('.reject-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () { runApprovalAction(btn, 'reject'); });
+        });
+      }
+      bindApprovalButtons();
 
       function applyFilters() {
+        refreshRows();
         var q = (searchInput.value || '').toLowerCase().trim();
         var role = roleFilter.value;
         var ver = verifyFilter.value;
@@ -719,6 +707,19 @@
       });
 
       applyFilters();
+
+      // Re-bind row actions after AJAX pagination replaces the table
+      window.initAjaxPage = function () {
+        bindToastButtons();
+        bindProfileButtons();
+        bindResendButtons();
+        bindApprovalButtons();
+        applyFilters();
+      };
     })();
   </script>
+
+@push('scripts')
+  @include('partials.ajax-pagination')
+@endpush
 @endsection

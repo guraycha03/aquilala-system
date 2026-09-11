@@ -16,38 +16,36 @@ class InventoryController extends Controller
     {
         $userId = Auth::id();
 
-        // Fetch all products for this store owner with related category
+        // Paginated products for the main table
         $products = Product::with('category')
             ->where('user_id', $userId)
             ->orderBy('name')
-            ->get();
+            ->paginate(10);
+
+        // Full dataset for metrics, chart, and modal
+        $allProducts = Product::where('user_id', $userId)->get();
 
         // Metrics
-        $totalItems = $products->count();
-        $lowStockItems = $products->filter(function ($p) {
+        $totalItems = $allProducts->count();
+        $lowStockItems = $allProducts->filter(function ($p) {
             return ($p->stock_quantity ?? 0) <= $p->reorder_threshold;
         });
         $lowStockCount = $lowStockItems->count();
-        $outOfStockCount = $products->filter(function ($p) {
+        $outOfStockCount = $allProducts->filter(function ($p) {
             return ($p->stock_quantity ?? 0) <= 0 || $p->status === 'out_of_stock';
         })->count();
-        $totalStockValue = $products->sum(function ($p) {
+        $totalStockValue = $allProducts->sum(function ($p) {
             return ($p->stock_quantity ?? 0) * $p->price;
         });
-        $totalUnits = $products->sum(fn ($p) => (int) ($p->stock_quantity ?? 0));
+        $totalUnits = $allProducts->sum(fn ($p) => (int) ($p->stock_quantity ?? 0));
 
         // Stock health breakdown
         $healthyCount = $totalItems - $lowStockCount - $outOfStockCount;
 
         return view('store.inventory.index', compact(
-            'products',
-            'totalItems',
-            'lowStockCount',
-            'outOfStockCount',
-            'totalStockValue',
-            'totalUnits',
-            'healthyCount',
-            'lowStockItems'
+            'products', 'allProducts',
+            'totalItems', 'lowStockCount', 'outOfStockCount',
+            'totalStockValue', 'totalUnits', 'healthyCount', 'lowStockItems'
         ));
     }
 
