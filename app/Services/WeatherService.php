@@ -16,77 +16,160 @@ class WeatherService
     const COUNTRY = 'Philippines';
 
     /**
-     * Cache duration in seconds (30 minutes).
+     * Cache entry identifier for the current-weather snapshot.
+     */
+    const CACHE_KEY = 'weather_bulan_sorsogon';
+
+    /**
+     * Freshness window in seconds (15 minutes). While cached data is younger
+     * than this it is served directly with no API call.
+     */
+    const CACHE_TTL = 900;
+
+    /**
+     * How long a stale snapshot is retained as a fallback (seconds, 24 hours).
+     * Deliberately longer than the freshness window so that when the live API
+     * call fails we can still fall back to the last-known-good data instead of
+     * breaking the UI.
+     */
+    const CACHE_STALE_TTL = 86400;
+
+    /**
+     * Cache duration in seconds (30 minutes) used by the hourly forecast.
      */
     const CACHE_DURATION = 1800;
 
     /**
-     * Get the current weather for Bulan, Sorsogon from the free
-     * OpenWeatherMap /data/2.5/weather endpoint.
+     * Get the current weather for Bulan, Sorsogon with a read-through cache.
      *
-     * Only real API values are returned. If the API is unreachable, missing,
-     * or rejects the request, an "unavailable" payload (is_available = false,
-     * null metrics) is returned — never fabricated or simulated numbers.
+     * Cache + fallback strategy (keeps the OpenWeather free tier from being
+     * hammered on every page load):
+     *
+     *   1. If a fresh snapshot exists (< 15 minutes old) it is returned
+     *      immediately — no API call is made.
+     *   2. Otherwise the OpenWeather /data/2.5/weather endpoint is called,
+     *      the result replaces the cache with a fresh timestamp, and is
+     *      returned.
+     *   3. If the live call fails, the expired snapshot is returned as a
+     *      fallback so the UI keeps working. Only when there is nothing
+     *      cached at all is an "unavailable" payload returned.
+     *
+     * Only real API values are ever served as fresh data — never fabricated
+     * or simulated numbers.
      *
      * @return array
      */
     public static function getCurrentWeather(): array
     {
-        return Cache::remember('weather_bulan_sorsogon', self::CACHE_DURATION, function () {
-            $apiKey = config('services.openweather.key');
+        // 1) Return a fresh cached snapshot right away — no API round-trip.
+        $cached = Cache::get(self::CACHE_KEY);
 
-            // No API key configured? Report unavailable rather than invent data.
-            if (empty($apiKey)) {
-                return self::unavailable();
-            }
+        if (is_array($cached) && self::isFresh($cached)) {
+            return $cached;
+        }
 
-            try {
-                $response = self::http()
-                    ->get(config('services.openweather.url'), [
-                        'lat' => self::LATITUDE,
-                        'lon' => self::LONGITUDE,
-                        'units' => 'metric',
-                        'appid' => $apiKey,
-                    ]);
+        // 2) Cache is missing or stale — refresh from the API and repopulate
+        //    the cache (longer retention than the freshness window so a later
+        //    failed refresh can still fall back to this snapshot).
+        $fresh = self::fetchCurrentWeather();
 
-                if ($response->successful()) {
-                    $data = $response->json();
-                    $main = $data['main'] ?? [];
-                    $weatherCodeData = $data['weather'][0] ?? [];
+        if (!empty($fresh['is_available'])) {
+            Cache::put(self::CACHE_KEY, $fresh, self::CACHE_STALE_TTL);
 
-                    $weatherCode = (int) ($weatherCodeData['id'] ?? 0);
-                    $weatherMain = strtolower($weatherCodeData['main'] ?? 'Clouds');
-                    $rain = (float) ($data['rain']['1h'] ?? $data['rain']['3h'] ?? 0);
-                    $snow = (float) ($data['snow']['1h'] ?? $data['snow']['3h'] ?? 0);
+            return $fresh;
+        }
 
-                    return [
-                        'temperature'   => isset($main['temp']) ? round((float) $main['temp'], 1) : null,
-                        'feels_like'    => isset($main['feels_like']) ? round((float) $main['feels_like'], 1) : null,
-                        'humidity'      => $main['humidity'] ?? null,
-                        'wind_speed'    => isset($data['wind']['speed']) ? round((float) $data['wind']['speed'] * 3.6, 1) : null, // m/s -> km/h
-                        'uv_index'      => null, // UV index is not part of the free 2.5 endpoints
-                        'rain'          => $rain,
-                        'precipitation' => $rain + $snow,
-                        'weather_code'  => $weatherCode,
-                        'condition'     => self::getWeatherCondition($weatherCode, $weatherMain),
-                        'icon'          => self::getWeatherIcon($weatherCode, $weatherMain),
-                        'season'        => SeasonHelper::getCurrentSeason(),
-                        'location'      => self::LOCATION_NAME,
-                        'country'       => self::COUNTRY,
-                        'latitude'      => self::LATITUDE,
-                        'longitude'     => self::LONGITUDE,
-                        'updated_at'    => now()->format('Y-m-d H:i:s'),
-                        'is_real'       => true,
-                        'is_real_data'  => true,
-                        'is_available'  => true,
-                    ];
-                }
-            } catch (\Exception $e) {
-                // Network failure, invalid key, etc. — report unavailable.
-            }
+        // 3) Live API call failed — fall back to the expired snapshot so the
+        //    UI does not break.
+        if (is_array($cached)) {
+            $cached['stale'] = true;
 
+            return $cached;
+        }
+
+        // Nothing cached and the API failed — honest "unavailable" payload.
+        return self::unavailable();
+    }
+
+    /**
+     * Call the OpenWeather /data/2.5/weather endpoint and build a real payload.
+     *
+     * Returns an unavailable payload (is_available = false) on any failure —
+     * missing key, network error, non-2xx response — never invented data.
+     */
+    private static function fetchCurrentWeather(): array
+    {
+        $apiKey = config('services.openweather.key');
+
+        // No API key configured? Report unavailable rather than invent data.
+        if (empty($apiKey)) {
             return self::unavailable();
-        });
+        }
+
+        try {
+            $response = self::http()
+                ->get(config('services.openweather.url'), [
+                    'lat' => self::LATITUDE,
+                    'lon' => self::LONGITUDE,
+                    'units' => 'metric',
+                    'appid' => $apiKey,
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $main = $data['main'] ?? [];
+                $weatherCodeData = $data['weather'][0] ?? [];
+
+                $weatherCode = (int) ($weatherCodeData['id'] ?? 0);
+                $weatherMain = strtolower($weatherCodeData['main'] ?? 'Clouds');
+                $rain = (float) ($data['rain']['1h'] ?? $data['rain']['3h'] ?? 0);
+                $snow = (float) ($data['snow']['1h'] ?? $data['snow']['3h'] ?? 0);
+
+                return [
+                    'temperature'   => isset($main['temp']) ? round((float) $main['temp'], 1) : null,
+                    'feels_like'    => isset($main['feels_like']) ? round((float) $main['feels_like'], 1) : null,
+                    'humidity'      => $main['humidity'] ?? null,
+                    'wind_speed'    => isset($data['wind']['speed']) ? round((float) $data['wind']['speed'] * 3.6, 1) : null, // m/s -> km/h
+                    'uv_index'      => null, // UV index is not part of the free 2.5 endpoints
+                    'rain'          => $rain,
+                    'precipitation' => $rain + $snow,
+                    'weather_code'  => $weatherCode,
+                    'condition'     => self::getWeatherCondition($weatherCode, $weatherMain),
+                    'icon'          => self::getWeatherIcon($weatherCode, $weatherMain),
+                    'season'        => SeasonHelper::getCurrentSeason(),
+                    'location'      => self::LOCATION_NAME,
+                    'country'       => self::COUNTRY,
+                    'latitude'      => self::LATITUDE,
+                    'longitude'     => self::LONGITUDE,
+                    'updated_at'    => now()->format('Y-m-d H:i:s'),
+                    'is_real'       => true,
+                    'is_real_data'  => true,
+                    'is_available'  => true,
+                ];
+            }
+        } catch (\Exception $e) {
+            // Network failure, invalid key, etc. — handled by the caller's
+            // stale-fallback logic.
+        }
+
+        return self::unavailable();
+    }
+
+    /**
+     * Whether a cached snapshot is still within the freshness window.
+     *
+     * A previously-cached "unavailable" payload is never treated as fresh so
+     * the API is always retried instead of serving a dead cache.
+     */
+    private static function isFresh(array $cached): bool
+    {
+        if (empty($cached['is_available'])) {
+            return false;
+        }
+
+        $updatedAt = strtotime((string) ($cached['updated_at'] ?? ''));
+
+        return $updatedAt !== false && (time() - $updatedAt) < self::CACHE_TTL;
     }
 
     /**
@@ -339,9 +422,11 @@ class WeatherService
     {
         $cacert = storage_path('certs/cacert.pem');
         if (is_file($cacert)) {
-            return Http::timeout(10)->withOptions(['verify' => $cacert]);
+            // 4s cap: the widget must never block a page render for long.
+            // Cached for 30 minutes afterwards, so this only hits cold caches.
+            return Http::timeout(4)->withOptions(['verify' => $cacert]);
         }
-        return Http::timeout(10);
+        return Http::timeout(4);
     }
 
     /**

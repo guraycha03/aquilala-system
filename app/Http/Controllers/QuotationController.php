@@ -29,14 +29,13 @@ class QuotationController extends Controller
         $quotations = Quotation::with('items.product.storeOwner')
             ->where('user_id', Auth::id())
             ->latest()
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
 
         $allQuotes = Quotation::where('user_id', Auth::id())->get();
 
         $totalQuotes = $allQuotes->count();
-        $computedCount = $allQuotes->where('status', 'computed')->count();
-        $viewedCount = $allQuotes->where('status', 'viewed')->count();
+        $computedCount = $allQuotes->filter(fn ($q) => !$q->is_expired && $q->status === 'computed')->count();
+        $viewedCount = $allQuotes->filter(fn ($q) => !$q->is_expired && $q->status === 'viewed')->count();
         $totalValue = $allQuotes->sum('estimated_total_cost');
 
         return view('farmer.quotations.index', compact(
@@ -422,12 +421,12 @@ class QuotationController extends Controller
         // Recent farmer activity (top 8)
         $recentActivity = $allQuotations->take(8);
 
-        // Paginated for the main table
+        // Full dataset for the main table
         $quotations = Quotation::involvingStore($storeUserId)
             ->with(['farmer', 'items.product'])
             ->orderByRaw("FIELD(status, 'computed', 'viewed', 'expired')")
             ->latest()
-            ->paginate(10);
+            ->get();
 
         return view('store.quotations.index', compact(
             'quotations',
@@ -456,9 +455,12 @@ class QuotationController extends Controller
 
         $quotation->load(['farmer', 'items.product.storeOwner']);
 
-        // Mark as viewed by this store
+        // Mark as viewed by this store (first view only, records the timestamp)
         if ($quotation->status === Quotation::STATUS_COMPUTED) {
-            $quotation->update(['status' => Quotation::STATUS_VIEWED]);
+            $quotation->update([
+                'status'    => Quotation::STATUS_VIEWED,
+                'viewed_at' => $quotation->viewed_at ?? now(),
+            ]);
             ActivityLogger::quotationViewed($quotation);
         }
 
@@ -471,7 +473,7 @@ class QuotationController extends Controller
     }
 
     /**
-     * Generate an AI plain-language overview of this store's demand (Groq API).
+     * Generate a complete AI demand intelligence report for this store (Groq API).
      */
     public function storeAiOverview(Request $request)
     {
@@ -535,10 +537,30 @@ class QuotationController extends Controller
             'top_crops'           => $topCrops,
         ];
 
-        $system = 'You are a concise business analyst for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Farmers generate cost quotations and stores see them as "demand signals" - demand visibility, no action required. Write a short store demand overview (120-170 words) using only the JSON telemetry provided. Rules:
-1. Start with ONE sentence executive takeaway.
-2. Follow with 3-6 very short bullet points (- ) covering: demand volume and farmer interest, week-over-week change, top products and top crops (quote quantities and PHP peso values), and one practical suggestion. Report total_signals, this_week and last_week EXACTLY as given — this_week/last_week are the last 7 and previous 7 days respectively, distinct from total_signals.
-3. Use **bold** for key numbers, product names, and crops. No emojis, no tables, no markdown headings. Never invent numbers.';
+        $system = 'You are a senior business analyst for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Farmers generate cost quotations and stores see them as "demand signals" - demand visibility, no action required. Write a COMPLETE demand intelligence report using ONLY the JSON telemetry provided. Report total_signals, this_week and last_week EXACTLY as given - this_week/last_week are the last 7 and previous 7 days respectively, distinct from total_signals. Never invent numbers.
+
+STRUCTURE YOUR RESPONSE WITH THESE SECTIONS (use markdown headings exactly as shown):
+### AI Analyst Takeaway
+ONE punchy sentence that sums up the demand picture.
+
+### Demand Snapshot
+4-6 short bullet points (- ) covering: total demand signals and farmer interest, week-over-week change, total quoted value, and one practical read on momentum.
+
+### Top Products & Crop Trends
+Short bullets on your top 3-6 products (quote quantities and PHP peso values) and top crops (quote land area), plus 1 sentence of trend context.
+
+### Product Recommendations
+Recommend 2-4 specific products this store should stock or restock based on the demand data. Use a small markdown table: Product | Est. Weekly Demand | Suggested Action. Add 2 short bullet takeaways if useful.
+
+### Next Step
+ONE closing sentence with a practical next action (e.g. restock, price check, or watch a crop).
+
+FORMATTING RULES:
+1. Use **bold** for key numbers, product names, and crops.
+2. Short, scannable content - no emojis, no overly long paragraphs.
+3. Keep table cells brief and single-line.
+4. At the very end of your reply, on its own line, add product keywords for the recommendations EXACTLY in this format (2-4 short generic keywords, comma-separated):
+[SUGGEST:urea, complete fertilizer, 14-14-14]';
 
         try {
             $response = Http::withHeaders([
@@ -593,12 +615,12 @@ class QuotationController extends Controller
             ->latest()
             ->get();
 
-        // Global metrics
+        // Global metrics (expired is derived from valid_until, not the stored status)
         $metrics = [
             'total'      => $allQuotations->count(),
-            'computed'   => $allQuotations->where('status', Quotation::STATUS_COMPUTED)->count(),
-            'viewed'     => $allQuotations->where('status', Quotation::STATUS_VIEWED)->count(),
-            'expired'    => $allQuotations->where('status', Quotation::STATUS_EXPIRED)->count(),
+            'computed'   => $allQuotations->filter(fn ($q) => !$q->is_expired && $q->status === Quotation::STATUS_COMPUTED)->count(),
+            'viewed'     => $allQuotations->filter(fn ($q) => !$q->is_expired && $q->status === Quotation::STATUS_VIEWED)->count(),
+            'expired'    => $allQuotations->filter(fn ($q) => $q->is_expired)->count(),
             'totalValue' => $allQuotations->sum('estimated_total_cost'),
         ];
 
@@ -636,10 +658,9 @@ class QuotationController extends Controller
             ->values()
             ->toArray();
 
-        // Paginated for the table
         $quotations = Quotation::with(['farmer', 'items.product.storeOwner'])
             ->latest()
-            ->paginate(10);
+            ->get();
 
         return view('admin.quotations.index', compact('quotations', 'metrics', 'storePerformance', 'cropDemand'));
     }

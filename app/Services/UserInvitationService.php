@@ -3,10 +3,9 @@
 namespace App\Services;
 
 use App\Exceptions\Onboarding\DuplicateAccountException;
-use App\Exceptions\Onboarding\ExpiredActivationTokenException;
 use App\Exceptions\Onboarding\InvalidActivationTokenException;
 use App\Exceptions\Onboarding\MailDeliveryException;
-use App\Mail\AccountActivationMail;
+use App\Models\EmailOtp;
 use App\Models\User;
 use App\Models\UserActivation;
 use Illuminate\Database\QueryException;
@@ -14,52 +13,49 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Throwable;
 
 class UserInvitationService
 {
     /**
-     * Approve a submitted registration request: flip the account from
-     * pending_approval to pending_verification, then issue a secure,
-     * single-use email link so the farmer can set their own password.
+     * Approve a pending account: mark it approved and email a fresh,
+     * single-use activation OTP so the user can set their own password.
      *
+     * @throws InvalidActivationTokenException
      * @throws MailDeliveryException
      */
     public static function approveRegistration(User $user): void
     {
         throw_if(
-            !$user->isPendingApproval(),
-            new InvalidActivationTokenException('This account is not awaiting registration approval.')
+            ! $user->isPending(),
+            new InvalidActivationTokenException('This account is not awaiting activation.')
         );
 
-        $user->forceFill([
-            'status'      => User::STATUS_PENDING_VERIFICATION,
-            'approved_at' => now(),
-        ])->save();
+        DB::transaction(function () use ($user) {
+            $user->forceFill(['approved_at' => now()])->save();
+        });
 
-        self::issueTokenAndSendEmail($user);
+        self::issueActivation($user);
 
         $approvedBy = Auth::user();
         if ($approvedBy) {
             ActivityLogger::log(
                 'user.approved',
-                "Approved registration for {$user->name} ({$user->role}) — activation link emailed",
+                "Approved account for {$user->name} ({$user->role}) — activation code emailed",
                 $user,
-                ['phone' => $user->phone, 'email' => $user->email],
+                ['email' => $user->email, 'phone' => $user->phone],
                 $approvedBy
             );
         }
     }
 
     /**
-     * Reject a submitted registration request by deleting the pending account.
+     * Reject a pending account by deleting it.
      */
     public static function rejectRegistration(User $user): void
     {
-        if (!$user->isPendingApproval()) {
-            throw new InvalidActivationTokenException('Only pending registration requests can be rejected.');
+        if (! $user->isPending()) {
+            throw new InvalidActivationTokenException('Only pending accounts can be rejected.');
         }
 
         $name = $user->name;
@@ -69,7 +65,7 @@ class UserInvitationService
         if ($rejectedBy) {
             ActivityLogger::log(
                 'user.rejected',
-                "Rejected registration for {$name}",
+                "Rejected account for {$name}",
                 null,
                 ['name' => $name],
                 $rejectedBy
@@ -78,23 +74,26 @@ class UserInvitationService
     }
 
     /**
-     * Create a pending user account and email its activation link.
+     * Create a pending user account (random unusable password) and issue its
+     * activation code.
      *
      * @throws DuplicateAccountException
      * @throws MailDeliveryException
      */
-    public static function invite(array $data): User
+    public static function invite(array $data, array &$delivery = []): User
     {
-        $phone = self::normalizePhone($data['phone'] ?? '');
+        $rawPhone = trim($data['phone'] ?? '');
+        $phone = $rawPhone !== '' ? self::normalizePhone($rawPhone) : null;
 
-        if ($phone === null) {
-            throw new DuplicateAccountException('Please enter a valid Philippine mobile number (e.g. 09171234567).');
+        if ($rawPhone !== '' && $phone === null) {
+            throw new DuplicateAccountException('Enter a valid Philippine mobile number (e.g. 09171234567) or leave the field empty.');
         }
 
         $email = strtolower(trim($data['email']));
 
-        // Uniqueness enforcement: 1 phone number = 1 unique account.
-        if (User::where('phone', $phone)->exists()) {
+        // Uniqueness enforcement for the optional phone field:
+        // 1 phone number = 1 unique account, but blank phones are fine.
+        if ($phone !== null && User::where('phone', $phone)->exists()) {
             throw DuplicateAccountException::phone();
         }
 
@@ -105,32 +104,52 @@ class UserInvitationService
         $user = DB::transaction(function () use ($data, $phone, $email) {
             try {
                 return User::create([
-                    'name'           => self::buildFullName($data),
-                    'first_name'     => trim($data['first_name']),
-                    'middle_initial' => !empty($data['middle_initial']) ? strtoupper(trim($data['middle_initial'])) : null,
-                    'last_name'      => trim($data['last_name']),
-                    'email'          => $email,
-                    'phone'          => $phone,
-                    'role'           => $data['role'],
-                    'status'         => User::STATUS_PENDING_VERIFICATION,
+                    'name' => self::buildFullName($data),
+                    'first_name' => trim($data['first_name']),
+                    'middle_initial' => ! empty($data['middle_initial']) ? strtoupper(trim($data['middle_initial'])) : null,
+                    'last_name' => trim($data['last_name']),
+                    'email' => $email,
+                    'phone' => $phone,
+                    'role' => $data['role'],
+                    'status' => User::STATUS_PENDING,
                     // Random unusable password until the user sets their own on activation.
-                    'password'       => Hash::make(Str::random(64)),
+                    'password' => Hash::make(Str::random(64)),
                 ] + array_filter([
                     'barangay' => $data['barangay'] ?? null,
-                    'city'     => $data['city'] ?? null,
+                    'city' => $data['city'] ?? null,
                     'province' => $data['province'] ?? null,
                 ]));
             } catch (QueryException $e) {
                 // Race-condition safety net for concurrent duplicate submissions.
                 if (self::isDuplicateKeyError($e)) {
-                    throw DuplicateAccountException::phone();
+                    if ($phone !== null) {
+                        throw DuplicateAccountException::phone();
+                    }
+
+                    throw DuplicateAccountException::email();
                 }
 
                 throw $e;
             }
         });
 
-        self::issueTokenAndSendEmail($user);
+        $delivery = ['sent' => false, 'error' => null];
+
+        try {
+            self::issueActivation($user);
+            $delivery['sent'] = true;
+        } catch (MailDeliveryException $e) {
+            // The account is created and its activation code is stored even
+            // when the email cannot be delivered. A transient mail outage must
+            // not fail the invitation — the admin re-issues the code with the
+            // "Resend Invitation" action from the Users list.
+            $delivery['error'] = $e->getMessage();
+
+            Log::warning('Invitation created but activation email could not be sent.', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         $invitedBy = Auth::user();
         if ($invitedBy) {
@@ -147,38 +166,52 @@ class UserInvitationService
     }
 
     /**
-     * Re-issue a fresh activation token and resend the invitation email.
+     * Issue a fresh activation code + entry token and deliver the OTP email.
+     * Each issue invalidates all previous unused codes and entry tokens, so
+     * only the newest invitation can be used.
      *
+     * @throws InvalidActivationTokenException
      * @throws MailDeliveryException
      */
-    public static function resendInvitation(User $user): void
+    public static function issueActivation(User $user): void
     {
-        if (!$user->isPendingVerification()) {
-            throw new InvalidActivationTokenException();
+        if (! $user->isPending()) {
+            throw new InvalidActivationTokenException('Only pending accounts can be issued an activation code.');
         }
 
-        self::issueTokenAndSendEmail($user);
+        self::issueEntryToken($user);
+
+        EmailOtpService::issueAndSend(
+            $user,
+            EmailOtp::PURPOSE_ACTIVATION
+        );
     }
 
     /**
-     * Resolve an activation token into a display state without mutating anything.
+     * Resolve an emailed activation-entry link into a display state.
+     * Entry tokens only carry the user to the OTP page — the 6-digit code
+     * itself is never placed in any URL.
      *
      * @return array{state: string, user?: User}
      */
-    public static function resolveToken(string $token): array
+    public static function resolveEntryToken(?string $token): array
     {
-        $activation = UserActivation::where('token_hash', hash('sha256', $token))->first();
-
-        if (!$activation) {
+        if ($token === null || $token === '') {
             return ['state' => 'invalid'];
         }
 
-        // Friendliest message wins: if the account is live, say so,
-        // regardless of the token's own consumed/expired status.
+        $activation = UserActivation::where('token_hash', hash('sha256', $token))->first();
+
+        if (! $activation) {
+            return ['state' => 'invalid'];
+        }
+
         $user = $activation->user;
 
-        if ($user && !$user->isPendingVerification()) {
-            return ['state' => 'already_active'];
+        // Friendliest message wins: if the account is live, say so,
+        // regardless of the token's own consumed/expired status.
+        if ($user && ! $user->isPending()) {
+            return ['state' => 'already_active', 'user' => $user];
         }
 
         if ($activation->isConsumed()) {
@@ -193,64 +226,19 @@ class UserInvitationService
     }
 
     /**
-     * Consume an activation token: set the password, verify the phone,
-     * and flip the account status to active.
-     *
-     * @throws InvalidActivationTokenException
-     * @throws ExpiredActivationTokenException
+     * Invalidate every outstanding entry token for an account (called when
+     * activation completes so a consumed link can never be reused).
      */
-    public static function activate(string $token, string $password): User
+    public static function consumeEntryTokens(User $user): void
     {
-        $activation = UserActivation::where('token_hash', hash('sha256', $token))->first();
-
-        if (!$activation || $activation->isConsumed()) {
-            throw new InvalidActivationTokenException();
-        }
-
-        if ($activation->isExpired()) {
-            throw new ExpiredActivationTokenException();
-        }
-
-        $user = $activation->user;
-
-        if (!$user || !$user->isPendingVerification()) {
-            throw new InvalidActivationTokenException();
-        }
-
-        return DB::transaction(function () use ($activation, $user, $password) {
-            // Single-use guarantee under concurrent requests.
-            $claimed = UserActivation::whereKey($activation->getKey())
-                ->whereNull('consumed_at')
-                ->update(['consumed_at' => now()]);
-
-            if ($claimed === 0) {
-                throw new InvalidActivationTokenException();
-            }
-
-            // Re-verify uniqueness in case two invites raced to activation.
-            if (User::where('phone', $user->phone)->whereKeyNot($user->getKey())->exists()) {
-                throw DuplicateAccountException::phone();
-            }
-
-            $user->forceFill([
-                'password'          => Hash::make($password),
-                'status'            => User::STATUS_ACTIVE,
-                'phone_verified_at' => now(),
-            ])->save();
-
-            ActivityLogger::log(
-                'user.activated',
-                "Activated account for {$user->name} via email link",
-                $user,
-                ['phone' => $user->phone],
-                $user
-            );
-
-            return $user;
-        });
+        $user->activations()->whereNull('consumed_at')->update(['consumed_at' => now()]);
     }
 
-    private static function issueTokenAndSendEmail(User $user): void
+    /**
+     * Issue (or refresh) the single-entry token that points the user at the
+     * /activate OTP page. Stored only as a SHA-256 hash.
+     */
+    private static function issueEntryToken(User $user): void
     {
         $plainToken = bin2hex(random_bytes(32));
 
@@ -264,17 +252,7 @@ class UserInvitationService
             ]);
         });
 
-        try {
-            Mail::to($user->email)->send(new AccountActivationMail($user, $plainToken));
-        } catch (Throwable $e) {
-            Log::error('Activation email failed to send.', [
-                'user_id' => $user->id,
-                'error'   => $e->getMessage(),
-            ]);
-
-            // The account + valid token persist; admin can simply resend.
-            throw new MailDeliveryException();
-        }
+        Log::debug('Activation entry token issued.', ['user_id' => $user->id]);
     }
 
     /**
@@ -285,21 +263,21 @@ class UserInvitationService
     {
         $digits = preg_replace('/[\s\-\(\)\.]/', '', trim($raw));
 
-        if (!preg_match('/^(\+?63|0)?9\d{9}$/', $digits)) {
+        if (! preg_match('/^(\+?63|0)?9\d{9}$/', $digits)) {
             return null;
         }
 
-        return '+63' . substr($digits, -10);
+        return '+63'.substr($digits, -10);
     }
 
-    private static function buildFullName(array $data): string
+    public static function buildFullName(array $data): string
     {
         $firstName = ucwords(strtolower(trim(preg_replace('/\s+/', ' ', $data['first_name']))));
-        $lastName  = ucwords(strtolower(trim(preg_replace('/\s+/', ' ', $data['last_name']))));
+        $lastName = ucwords(strtolower(trim(preg_replace('/\s+/', ' ', $data['last_name']))));
 
         $mi = '';
-        if (!empty($data['middle_initial'])) {
-            $mi = strtoupper(trim(str_replace('.', '', $data['middle_initial']))) . '.';
+        if (! empty($data['middle_initial'])) {
+            $mi = strtoupper(trim(str_replace('.', '', $data['middle_initial']))).'.';
         }
 
         return trim(preg_replace('/\s+/', ' ', sprintf('%s %s %s', $firstName, $mi, $lastName)));

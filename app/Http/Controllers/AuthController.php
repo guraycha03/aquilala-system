@@ -2,34 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\SeasonHelper;
 use App\Models\Category;
+use App\Models\HarvestReport;
 use App\Models\Product;
+use App\Models\ProductReview;
 use App\Models\Quotation;
 use App\Models\User;
+use App\Services\ActivityLogger;
+use App\Services\UserInvitationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
     public function showLogin()
     {
         return view('auth.login');
-    }
-
-    public function showSignup()
-    {
-        return view('auth.signup');
-    }
-
-    /**
-     * Confirmation page shown after a farmer submits a registration request.
-     */
-    public function showRegistrationSubmitted()
-    {
-        return view('auth.registration-submitted');
     }
 
     public function login(Request $request)
@@ -40,16 +31,16 @@ class AuthController extends Controller
 
         if ($method === 'phone') {
             $validated = $request->validate([
-                'phone'    => ['required', 'string', 'max:25'],
+                'phone' => ['required', 'string', 'max:25'],
                 'password' => ['required', 'string'],
             ], [
-                'phone.required'    => 'Please enter your mobile number.',
-                'phone.max'         => 'Mobile number is too long.',
+                'phone.required' => 'Please enter your mobile number.',
+                'phone.max' => 'Mobile number is too long.',
                 'password.required' => 'Please enter your password.',
             ]);
 
             // Accepts +639XXXXXXXXX, 09XXXXXXXXX, 9XXXXXXXXX etc.
-            $phone = \App\Services\UserInvitationService::normalizePhone($validated['phone']);
+            $phone = UserInvitationService::normalizePhone($validated['phone']);
 
             if ($phone === null) {
                 return back()->withErrors([
@@ -58,7 +49,7 @@ class AuthController extends Controller
             }
 
             $credentials = [
-                'phone'    => $phone,
+                'phone' => $phone,
                 'password' => $validated['password'],
             ];
         } else {
@@ -79,177 +70,60 @@ class AuthController extends Controller
             ]);
 
             $credentials = [
-                'email'    => $validated['email'],
+                'email' => $validated['email'],
                 'password' => $validated['password'],
             ];
         }
 
-        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()->withErrors([
-                $errorKey => $method === 'phone'
-                    ? 'Invalid phone number or password.'
-                    : 'Invalid email or password.',
+                // Deliberately anonymous: the login page never reveals whether
+                // an email/phone is registered or whether the password is wrong.
+                $errorKey => 'The provided credentials are incorrect.',
             ])->withInput($request->except('password'));
         }
 
         $user = Auth::user();
 
-        // Registration requests still awaiting admin approval cannot sign in yet.
-        if ($user->isPendingApproval()) {
+        // Pending accounts (admin-created, awaiting OTP + password setup) and
+        // disabled accounts must not sign in. A pending user is routed to the
+        // correct continuation page; everyone else sees the same anonymous
+        // message as a bad credential.
+        if ($user->isPending() || $user->isDisabled()) {
+            $isPending = $user->isPending();
+
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
+            // Guide genuinely pending users onward without leaking account
+            // existence to anyone probing random addresses.
+            if ($isPending && $user->role !== 'admin') {
+                if ($method === 'email') {
+                    $request->session()->put('activation_email', strtolower(trim($validated['email'])));
+                }
+
+                return redirect()->route('account.activation.index')->with(
+                    'info',
+                    'Your account has not been activated yet. A verification code was sent to your email when your account was created.'
+                );
+            }
+
+            if ($isPending) {
+                return redirect()->route('email.verify.show')->with(
+                    'info',
+                    'Your account is awaiting email verification. Enter the 6-digit code sent to your email.'
+                );
+            }
+
             return back()->withErrors([
-                $errorKey => 'Your registration is still awaiting approval by the Aquilala administrator. You will be able to sign in once it is approved.',
+                $errorKey => 'The provided credentials are incorrect.',
             ])->withInput($request->except('password'));
         }
 
-        // Only accounts created through the Admin invitation flow are held
-        // until they confirm via the emailed link. Developer/seeder-created
-        // accounts (e.g. the platform Admin) and legacy self-signups are
-        // active immediately.
-        if ($user->isPendingVerification()) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return back()->withErrors([
-                $errorKey => 'Your account has not been activated yet. Please open the confirmation link sent to your email, or ask the administrator to resend the invitation.',
-            ])->withInput($request->except('password'));
-        }
-
-        if ($user->status === \App\Models\User::STATUS_SUSPENDED) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return back()->withErrors([
-                $errorKey => 'This account has been suspended. Please contact the administrator.',
-            ])->withInput($request->except('password'));
-        }
-
-        \App\Services\ActivityLogger::userLoggedIn($user, $method === 'phone' ? 'phone number' : 'email');
+        ActivityLogger::userLoggedIn($user, $method === 'phone' ? 'phone number' : 'email');
 
         return redirect()->route('dashboard.redirect', ['role' => $user->role]);
-    }
-
-    public function signup(Request $request)
-    {
-        // Production gets strict DNS and Spoof checking.
-        // Local dev uses standard rfc format checking to avoid missing system extensions.
-        $emailRule = app()->environment('production') ? 'email:rfc,dns,spoof' : 'email:rfc';
-
-        $validated = $request->validate([
-            'first_name'         => ['required', 'string', 'max:50', 'regex:/^[\pL\s\-]+$/u'],
-            'middle_initial'     => ['nullable', 'string', 'max:2', 'regex:/^[\pL\s\.]+$/u'],
-            'last_name'          => ['required', 'string', 'max:50', 'regex:/^[\pL\s\-]+$/u'],
-            'sex'                => ['nullable', Rule::in(['Male', 'Female'])],
-            'birth_date'         => ['nullable', 'date', 'before:today'],
-            'civil_status'       => ['nullable', Rule::in(['Single', 'Married', 'Widowed', 'Separated'])],
-            'email' => [
-                'required',
-                'string',
-                'max:254',
-                $emailRule,
-                'unique:users,email',
-            ],
-            'phone' => [
-                'required',
-                'string',
-                'max:25',
-                function (string $attribute, mixed $value, \Closure $fail) {
-                    $normalized = \App\Services\UserInvitationService::normalizePhone((string) $value);
-
-                    if ($normalized === null) {
-                        $fail('Enter a valid Philippine mobile number — the 9 digits after +639.');
-                        return;
-                    }
-
-                    if (User::where('phone', $normalized)->exists()) {
-                        $fail('This phone number is already registered. Please use a different number or log in.');
-                    }
-                },
-            ],
-            'role' => ['required', Rule::in(['admin', 'store_owner', 'farmer'])],
-            'address'           => ['nullable', 'string', 'max:500'],
-            'barangay'          => ['nullable', 'string', 'max:100'],
-            'city'              => ['nullable', 'string', 'max:100'],
-            'province'          => ['nullable', 'string', 'max:100'],
-            'farm_location'     => ['nullable', 'string', 'max:500'],
-            'default_land_area' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
-            'default_land_area_unit' => ['nullable', 'string', 'max:10'],
-            'land_ownership'    => ['nullable', 'string', 'max:60'],
-            'years_farming'     => ['nullable', 'integer', 'min:0', 'max:120'],
-            'assoc_member_no'   => ['nullable', 'string', 'max:60'],
-        ], [
-            'first_name.required' => 'Please enter your first name.',
-            'first_name.regex'    => 'First name may only contain letters, spaces, and hyphens.',
-            'middle_initial.regex' => 'Middle initial may only contain letters, spaces, and periods.',
-            'last_name.required'  => 'Please enter your last name.',
-            'last_name.regex'     => 'Last name may only contain letters, spaces, and hyphens.',
-            'sex.in'              => 'Select a valid option for sex.',
-            'birth_date.before'   => 'Please enter a valid date of birth.',
-            'civil_status.in'     => 'Select a valid civil status.',
-            'email.required'      => 'Please enter your email address.',
-            'email.email'         => 'Enter a valid email address.',
-            'email.unique'        => 'This email is already registered. Please use a different email or log in.',
-            'phone.required'      => 'Please enter your mobile number.',
-            'phone.max'           => 'Mobile number is too long.',
-            'role.in'             => 'Select a valid account role.',
-        ]);
-
-        // Clean and normalize human inputs
-        $firstName = ucwords(strtolower(trim(preg_replace('/\s+/', ' ', $validated['first_name']))));
-        $lastName  = ucwords(strtolower(trim(preg_replace('/\s+/', ' ', $validated['last_name']))));
-
-        $mi = '';
-        if (!empty($validated['middle_initial'])) {
-            $cleanMi = strtoupper(trim(str_replace('.', '', $validated['middle_initial'])));
-            $mi = $cleanMi . '.';
-        }
-
-        $fullName = trim(sprintf('%s %s %s', $firstName, $mi, $lastName));
-        $fullName = preg_replace('/\s+/', ' ', $fullName);
-
-        $user = User::create(array_filter([
-            'name'           => $fullName,
-            'first_name'     => $firstName,
-            'middle_initial' => empty($mi) ? null : $mi,
-            'last_name'      => $lastName,
-            'sex'            => $validated['sex'] ?? null,
-            'birth_date'     => $validated['birth_date'] ?? null,
-            'civil_status'   => $validated['civil_status'] ?? null,
-            'email'          => strtolower(trim($validated['email'])),
-            'phone'          => \App\Services\UserInvitationService::normalizePhone($validated['phone']),
-            'role'           => $validated['role'],
-            'status'         => User::STATUS_PENDING_APPROVAL,
-            // Random unusable password until the farmer sets their own via the
-            // secure link emailed after an admin approves the registration.
-            'password'       => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(64)),
-            'address'        => $validated['address'] ?? null,
-            'barangay'       => $validated['barangay'] ?? null,
-            'city'           => $validated['city'] ?? null,
-            'province'       => $validated['province'] ?? null,
-            'farm_location'  => $validated['farm_location'] ?? null,
-            'default_land_area'      => $validated['default_land_area'] ?? null,
-            'default_land_area_unit' => $validated['default_land_area_unit'] ?? null,
-            'land_ownership' => $validated['land_ownership'] ?? null,
-            'years_farming'  => $validated['years_farming'] ?? null,
-            'assoc_member_no'=> $validated['assoc_member_no'] ?? null,
-        ], fn ($value) => $value !== null && $value !== ''));
-
-        \App\Services\ActivityLogger::log(
-            'user.registration_requested',
-            "Submitted registration request for {$user->name} (farmer)",
-            $user,
-            ['phone' => $user->phone, 'email' => $user->email],
-            $user
-        );
-
-        // Farmers do NOT auto-login. Their account waits for admin approval,
-        // after which they receive a secure email link to set their password.
-        return redirect()->route('register.submitted');
     }
 
     public function logout(Request $request)
@@ -261,7 +135,7 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
-/**
+    /**
      * Display the Admin Dashboard with live database metrics and user logs.
      */
     public function showAdminDashboard()
@@ -271,25 +145,6 @@ class AuthController extends Controller
         $adminCount = User::where('role', 'admin')->count();
         $storeOwnersCount = User::where('role', 'store_owner')->count();
         $farmersCount = User::where('role', 'farmer')->count();
-
-        // 1b. Registration activity over the past 14 days
-        $registrationCountsByDate = DB::table('users')
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as total')
-            ->where('created_at', '>=', now()->subDays(13)->startOfDay())
-            ->groupBy('date')
-            ->pluck('total', 'date');
-
-        $registrationTrend = collect(range(13, 0))
-            ->map(function ($offset) use ($registrationCountsByDate) {
-                $day = now()->subDays($offset);
-
-                return [
-                    'date'  => $day->toDateString(),
-                    'label' => $day->format('M j'),
-                    'count' => (int) ($registrationCountsByDate[$day->toDateString()] ?? 0),
-                ];
-            })
-            ->values();
 
         // 2. Fetch the latest 10 profile registrations
         $recentUsers = User::latest()->take(10)->get();
@@ -304,14 +159,127 @@ class AuthController extends Controller
             ->count();
         $discontinuedProducts = Product::where('status', 'discontinued')->count();
 
+        $totalHarvests = HarvestReport::count();
+        $totalHarvestYield = HarvestReport::sum('actual_yield_metric_tons');
+        $totalHarvestExpenses = HarvestReport::sum('actual_total_expenses');
+
+        // ─── Association season & attention queue ──────────────────
+        $currentSeason = SeasonHelper::getCurrentSeason();
+        $currentSeasonLabel = SeasonHelper::getSeasonLabel();
+        $currentSeasonHarvests = HarvestReport::whereRaw('LOWER(season) LIKE ?', [strtolower($currentSeason).'%'])->count();
+        $pendingCount = User::where('status', User::STATUS_PENDING)->count();
+        $totalPendingReviews = ProductReview::pending()->count();
+
+        // Harvest report activity over the past 14 days
+        $harvestCountsByDate = DB::table('harvest_reports')
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as total')
+            ->where('created_at', '>=', now()->subDays(13)->startOfDay())
+            ->groupBy('date')
+            ->pluck('total', 'date');
+
+        $harvestTrend = collect(range(13, 0))
+            ->map(function ($offset) use ($harvestCountsByDate) {
+                $day = now()->subDays($offset);
+
+                return [
+                    'date' => $day->toDateString(),
+                    'label' => $day->format('M j'),
+                    'count' => (int) ($harvestCountsByDate[$day->toDateString()] ?? 0),
+                ];
+            })
+            ->values();
+
+        // Harvest report activity grouped per day for the dashboard graph (last 12 months)
+        $harvestDaily = DB::table('harvest_reports')
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as total, COALESCE(SUM(actual_yield_metric_tons), 0) as yield, COALESCE(SUM(actual_total_expenses), 0) as expenses')
+            ->where('created_at', '>=', now()->subDays(364)->startOfDay())
+            ->groupBy('date')
+            ->get()
+            ->keyBy('date');
+
+        $harvestByMonth = $harvestDaily->groupBy(fn ($row, $key) => substr((string) $key, 0, 7));
+
+        $monthRows = function (Carbon $month) use ($harvestByMonth) {
+            return $harvestByMonth->get($month->format('Y-m'), collect());
+        };
+
+        $harvestGraphYear = collect(range(11, 0))
+            ->map(function ($i) use ($monthRows) {
+                $m = now()->startOfMonth()->subMonths($i);
+                $rows = $monthRows($m);
+
+                return [
+                    'label' => $m->format('M'),
+                    'count' => (int) $rows->sum('total'),
+                    'yield' => (float) $rows->sum('yield'),
+                    'expenses' => (float) $rows->sum('expenses'),
+                ];
+            })
+            ->values();
+
+        $dayRow = fn ($d) => $harvestDaily->get($d->toDateString());
+
+        $harvestGraphMonth = collect(range(0, (int) now()->day - 1))
+            ->map(function ($d) use ($dayRow) {
+                $day = now()->startOfMonth()->addDays($d);
+                $row = $dayRow($day);
+
+                return [
+                    'label' => (string) $day->day,
+                    'count' => (int) ($row->total ?? 0),
+                    'yield' => (float) ($row->yield ?? 0),
+                    'expenses' => (float) ($row->expenses ?? 0),
+                ];
+            })
+            ->values();
+
+        $harvestGraphWeek = collect(range(6, 0))
+            ->map(function ($i) use ($dayRow) {
+                $day = now()->subDays($i);
+                $row = $dayRow($day);
+
+                return [
+                    'label' => $day->format('D j'),
+                    'count' => (int) ($row->total ?? 0),
+                    'yield' => (float) ($row->yield ?? 0),
+                    'expenses' => (float) ($row->expenses ?? 0),
+                ];
+            })
+            ->values();
+
+        $harvestGraphDays = collect(range(29, 0))
+            ->map(function ($i) use ($dayRow) {
+                $day = now()->subDays($i);
+                $row = $dayRow($day);
+
+                return [
+                    'label' => $day->format('M j'),
+                    'count' => (int) ($row->total ?? 0),
+                    'yield' => (float) ($row->yield ?? 0),
+                    'expenses' => (float) ($row->expenses ?? 0),
+                ];
+            })
+            ->values();
+
         $totalQuotations = Quotation::count();
         $quotationStatusCounts = [
-            'computed' => Quotation::where('status', Quotation::STATUS_COMPUTED)->count(),
-            'viewed'   => Quotation::where('status', Quotation::STATUS_VIEWED)->count(),
-            'expired'  => Quotation::where('status', Quotation::STATUS_EXPIRED)->count(),
+            'computed' => Quotation::where('status', Quotation::STATUS_COMPUTED)
+                ->where(fn ($q) => $q->whereNull('valid_until')->orWhere('valid_until', '>=', now()))->count(),
+            'viewed' => Quotation::where('status', Quotation::STATUS_VIEWED)
+                ->where(fn ($q) => $q->whereNull('valid_until')->orWhere('valid_until', '>=', now()))->count(),
+            'expired' => Quotation::where('valid_until', '<', now())->count(),
         ];
         $computedQuotations = $quotationStatusCounts['computed'];
         $viewedQuotations = $quotationStatusCounts['viewed'];
+
+        // Quotations that need attention: expired, or still unseen by any store
+        $attentionQuotations = Quotation::with(['farmer'])
+            ->get()
+            ->filter(fn ($q) => $q->is_expired || $q->status === Quotation::STATUS_COMPUTED)
+            ->sortBy(fn ($q) => $q->is_expired ? 0 : 1)
+            ->sortBy(fn ($q) => $q->valid_until?->getTimestamp() ?? PHP_INT_MAX)
+            ->take(8)
+            ->values();
 
         // Recent platform-wide quotation activity
         $recentPlatformQuotations = Quotation::with(['farmer', 'items.product.storeOwner'])
@@ -327,10 +295,10 @@ class AuthController extends Controller
 
         // Stock health summary (matches the per-product status logic)
         $stockCounts = [
-            'in_stock'    => Product::where('stock_quantity', '>', 0)
+            'in_stock' => Product::where('stock_quantity', '>', 0)
                 ->whereColumn('stock_quantity', '>', 'reorder_threshold')
                 ->count(),
-            'low_stock'   => Product::where('stock_quantity', '>', 0)
+            'low_stock' => Product::where('stock_quantity', '>', 0)
                 ->whereColumn('stock_quantity', '<=', 'reorder_threshold')
                 ->count(),
             'out_of_stock' => Product::where('stock_quantity', '<=', 0)->count(),
@@ -342,21 +310,33 @@ class AuthController extends Controller
             'adminCount',
             'storeOwnersCount',
             'farmersCount',
-            'registrationTrend',
             'recentUsers',
             'totalCategories',
             'totalProducts',
             'activeProducts',
             'outOfStockProducts',
             'discontinuedProducts',
+            'totalHarvests',
+            'totalHarvestYield',
+            'totalHarvestExpenses',
+            'currentSeason',
+            'currentSeasonLabel',
+            'currentSeasonHarvests',
+            'pendingCount',
+            'totalPendingReviews',
+            'harvestTrend',
+            'harvestGraphYear',
+            'harvestGraphMonth',
+            'harvestGraphWeek',
+            'harvestGraphDays',
             'totalQuotations',
             'quotationStatusCounts',
             'computedQuotations',
             'viewedQuotations',
+            'attentionQuotations',
             'recentPlatformQuotations',
             'recentProducts',
             'stockCounts'
         ));
     }
 }
-

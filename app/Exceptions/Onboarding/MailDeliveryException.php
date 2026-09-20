@@ -6,8 +6,8 @@ use RuntimeException;
 
 class MailDeliveryException extends RuntimeException
 {
-    public function __construct()
+    public function __construct(?string $message = null)
     {
-        parent::__construct('The account was created, but the activation email could not be sent. Please use the "Resend Invitation" action once connectivity is restored.');
+        parent::__construct($message ?? 'The account was created, but the activation email could not be sent. Please use the "Resend Invitation" action once connectivity is restored.');
     }
 }

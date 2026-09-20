@@ -239,12 +239,38 @@
 </div>
 
 <!-- Quotations List -->
+@if($quotations->count() > 0)
+  <x-table-toolbar
+      uid="quotes"
+      work-table="quotesTable"
+      per-page="10"
+      noun="quotations"
+      search-placeholder="Search by reference, crop, or season…"
+      :filters="[
+          ['key' => 'status', 'label' => 'All statuses', 'options' => [
+              ['computed', 'Estimate Ready'],
+              ['viewed', 'Viewed by Store'],
+              ['expired', 'Expired'],
+          ]],
+          ['key' => 'crop', 'label' => 'All crops', 'options' => collect($quotations->pluck('crop_type')->unique()->values())->map(fn($c) => [strtolower($c), $c])->all()],
+          ['key' => 'season', 'label' => 'All seasons', 'options' => collect($quotations->pluck('season')->unique()->values())->map(fn($s) => [strtolower($s), ucfirst($s)])->all()],
+      ]"
+      :sorts="[
+          ['key' => 'date', 'dir' => -1, 'type' => 'date', 'label' => 'Date (newest)'],
+          ['key' => 'date', 'dir' => 1, 'type' => 'date', 'label' => 'Date (oldest)'],
+          ['key' => 'cost', 'dir' => -1, 'type' => 'num', 'label' => 'Estimated cost (highest)'],
+          ['key' => 'cost', 'dir' => 1, 'type' => 'num', 'label' => 'Estimated cost (lowest)'],
+          ['key' => 'crop', 'dir' => 1, 'type' => 'str', 'label' => 'Crop (A–Z)'],
+          ['key' => 'status', 'dir' => 1, 'type' => 'str', 'label' => 'Status (A–Z)'],
+      ]"
+    />
+  @endif
+
 <div class="table-card">
   @if($quotations->count() > 0)
-    <div data-paginated>
     <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
       <div class="app-scroll">
-        <table class="quote-table">
+        <table id="quotesTable" class="quote-table">
         <thead>
           <tr>
             <th>Reference</th>
@@ -259,7 +285,12 @@
         </thead>
         <tbody>
           @foreach($quotations as $quote)
-            <tr>
+            <tr data-search="{{ strtolower(($quote->quotation_number ?? '') . ' ' . ($quote->crop_type ?? '') . ' ' . ($quote->season ?? '') . ' ' . ($quote->effective_status ?? '')) }}"
+                data-status="{{ strtolower($quote->effective_status ?? '') }}"
+                data-crop="{{ strtolower($quote->crop_type ?? '') }}"
+                data-season="{{ strtolower($quote->season ?? '') }}"
+                data-cost="{{ (float) ($quote->estimated_total_cost ?? 0) }}"
+                data-date="{{ $quote->created_at?->format('Y-m-d') ?? '' }}">
               <td>
                 <span style="font-weight: 700; color: #143d23; font-family: 'SF Mono', ui-monospace, monospace; font-size: 13px; letter-spacing: 0.02em;">{{ $quote->quotation_number }}</span>
               </td>
@@ -279,10 +310,13 @@
               </td>
               <td style="color: #879a8c; font-size: 13px; white-space: nowrap;">{{ $quote->created_at->format('M d, Y') }}</td>
               <td>
-                <span class="status-badge {{ $quote->status }}">
+                <span class="status-badge {{ $quote->effective_status }}">
                   <span class="status-badge-dot"></span>
                   {{ $quote->status_label }}
                 </span>
+                @if($quote->effective_status === 'viewed' && $quote->viewed_at)
+                  <div style="font-size: 11px; color: #94a3b8; margin-top: 5px; white-space: nowrap;">Viewed {{ $quote->viewed_at->format('M d, Y · g:i A') }}</div>
+                @endif
               </td>
               <td style="text-align: right;">
                 <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">
@@ -291,7 +325,8 @@
                     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
                   </a>
                   <form action="{{ route('farmer.quotations.destroy', $quote) }}" method="POST"
-                        onsubmit="return confirm('Delete this cost quotation?');"
+                        data-aqui-confirm="Delete this cost quotation?"
+                        data-aqui-danger data-aqui-confirm-label="Delete"
                         style="margin: 0;">
                     @csrf
                     @method('DELETE')
@@ -311,10 +346,6 @@
         <div class="app-scrollbar-thumb"></div>
       </div>
     </div>
-    @if($quotations->hasPages())
-      {{ $quotations->links('partials.pagination') }}
-    @endif
-    </div>
   @else
     <div class="empty-state">
       <div class="empty-icon">
@@ -332,7 +363,4 @@
   @endif
 </div>
 
-@push('scripts')
-  @include('partials.ajax-pagination')
-@endpush
 @endsection

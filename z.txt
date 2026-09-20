@@ -1,5 +1,22 @@
 
+PLAN
+
+sync the review and rate made by users and make it appear on the noficiation modal and page of admin and after apporoval on store owners, same witht he cost qoutation, notify the 2 other users after farmer mde it
+
+make the star icon rating work
+
+remove or hide the register page/form for now but do not delete the file if i bring it back later on.
+but for now remove it from appearing in the front end, keep the login page as it, for now i will only let users login with already existing accounts egistered by admin, means only admin can create or register accounts, the link with changing passowrd for users to login work the same
+
+
+make the global style of tables like this, make the seach bar and filter buttons appear searate from the table by hiding the white background on the search bar and filter part where its connected ot the rest of the table, so the searchbar and filter will appear floating on top of the table
+
+make the qoutation page on farmer user inclide complete prrocsss for qoutation, to have all the info for each qoutation and also show the calculation like it does on add batch crop modal. the qoutation page should be complete information, with ai overview but already add a fallbar smart response, bt improve ai
+
+
+
+
+php artisan aquilala:create-admin
+
 
 php artisan view:clear
-
-

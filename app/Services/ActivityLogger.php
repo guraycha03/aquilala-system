@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ActivityLog;
+use App\Models\ProductReview;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
@@ -148,6 +149,39 @@ class ActivityLogger
         );
     }
 
+    // ── Harvest report shortcuts ─────────────────────────────────
+
+    public static function harvestReportCreated($report): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_HARVEST_CREATED,
+            "Recorded harvest of {$report->crop_type} ({$report->season}) — yield {$report->actual_yield_metric_tons} MT on {$report->harvest_date->format('M d, Y')}",
+            $report,
+            [
+                'crop_type' => $report->crop_type,
+                'season'    => $report->season,
+                'land_area' => $report->land_area,
+                'yield'     => $report->actual_yield_metric_tons,
+                'expenses'  => $report->actual_total_expenses,
+                'harvest_date' => $report->harvest_date->format('Y-m-d'),
+            ]
+        );
+    }
+
+    public static function harvestReportDeleted($report): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_HARVEST_DELETED,
+            "Removed harvest report for {$report->crop_type} (harvested {$report->harvest_date->format('M d, Y')})",
+            $report,
+            [
+                'crop_type' => $report->crop_type,
+                'season'    => $report->season,
+                'harvest_date' => $report->harvest_date->format('Y-m-d'),
+            ]
+        );
+    }
+
     // ── Land shortcut ────────────────────────────────────────────
 
     public static function landUpdated(float $oldArea, float $newArea, string $unit): ActivityLog
@@ -189,6 +223,101 @@ class ActivityLogger
             "Deleted product: {$productName} (SKU: {$sku})",
             null,
             ['product_name' => $productName, 'sku' => $sku]
+        );
+    }
+
+    // ── Review shortcuts (for farmers) ───────────────────────────
+
+    public static function reviewCreated($review): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_REVIEW_CREATED,
+            "Reviewed {$review->product?->name} — {$review->rating} star" . ($review->rating !== 1 ? 's' : ''),
+            $review,
+            ['product_name' => $review->product?->name, 'rating' => $review->rating]
+        );
+    }
+
+    public static function reviewDeleted($review): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_REVIEW_DELETED,
+            "Removed review for {$review->product?->name}",
+            $review,
+            ['product_name' => $review->product?->name, 'rating' => $review->rating]
+        );
+    }
+
+    // ── Review moderation shortcuts (for admins) ──────────────────
+
+    public static function reviewApproved($review): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_REVIEW_APPROVED,
+            "Approved review for {$review->product?->name} by {$review->farmer?->name}",
+            $review,
+            ['product_name' => $review->product?->name, 'rating' => $review->rating, 'reviewer' => $review->farmer?->name]
+        );
+    }
+
+    public static function reviewRejected($review): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_REVIEW_REJECTED,
+            "Disapproved review for {$review->product?->name} by {$review->farmer?->name}",
+            $review,
+            ['product_name' => $review->product?->name, 'rating' => $review->rating, 'reviewer' => $review->farmer?->name]
+        );
+    }
+
+    // ── Store-owner-facing review notifications ───────────────────
+    // These rows are written with user_id = the affected store owner so they
+    // show up in the store owner's activity history and notification bell.
+
+    private static function reviewTargetMeta($review, string $actor, string $status): array
+    {
+        return [
+            'review_id'    => $review->id,
+            'product_id'   => $review->product_id,
+            'product_name' => $review->product?->name,
+            'reviewer'     => $review->farmer?->name,
+            'actor'        => $actor,
+            'rating'       => $review->rating,
+            'comment'      => $review->comment,
+            'status'       => $status,
+        ];
+    }
+
+    public static function reviewApprovedForStore($review, User $storeOwner, $admin): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_REVIEW_APPROVED,
+            "Review from {$review->farmer?->name} ({$review->rating}★) on \"{$review->product?->name}\" was approved and is now public",
+            $review,
+            self::reviewTargetMeta($review, $admin?->name ?? 'Admin', ProductReview::STATUS_APPROVED),
+            $storeOwner
+        );
+    }
+
+    public static function reviewRejectedForStore($review, User $storeOwner, $admin): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_REVIEW_REJECTED,
+            "Review from {$review->farmer?->name} ({$review->rating}★) on \"{$review->product?->name}\" was disapproved and is hidden",
+            $review,
+            self::reviewTargetMeta($review, $admin?->name ?? 'Admin', ProductReview::STATUS_REJECTED),
+            $storeOwner
+        );
+    }
+
+    public static function reviewDeletedForStore($review, User $storeOwner): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_REVIEW_DELETED,
+            "Review from {$review->farmer?->name} on \"{$review->product?->name}\" was removed by the farmer",
+            $review,
+            self::reviewTargetMeta($review, $review->farmer?->name ?? 'Farmer', 'deleted'),
+            $storeOwner
         );
     }
 }

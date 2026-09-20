@@ -18,6 +18,13 @@
             justify-content: center;
         }
 
+        /* Global: consistent, readable letter-spacing on all validation / feedback text */
+        .field-error, .field-feedback, .form-error, .form-error-message,
+        .form-errors, .form-errors li, .form-errors ul, .alert-error, .alert-error li,
+        [id$="-feedback"], [id$="-error"], [id$="Feedback"], [id$="Error"] {
+            letter-spacing: 0.05em;
+        }
+
         /* Registration page: long form, allow natural scrolling instead of
            flex-centering which could clip the top of tall content. */
         body.auth-body--tall {
@@ -115,20 +122,42 @@
         .visual-pane {
             display: none;
             position: relative;
-            background-position: center;
-            background-size: cover;
-            background-repeat: no-repeat;
+            overflow: hidden;
             padding: 48px;
             color: #ffffff;
             flex-direction: column;
             justify-content: center;
         }
 
+        /* Crossfading background slides */
+        .visual-pane__slides {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+        .visual-pane__slide {
+            position: absolute;
+            inset: 0;
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            will-change: opacity;
+        }
+        .visual-pane__slide.is-active { opacity: 1; }
+
+        /* Keep the welcome copy above the slides */
+        .visual-pane__content {
+            position: relative;
+            z-index: 1;
+        }
+
         .visual-pane h2 {
             font-size: 32px;
             font-weight: 800;
             margin-bottom: 12px;
-            letter-spacing: -0.025em;
+            letter-spacing: 0.08em;
             line-height: 1.2;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
@@ -137,6 +166,7 @@
             color: #e2ebe5;
             font-size: 15px;
             line-height: 1.6;
+            letter-spacing: 0.03em;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
 
@@ -161,6 +191,8 @@
             }
         }
     </style>
+
+    @stack('styles')
 </head>
 <body class="@if(isset($hideVisualPane) && $hideVisualPane) auth-body--tall @endif">
 
@@ -180,13 +212,29 @@
         {{-- The register page sets $hideVisualPane = true to give the
              form more room and avoid a long side image. --}}
         @unless(isset($hideVisualPane) && $hideVisualPane)
-        <div class="visual-pane" data-bg="{{ asset('images/login-img.png') }}">
-            <div>
+        @php
+            $loginSlides = [
+                'images/login-images/login-img-1.png',
+                'images/login-images/login-img-2.jpg',
+                'images/login-images/login-img-3.jpg',
+                'images/login-images/login-img-4.jpg',
+                'images/login-images/login-img-5.jpg',
+                'images/login-images/login-img-6.jpg',
+            ];
+        @endphp
+        <div class="visual-pane">
+            <div class="visual-pane__slides" aria-hidden="true">
+                @foreach($loginSlides as $i => $slide)
+                    <div class="visual-pane__slide {{ $i === 0 ? 'is-active' : '' }}"
+                         style="background-image: linear-gradient(135deg, rgba(51, 118, 20, 0.72), rgba(20, 61, 35, 0.68)), url('{{ asset($slide) }}');"></div>
+                @endforeach
+            </div>
+            <div class="visual-pane__content">
                 <h2>Aqui<span>lala</span></h2>
                 <p>Irrigators Association Incorporated</p>
                 <div style="margin-top: 32px; height: 2px; width: 40px; background: #348110; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
                 <p style="margin-top: 24px; font-size: 14px; color: #ffffff; font-weight: 600; text-shadow: 0 1px 4px rgba(0,0,0,0.4);">
-                    Access recommended farm inputs, compare curated store offerings, and plan your costs with guided decision support.
+                    Sign in to use the association's farm services and information.
                 </p>
             </div>
         </div>
@@ -195,10 +243,27 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            var pane = document.querySelector('.visual-pane');
-            if (pane && pane.dataset.bg) {
-                pane.style.backgroundImage = 'linear-gradient(135deg, rgba(51, 118, 20, 0.62), rgba(20, 61, 35, 0.55)), url("' + pane.dataset.bg + '")';
-            }
+            var slides = document.querySelectorAll('.visual-pane__slide');
+            if (slides.length < 2) return;
+
+            var current = 0;
+            var transitionMs = 2000; // must match the CSS transition duration
+
+            setInterval(function () {
+                var prev = current;
+                current = (current + 1) % slides.length;
+
+                // Bring the incoming slide on top, then fade it in over the current one
+                slides[current].style.zIndex = 2;
+                slides[current].classList.add('is-active');
+
+                // Once the crossfade completes, retire the previous slide
+                setTimeout(function () {
+                    slides[prev].classList.remove('is-active');
+                    slides[prev].style.zIndex = '';
+                    slides[current].style.zIndex = '';
+                }, transitionMs);
+            }, 6000);
         });
     </script>
 

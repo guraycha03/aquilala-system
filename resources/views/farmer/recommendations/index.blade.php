@@ -160,13 +160,17 @@
   /* ── Recommendation Categories ── */
   .sr-categories {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     margin-bottom: 32px;
   }
-  @media (max-width: 768px) {
+  @media (max-width: 1024px) {
+    .sr-categories { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
     .sr-categories { grid-template-columns: 1fr; }
   }
+  #recommended-products { scroll-margin-top: 24px; }
   .sr-cat-card {
     background: #ffffff;
     border: 1px solid #e8eaed;
@@ -313,7 +317,8 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 9px;
+    line-height: 1;
+    padding: 5px 10px;
     border-radius: 6px;
     white-space: nowrap;
   }
@@ -545,14 +550,13 @@
         $topRated = $products->count();
       @endphp
 
-      <a href="#" class="sr-cat-card" onclick="return false;">
+      <a href="#recommended-products" class="sr-cat-card">
         <div class="sr-cat-icon" style="background: linear-gradient(135deg, #f0fdf4, #dcfce7);">
           <svg viewBox="0 0 24 24" width="22" height="22" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M7 20h10"/>
-            <path d="M10 20c0-4.4-3.6-8-8-8"/>
-            <path d="M14 20c0-4.4 3.6-8 8-8"/>
-            <path d="M12 12V4"/>
-            <path d="M8 8l4-4 4 4"/>
+            <path d="M12 20v-8"/>
+            <path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/>
+            <path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/>
           </svg>
         </div>
         <div>
@@ -565,7 +569,7 @@
         </div>
       </a>
 
-      <a href="#" class="sr-cat-card" onclick="return false;">
+      <a href="{{ route('farmer.products.browse', ['season' => 'wet']) }}" class="sr-cat-card">
         <div class="sr-cat-icon" style="background: linear-gradient(135deg, #e0f2fe, #dbeafe);">
           <svg viewBox="0 0 24 24" width="22" height="22" stroke="#0369a1" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
@@ -581,7 +585,7 @@
         </div>
       </a>
 
-      <a href="#" class="sr-cat-card" onclick="return false;">
+      <a href="{{ route('farmer.reviews.index') }}" class="sr-cat-card">
         <div class="sr-cat-icon" style="background: linear-gradient(135deg, #fef3c7, #fef9c3);">
           <svg viewBox="0 0 24 24" width="22" height="22" stroke="#d97706" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -596,10 +600,28 @@
           <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
       </a>
+
+      <a href="{{ route('farmer.stores.index') }}" class="sr-cat-card">
+        <div class="sr-cat-icon" style="background: linear-gradient(135deg, #f3e8ff, #ede9fe);">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="#7c3aed" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l1-5h16l1 5"/>
+            <path d="M5 9v11h14V9"/>
+            <path d="M9 20v-6h6v6"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Partner Stores</h3>
+          <p>Trusted local farm supply stores in your area offering quality products.</p>
+        </div>
+        <div class="sr-cat-count">
+          {{ $storeCount }} {{ Str::plural('store', $storeCount) }}
+          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </a>
     </div>
 
     {{-- ═══ 5. Product Grid ═══ --}}
-    <div class="sr-section-head">
+    <div class="sr-section-head" id="recommended-products">
       <div>
         <h2>Recommended Products</h2>
         <p>Curated selections based on your crops, season, and farming needs in Bulan.</p>
@@ -646,7 +668,6 @@
 
           <div class="sr-product-body">
             <h3>{{ $product->name }}</h3>
-            <p class="sr-desc">{{ $product->description ? \Illuminate\Support\Str::limit($product->description, 80) : 'No description provided.' }}</p>
             @if($product->storeOwner)
               <div class="sr-product-store">
                 <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l1-5h16l1 5"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/></svg>

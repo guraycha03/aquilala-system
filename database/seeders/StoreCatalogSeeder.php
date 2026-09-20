@@ -10,14 +10,13 @@ use App\Models\Product;
 use App\Models\ProductApplication;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class StoreCatalogSeeder extends Seeder
 {
     /**
-     * Seed three store owners (Bulan, Gubat, Irosin) with a realistic,
-     * current-day agricultural input catalog. Every crop-consumable has
-     * DecisionFormula records so it is instantly detectable on the
+     * Seed the demo store owner (Maya Santos — Oakridge Farm & Feed) with a
+     * realistic, current-day agricultural input catalog. Every crop-consumable
+     * has DecisionFormula records so it is instantly detectable on the
      * farmer quotation page, plus optional fertilizer details and
      * application advice for richer product detail pages.
      */
@@ -27,52 +26,19 @@ class StoreCatalogSeeder extends Seeder
 
         $stores = [
             [
-                'email'          => 'guraycha@gmail.com',
-                'name'           => 'Cha G. Guray',
-                'first_name'     => 'Cha',
-                'middle_initial' => 'G.',
-                'last_name'      => 'Guray',
-                'prefix'         => 'AQU',
+                'email'          => 'maya@gmail.com',
+                'name'           => 'Maya Santos',
+                'first_name'     => 'Maya',
+                'last_name'      => 'Santos',
+                'prefix'         => 'OKR',
                 'price_factor'   => 1.00,
                 'stock_factor'   => 1.00,
-                'store_name'     => 'Aquilala Central Depot — Bulan Branch',
-                'address'        => 'Zone 4, Poblacion',
-                'barangay'       => 'Poblacion',
+                'store_name'     => 'Oakridge Farm & Feed',
+                'address'        => 'Zone 1, San Francisco (Pulot)',
+                'barangay'       => 'San Francisco (Pulot)',
                 'city'           => 'Bulan',
                 'province'       => 'Sorsogon',
                 'contact_number' => '0917-123-4567',
-            ],
-            [
-                'email'          => 'store.gubat@aquilala.org',
-                'name'           => 'Ramon B. Escoto',
-                'first_name'     => 'Ramon',
-                'middle_initial' => 'B.',
-                'last_name'      => 'Escoto',
-                'prefix'         => 'GUB',
-                'price_factor'   => 0.96,
-                'stock_factor'   => 0.85,
-                'store_name'     => 'Gubat Agricultural Supply',
-                'address'        => 'Brgy. Rizal, National Highway',
-                'barangay'       => 'Brgy. Rizal',
-                'city'           => 'Gubat',
-                'province'       => 'Sorsogon',
-                'contact_number' => '0918-765-4321',
-            ],
-            [
-                'email'          => 'store.irosin@aquilala.org',
-                'name'           => 'Liza M. Ferias',
-                'first_name'     => 'Liza',
-                'middle_initial' => 'M.',
-                'last_name'      => 'Ferias',
-                'prefix'         => 'IRO',
-                'price_factor'   => 1.04,
-                'stock_factor'   => 1.15,
-                'store_name'     => 'Irosin Agro-Supply Depot',
-                'address'        => 'Purok 3, Brgy. Gabao, Maharlika Highway',
-                'barangay'       => 'Brgy. Gabao',
-                'city'           => 'Irosin',
-                'province'       => 'Sorsogon',
-                'contact_number' => '0919-432-8765',
             ],
         ];
 
@@ -104,10 +70,9 @@ class StoreCatalogSeeder extends Seeder
             [
                 'name'           => $def['name'],
                 'first_name'     => $def['first_name'],
-                'middle_initial' => $def['middle_initial'],
+                'middle_initial' => $def['middle_initial'] ?? null,
                 'last_name'      => $def['last_name'],
                 'role'           => 'store_owner',
-                'password'       => Hash::make(env('SEED_MERCHANT_PASSWORD', md5($def['email'] . 'aquilala_secure'))),
                 'store_name'     => $def['store_name'],
                 'address'        => $def['address'],
                 'barangay'       => $def['barangay'],

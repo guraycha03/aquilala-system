@@ -17,7 +17,7 @@ class FormulaController extends Controller
         $formulas = DecisionFormula::with('product.category')
             ->orderBy('crop_type')
             ->orderBy('season')
-            ->paginate(10);
+            ->get();
 
         $stats = [
             'total'    => DecisionFormula::count(),
@@ -26,9 +26,12 @@ class FormulaController extends Controller
             'seasons'  => DecisionFormula::distinct()->count('season'),
         ];
 
-        $grouped = $this->groupFormulas($formulas);
+        $crops = DecisionFormula::query()
+            ->distinct()
+            ->orderBy('crop_type')
+            ->pluck('crop_type');
 
-        return view('store.formulas.index', compact('formulas', 'grouped', 'stats'));
+        return view('store.formulas.index', compact('formulas', 'stats', 'crops'));
     }
 
     /**
@@ -129,16 +132,6 @@ class FormulaController extends Controller
             ->pluck('crop_type');
 
         return compact('products', 'existingCrops');
-    }
-
-    /**
-     * Group a formula collection by crop type, then by season.
-     */
-    private function groupFormulas($formulas)
-    {
-        return $formulas->groupBy('crop_type')->map(function ($cropFormulas) {
-            return $cropFormulas->groupBy('season');
-        });
     }
 
     /**

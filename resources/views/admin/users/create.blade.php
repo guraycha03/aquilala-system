@@ -96,7 +96,7 @@
 
     <div class="header-row">
       <h1>Register New User</h1>
-      <p>An activation link will be emailed so the user can confirm their phone number and set their own password.</p>
+      <p>An activation link will be emailed so the user can confirm their email address and set their own password.</p>
     </div>
 
     <div class="form-card">
@@ -118,8 +118,8 @@
             <small class="field-error">@error('first_name'){{ $message }}@enderror</small>
           </div>
           <div class="invite-field">
-            <label>M.I. <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
-            <input type="text" name="middle_initial" value="{{ old('middle_initial') }}" placeholder="D." maxlength="2" style="text-align:center;">
+            <label>Middle Name <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
+            <input type="text" name="middle_initial" value="{{ old('middle_initial') }}" placeholder="D. or Dela" maxlength="50">
             <small class="field-error">@error('middle_initial'){{ $message }}@enderror</small>
           </div>
           <div class="invite-field">
@@ -141,7 +141,7 @@
             <small class="field-error">@error('email'){{ $message }}@enderror</small>
           </div>
           <div class="invite-field full">
-            <label>Registered Phone Number <span class="req">*</span></label>
+            <label>Registered Phone Number <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
             <div class="phone-row">
               <span class="phone-prefix" title="Philippine mobile numbers only — prefix is fixed">
                 <svg class="ph-flag" viewBox="0 0 36 25" role="img" aria-label="Philippine flag">
@@ -164,8 +164,8 @@
             </div>
             <small class="field-error">@error('phone'){{ $message }}@enderror</small>
             <small style="display:block;font-size:11px;color:#94a3b8;margin-top:4px;">
-              Philippine mobile number only — enter the 9 digits after +639.
-              This becomes the user's unique identity, one number per account.
+              Philippine mobile number only — enter the 9 digits after +639, or leave it empty.
+              Sign‑in uses the verified email address; the phone (if given) is a contact detail.
             </small>
           </div>
         </div>
@@ -195,14 +195,14 @@
 
       form.addEventListener('submit', function (e) {
         var digits = phoneLocal.value.replace(/\D/g, '');
-        if (digits.length !== 9) {
+        if (digits.length > 0 && digits.length !== 9) {
           e.preventDefault();
           phoneLocal.closest('.invite-field').querySelector('.field-error').textContent =
-            'Enter the 9-digit number after +639 (e.g. 171234567).';
+            'Enter the 9-digit number after +639, or leave it empty.';
           phoneLocal.focus();
           return;
         }
-        phoneHidden.value = '+639' + digits;
+        phoneHidden.value = digits.length === 9 ? '+639' + digits : '';
         submitBtn.disabled = true;
         submitBtn.textContent = 'Sending…';
       });

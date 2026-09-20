@@ -3,12 +3,17 @@
 @section('title', 'Registration Approvals')
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'all',       'label' => 'All Users', 'url' => route('admin.users.index')],
+      ['key' => 'approvals', 'label' => 'Approvals', 'url' => route('admin.approvals.index')],
+      ['key' => 'stores',    'label' => 'Stores',    'url' => route('admin.stores.index')],
+    ],
+    'activeTab' => 'approvals',
+  ])
   @php
-    $pendingApplications = $applications->filter(fn($u) => $u->isPendingApproval());
-    $approvedApplications = $applications->filter(fn($u) => !$u->isPendingApproval() && ($u->approved_at !== null || in_array($u->status, [
-        \App\Models\User::STATUS_PENDING_VERIFICATION,
-        \App\Models\User::STATUS_ACTIVE,
-    ], true)));
+    $pendingApplications = $applications->filter(fn($u) => $u->isPending());
+    $approvedApplications = $applications->filter(fn($u) => !$u->isPending());
 
     $serialized = $applications->map(function ($u) {
         $location = trim(implode(', ', array_filter([$u->barangay, $u->city, $u->province])));
@@ -41,13 +46,13 @@
                 $u->civil_status ? ('Civil status: ' . $u->civil_status) : null,
                 $u->land_ownership ? ('Land: ' . $u->land_ownership) : null,
                 $u->years_farming !== null ? ($u->years_farming . ' yr(s) farming') : null,
-            ]))) ?: 'Awaiting review of application details.',
-            'status'    => $u->isPendingApproval() ? 'pending' : 'approved',
+            ]))) ?: 'Awaiting activation of the member account.',
+            'status'    => $u->isPending() ? 'pending' : 'approved',
         ];
     })->values()->all();
 
     $statusMeta = [
-        'pending'  => ['Pending', '#a57f43', '#f6f0e6'],
+        'pending'  => ['Pending activation', '#a57f43', '#f6f0e6'],
         'approved' => ['Approved', '#63856c', '#eef3ef'],
         'rejected' => ['Rejected', '#a86464', '#f6ecec'],
     ];
@@ -65,7 +70,7 @@
     .app-page::after { width: 280px; height: 280px; background: rgba(59,130,246,0.13); bottom: -70px; left: -70px; }
     .app-content { position: relative; z-index: 1; }
 
-    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
     .header-row h1 { font-size: 24px; font-weight: 700; color: #1e293b; letter-spacing: 0.02em; margin: 0 0 4px 0; }
     .header-row p { font-size: 13px; color: #64748b; margin: 0; }
 
@@ -215,22 +220,22 @@
         <div class="app-kpi">
           <div class="ak-label">Needs Review</div>
           <div class="ak-value" id="kpiPending">{{ $pendingApplications->count() }}</div>
-          <div class="ak-sub">registrations awaiting action</div>
+          <div class="ak-sub">Registrations awaiting action</div>
         </div>
         <div class="app-kpi">
           <div class="ak-label">Approved</div>
           <div class="ak-value" id="kpiApproved">{{ $approvedApplications->count() }}</div>
-          <div class="ak-sub">members approved</div>
+          <div class="ak-sub">Members approved</div>
         </div>
         <div class="app-kpi">
           <div class="ak-label">Rejected</div>
           <div class="ak-value" id="kpiRejected">0</div>
-          <div class="ak-sub">declined applications</div>
+          <div class="ak-sub">Declined applications</div>
         </div>
         <div class="app-kpi">
           <div class="ak-label">Total Applications</div>
           <div class="ak-value" id="kpiTotal">{{ $applications->count() }}</div>
-          <div class="ak-sub">all submitted registrations</div>
+          <div class="ak-sub">All submitted registrations</div>
         </div>
       </section>
 

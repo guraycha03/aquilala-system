@@ -253,17 +253,28 @@
     letter-spacing: 0.03em;
   }
   .season-pill {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 6px;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    padding: 5px 10px;
+    border-radius: 6px;
   }
   .season-wet { background: #e0f2fe; color: #0369a1; }
   .season-dry { background: #ffedd5; color: #c2410c; }
   .season-all { background: #f0fdf4; color: #166534; }
+
+  .card-rating { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .card-rating .stars { display: inline-flex; gap: 2px; }
+  .card-rating .stars svg { width: 13px; height: 13px; fill: currentColor; stroke: none; }
+  .card-rating .stars .star-empty { fill: #e2e8f0; }
+  .card-rating .stars .star-filled { fill: #f59e0b; }
+  .card-rating .r-avg { font-size: 13px; font-weight: 800; color: #143d23; }
+  .card-rating .r-count { font-size: 11px; color: #94a3b8; }
+  .card-rating .r-none { font-size: 11px; color: #cbd5e1; }
 
   .product-title {
     font-size: 16px;
@@ -405,43 +416,27 @@
 <!-- Supplies Grid -->
 <div class="product-grid" id="productGrid">
   @forelse($products as $product)
-    <a href="{{ route('farmer.products.show', $product->id) }}" class="product-card"
+    <x-product-card :product="$product" href="{{ route('farmer.products.show', $product->id) }}"
        data-name="{{ strtolower($product->name) }}"
        data-description="{{ strtolower($product->description ?? '') }}"
        data-brand="{{ strtolower($product->brand ?? '') }}"
        data-sku="{{ strtolower($product->sku ?? '') }}"
        data-category="{{ strtolower($product->category?->name ?? $product->getOriginal('category') ?? '') }}"
        data-season="{{ $product->recommended_season ?? '' }}">
-      <div style="height: 180px; background: #f8fafc; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #f1f5f9; overflow: hidden; flex-shrink: 0;">
-        @if($product->mainImage && !empty($product->mainImage->file_path))
-          <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->name }}" style="width: 100%; height: 100%; object-fit: cover; display: block;" loading="lazy">
-        @elseif($product->images && $product->images->first())
-          <img src="{{ asset('storage/' . $product->images->first()->file_path) }}" alt="{{ $product->name }}" style="width: 100%; height: 100%; object-fit: cover; display: block;" loading="lazy">
-        @else
-          <svg viewBox="0 0 24 24" width="48" height="48" stroke="#cbd5e1" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
-        @endif
-      </div>
-      <div class="card-body">
-        <div class="badge-container">
-          <span class="category-pill">{{ $product->category?->name ?? $product->getOriginal('category') ?? 'General Supply' }}</span>
-
-          @if($product->recommended_season)
-            <span class="season-pill {{ $product->recommended_season === 'wet' ? 'season-wet' : ($product->recommended_season === 'dry' ? 'season-dry' : 'season-all') }}">
-              @if($product->recommended_season === 'wet') <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg> Wet
-              @elseif($product->recommended_season === 'dry') <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Dry
-              @else <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Year-round
-              @endif
+      <x-slot name="body">
+        <div class="card-rating">
+          @if($product->review_count > 0)
+            <span class="stars">
+              @for($i = 1; $i <= 5; $i++)
+                <svg class="{{ $i <= (int) round($product->average_rating) ? 'star-filled' : 'star-empty' }}" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              @endfor
             </span>
+            <span class="r-avg">{{ number_format($product->average_rating, 1) }}</span>
+            <span class="r-count">({{ $product->review_count }})</span>
+          @else
+            <span class="r-none">No reviews yet</span>
           @endif
         </div>
-
-        <h3 class="product-title">{{ $product->name }}</h3>
-        <p class="product-description">{{ $product->description ? \Illuminate\Support\Str::limit($product->description, 90) : 'No additional details provided.' }}</p>
-
         <div class="meta-tags">
           @if($product->brand)
             <span class="meta-tag">Brand: {{ $product->brand }}</span>
@@ -450,16 +445,14 @@
             <span class="meta-tag">Code: {{ $product->sku }}</span>
           @endif
         </div>
-      </div>
-
-      <div class="card-footer">
-        <span class="price-tag">₱{{ number_format($product->price, 2) }}</span>
+      </x-slot>
+      <x-slot name="footer">
         <span class="stock-status {{ $product->is_low_stock ? 'stock-low' : 'stock-in' }}">
           <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block;"></span>
           {{ $product->stock_quantity }} {{ $product->stock_unit ?? 'pieces' }} left
         </span>
-      </div>
-    </a>
+      </x-slot>
+    </x-product-card>
   @empty
     <div class="empty-state" id="emptyStateServer">
       <div class="empty-icon">

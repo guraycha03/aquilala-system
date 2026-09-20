@@ -12,6 +12,13 @@ class HarvestReport extends Model
         'land_area', 'actual_yield_metric_tons', 'actual_total_expenses', 'harvest_date'
     ];
 
+    protected $casts = [
+        'harvest_date'             => 'date',
+        'land_area'                => 'decimal:2',
+        'actual_yield_metric_tons' => 'decimal:2',
+        'actual_total_expenses'    => 'decimal:2',
+    ];
+
     public function farmer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');

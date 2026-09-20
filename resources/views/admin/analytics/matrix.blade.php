@@ -114,10 +114,40 @@
 
       <!-- BREADCRUMB -->
       <nav class="mx-crumb">
-        <a href="{{ route('admin.analytics.index') }}">System Analytics</a>
+        <a href="{{ route('admin.operations.index') }}">Crops & Inputs</a>
         <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
         <span>Decision Rule Matrix</span>
       </nav>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
+        <div>
+          <h1 style="font-size:22px;font-weight:700;color:#1e293b;margin:0 0 4px 0;">Decision Rule Matrix</h1>
+          <p style="font-size:13px;color:#64748b;margin:0;">Baseline application rates per hectare — managed by store owners</p>
+        </div>
+        <div class="matrix-chips">
+          <span>
+            <svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/></svg>
+            {{ number_format($ruleCount) }} rules
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+            {{ number_format($cropCount) }} crops
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            {{ $seasonLabels }}
+          </span>
+        </div>
+      </div>
+
+      @include('partials.admin-tabs', [
+        'tabs' => [
+          ['key' => 'formulas', 'label' => 'Formulas',          'url' => route('admin.operations.formulas')],
+          ['key' => 'catalog',  'label' => 'Catalog & Reviews', 'url' => route('admin.operations.catalog')],
+          ['key' => 'seasons',  'label' => 'Seasons',           'url' => route('admin.operations.seasons')],
+        ],
+        'activeTab' => 'formulas',
+      ])
 
       @if($ruleCount === 0)
         <div class="mx-panel">
@@ -127,27 +157,6 @@
           </div>
         </div>
       @else
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px;">
-          <div>
-            <h1 style="font-size:22px;font-weight:700;color:#1e293b;margin:0 0 4px 0;">Decision Rule Matrix</h1>
-            <p style="font-size:13px;color:#64748b;margin:0;">Baseline application rates per hectare — managed by store owners</p>
-          </div>
-          <div class="matrix-chips">
-            <span>
-              <svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/></svg>
-              {{ number_format($ruleCount) }} rules
-            </span>
-            <span>
-              <svg viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
-              {{ number_format($cropCount) }} crops
-            </span>
-            <span>
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              {{ $seasonLabels }}
-            </span>
-          </div>
-        </div>
-
         <div class="mx-panel">
           @foreach($grouped as $crop => $seasons)
             @php $flattened = $seasons->flatten(); @endphp

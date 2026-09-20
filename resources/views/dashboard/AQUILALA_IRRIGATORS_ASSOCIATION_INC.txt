@@ -1,0 +1,31 @@
+
+
+
+In irrigation and agricultural systems like the National Irrigation Administration (NIA), the difference between Actual IA Members and Farmer-Beneficiaries comes down to legal registration versus who physically uses the water.
+
+Here is the exact breakdown of why your dataset shows 214 Members but 260 Beneficiaries:
+
+### 1. Actual IA Members (214)
+
+These are the farmers who are officially registered, card-carrying members of the Aquilala Irrigators Association.
+
+* They pay membership dues and association fees.
+* They have voting rights to elect the IA President (like Mrs. Ana V. Lacsa) and other officers.
+* They attend general assembly meetings.
+* They are legally responsible for maintaining the irrigation canals in their sector.
+
+### 2. Farmer-Beneficiaries (260)
+
+This is the total number of farmers who receive water from the irrigation system, regardless of whether they joined the association or not.
+
+Every registered “Member” is a beneficiary, but not every beneficiary is a member.
+
+The extra 46 people (260 minus 214) are likely tenant farmers, renters, or neighboring landowners who benefit directly from the irrigation system but chose not to sign up as official voting members of the IA.
+
+### Quick Summary for Your System
+
+If you are designing a database or system logic for this:
+
+**Members** = The legal, organized group holding the responsibilities and voting rights.
+
+**Beneficiaries** = The physical footprint of the project, representing everyone whose crops receive water from the irrigation system.

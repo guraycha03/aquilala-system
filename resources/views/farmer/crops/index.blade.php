@@ -71,6 +71,57 @@
     }
     .filter-btn:hover { border-color: #cbd5e1; color: #334155; }
     .filter-btn.active { background: #14532d; color: #fff; border-color: #14532d; }
+    .batch-count { display: inline-flex; align-items: center; background: #14532d; color: #fff; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-left: 8px; vertical-align: middle; }
+
+    /* ── Crop Batches Table ── */
+    .crop-table-card {
+        background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; overflow-x: auto;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 24px;
+    }
+    .crop-table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 880px; }
+    .crop-table th {
+        padding: 12px 16px; font-weight: 600; color: #6b7c6e; border-bottom: 1px solid #f0f2f1;
+        text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+        background: #fafdfb; white-space: nowrap;
+    }
+    .crop-table td { padding: 13px 16px; border-bottom: 1px solid #f5f7f6; color: #374138; vertical-align: middle; }
+    .crop-table tbody tr { transition: background 0.15s; cursor: pointer; }
+    .crop-table tbody tr:hover td { background: #f8faf9; }
+    .crop-table tbody tr:last-child td { border-bottom: none; }
+    .crop-name-cell { display: flex; align-items: center; gap: 10px; }
+    .crop-name-ic { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .crop-name-ic svg { width: 18px; height: 18px; }
+    .crop-name { font-weight: 700; color: #1e293b; font-size: 14px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .crop-batch-chip { font-size: 11px; font-weight: 600; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 12px; white-space: nowrap; }
+    .crop-sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+    .stage-badge-mini { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+    .stage-dot-mini { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .season-badge-mini { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; text-transform: capitalize; }
+    .season-badge-mini.wet { background: #eff6ff; color: #1d4ed8; }
+    .season-badge-mini.dry { background: #fffbeb; color: #b45309; }
+    .yield-cell b { font-variant-numeric: tabular-nums; }
+    .yield-tons { font-size: 11.5px; color: #94a3b8; font-weight: 600; margin-top: 1px; }
+    .row-progress { width: 110px; height: 6px; background: #eef2f1; border-radius: 99px; overflow: hidden; }
+    .row-progress > div { height: 100%; border-radius: 99px; }
+    .row-progress-label { font-size: 12px; font-weight: 700; color: #1e293b; margin-top: 5px; }
+    .act-yield { font-size: 12px; font-weight: 700; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 8px; white-space: nowrap; }
+    .row-actions { display: inline-flex; align-items: center; gap: 6px; }
+    .row-btn {
+        display: inline-flex; align-items: center; gap: 5px; border-radius: 8px; padding: 7px 10px;
+        font-size: 12px; font-weight: 600; border: 1px solid transparent; cursor: pointer;
+        transition: all 0.15s; background: none; font-family: inherit;
+    }
+    .row-btn.plain { color: #64748b; border-color: #e5e7eb; }
+    .row-btn.plain:hover { color: #14532d; border-color: #bbf7d0; background: #f0fdf4; }
+    .row-btn.red { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
+    .row-btn.red:hover { background: #fee2e2; }
+    .row-btn:disabled, .row-btn.disabled {
+        opacity: 0.45; cursor: not-allowed; color: #94a3b8;
+        border-color: #e5e7eb; background: #f8faf9; pointer-events: none;
+    }
+    @media (max-width: 900px) { .hide-sm { display: none; } }
+
+    .tb-hint { font-size: 12px; color: #94a3b8; font-weight: 500; }
 
     /* ── Crop Cards ── */
     .crops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; margin-bottom: 24px; }
@@ -461,136 +512,142 @@
 <!-- ── Filter Bar ── -->
 @if($crops->count() > 0)
 <div class="section-head">
-    <h2 class="section-title">Crop Batches</h2>
-    <div class="filter-group">
-        <button class="filter-btn active" onclick="filterCrops('all', this)">All</button>
-        <button class="filter-btn" onclick="filterCrops('active', this)">Active</button>
-        <button class="filter-btn" onclick="filterCrops('harvested', this)">Harvested</button>
-    </div>
+    <h2 class="section-title">
+        Crop Batches
+        <span class="batch-count" id="tbCount">{{ $crops->count() }}</span>
+    </h2>
 </div>
+
+<x-table-toolbar
+    uid="crops"
+    work-table="cropsTable"
+    count="tbCount"
+    per-page="10"
+    noun="crops"
+    search-placeholder="Search crop, batch, category…"
+    :filters="[
+        ['key' => 'status', 'label' => 'All Statuses', 'options' => [['active', 'Active'], ['harvested', 'Harvested']]],
+        ['key' => 'crop', 'label' => 'All Crops', 'options' => $crops->groupBy(fn($c) => $c->crop->name)->keys()->map(fn($n) => [strtolower($n), $n])->values()->all()],
+        ['key' => 'stageIndex', 'label' => 'All Stages', 'options' => [
+            ['0', 'Land Preparation'], ['1', 'Seeding / Sowing'], ['2', 'Vegetative Growth'],
+            ['3', 'Flowering / Fruiting'], ['4', 'Ripening'], ['5', 'Harvested'], ['6', 'Failed'],
+        ]],
+        ['key' => 'season', 'label' => 'All Seasons', 'options' => [['wet', 'Wet'], ['dry', 'Dry']]],
+    ]"
+    :sorts="[
+        ['key' => 'planted', 'dir' => -1, 'type' => 'date', 'label' => 'Newest planted'],
+        ['key' => 'planted', 'dir' => 1, 'type' => 'date', 'label' => 'Oldest planted'],
+        ['key' => 'crop', 'dir' => 1, 'type' => 'str', 'label' => 'Crop (A–Z)'],
+        ['key' => 'crop', 'dir' => -1, 'type' => 'str', 'label' => 'Crop (Z–A)'],
+        ['key' => 'area', 'dir' => -1, 'type' => 'num', 'label' => 'Land area (largest)'],
+        ['key' => 'area', 'dir' => 1, 'type' => 'num', 'label' => 'Land area (smallest)'],
+        ['key' => 'stageIndex', 'dir' => 1, 'type' => 'num', 'label' => 'Stage (early → harvested)'],
+        ['key' => 'progress', 'dir' => -1, 'type' => 'num', 'label' => 'Progress (highest)'],
+    ]"
+/>
 @endif
 
-<!-- ── Crop Cards ── -->
+<!-- ── Crop Batches Table ── -->
 @if($crops->count() > 0)
-@php
-    $stageOrder = ['land_prep','seeding','vegetative','reproductive','ripening','harvested'];
-@endphp
-<div class="crops-grid">
-    @foreach($crops as $fc)
-    @php
-        $isFinished = in_array($fc->growth_stage, ['harvested', 'failed']);
-        $stageIdx = array_search($fc->growth_stage, $stageOrder) ?? 0;
-    @endphp
-    <div class="crop-card" data-status="{{ $isFinished ? 'harvested' : 'active' }}">
-        <div class="card-top-accent" style="background: linear-gradient(90deg, {{ $fc->growth_stage_color }}, {{ $fc->growth_stage_color }}88);"></div>
-
-        <div class="card-header">
-            <div>
-                <h3 class="card-crop-name">{{ $fc->crop->name }}</h3>
-                <div class="card-meta">
-                    <span class="card-category">{{ $fc->crop->category ?? 'Crop' }}</span>
-                    @if($fc->batch_name)
-                        <span class="card-batch">{{ $fc->batch_name }}</span>
+<div class="crop-table-card">
+    <table class="crop-table" id="cropsTable">
+        <thead>
+            <tr>
+                <th>Crop Batch</th>
+                <th>Stage</th>
+                <th>Land Area</th>
+                <th>Season</th>
+                <th>Planted</th>
+                <th>Target Harvest</th>
+                <th>Progress</th>
+                <th class="hide-sm">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($crops as $fc)
+            @php
+                $isFinished = in_array($fc->growth_stage, ['harvested', 'failed']);
+                $stageIndexMap = ['land_prep' => 0, 'seeding' => 1, 'vegetative' => 2, 'reproductive' => 3, 'ripening' => 4, 'harvested' => 5, 'failed' => 6];
+            @endphp
+            <tr data-status="{{ $isFinished ? 'harvested' : 'active' }}"
+                data-crop="{{ strtolower($fc->crop->name ?? '') }}"
+                data-search="{{ strtolower(implode(' ', array_filter([$fc->crop->name ?? '', $fc->batch_name ?? '', $fc->crop->category ?? '', $fc->growth_stage_label, $fc->season ?? '', (string) ($fc->actual_yield ?? '')]))) }}"
+                data-stage-index="{{ $stageIndexMap[$fc->growth_stage] ?? 0 }}"
+                data-season="{{ $fc->season }}"
+                data-area="{{ $fc->land_area }}"
+                data-planted="{{ $fc->planting_date->format('Y-m-d') }}"
+                data-harvest="{{ $fc->expected_harvest_date ? $fc->expected_harvest_date->format('Y-m-d') : '' }}"
+                data-progress="{{ $isFinished ? ($fc->growth_stage === 'harvested' ? 100 : -1) : $fc->progress_percent }}"
+                onclick="location.href='{{ route('farmer.crops.show', $fc) }}'">
+                <td>
+                    <div class="crop-name-cell">
+                        <span class="crop-name-ic" style="background: {{ $fc->growth_stage_color }}14; color: #16a34a;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
+                        </span>
+                        <div>
+                            <div class="crop-name">
+                                {{ $fc->crop->name }}
+                                @if($fc->batch_name)<span class="crop-batch-chip">{{ $fc->batch_name }}</span>@endif
+                            </div>
+                            <div class="crop-sub">{{ $fc->crop->category ?? 'Crop' }} &middot; {{ $fc->days_since_planting }}d since planting</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="stage-badge-mini" style="background: {{ $fc->growth_stage_color }}12; color: {{ $fc->growth_stage_color }};">
+                        <span class="stage-dot-mini"></span>
+                        {{ $fc->growth_stage_label }}
+                    </span>
+                </td>
+                <td class="yield-cell">
+                    <b>{{ rtrim(rtrim(number_format($fc->land_area, 2, '.', ''), '0'), '.') }}</b>
+                    <span class="yield-tons">{{ $fc->land_area_unit === 'ha' ? 'ha' : $fc->land_area_unit }}</span>
+                </td>
+                <td>
+                    <span class="season-badge-mini {{ $fc->season }}">{{ ucfirst($fc->season) }}</span>
+                </td>
+                <td>{{ $fc->planting_date->format('M d, Y') }}</td>
+                <td>
+                    @if($fc->expected_harvest_date)
+                        <div>{{ $fc->expected_harvest_date->format('M d, Y') }}</div>
+                        @if(!$isFinished)<div class="yield-tons">{{ $fc->days_until_harvest }}d left</div>@endif
+                    @else
+                        —
                     @endif
-                </div>
-            </div>
-            <span class="stage-badge" style="background: {{ $fc->growth_stage_color }}12; color: {{ $fc->growth_stage_color }};">
-                <span class="stage-dot"></span>
-                {{ $fc->growth_stage_label }}
-            </span>
-        </div>
-
-        <div class="card-body">
-            <div class="card-details">
-                <div class="detail-item">
-                    <span class="detail-label">Land Area</span>
-                    <span class="detail-value">{{ $fc->land_area }} {{ $fc->land_area_unit === 'ha' ? 'ha' : $fc->land_area_unit }}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Season</span>
-                    <span class="detail-value" style="display: inline-flex; align-items: center; gap: 5px;">
-                        @if($fc->season === 'wet')
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg> Wet
+                </td>
+                <td>
+                    @if(!$isFinished)
+                        <div class="row-progress"><div style="width: {{ $fc->progress_percent }}%; background: linear-gradient(90deg, {{ $fc->growth_stage_color }}, {{ $fc->growth_stage_color }}aa);"></div></div>
+                        <div class="row-progress-label">{{ $fc->progress_percent }}%</div>
+                    @elseif($fc->actual_yield)
+                        <span class="act-yield">{{ $fc->actual_yield }} {{ $fc->yield_unit ?? 'units' }}</span>
+                    @else
+                        <span class="yield-tons">—</span>
+                    @endif
+                </td>
+                <td class="hide-sm">
+                    <div class="row-actions">
+                        @if(!$isFinished)
+                            <button class="row-btn plain" title="Update growth stage or record the harvest" onclick="event.stopPropagation(); openUpdateModal({{ $fc->id }}, '{{ $fc->growth_stage }}')">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                Update
+                            </button>
                         @else
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Dry
+                            <button class="row-btn disabled" disabled title="Updates are not applicable to completed batches.">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                Update
+                            </button>
                         @endif
-                    </span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Planted</span>
-                    <span class="detail-value">{{ $fc->planting_date->format('M d, Y') }}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Days Active</span>
-                    <span class="detail-value">{{ $fc->days_since_planting }}d</span>
-                </div>
-                @if($fc->expected_harvest_date)
-                <div class="detail-item">
-                    <span class="detail-label">Target Harvest</span>
-                    <span class="detail-value">{{ $fc->expected_harvest_date->format('M d, Y') }}</span>
-                </div>
-                @endif
-                @if($fc->estimated_cost)
-                <div class="detail-item">
-                    <span class="detail-label">Est. Cost</span>
-                    <span class="detail-value">₱{{ number_format($fc->estimated_cost, 0) }}</span>
-                </div>
-                @endif
-            </div>
-
-            @if(!$isFinished)
-            <div class="stage-stepper">
-                @foreach($stageOrder as $si => $sKey)
-                @if($sKey !== 'harvested')
-                <div class="stepper-step">
-                    <div class="stepper-dot {{ $si < $stageIdx ? 'done' : ($si === $stageIdx ? 'current' : '') }}"></div>
-                    <span class="stepper-label {{ $si <= $stageIdx ? 'active-label' : '' }}">
-                        {{ match($sKey) { 'land_prep' => 'Prep', 'seeding' => 'Seed', 'vegetative' => 'Veg', 'reproductive' => 'Flwr', 'ripening' => 'Ripe', default => '' } }}
-                    </span>
-                </div>
-                @endif
-                @endforeach
-            </div>
-            @endif
-
-            @if($fc->expected_harvest_date && !$isFinished)
-            <div class="progress-section">
-                <div class="progress-header">
-                    <span class="progress-title">Growth Progress</span>
-                    <span class="progress-pct" style="color: {{ $fc->growth_stage_color }};">{{ $fc->progress_percent }}%</span>
-                </div>
-                <div class="progress-track">
-                    <div class="progress-fill" style="width: {{ $fc->progress_percent }}%; background: linear-gradient(90deg, {{ $fc->growth_stage_color }}, {{ $fc->growth_stage_color }}aa);"></div>
-                </div>
-                <div class="progress-footer">
-                    <span>Day {{ $fc->days_since_planting }} of {{ $fc->days_since_planting + $fc->days_until_harvest }}</span>
-                    <span>{{ $fc->days_until_harvest }}d remaining</span>
-                </div>
-            </div>
-            @endif
-
-            @if($isFinished && $fc->actual_yield)
-            <div style="margin-top: 12px; padding: 10px 14px; background: #f0fdf4; border-radius: 10px; border: 1px solid #bbf7d0;">
-                <div style="font-size: 11px; font-weight: 600; color: #16a34a; text-transform: uppercase; letter-spacing: 0.05em;">Actual Harvest</div>
-                <div style="font-size: 15px; font-weight: 800; color: #166534; margin-top: 2px;">{{ $fc->actual_yield }} {{ $fc->yield_unit ?? 'units' }}</div>
-            </div>
-            @endif
-        </div>
-
-        <div class="card-footer">
-            @if(!$isFinished)
-                <button class="btn-sm btn-sm-green" onclick="openUpdateModal({{ $fc->id }}, '{{ $fc->growth_stage }}')">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-                    Update Stage
-                </button>
-            @endif
-            <button class="btn-sm btn-sm-red" onclick="deleteCrop({{ $fc->id }})" style="margin-left: auto;">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                Remove
-            </button>
-        </div>
-    </div>
-    @endforeach
+                        <button class="row-btn red" title="Remove this crop batch" onclick="event.stopPropagation(); deleteCrop({{ $fc->id }})">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            Remove
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
 </div>
 @else
 <!-- ── Empty State ── -->
@@ -617,6 +674,7 @@
 
 <x-new-crop-batch-modal
     :all-crops="$allCrops"
+    :crops="$crops"
     :stats="$stats"
     :user="$user"
     :alloc-pct="$allocPct"
@@ -807,10 +865,16 @@
         const um = document.getElementById('updateModal'); if (um) window._openOverlay(um);
     };
     window.deleteCrop = function(id) {
-        if (confirm('Remove this crop batch? This cannot be undone.')) {
+        if (!window.AquiNotice) { return; }
+        AquiNotice.confirm({
+            message: 'Remove this crop batch? This cannot be undone.',
+            danger: true,
+            confirmLabel: 'Remove'
+        }).then(function (ok) {
+            if (!ok) return;
             const f = document.getElementById('deleteForm');
             if (f) { f.action = '{{ url("/farmer/crops") }}/' + id; f.submit(); }
-        }
+        });
     };
 
     document.querySelectorAll('.modal-overlay, .ncb-overlay').forEach(o => {
@@ -903,15 +967,6 @@
     function _applyFsTransform() {
         var wrap = document.getElementById('farmFsSvgWrap');
         if (wrap) wrap.style.transform = 'scale(' + _fsScale + ')';
-    }
-
-    /* ── Filter Crop Cards ── */
-    function filterCrops(type, btn) {
-        document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        document.querySelectorAll('.crop-card').forEach(function(card) {
-            card.style.display = (type === 'all' || card.dataset.status === type) ? '' : 'none';
-        });
     }
 
     /* ── Update Stage Modal ── */

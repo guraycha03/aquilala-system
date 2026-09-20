@@ -12,18 +12,68 @@ class InventoryController extends Controller
     /**
      * Display the inventory management dashboard with live data.
      */
-    public function index()
+    public function index(Request $request)
     {
         $userId = Auth::id();
 
-        // Paginated products for the main table
-        $products = Product::with('category')
+        $q = trim((string) $request->query('q', ''));
+        $status = (string) $request->query('status', 'all');
+        $cat = trim((string) $request->query('cat', ''));
+        $filterActive = $q !== '' || in_array($status, ['healthy', 'low', 'out'], true) || $cat !== '';
+
+        // Paginated products for the main table (server-side smart filtering)
+        $query = Product::with('category')
             ->where('user_id', $userId)
-            ->orderBy('name')
-            ->paginate(10);
+            ->orderBy('name');
+
+        $tokens = preg_split('/\s+/', mb_strtolower($q), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        foreach ($tokens as $token) {
+            $like = "%{$token}%";
+            $query->where(function ($sub) use ($like) {
+                $sub->whereRaw('LOWER(name) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(sku) LIKE ?', [$like])
+                    ->orWhereHas('category', function ($c) use ($like) {
+                        $c->whereRaw('LOWER(name) LIKE ?', [$like]);
+                    });
+            });
+        }
+
+        if ($status === 'healthy') {
+            $query->where(function ($sub) {
+                $sub->whereRaw('COALESCE(stock_quantity,0) > COALESCE(reorder_threshold,1)')
+                    ->where('status', '!=', 'discontinued');
+            });
+        } elseif ($status === 'low') {
+            $query->where(function ($sub) {
+                $sub->whereRaw('COALESCE(stock_quantity,0) BETWEEN 1 AND COALESCE(reorder_threshold,1)')
+                    ->where('status', '!=', 'discontinued');
+            });
+        } elseif ($status === 'out') {
+            $query->where(function ($sub) {
+                $sub->where('stock_quantity', '<=', 0)
+                    ->orWhere('status', 'out_of_stock')
+                    ->orWhere('status', 'discontinued');
+            });
+        }
+
+        if ($cat !== '') {
+            $query->whereHas('category', fn ($c) => $c->where('name', $cat));
+        }
+
+        $products = $query->get();
 
         // Full dataset for metrics, chart, and modal
         $allProducts = Product::where('user_id', $userId)->get();
+
+        // Distinct category names for the filter dropdown
+        $categories = $allProducts
+            ->pluck('category')
+            ->filter()
+            ->pluck('name')
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
 
         // Metrics
         $totalItems = $allProducts->count();
@@ -45,7 +95,8 @@ class InventoryController extends Controller
         return view('store.inventory.index', compact(
             'products', 'allProducts',
             'totalItems', 'lowStockCount', 'outOfStockCount',
-            'totalStockValue', 'totalUnits', 'healthyCount', 'lowStockItems'
+            'totalStockValue', 'totalUnits', 'healthyCount', 'lowStockItems',
+            'status', 'q', 'cat', 'filterActive', 'categories'
         ));
     }
 

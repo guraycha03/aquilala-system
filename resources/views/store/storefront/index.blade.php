@@ -108,6 +108,104 @@
         display: block;
     }
 
+    /* Catalog Toolbar — search + styled filters (farm activity page style) */
+    .catalog-toolbar {
+        display: flex; align-items: center; gap: 12px;
+        margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .catalog-toolbar .catalog-search { flex: 1; min-width: 260px; margin-bottom: 0; }
+
+    .catalog-search {
+        position: relative;
+    }
+
+    .catalog-search > svg {
+        position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+        width: 17px; height: 17px; stroke: #94a3b8;
+    }
+
+    .catalog-search input {
+        width: 100%; height: 42px; padding: 0 16px 0 40px;
+        border: 1.5px solid #e2e8f0; border-radius: 10px;
+        font-size: 13px; color: #0f172a; outline: none; background: #f8fafc;
+        font-weight: 500; font-family: inherit; box-sizing: border-box;
+        transition: all .2s ease;
+    }
+    .catalog-search.has-count input { padding-right: 110px; }
+
+    .catalog-search input:focus {
+        border-color: #16a34a; background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(22,163,74,.08);
+    }
+
+    .catalog-search input::placeholder { color: #94a3b8; }
+
+    .catalog-count {
+        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+        font-size: 12px; font-weight: 600; color: #64748b;
+        background: #f1f5f9; padding: 4px 10px; border-radius: 20px;
+        visibility: hidden;
+    }
+    .catalog-count.show { visibility: visible; }
+
+    /* Custom Filter Dropdowns (ncb-select style) */
+    .ncb-group-inline { position: relative; min-width: 170px; }
+    .ncb-select-trigger {
+        width: 100%; height: 42px; padding: 0 13px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+        font-size: 13px; color: #1e293b; background-color: #ffffff; transition: all 0.2s ease;
+        box-sizing: border-box; font-family: inherit; cursor: pointer;
+        display: flex; justify-content: space-between; align-items: center; user-select: none;
+        text-align: left; gap: 8px;
+    }
+    .ncb-select-trigger.placeholder { color: #94a3b8; }
+    .ncb-select-trigger:hover { border-color: #cbd5e1; }
+    .ncb-select-trigger.active { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); outline: none; }
+    .ncb-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ncb-select-arrow { transition: transform 0.2s ease; color: #64748b; flex-shrink: 0; }
+    .ncb-select-arrow.rotate { transform: rotate(180deg); }
+
+    .ncb-select-menu {
+        display: none;
+        position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+        background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+        max-height: 220px; overflow-y: auto; z-index: 600; padding: 4px;
+        scrollbar-width: thin;
+    }
+    .ncb-select-option {
+        padding: 8px 12px; font-size: 13px; color: #1e293b; border-radius: 6px;
+        cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+    }
+    .ncb-select-option:hover { background: #f1f5f9; color: #16a34a; }
+    .ncb-select-option.selected { background: #f0fdf4; color: #16a34a; font-weight: 600; }
+
+    /* Filter clear button */
+    .filter-clear {
+        display: inline-flex; align-items: center; gap: 6px;
+        height: 42px; padding: 0 14px; border: 1.5px solid #16a34a; border-radius: 10px;
+        background: #16a34a; color: #ffffff; font-size: 13px; font-weight: 700;
+        cursor: pointer; font-family: inherit; transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+    }
+    .filter-clear .ic-clear { display: inline-flex; }
+    .filter-clear .ic-search { display: none; }
+    .filter-clear.is-search .ic-clear { display: none; }
+    .filter-clear.is-search .ic-search { display: inline-flex; }
+    .filter-clear:hover { border-color: #15803d; color: #ffffff; background: #15803d; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); }
+    .filter-clear:active { transform: scale(0.98); }
+    .filter-clear[hidden] { display: none; }
+
+    .card-hide { display: none !important; }
+    .search-no-results {
+        display: none; text-align: center; padding: 54px 20px;
+        background: #ffffff; border: 2px dashed #e2e8f0; border-radius: 16px;
+        color: #64748b;
+    }
+    .search-no-results.show { display: block; }
+    .search-no-results svg { width: 48px; height: 48px; stroke: #94a3b8; margin-bottom: 14px; }
+    .search-no-results h3 { font-size: 17px; font-weight: 700; color: #1e293b; margin: 0 0 6px 0; }
+    .search-no-results p { font-size: 14px; margin: 0; line-height: 1.6; }
+
     /* Preview Banner */
     .preview-banner {
         background: #eff6ff;
@@ -126,8 +224,14 @@
     /* Product Grid & Cards */
     .product-grid { 
         display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); 
-        gap: 24px; 
+        grid-template-columns: repeat(4, 1fr); 
+        gap: 16px; 
+    }
+    @media (max-width: 1200px) {
+        .product-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 900px) {
+        .product-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
     .product-card { 
@@ -170,7 +274,7 @@
     }
 
     .product-details { 
-        padding: 18px; 
+        padding: 20px; 
         flex-grow: 1; 
         display: flex; 
         flex-direction: column; 
@@ -217,22 +321,27 @@
     .badge-group {
         display: flex; 
         align-items: center; 
+        justify-content: space-between;
         gap: 8px; 
         margin-bottom: 16px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
 
     .season-badge {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 5px;
         font-size: 11px; 
-        font-weight: 600; 
-        color: #475569;
-        background: #f1f5f9;
-        padding: 3px 8px;
+        font-weight: 700; 
+        line-height: 1;
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 5px 10px;
         border-radius: 6px;
     }
+    .season-badge.season-wet { background: #e0f2fe; color: #0369a1; }
+    .season-badge.season-dry { background: #ffedd5; color: #c2410c; }
+    .season-badge.season-all { background: #f0fdf4; color: #166534; }
 
     .stock-badge { 
         display: inline-flex; 
@@ -242,6 +351,9 @@
         border-radius: 6px; 
         font-size: 11px; 
         font-weight: 600; 
+        white-space: nowrap;
+        flex-shrink: 0;
+        margin-left: auto;
     }
 
     .stock-low { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
@@ -376,7 +488,60 @@
 </div>
 @endif
 
-<!-- Tab Navigation -->
+<!-- Search + Styled Filters -->
+<div class="catalog-toolbar">
+    <div class="catalog-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="catalogSearch" placeholder="Search by name, SKU, category, season, stock, or price..." autocomplete="off">
+        <span class="catalog-count" id="catalogCount"></span>
+    </div>
+
+    <div class="ncb-group-inline" data-filter-key="cat">
+        <button type="button" class="ncb-select-trigger placeholder" id="catFilterTrigger" data-default-label="Category" tabindex="0" aria-haspopup="listbox">
+            <span class="ncb-select-label">Category</span>
+            <svg class="ncb-select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="ncb-select-menu" id="catFilterMenu" role="listbox">
+            <div class="ncb-select-option selected" data-value="" data-label="All Categories">All Categories</div>
+            @foreach($categories as $cat)
+            <div class="ncb-select-option" data-value="{{ strtolower($cat) }}" data-label="{{ $cat }}">{{ $cat }}</div>
+            @endforeach
+        </div>
+    </div>
+
+    <div class="ncb-group-inline" data-filter-key="season">
+        <button type="button" class="ncb-select-trigger placeholder" id="seasonFilterTrigger" data-default-label="Season" tabindex="0" aria-haspopup="listbox">
+            <span class="ncb-select-label">Season</span>
+            <svg class="ncb-select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="ncb-select-menu" id="seasonFilterMenu" role="listbox">
+            <div class="ncb-select-option selected" data-value="" data-label="All Seasons">All Seasons</div>
+            <div class="ncb-select-option" data-value="wet" data-label="Wet Season">Wet Season</div>
+            <div class="ncb-select-option" data-value="dry" data-label="Dry Season">Dry Season</div>
+            <div class="ncb-select-option" data-value="all" data-label="Year-Round">Year-Round</div>
+        </div>
+    </div>
+
+    <div class="ncb-group-inline" data-filter-key="stock">
+        <button type="button" class="ncb-select-trigger placeholder" id="stockFilterTrigger" data-default-label="Stock Status" tabindex="0" aria-haspopup="listbox">
+            <span class="ncb-select-label">Stock Status</span>
+            <svg class="ncb-select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="ncb-select-menu" id="stockFilterMenu" role="listbox">
+            <div class="ncb-select-option selected" data-value="" data-label="All Statuses">All Statuses</div>
+            <div class="ncb-select-option" data-value="in" data-label="In Stock">In Stock</div>
+            <div class="ncb-select-option" data-value="low" data-label="Low Stock">Low Stock</div>
+            <div class="ncb-select-option" data-value="out" data-label="Out of Stock">Out of Stock</div>
+        </div>
+    </div>
+
+    <button type="button" class="filter-clear is-search" id="filterClearBtn" aria-label="Search">
+        <svg class="ic-clear" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <svg class="ic-search" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span id="filterClearLabel">Search</span>
+    </button>
+</div>
+
 <div class="catalog-tabs">
     <button class="tab-btn active" onclick="switchCatalogTab('manage-tab', this)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -393,78 +558,10 @@
     @if(isset($products) && $products->count() > 0)
     <div class="product-grid">
         @foreach($products as $product)
-        <div class="product-card">
-            <div class="product-image-container">
-                @if($product->mainImage && !empty($product->mainImage->file_path))
-                    <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->name }}" class="product-card-img">
-                @elseif($product->images && $product->images->first())
-                    <img src="{{ asset('storage/' . $product->images->first()->file_path) }}" alt="{{ $product->name }}" class="product-card-img">
-                @else
-                    <svg viewBox="0 0 24 24" width="44" height="44" stroke="#cbd5e1" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                @endif
-            </div>
-
-            <div class="product-details">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="category-chip">{{ $product->category->name ?? $product->category ?? 'Uncategorized' }}</span>
-                    <span class="sku-code">SKU: {{ $product->sku }}</span>
-                </div>
-
-                <h3 class="product-title">{{ $product->name }}</h3>
-                <p class="product-description">{{ $product->description ?: 'No detailed description provided for this product.' }}</p>
-
-                <div class="badge-group">
-                    <span class="season-badge">
-                        @if($product->recommended_season === 'wet')
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>
-                            Wet Season
-                        @elseif($product->recommended_season === 'dry')
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-                            Dry Season
-                        @else
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-                            All Seasons
-                        @endif
-                    </span>
-
-                    @php $qty = $product->stock_quantity ?? 0; @endphp
-                    <span class="stock-badge {{ $qty <= ($product->reorder_threshold ?? 5) ? 'stock-low' : 'stock-ok' }}">
-                        @if($qty <= ($product->reorder_threshold ?? 5))
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-                            Low Stock
-                        @else
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                            In Stock
-                        @endif
-                    </span>
-                </div>
-
-                <div class="card-footer">
-                    <div class="price-row">
-                        <div class="price-tag">₱{{ number_format($product->price, 2) }}</div>
-                        <span class="units-count">{{ $qty }} {{ $product->stock_unit ?? 'pieces' }} available</span>
-                    </div>
-
-                    <div class="action-group">
-                        <a href="{{ route('store.products.edit', $product->id) }}" class="btn-action" style="flex: 1;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                            Edit
-                        </a>
-                        <form method="POST" action="{{ route('store.products.destroy', $product->id) }}" onsubmit="return confirm('Are you sure you want to delete this product?');" style="margin: 0;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn-action btn-delete" title="Delete Product">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-product-card :product="$product" :actions="true" data-search="{{ strtolower(trim(($product->name ?? '') . ' ' . ($product->sku ?? '') . ' ' . ($product->category->name ?? $product->category ?? '') . ' ' . (($product->recommended_season ?? '') === 'wet' ? 'wet season' : (($product->recommended_season ?? '') === 'dry' ? 'dry season' : 'all seasons')) . ' ' . ((int) ($product->stock_quantity ?? 0) <= 0 ? 'out of stock' : ((int) ($product->stock_quantity ?? 0) <= (int) ($product->reorder_threshold ?? 5) ? 'low stock' : 'in stock')) . ' ' . number_format($product->price, 2, '.', ''))) }}"
+           data-cat="{{ strtolower(trim($product->category->name ?? 'uncategorized')) }}"
+           data-season="{{ in_array($product->recommended_season ?? 'all', ['wet', 'dry'], true) ? $product->recommended_season : 'all' }}"
+           data-stock="{{ (int) ($product->stock_quantity ?? 0) <= 0 ? 'out' : ((int) ($product->stock_quantity ?? 0) <= (int) ($product->reorder_threshold ?? 5) ? 'low' : 'in') }}" />
         @endforeach
     </div>
     @else
@@ -476,64 +573,31 @@
         <p>Your product catalog is currently empty. Click "Add Product Profile" above to create your first item.</p>
     </div>
     @endif
+
+    <div class="search-no-results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <h3>No Matches</h3>
+        <p>Nothing in your catalog matches this search. Try a different keyword or clear the search.</p>
+    </div>
 </div>
 
 <!-- TAB 2: FARMER PREVIEW VIEW -->
 <div id="preview-tab" class="tab-content">
     <div class="preview-banner">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-        <span><strong>Preview Mode:</strong> This is how your store products appear to farmers in the marketplace. Action controls like Edit/Delete are hidden.</span>
+        <span><strong>Preview Mode:</strong> This is how your store products appear to farmers in the marketplace. Action controls like Edit/Delete are hidden. Click any product to open the farmer-facing detail page.</span>
     </div>
 
     @if(isset($products) && $products->count() > 0)
     <div class="product-grid">
         @foreach($products as $product)
-        <div class="product-card">
-            <div class="product-image-container">
-                @if($product->mainImage && !empty($product->mainImage->file_path))
-                    <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->name }}" class="product-card-img">
-                @elseif($product->images && $product->images->first())
-                    <img src="{{ asset('storage/' . $product->images->first()->file_path) }}" alt="{{ $product->name }}" class="product-card-img">
-                @else
-                    <svg viewBox="0 0 24 24" width="44" height="44" stroke="#cbd5e1" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                @endif
-            </div>
-
-            <div class="product-details">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span class="category-chip">{{ $product->category->name ?? $product->category ?? 'Uncategorized' }}</span>
-                </div>
-
-                <h3 class="product-title">{{ $product->name }}</h3>
-                <p class="product-description">{{ $product->description ?: 'No detailed description provided for this product.' }}</p>
-
-                <div class="badge-group">
-                    <span class="season-badge">
-                        @if($product->recommended_season === 'wet')
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>
-                            Wet Season
-                        @elseif($product->recommended_season === 'dry')
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-                            Dry Season
-                        @else
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-                            All Seasons
-                        @endif
-                    </span>
-                </div>
-
-                <div class="card-footer">
-                    <div class="price-row">
-                        <div class="price-tag">₱{{ number_format($product->price, 2) }}</div>
-                        <span class="units-count" style="color: #16a34a; font-weight: 600;">In Stock</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-product-card :product="$product" href="{{ route('farmer.products.show', $product->id) }}"
+           data-search="{{ strtolower(trim(($product->name ?? '') . ' ' . ($product->sku ?? '') . ' ' . ($product->category->name ?? $product->category ?? '') . ' ' . (($product->recommended_season ?? '') === 'wet' ? 'wet season' : (($product->recommended_season ?? '') === 'dry' ? 'dry season' : 'all seasons')) . ' ' . ((int) ($product->stock_quantity ?? 0) <= 0 ? 'out of stock' : ((int) ($product->stock_quantity ?? 0) <= (int) ($product->reorder_threshold ?? 5) ? 'low stock' : 'in stock')) . ' ' . number_format($product->price, 2, '.', ''))) }}"
+           data-cat="{{ strtolower(trim($product->category->name ?? 'uncategorized')) }}"
+           data-season="{{ in_array($product->recommended_season ?? 'all', ['wet', 'dry'], true) ? $product->recommended_season : 'all' }}"
+           data-stock="{{ (int) ($product->stock_quantity ?? 0) <= 0 ? 'out' : ((int) ($product->stock_quantity ?? 0) <= (int) ($product->reorder_threshold ?? 5) ? 'low' : 'in') }}">
+          <x-slot name="footer"><span class="units-count" style="color: #16a34a; font-weight: 600;">In Stock</span></x-slot>
+        </x-product-card>
         @endforeach
     </div>
     @else
@@ -545,6 +609,12 @@
         <p>No products are currently visible to buyers in the store marketplace.</p>
     </div>
     @endif
+
+    <div class="search-no-results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <h3>No Matches</h3>
+        <p>Nothing in your catalog matches this search. Try a different keyword or clear the search.</p>
+    </div>
 </div>
 
 <script>
@@ -555,6 +625,170 @@
         document.getElementById(tabId).classList.add('active');
         element.classList.add('active');
     }
+
+    // Active filter state (Category / Season / Stock status)
+    const catalogFilters = { cat: '', season: '', stock: '' };
+
+    // Whether a search term or a filter is currently applied
+    function haveActiveFilters() {
+        const input = document.getElementById('catalogSearch');
+        return Object.values(catalogFilters).some(Boolean) || (input && input.value.trim() !== '');
+    }
+
+    // Smart live search + filter: tokenized AND match over name, SKU, category, season, stock, price
+    function applyCatalogFilter() {
+        const input = document.getElementById('catalogSearch');
+        const countEl = document.getElementById('catalogCount');
+        const raw = (input ? input.value : '').toLowerCase().trim();
+        const tokens = raw.split(/\s+/).filter(Boolean);
+        const f = catalogFilters;
+        const filtering = tokens.length > 0 || f.cat || f.season || f.stock;
+
+        let visible = 0;
+        document.querySelectorAll('.product-card').forEach(function (card) {
+            const hay = (card.dataset.search || '').toLowerCase();
+            const tokenMatch = tokens.every(function (t) { return hay.includes(t); });
+            const catMatch = !f.cat || (card.dataset.cat || '') === f.cat;
+            const seasonMatch = !f.season || (card.dataset.season || 'all') === f.season;
+            const stockMatch = !f.stock || (card.dataset.stock || '') === f.stock;
+
+            const match = tokenMatch && catMatch && seasonMatch && stockMatch;
+            card.classList.toggle('card-hide', !match);
+            if (match) visible++;
+        });
+
+        document.querySelectorAll('.tab-content').forEach(function (tab) {
+            const cards = tab.querySelectorAll(':scope > .product-grid .product-card');
+            const grid = tab.querySelector(':scope > .product-grid');
+            let emptyEl = tab.querySelector('.search-no-results');
+            const gridHasCards = !grid || grid.querySelectorAll('.product-card').length > 0;
+            const hasAny = Array.prototype.some.call(cards, function (c) {
+                return !c.classList.contains('card-hide');
+            });
+            if (grid) grid.style.display = (gridHasCards && (!filtering || hasAny)) ? '' : 'none';
+            if (emptyEl) emptyEl.classList.toggle('show', gridHasCards && filtering && !hasAny);
+        });
+
+        if (countEl) {
+            countEl.textContent = visible + (visible === 1 ? ' match' : ' matches');
+            countEl.classList.toggle('show', filtering);
+            const wrapper = input ? input.closest('.catalog-search') : null;
+            if (wrapper) wrapper.classList.toggle('has-count', filtering);
+        }
+
+        updateClearButton();
+    }
+
+    // Custom styled dropdown (ncb-select style, vanilla JS)
+    function initCustomSelect(triggerId, menuId, key) {
+        const trigger = document.getElementById(triggerId);
+        const menu = document.getElementById(menuId);
+        if (!trigger || !menu) return;
+
+        const arrow = trigger.querySelector('.ncb-select-arrow');
+        const label = trigger.querySelector('.ncb-select-label');
+
+        function close() {
+            menu.style.display = 'none';
+            trigger.classList.remove('active');
+            if (arrow) arrow.classList.remove('rotate');
+        }
+
+        trigger.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const wasOpen = menu.style.display === 'block';
+
+            const others = document.querySelectorAll('.ncb-select-menu');
+            others.forEach(function (m) {
+                if (m !== menu) {
+                    m.style.display = 'none';
+                    const t = m.previousElementSibling;
+                    t.classList.remove('active');
+                    const a = t.querySelector('.ncb-select-arrow');
+                    if (a) a.classList.remove('rotate');
+                }
+            });
+
+            if (wasOpen) { close(); return; }
+
+            menu.style.display = 'block';
+            trigger.classList.add('active');
+            if (arrow) arrow.classList.add('rotate');
+        });
+
+        menu.querySelectorAll('.ncb-select-option').forEach(function (opt) {
+            opt.addEventListener('click', function (e) {
+                e.stopPropagation();
+                menu.querySelectorAll('.ncb-select-option').forEach(function (o) { o.classList.remove('selected'); });
+                opt.classList.add('selected');
+
+                const value = opt.dataset.value || '';
+                const labelText = opt.dataset.label || opt.textContent.trim();
+                label.textContent = labelText;
+                trigger.classList.toggle('placeholder', value === '');
+                catalogFilters[key] = value;
+
+                close();
+                applyCatalogFilter();
+            });
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!trigger.contains(e.target) && !menu.contains(e.target)) close();
+        });
+    }
+
+    // Toggle the toolbar button between "Search" (no filters) and "Clear" (results shown)
+    function updateClearButton() {
+        const btn = document.getElementById('filterClearBtn');
+        const label = document.getElementById('filterClearLabel');
+        if (!btn || !label) return;
+        const active = haveActiveFilters();
+        btn.classList.toggle('is-search', !active);
+        btn.setAttribute('aria-label', active ? 'Clear search and filters' : 'Search');
+        label.textContent = active ? 'Clear' : 'Search';
+    }
+
+    function resetCatalogFilters() {
+        document.getElementById('catalogSearch').value = '';
+        Object.keys(catalogFilters).forEach(function (k) { catalogFilters[k] = ''; });
+
+        document.querySelectorAll('.ncb-group-inline[data-filter-key]').forEach(function (group) {
+            const trigger = group.querySelector('.ncb-select-trigger');
+            const menu = group.querySelector('.ncb-select-menu');
+            trigger.querySelector('.ncb-select-label').textContent = trigger.dataset.defaultLabel;
+            trigger.classList.add('placeholder');
+            menu.querySelectorAll('.ncb-select-option').forEach(function (o) { o.classList.remove('selected'); });
+            menu.querySelector('.ncb-select-option[data-value=""]').classList.add('selected');
+        });
+
+        applyCatalogFilter();
+    }
+
+    // Live search as the user types
+    (function () {
+        const input = document.getElementById('catalogSearch');
+        if (!input) return;
+
+        let timer = null;
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(applyCatalogFilter, 120);
+        });
+    })();
+
+    // Toolbar button: "Search" first, becomes "Clear" once results are shown
+    document.getElementById('filterClearBtn').addEventListener('click', function () {
+        if (haveActiveFilters()) {
+            resetCatalogFilters();
+        } else {
+            document.getElementById('catalogSearch').focus();
+        }
+    });
+
+    initCustomSelect('catFilterTrigger', 'catFilterMenu', 'cat');
+    initCustomSelect('seasonFilterTrigger', 'seasonFilterMenu', 'season');
+    initCustomSelect('stockFilterTrigger', 'stockFilterMenu', 'stock');
 </script>
 
 @endsection

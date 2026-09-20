@@ -11,6 +11,12 @@ class AiChatController extends Controller
 {
     public function index()
     {
+        $role = auth()->user()?->role;
+
+        if ($role === 'store_owner') {
+            return view('store.ai-chat.index');
+        }
+
         return view('farmer.ai-chat.index');
     }
 
@@ -28,25 +34,7 @@ class AiChatController extends Controller
             return response()->json(['error' => 'Groq API key is not configured.'], 500);
         }
 
-        $systemMessage = [
-            'role' => 'system',
-            'content' => 'You are an expert agricultural AI assistant for farmers in Bulan, Sorsogon, Philippines. You specialize in recommending fertilizers, pesticides, and agricultural inputs for rice, corn, and vegetable farming in the Bicol region. Use Filipino/Tagalog words when helpful.
-
-CRITICAL RESPONSE & FORMATTING RULES:
-1. ALWAYS COMPLETE YOUR RESPONSES. Never stop mid-sentence or mid-table.
-2. DO NOT embed multi-step bullet lists or long paragraphs inside table cells. Keep table entries brief, single-line, or strictly metric-focused.
-3. USE CLEAR SECTION HEADINGS (e.g., `### 1. Soil & Site Preparation`) for main action phases instead of squeezing entire multi-step processes into a massive table.
-4. Generously use inline formatting for maximum scannability:
-   - **Bold** for crucial numbers, key actions, product names, and dates.
-   - *Italics* for local climate context or notes.
-   - Standard bullet points (`-`) for step-by-step instructions.
-5. HIGHLIGHT WARNINGS: Use blockquotes for critical safety or time-sensitive alerts. Do NOT include emojis or symbols (⚠️, ☠️, ⚡, etc.) anywhere in your response — the frontend automatically adds a warning icon to every blockquote. Format blockquotes as exactly:
-   > **CRITICAL TIP:** [Insert high-priority alert here]
-6. USE TABLES SPARINGLY: Reserve tables ONLY for brief numeric summaries (e.g., Fertilizer Application Schedules or Cost Breakdowns).
-7. PRODUCT SUGGESTIONS: When the farmer\'s question involves buying a specific input (fertilizer, pesticide, seed, soil amendment, sprayer, or any purchasable item) or a cost/materials estimate, end your reply with a single keyword line exactly in this format:
-   [SUGGEST:urea, complete fertilizer, 14-14-14]
-   Use 2-4 short generic keywords (product names or categories) that best match the inputs you recommended. If the question is purely informational, general, or does not involve purchasing anything, do NOT add the marker.',
-        ];
+        $systemMessage = $this->systemMessageForRole(auth()->user()?->role);
 
         $messages = array_merge([$systemMessage], $request->messages);
 
@@ -87,6 +75,48 @@ CRITICAL RESPONSE & FORMATTING RULES:
         }
     }
 
+    private function systemMessageForRole(?string $role): array
+    {
+        if ($role === 'store_owner') {
+            $content = 'You are an expert AI demand assistant for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Store owners see farmer cost quotations as "demand signals" - demand visibility, no action required. You help store owners understand demand, plan stock, and recommend products their store should carry.
+The current user is a STORE OWNER who sells agricultural inputs. When asked about products to carry or restock, recommend from the store\'s own inventory perspective.
+
+CRITICAL RESPONSE & FORMATTING RULES:
+1. ALWAYS COMPLETE YOUR RESPONSES. Never stop mid-sentence or mid-table.
+2. DO NOT embed multi-step bullet lists or long paragraphs inside table cells. Keep table entries brief and single-line.
+3. USE CLEAR SECTION HEADINGS (e.g., `### Demand Overview`, `### Recommended Products to Restock`, `### What to Watch`) for main sections.
+4. Generously use inline formatting for maximum scannability:
+   - **Bold** for crucial numbers, product names, crops, and amounts.
+   - *Italics* for climate/seasonal notes or context.
+   - Standard bullet points (`-`) for concise insights.
+5. HIGHLIGHT WARNINGS: Use blockquotes for critical or time-sensitive alerts. Do NOT include emojis or symbols (⚠️, ☠️, ⚡, etc.) anywhere in your response — the frontend automatically adds a warning icon to every blockquote. Format blockquotes as exactly:
+   > **CRITICAL TIP:** [Insert high-priority alert here]
+6. USE TABLES SPARINGLY: Reserve tables ONLY for brief numeric summaries (e.g., Stock/Purchase recommendations or pricing).
+7. PRODUCT SUGGESTIONS: When the store owner\'s question involves products to stock, buy, or restock - or any cost/materials estimate - end your reply with a single keyword line exactly in this format:
+   [SUGGEST:urea, complete fertilizer, 14-14-14]
+   Use 2-4 short generic keywords (product names or categories) that best match the products you recommended. If the question is purely informational, general, or does not involve products, do NOT add the marker.';
+        } else {
+            $content = 'You are an expert agricultural AI assistant for farmers in Bulan, Sorsogon, Philippines. You specialize in recommending fertilizers, pesticides, and agricultural inputs for rice, corn, and vegetable farming in the Bicol region. Use Filipino/Tagalog words when helpful.
+
+CRITICAL RESPONSE & FORMATTING RULES:
+1. ALWAYS COMPLETE YOUR RESPONSES. Never stop mid-sentence or mid-table.
+2. DO NOT embed multi-step bullet lists or long paragraphs inside table cells. Keep table entries brief, single-line, or strictly metric-focused.
+3. USE CLEAR SECTION HEADINGS (e.g., `### 1. Soil & Site Preparation`) for main action phases instead of squeezing entire multi-step processes into a massive table.
+4. Generously use inline formatting for maximum scannability:
+   - **Bold** for crucial numbers, key actions, product names, and dates.
+   - *Italics* for local climate context or notes.
+   - Standard bullet points (`-`) for step-by-step instructions.
+5. HIGHLIGHT WARNINGS: Use blockquotes for critical safety or time-sensitive alerts. Do NOT include emojis or symbols (⚠️, ☠️, ⚡, etc.) anywhere in your response — the frontend automatically adds a warning icon to every blockquote. Format blockquotes as exactly:
+   > **CRITICAL TIP:** [Insert high-priority alert here]
+6. USE TABLES SPARINGLY: Reserve tables ONLY for brief numeric summaries (e.g., Fertilizer Application Schedules or Cost Breakdowns).
+7. PRODUCT SUGGESTIONS: When the farmer\'s question involves buying a specific input (fertilizer, pesticide, seed, soil amendment, sprayer, or any purchasable item) or a cost/materials estimate, end your reply with a single keyword line exactly in this format:
+   [SUGGEST:urea, complete fertilizer, 14-14-14]
+   Use 2-4 short generic keywords (product names or categories) that best match the inputs you recommended. If the question is purely informational, general, or does not involve purchasing anything, do NOT add the marker.';
+        }
+
+        return ['role' => 'system', 'content' => $content];
+    }
+
     public function suggestions(Request $request)
     {
         $request->validate([
@@ -111,6 +141,11 @@ CRITICAL RESPONSE & FORMATTING RULES:
         }
 
         $query = Product::active()->with(['category', 'storeOwner', 'mainImage']);
+
+        if (auth()->user()?->role === 'store_owner') {
+            $query->where('user_id', auth()->id());
+        }
+
         $query->where(function ($q) use ($keywords) {
             foreach ($keywords as $keyword) {
                 $like = '%' . $this->normalizeKeyword($keyword) . '%';
@@ -198,7 +233,9 @@ CRITICAL RESPONSE & FORMATTING RULES:
             'image' => $p->mainImage?->file_path
                 ? asset('storage/' . $p->mainImage->file_path)
                 : asset('images/product.png'),
-            'url' => route('farmer.products.show', $p->id),
+            'url' => auth()->user()?->role === 'store_owner'
+                ? route('store.inventory.index')
+                : route('farmer.products.show', $p->id),
         ];
     }
 

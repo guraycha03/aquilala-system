@@ -11,16 +11,6 @@
     overflow: hidden;
     margin-bottom: 20px;
   }
-  .formula-card-header {
-    padding: 18px 24px;
-    border-bottom: 1px solid #e5e7eb;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .formula-card-body { padding: 8px 24px 24px 24px; }
 
   .kpi-grid {
     display: grid;
@@ -61,34 +51,6 @@
   }
   .season-badge-wet { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
   .season-badge-dry { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th {
-    background: #fafbfa;
-    padding: 12px 14px;
-    font-weight: 600;
-    color: #4a574e;
-    border-bottom: 1px solid #e2e8f0;
-    text-align: left;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-  td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; color: #3d4a41; vertical-align: top; }
-
-  .rate-chip {
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-  }
-  .rate-chip strong { color: #143d23; font-size: 15px; }
-  .rate-chip span { color: #64748b; font-size: 12px; }
 
   .btn-primary {
     background: #143d23;
@@ -139,6 +101,68 @@
     line-height: 1.6;
   }
   .info-banner svg { flex-shrink: 0; margin-top: 2px; }
+
+  /* ── Sortable Table ──────────────────────────────────────────────── */
+  .formula-table-card {
+    background: #ffffff; border: 1px solid #e5e7eb; border-radius: 14px;
+    overflow: hidden;
+  }
+  .table-scroll { overflow-x: auto; }
+  table.formula-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 820px; }
+  .formula-table thead th {
+    background: #fafcfa; padding: 13px 14px; font-weight: 700;
+    color: #4a574e; border-bottom: 1px solid #e2e8f0; text-align: left;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em;
+    white-space: nowrap; user-select: none;
+  }
+  .formula-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: #3d4a41; vertical-align: middle; }
+  .formula-table tbody tr { transition: background 0.15s; }
+  .formula-table tbody tr:hover { background: #f8fdf9; }
+  .formula-table tbody tr:last-child td { border-bottom: none; }
+  .formula-table tbody tr.card-hide { display: none; }
+  .prod-cell { font-weight: 600; color: #1e2922; }
+  .prod-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+  .rate-chip {
+    background: #f1f5f9; border: 1px solid #e2e8f0;
+    padding: 5px 11px; border-radius: 8px; font-size: 13px;
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .rate-chip strong { color: #143d23; font-size: 15px; }
+  .rate-chip span { color: #64748b; font-size: 12px; }
+
+  .btn-icon {
+    background: transparent; border: 1px solid #e2e8f0; border-radius: 8px;
+    padding: 6px 10px; font-size: 13px; font-weight: 600; cursor: pointer;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+    color: #475569; transition: all 0.2s;
+  }
+  .btn-icon-edit:hover { border-color: #143d23; color: #143d23; background: #f0fdf4; }
+  .btn-icon-delete { color: #b91c1c; border-color: #fecaca; }
+  .btn-icon-delete:hover { background: #fef2f2; border-color: #dc2626; color: #dc2626; }
+
+  .table-empty {
+    display: none; text-align: center; padding: 48px 20px; color: #64748b; font-size: 14px;
+  }
+  .table-empty.show { display: block; }
+
+  /* ── Pagination (client-side) ────────────────────────────────────── */
+  .pagination-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 14px 18px; border-top: 1px solid #eef2ee; flex-wrap: wrap;
+  }
+  .pagination-info { font-size: 13px; color: #64748b; font-weight: 500; }
+  .pagination-controls { display: flex; align-items: center; gap: 6px; }
+  .page-btn {
+    min-width: 34px; height: 34px; padding: 0 10px; border: 1.5px solid #e2e8f0;
+    border-radius: 8px; background: #ffffff; color: #475569; font-size: 13px;
+    font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .page-btn:hover:not(:disabled) { border-color: #16a34a; color: #16a34a; }
+  .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .page-btn.active { background: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700; }
+  .page-ellipsis { color: #94a3b8; font-size: 13px; padding: 0 2px; }
 </style>
 
 <div class="header-panel" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
@@ -200,8 +224,7 @@
     </div>
   </div>
 @else
-  <div data-paginated>
-  <div class="kpi-grid">
+<div class="kpi-grid">
     <div class="kpi-card">
       <div class="kpi-label">Active Formulas</div>
       <div class="kpi-value">{{ $stats['total'] }}</div>
@@ -220,105 +243,108 @@
     </div>
   </div>
 
-  @foreach($grouped as $crop => $seasons)
-    <div class="formula-card">
-      <div class="formula-card-header">
-        <div>
-          <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0; text-transform: capitalize;">{{ $crop }}</h2>
-          <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">
-            {{ $seasons->flatten()->count() }} formula(s) across {{ $seasons->keys()->count() }} season(s)
-          </p>
-        </div>
-      </div>
+  <!-- Search + Styled Filters -->
+  <x-table-toolbar
+      uid="formulas"
+      work-table="formulaTable"
+      per-page="10"
+      noun="formulas"
+      empty="formulaTableEmpty"
+      search-placeholder="Search formulas — product, crop, season, unit, or notes..."
+      :filters="[
+          ['key' => 'crop', 'label' => 'All Crop Types', 'options' => $crops->map(fn($c) => [strtolower($c), ucfirst($c)])->values()->all()],
+          ['key' => 'season', 'label' => 'All Seasons', 'options' => [['wet', 'Wet Season'], ['dry', 'Dry Season']]],
+      ]"
+      :sorts="[
+          ['key' => 'name', 'dir' => 1, 'type' => 'str', 'label' => 'Product (A–Z)'],
+          ['key' => 'name', 'dir' => -1, 'type' => 'str', 'label' => 'Product (Z–A)'],
+          ['key' => 'crop', 'dir' => 1, 'type' => 'str', 'label' => 'Crop type (A–Z)'],
+          ['key' => 'rate', 'dir' => -1, 'type' => 'num', 'label' => 'Rate / ha (high → low)'],
+          ['key' => 'rate', 'dir' => 1, 'type' => 'num', 'label' => 'Rate / ha (low → high)'],
+          ['key' => 'unit', 'dir' => 1, 'type' => 'str', 'label' => 'Unit (A–Z)'],
+      ]"
+  />
 
-      <div class="formula-card-body">
-        @foreach($seasons as $season => $seasonFormulas)
-          <div style="display: flex; align-items: center; gap: 10px; margin: 18px 0 10px 0;">
-            <span class="season-badge {{ $season === 'wet' ? 'season-badge-wet' : 'season-badge-dry' }}">
-              @if($season === 'wet')
-                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/></svg>
-              @else
-                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+  <p style="font-size: 12px; color: #94a3b8; margin: 0 0 10px 0;">
+    <strong style="color: #64748b;">Crop Type</strong> = what the farmer is growing &nbsp;·&nbsp;
+    <strong style="color: #64748b;">Product</strong> = the input applied to that crop
+  </p>
+
+  <!-- Formula Table -->
+  <div class="formula-table-card">
+    <div class="table-scroll">
+      <table class="formula-table" id="formulaTable">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Crop Type</th>
+            <th>Season</th>
+            <th>Rate / Ha</th>
+            <th>Unit</th>
+            <th>Notes</th>
+            <th style="width: 140px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="formulaTableBody">
+          @foreach($formulas as $formula)
+          <tr data-search="{{ strtolower(trim(($formula->product->name ?? '') . ' ' . ($formula->product->category->name ?? '') . ' ' . ($formula->crop_type ?? '') . ' ' . ($formula->season ?? '') . ' ' . ($formula->unit ?? '') . ' ' . ($formula->notes ?? ''))) }}"
+              data-crop="{{ strtolower($formula->crop_type) }}"
+              data-season="{{ $formula->season }}"
+              data-rate="{{ (float) $formula->rate_per_hectare }}"
+              data-unit="{{ strtolower(trim($formula->unit ?? '')) }}"
+              data-name="{{ strtolower($formula->product->name ?? '') }}">
+            <td>
+              <div class="prod-cell">{{ $formula->product->name ?? 'Unknown Product' }}</div>
+              @if($formula->product)
+                <div class="prod-meta">
+                  {{ $formula->product->category->name ?? 'General' }}
+                  · ₱{{ number_format($formula->product->price ?? 0, 2) }}/{{ $formula->product->price_unit ?? 'piece' }}
+                </div>
               @endif
-              {{ $season === 'wet' ? 'Wet Season' : 'Dry Season' }}
-            </span>
-            <span style="font-size: 12px; color: #94a3b8;">{{ $season === 'wet' ? 'June – January' : 'February – May' }}</span>
-          </div>
-
-          @if($seasonFormulas->count() === 0)
-            <p style="font-size: 13px; color: #94a3b8; padding: 8px 0;">No formulas for this season.</p>
-          @else
-            <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
-              <div class="app-scroll">
-                <table>
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Rate / Hectare</th>
-                    <th>Notes</th>
-                    <th style="width: 130px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @foreach($seasonFormulas as $formula)
-                    <tr>
-                      <td>
-                        <div style="font-weight: 600; color: #1e2922;">{{ $formula->product->name ?? 'Unknown Product' }}</div>
-                        @if($formula->product)
-                          <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">
-                            {{ $formula->product->category->name ?? 'General' }}
-                            · ₱{{ number_format($formula->product->price ?? 0, 2) }}/{{ $formula->product->price_unit ?? 'piece' }}
-                          </div>
-                        @endif
-                      </td>
-                      <td>
-                        <span class="rate-chip">
-                          <strong>{{ number_format((float) $formula->rate_per_hectare, 2) }}</strong>
-                          <span>{{ $formula->unit }} / ha</span>
-                        </span>
-                      </td>
-                      <td style="color: #64748b; font-size: 13px; max-width: 320px;">
-                        {{ $formula->notes ?? '—' }}
-                      </td>
-                      <td>
-                        <div style="display: flex; gap: 6px;">
-                          <a href="{{ route('store.formulas.edit', $formula) }}" class="btn-icon btn-icon-edit">
-                            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                            Edit
-                          </a>
-                          <form action="{{ route('store.formulas.destroy', $formula) }}" method="POST"
-                                onsubmit="return confirm('Remove this formula? Recommended quantities will stop being computed for this product in this crop + season.');">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="btn-icon btn-icon-delete">
-                              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                              Delete
-                            </button>
-                          </form>
-                        </div>
-                      </td>
-                    </tr>
-                  @endforeach
-                </tbody>
-              </table>
+            </td>
+            <td style="font-weight: 600; color: #1e2922; text-transform: capitalize;">{{ $formula->crop_type }}</td>
+            <td>
+              <span class="season-badge {{ $formula->season === 'wet' ? 'season-badge-wet' : 'season-badge-dry' }}">
+                @if($formula->season === 'wet')
+                  <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/></svg>
+                @else
+                  <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                @endif
+                {{ $formula->season === 'wet' ? 'Wet Season' : 'Dry Season' }}
+              </span>
+            </td>
+            <td>
+              <span class="rate-chip"><strong>{{ number_format((float) $formula->rate_per_hectare, 2) }}</strong><span>/ ha</span></span>
+            </td>
+            <td style="color: #475569;">{{ $formula->unit ?? '—' }}</td>
+            <td style="color: #64748b; font-size: 13px; max-width: 280px;">{{ $formula->notes ?? '—' }}</td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <a href="{{ route('store.formulas.edit', $formula) }}" class="btn-icon btn-icon-edit">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                  Edit
+                </a>
+                <form action="{{ route('store.formulas.destroy', $formula) }}" method="POST"
+                      data-aqui-confirm="Remove this formula? Recommended quantities will stop being computed for this product in this crop + season."
+                      data-aqui-danger data-aqui-confirm-label="Delete">
+                  @csrf @method('DELETE')
+                  <button type="submit" class="btn-icon btn-icon-delete">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    Delete
+                  </button>
+                </form>
               </div>
-              <div class="app-scrollbar">
-                <div class="app-scrollbar-track"></div>
-                <div class="app-scrollbar-thumb"></div>
-              </div>
-            </div>
-          @endif
-        @endforeach
-      </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
     </div>
-  @endforeach
 
-  @if($formulas->hasPages())
-    {{ $formulas->links('partials.pagination') }}
-  @endif
+    <div class="table-empty" id="formulaTableEmpty">
+      <svg viewBox="0 0 24 24" width="40" height="40" stroke="#94a3b8" stroke-width="1.5" fill="none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <p style="margin: 10px 0 0 0;">No formulas match your search or filters. Try a different keyword or clear the filters.</p>
+    </div>
   </div>
-@endif
+  @endif
 @endsection
-
-@push('scripts')
-  @include('partials.ajax-pagination')
-@endpush

@@ -30,6 +30,7 @@ class Quotation extends Model
         'land_area',
         'estimated_total_cost',
         'status',
+        'viewed_at',
         'valid_until',
         'notes',
         'store_notes',
@@ -37,6 +38,7 @@ class Quotation extends Model
 
     protected $casts = [
         'valid_until' => 'datetime',
+        'viewed_at'   => 'datetime',
         'land_area'   => 'decimal:2',
     ];
 
@@ -49,9 +51,19 @@ class Quotation extends Model
             : false;
     }
 
+    /**
+     * Stored status is never written as "expired" — expiry is derived from
+     * valid_until. Use this accessor anywhere a consumer needs the status
+     * that the farmer/admin actually sees.
+     */
+    public function getEffectiveStatusAttribute(): string
+    {
+        return $this->is_expired ? self::STATUS_EXPIRED : (string) ($this->status ?? self::STATUS_COMPUTED);
+    }
+
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
+        return match ($this->effective_status) {
             self::STATUS_COMPUTED   => 'Estimate Ready',
             self::STATUS_VIEWED     => 'Viewed by Store',
             self::STATUS_EXPIRED    => 'Expired',
@@ -59,13 +71,13 @@ class Quotation extends Model
             self::STATUS_DISPATCHED => 'Dispatched',
             self::STATUS_ACCEPTED   => 'Accepted',
             self::STATUS_REJECTED   => 'Rejected',
-            default                 => ucfirst($this->status ?? 'computed'),
+            default                 => ucfirst($this->effective_status),
         };
     }
 
     public function getStatusColorAttribute(): string
     {
-        return match ($this->status) {
+        return match ($this->effective_status) {
             self::STATUS_COMPUTED   => '#0284c7',
             self::STATUS_VIEWED     => '#7c3aed',
             self::STATUS_EXPIRED    => '#94a3b8',
@@ -79,7 +91,7 @@ class Quotation extends Model
 
     public function getStatusBgAttribute(): string
     {
-        return match ($this->status) {
+        return match ($this->effective_status) {
             self::STATUS_COMPUTED   => '#e0f2fe',
             self::STATUS_VIEWED     => '#f3e8ff',
             self::STATUS_EXPIRED    => '#f1f5f9',

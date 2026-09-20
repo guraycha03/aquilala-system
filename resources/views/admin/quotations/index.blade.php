@@ -3,6 +3,14 @@
 @section('title', 'Cost Quotation Analytics')
 
 @section('content')
+@include('partials.admin-tabs', [
+  'tabs' => [
+    ['key' => 'demand',   'label' => 'Demand Trends',       'url' => route('admin.quotations.index')],
+    ['key' => 'harvests', 'label' => 'Harvest Performance',  'url' => route('admin.harvests.index')],
+    ['key' => 'expenses', 'label' => 'Expenses',             'url' => route('admin.analytics.expenses')],
+  ],
+  'activeTab' => 'demand',
+])
 <style>
   .stat-card {
     background: #ffffff;
@@ -50,8 +58,8 @@
   }
 </style>
 
-<div class="header-panel" style="margin-bottom: 24px;">
-  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Quotation Analytics</h1>
+<div class="header-panel" style="margin-bottom: 10px;">
+  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Demand Trends</h1>
   <p style="color: #606d64; font-size: 14px; margin: 0;">System-wide demand visibility — farmer cost quotations, store performance, and crop trends.</p>
 </div>
 
@@ -84,13 +92,6 @@
       <div class="stat-label">Expired</div>
     </div>
     <svg viewBox="0 0 24 24" width="24" height="24" stroke="#94a3b8" stroke-width="1.5" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-  </div>
-  <div class="stat-card">
-    <div>
-      <div class="stat-value">₱{{ number_format($metrics['totalValue'], 0) }}</div>
-      <div class="stat-label">Total Demand Value</div>
-    </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#16a34a" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M8 3h6.5a4.5 4.5 0 0 1 0 9H8"/><line x1="4.5" y1="6.5" x2="21" y2="6.5" stroke-width="1.5"/><line x1="4.5" y1="9.5" x2="21" y2="9.5" stroke-width="1.5"/></svg>
   </div>
 </div>
 
@@ -165,15 +166,35 @@
   </div>
 </div>
 
+<x-table-toolbar
+    uid="admin-quotes"
+    work-table="adminQuotesTable"
+    per-page="10"
+    noun="quotations"
+    search-placeholder="Search by reference, farmer, crop, or status…"
+    :filters="[
+        ['key' => 'crop', 'label' => 'All crops', 'options' => collect($quotations->pluck('crop_type')->unique()->values())->map(fn($c) => [strtolower($c), $c])->all()],
+        ['key' => 'season', 'label' => 'All seasons', 'options' => collect($quotations->pluck('season')->unique()->values())->map(fn($s) => [strtolower($s), ucfirst($s)])->all()],
+        ['key' => 'status', 'label' => 'All statuses', 'options' => collect($quotations->pluck('status')->unique()->values())->map(fn($st) => [strtolower($st), ucwords(str_replace('_', ' ', $st))])->all()],
+    ]"
+    :sorts="[
+        ['key' => 'date', 'dir' => -1, 'type' => 'date', 'label' => 'Submitted (newest)'],
+        ['key' => 'date', 'dir' => 1, 'type' => 'date', 'label' => 'Submitted (oldest)'],
+        ['key' => 'value', 'dir' => -1, 'type' => 'num', 'label' => 'Est. value (highest)'],
+        ['key' => 'value', 'dir' => 1, 'type' => 'num', 'label' => 'Est. value (lowest)'],
+        ['key' => 'farmer', 'dir' => 1, 'type' => 'str', 'label' => 'Farmer (A–Z)'],
+        ['key' => 'crop', 'dir' => 1, 'type' => 'str', 'label' => 'Crop (A–Z)'],
+    ]"
+  />
+
 <!-- Full Quotation Log -->
 <div class="data-table-container">
   <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
     <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Global Quotation Log</h2>
   </div>
-  <div data-paginated>
   <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
     <div class="app-scroll">
-      <table>
+      <table id="adminQuotesTable">
       <thead>
         <tr>
           <th>Reference</th>
@@ -188,7 +209,13 @@
       <tbody>
         @forelse($quotations as $q)
           @php $badgeStyle = 'background:' . $q->status_bg . ';color:' . $q->status_color . ';'; @endphp
-          <tr>
+          <tr data-search="{{ strtolower(($q->quotation_number ?? '') . ' ' . ($q->farmer?->name ?? '') . ' ' . ($q->crop_type ?? '') . ' ' . ($q->season ?? '') . ' ' . ($q->status ?? '')) }}"
+            data-farmer="{{ strtolower($q->farmer?->name ?? '') }}"
+            data-crop="{{ strtolower($q->crop_type ?? '') }}"
+            data-season="{{ strtolower($q->season ?? '') }}"
+            data-status="{{ strtolower($q->status ?? '') }}"
+            data-value="{{ (float) ($q->estimated_total_cost ?? 0) }}"
+            data-date="{{ $q->created_at?->format('Y-m-d') ?? '' }}">
             <td style="font-weight: 600; color: #143d23; font-family: monospace; font-size: 13px;">{{ $q->quotation_number }}</td>
             <td>
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -233,13 +260,5 @@
       <div class="app-scrollbar-thumb"></div>
     </div>
   </div>
-  @if($quotations->hasPages())
-    {{ $quotations->links('partials.pagination') }}
-  @endif
-  </div>
 </div>
 @endsection
-
-@push('scripts')
-  @include('partials.ajax-pagination')
-@endpush

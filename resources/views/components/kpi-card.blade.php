@@ -11,16 +11,14 @@
 ])
 
 @php
-    $arrowPath = match($trendDirection) {
-        'up' => 'M12 19V5M5 12l7-7 7 7',
-        'down' => 'M12 5v14M5 12l7 7 7-7',
-        default => 'M5 12h14',
-    };
-
     // Detect numeric value for count-up animation
     $cleanValue = preg_replace('/[^0-9.]/', '', (string) $value);
     $numeric = $cleanValue !== '' && is_numeric($cleanValue);
-    $hasDecimals = $numeric && (float) $cleanValue != (int) $cleanValue;
+    $decimals = 0;
+    if ($numeric && str_contains($cleanValue, '.')) {
+        $decimals = strlen(strrchr($cleanValue, '.') ?: '0') - 1;
+    }
+    $hasDecimals = $decimals > 0;
     $countTarget = $numeric ? (float) $cleanValue : null;
     $prefix = '';
     $suffix = '';
@@ -44,18 +42,17 @@
         @endisset
     </div>
 
-    <div class="kpi-value" data-count-target="{{ $countTarget ?? '' }}" data-count-decimals="{{ $hasDecimals ? 2 : 0 }}" data-count-prefix="{{ $prefix }}" data-count-suffix="{{ $suffix }}">
+    <div class="kpi-value" data-count-target="{{ $countTarget ?? '' }}" data-count-decimals="{{ $decimals }}" data-count-prefix="{{ $prefix }}" data-count-suffix="{{ $suffix }}">
         {{ $value }}
     </div>
 
-    @if($trendValue !== null)
+    @if($trendValue !== null || $trendLabel)
         <div class="kpi-foot">
-            <span class="kpi-trend-pill">
-                @if($trendDirection !== 'neutral')
-                    <svg viewBox="0 0 24 24"><path d="{{ $arrowPath }}" /></svg>
-                @endif
-                {{ $trendValue }}
-            </span>
+            @if($trendValue !== null)
+                <span class="kpi-trend-pill">
+                    {{ $trendValue }}
+                </span>
+            @endif
             @if($trendLabel)
                 <span class="kpi-trend-label">{{ $trendLabel }}</span>
             @endif
@@ -154,19 +151,15 @@
     .kpi-trend-down { --trend-color: #dc2626; }
     .kpi-trend-neutral { --trend-color: #64748b; }
 
-    @keyframes kpiArrowUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-    @keyframes kpiArrowDown { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
     @keyframes kpiPop { 0% { transform: scale(1); } 45% { transform: scale(1.08); } 100% { transform: scale(1); } }
     @keyframes kpiSuffixBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
 
-    .kpi-trend-up .kpi-trend-pill svg { animation: kpiArrowUp 1.6s ease-in-out infinite; }
-    .kpi-trend-down .kpi-trend-pill svg { animation: kpiArrowDown 1.6s ease-in-out infinite; }
     .kpi-value .kpi-number.pop { animation: kpiPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
     .kpi-value .kpi-suffix { display: inline-block; animation: kpiSuffixBounce 2.2s ease-in-out infinite; }
     .kpi-value .kpi-suffix:empty { display: none; }
 
     @media (prefers-reduced-motion: reduce) {
-        .kpi-trend-pill svg, .kpi-number.pop, .kpi-suffix { animation: none; }
+        .kpi-number.pop, .kpi-suffix { animation: none; }
     }
 </style>
 

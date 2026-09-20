@@ -91,7 +91,7 @@
       <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 6px 0; letter-spacing: -0.02em;">
         Cost Quotation {{ $quotation->quotation_number }}
       </h1>
-      <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
+      <p class="keep-sub" style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
         Farmer: <strong>{{ $quotation->farmer?->name ?? 'Unknown' }}</strong> — Demand signal for your products
       </p>
     </div>

@@ -21,6 +21,7 @@
     align-items: center;
     justify-content: space-between;
     overflow: hidden;
+    min-height: 140px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
@@ -42,12 +43,24 @@
   .stat-card.amber .stat-value { color: #92400e; }
   .stat-card.green .stat-value { color: #166534; }
   .stat-card.violet .stat-value { color: #5b21b6; }
-  .stat-card .stat-label { font-size: 13px; color: #6b7c6e; margin-top: 4px; font-weight: 500; }
+  .stat-card .stat-label { font-size: 12px; color: #6b7c6e; margin-top: 10px; font-weight: 500; }
   .stat-sub { font-size: 12px; color: #6b7c6e; margin-top: 7px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
   .stat-sub b { color: #1a2b1e; font-weight: 800; }
   .stat-sub .trend-up { color: #15803d; }
   .stat-sub .trend-down { color: #b91c1c; }
   .stat-sub svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  .stat-card.violet.ai-overview { flex-direction: column; align-items: stretch; justify-content: space-between; }
+  .stat-card.violet .ai-title { font-size: 20px; letter-spacing: -0.02em; }
+  .ai-overview-head { position: relative; min-height: 42px; padding-right: 48px; }
+  .ai-icon {
+    position: absolute; top: 0; right: 0;
+    width: 38px; height: 38px; border-radius: 11px;
+    background: rgba(124,58,237,0.12);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ai-icon svg { width: 19px; height: 19px; stroke: #7c3aed; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .ai-overview-btn { align-self: flex-start; padding: 8px 13px; font-size: 11.5px; }
 
   .ai-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
@@ -113,68 +126,41 @@
   .ai-modal-close:hover { background: #fee2e2; color: #b91c1c; }
   .ai-modal-body { padding: 20px; font-size: 13.5px; color: #3f3f46; }
 
-  .ai-kpis {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px;
-  }
-  .ai-kpi {
-    background: linear-gradient(160deg, #faf5ff 0%, #ffffff 60%);
-    border: 1px solid #ede9fe; border-radius: 12px; padding: 12px 14px;
-  }
-  .ai-kpi .k { font-size: 11px; font-weight: 600; color: #8b7ea8; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
-  .ai-kpi .v { font-size: 20px; font-weight: 800; color: #2b1a4e; line-height: 1.1; display: flex; align-items: center; gap: 6px; }
-  .ai-kpi .v .delta-up { color: #16a34a; font-size: 12px; font-weight: 700; background: #f0fdf4; padding: 2px 7px; border-radius: 999px; }
-  .ai-kpi .v .delta-down { color: #dc2626; font-size: 12px; font-weight: 700; background: #fef2f2; padding: 2px 7px; border-radius: 999px; }
-  .ai-kpi .v .delta-flat { color: #94a3b8; font-size: 12px; font-weight: 700; background: #f1f5f9; padding: 2px 7px; border-radius: 999px; }
-  .ai-kpi .s { font-size: 11px; color: #a5a0b8; margin-top: 3px; }
-
-  .ai-card {
-    background: #ffffff; border: 1px solid #f0f2f1; border-radius: 12px;
-    padding: 14px 16px; margin-bottom: 12px;
-  }
-  .ai-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-  .ai-card-head .dot { width: 7px; height: 7px; border-radius: 50%; }
-  .ai-card-head h4 { font-size: 13px; font-weight: 700; color: #1a2b1e; margin: 0; }
-  .ai-card-head .sub { font-size: 11px; color: #a5a0b8; margin-left: auto; }
-
-  .ai-week {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: end;
-  }
-  .ai-week .bar-col { text-align: center; }
-  .ai-week .bar-track { height: 74px; display: flex; align-items: flex-end; justify-content: center; border-radius: 8px 8px 0 0; background: #f8f5ff; position: relative; }
-  .ai-week .bar-fill { width: 38px; border-radius: 8px 8px 0 0; transition: height .3s ease; }
-  .ai-week .bar-fill.purple { background: linear-gradient(180deg, #8b5cf6, #7c3aed); box-shadow: 0 4px 12px rgba(124,58,237,0.3); }
-  .ai-week .bar-fill.gray { background: linear-gradient(180deg, #d8d2e8, #c4bcd8); }
-  .ai-week .bar-val { font-size: 18px; font-weight: 800; color: #2b1a4e; }
-  .ai-week .bar-lbl { font-size: 11px; color: #a5a0b8; font-weight: 600; margin-top: 6px; }
-  .ai-week .bar-sub { font-size: 10px; color: #c5bfd6; }
-
-  .ai-product-row { padding: 9px 0; }
-  .ai-product-row + .ai-product-row { border-top: 1px solid #f4f2f9; }
-  .ai-product-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-  .ai-product-top .n { font-weight: 700; color: #1a2b1e; font-size: 13px; }
-  .ai-product-top .m { font-size: 11px; color: #a5a0b8; font-weight: 600; }
-  .ai-bar { height: 7px; border-radius: 999px; background: #f4f2f9; overflow: hidden; }
-  .ai-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #a78bfa, #7c3aed); }
-
-  .ai-crops { display: flex; flex-wrap: wrap; gap: 8px; }
-  .ai-crop {
-    display: inline-flex; align-items: center; gap: 7px;
-    background: #faf5ff; border: 1px solid #ede9fe; border-radius: 999px;
-    padding: 5px 12px; font-size: 12px; font-weight: 600; color: #5b21b6;
-  }
-  .ai-crop .cnt { background: #7c3aed; color: #fff; border-radius: 999px; font-size: 10px; padding: 1px 7px; font-weight: 700; }
-
   .ai-narrative {
     background: linear-gradient(135deg, #faf5ff 0%, #f6efff 100%);
-    border: 1px solid #ede9fe; border-radius: 12px; padding: 14px 16px;
+    border: 1px solid #ede9fe; border-radius: 12px; padding: 16px 18px;
   }
-  .ai-narrative-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  .ai-narrative-head h4 { font-size: 13px; font-weight: 700; color: #5b21b6; margin: 0; }
-  .ai-narrative-body { font-size: 13px; color: #3b2a63; line-height: 1.6; }
-  .ai-narrative-body p { margin: 6px 0 0 0; }
-  .ai-narrative-body ul { margin: 8px 0 0 0; padding-left: 18px; }
-  .ai-narrative-body li { margin-bottom: 6px; line-height: 1.5; }
-  .ai-narrative-body strong { color: #7c3aed; }
+  .ai-narrative-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .ai-narrative-head h4 { font-size: 15px; font-weight: 700; color: #5b21b6; margin: 0; }
+  .ai-narrative-body { font-size: 14px; color: #3b2a63; line-height: 1.7; }
+  .ai-narrative-body p { margin: 8px 0 0 0; }
+  .ai-narrative-body ul, .ai-narrative-body ol { margin: 10px 0 0 18px; padding: 0; }
+  .ai-narrative-body li { margin-bottom: 7px; line-height: 1.6; }
+  .ai-narrative-body strong { color: #6d28d9; }
+  .ai-narrative-body h1, .ai-narrative-body h2, .ai-narrative-body h3, .ai-narrative-body h4 {
+    margin: 16px 0 6px; font-weight: 700; color: #4c1d95; line-height: 1.35;
+  }
+  .ai-narrative-body h1 { font-size: 16px; }
+  .ai-narrative-body h2 { font-size: 15px; }
+  .ai-narrative-body h3 { font-size: 14.5px; }
+  .ai-narrative-body h4 { font-size: 14px; }
+  .ai-narrative-body > *:first-child { margin-top: 0; }
+  .ai-narrative-body table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+  .ai-narrative-body th { background: #f3e8ff; text-align: left; font-weight: 700; color: #4c1d95; }
+  .ai-narrative-body th, .ai-narrative-body td { border: 1px solid #e9d5ff; padding: 7px 9px; }
+  .ai-narrative-body blockquote { margin: 10px 0; padding: 9px 13px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; color: #78350f; }
+  .ai-narrative-body .table-wrap { overflow-x: auto; max-width: 100%; }
+  .ai-narrative-body .warn-icon-img { width: 16px; height: 16px; display: inline-block; margin-right: 6px; vertical-align: -3px; }
+
+  .ai-modal-foot { margin-top: 16px; display: flex; justify-content: flex-end; }
+  .ai-chat-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #7c3aed; color: #ffffff; border: none; border-radius: 10px;
+    padding: 10px 16px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: background 0.2s ease;
+  }
+  .ai-chat-link:hover { background: #6d28d9; }
+  .ai-chat-link svg { width: 15px; height: 15px; }
 
   .panel {
     background: #ffffff;
@@ -271,7 +257,7 @@
     <div>
       <div class="stat-value">{{ $totalQuotations }}</div>
       <div class="stat-label">Demand Signals</div>
-      <div class="stat-sub">from <b>{{ $uniqueFarmers }}</b> interested farmers</div>
+      <div class="stat-sub">From <b>{{ $uniqueFarmers }}</b> interested farmers</div>
     </div>
     <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(37,99,235,0.1); display: flex; align-items: center; justify-content: center;">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="#2563eb" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -301,33 +287,20 @@
     <div>
       <div class="stat-value">₱{{ number_format($ownDemandValue, 0) }}</div>
       <div class="stat-label">Your Products' Demand Value</div>
-      <div class="stat-sub">across <b>{{ $demandProductCount }}</b> of your products</div>
+      <div class="stat-sub">Across <b>{{ $demandProductCount }}</b> of your products</div>
     </div>
     <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(22,163,74,0.1); display: flex; align-items: center; justify-content: center;">
       <svg viewBox="0 0 24 24" width="24" height="24" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M8 3h6.5a4.5 4.5 0 0 1 0 9H8"/></svg>
     </div>
   </div>
-  <div class="stat-card violet" style="flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 12px;">
-    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-      <div>
-        <div class="stat-value" style="font-size: 21px; line-height: 1.15;">AI Store Overview</div>
-        <div class="stat-label">Plain-language read on your demand</div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-          @if($weekTrend > 0)
-            <span style="font-size: 12px; font-weight: 700; color: #16a34a; background: #f0fdf4; padding: 2px 8px; border-radius: 999px;">▲ +{{ $weekTrend }}%</span>
-          @elseif($weekTrend < 0)
-            <span style="font-size: 12px; font-weight: 700; color: #dc2626; background: #fef2f2; padding: 2px 8px; border-radius: 999px;">▼ {{ $weekTrend }}%</span>
-          @else
-            <span style="font-size: 12px; font-weight: 700; color: #94a3b8; background: #f1f5f9; padding: 2px 8px; border-radius: 999px;">0%</span>
-          @endif
-          <span style="font-size: 11px; color: #8b7ea8; font-weight: 500;">{{ $recentQuotations }} this week · {{ $priorQuotations }} last week</span>
-        </div>
-      </div>
-      <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(124,58,237,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-        <svg viewBox="0 0 24 24" width="22" height="22" stroke="#7c3aed" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
+  <div class="stat-card violet ai-overview">
+    <div class="ai-overview-head">
+      <div class="stat-value ai-title">AI Store Overview</div>
+      <div class="ai-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
       </div>
     </div>
-    <button type="button" class="ai-btn" id="aiOverviewBtn" onclick="generateAiOverview(this)">
+    <button type="button" class="ai-btn ai-overview-btn" id="aiOverviewBtn" onclick="generateAiOverview(this)">
       <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
       <span>Generate Overview</span>
     </button>
@@ -408,6 +381,26 @@
   </div>
 </div>
 
+<x-table-toolbar
+    uid="store-quotes"
+    work-table="storeQuotesTable"
+    per-page="10"
+    noun="signals"
+    search-placeholder="Search by reference, farmer, crop, or season…"
+    :filters="[
+        ['key' => 'crop', 'label' => 'All crops', 'options' => collect($quotations->pluck('crop_type')->unique()->values())->map(fn($c) => [strtolower($c), $c])->all()],
+        ['key' => 'season', 'label' => 'All seasons', 'options' => collect($quotations->pluck('season')->unique()->values())->map(fn($s) => [strtolower($s), ucfirst($s)])->all()],
+    ]"
+    :sorts="[
+        ['key' => 'date', 'dir' => -1, 'type' => 'date', 'label' => 'Date (newest)'],
+        ['key' => 'date', 'dir' => 1, 'type' => 'date', 'label' => 'Date (oldest)'],
+        ['key' => 'value', 'dir' => -1, 'type' => 'num', 'label' => 'Est. value (highest)'],
+        ['key' => 'value', 'dir' => 1, 'type' => 'num', 'label' => 'Est. value (lowest)'],
+        ['key' => 'farmer', 'dir' => 1, 'type' => 'str', 'label' => 'Farmer (A–Z)'],
+        ['key' => 'crop', 'dir' => 1, 'type' => 'str', 'label' => 'Crop (A–Z)'],
+    ]"
+  />
+
 <div class="table-card">
   <div style="padding: 20px 24px; border-bottom: 1px solid #f0f2f1; display: flex; justify-content: space-between; align-items: center; background: #fafdfb;">
     <div>
@@ -416,10 +409,9 @@
     </div>
     <span style="font-size: 13px; color: #879a8c; font-weight: 600; background: #f0f2f1; padding: 4px 12px; border-radius: 8px;">{{ $totalQuotations }} total</span>
   </div>
-  <div data-paginated>
   <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
     <div class="app-scroll">
-      <table>
+      <table id="storeQuotesTable">
       <thead>
         <tr>
           <th>Reference</th>
@@ -437,7 +429,12 @@
           @php
             $storeItems = $q->items->filter(fn ($item) => $item->product && $item->product->user_id === Auth::id());
           @endphp
-          <tr>
+          <tr data-search="{{ strtolower(($q->quotation_number ?? '') . ' ' . ($q->farmer?->name ?? '') . ' ' . ($q->crop_type ?? '') . ' ' . ($q->season ?? '')) }}"
+            data-farmer="{{ strtolower($q->farmer?->name ?? '') }}"
+            data-crop="{{ strtolower($q->crop_type ?? '') }}"
+            data-season="{{ strtolower($q->season ?? '') }}"
+            data-value="{{ (float) ($q->estimated_total_cost ?? 0) }}"
+            data-date="{{ $q->created_at?->format('Y-m-d') ?? '' }}">
             <td><span style="font-weight: 700; color: #143d23; font-family: 'SF Mono', ui-monospace, monospace; font-size: 13px;">{{ $q->quotation_number }}</span></td>
             <td>
               <div class="farmer-cell">
@@ -493,10 +490,6 @@
       <div class="app-scrollbar-thumb"></div>
     </div>
   </div>
-  @if($quotations->hasPages())
-    {{ $quotations->links('partials.pagination') }}
-  @endif
-  </div>
 </div>
 
 <div class="ai-floating" id="aiFloatingLoading" hidden>
@@ -508,7 +501,7 @@
   <div class="ai-modal-head">
     <div>
       <h3 id="aiModalTitle">AI Store Overview</h3>
-      <p>Plain-language read on your demand</p>
+      <p>LLM-generated demand intelligence report</p>
     </div>
     <button type="button" class="ai-modal-close" id="aiModalClose" aria-label="Close AI overview" title="Close">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -528,71 +521,72 @@
       .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
       .replace(/\u2014/g, '&mdash;');
   }
-  function fmtMoney(n) {
-    return '₱' + (Math.round(Number(n) || 0)).toLocaleString();
-  }
-  function renderKpis(m) {
-    var tw = Number(m.this_week) || 0;
-    var lw = Number(m.last_week) || 0;
-    var delta = lw > 0 ? Math.round(((tw - lw) / lw) * 100) : (tw > 0 ? 100 : 0);
-    var cls = delta > 0 ? 'delta-up' : (delta < 0 ? 'delta-down' : 'delta-flat');
-    var txt = delta > 0 ? '▲ ' + delta + '%' : (delta < 0 ? '▼ ' + Math.abs(delta) + '%' : '0%');
-    return '' +
-      '<div class="ai-kpi"><div class="k">This Week</div><div class="v">' + tw + '</div><div class="s">demand signals</div></div>' +
-      '<div class="ai-kpi"><div class="k">Last Week</div><div class="v">' + lw + '</div><div class="s">previous 7 days</div></div>' +
-      '<div class="ai-kpi"><div class="k">Week over Week</div><div class="v"><span class="' + cls + '">' + txt + '</span></div><div class="s">' + (delta > 0 ? 'gaining momentum' : delta < 0 ? 'cooling off' : 'steady demand') + '</div></div>' +
-      '<div class="ai-kpi"><div class="k">Unique Farmers</div><div class="v">' + (Number(m.unique_farmers) || 0) + '</div><div class="s">interested farmers</div></div>';
-  }
-  function renderWeekChart(m) {
-    var tw = Number(m.this_week) || 0;
-    var lw = Number(m.last_week) || 0;
-    var max = Math.max(tw, lw, 1);
-    var hTw = Math.max(6, Math.round((tw / max) * 72));
-    var hLw = Math.max(6, Math.round((lw / max) * 72));
-    return '<div class="ai-week">' +
-      '<div class="bar-col"><div class="bar-val">' + tw + '</div>' +
-      '<div class="bar-track"><div class="bar-fill purple" style="height:' + hTw + 'px;"></div></div>' +
-      '<div class="bar-lbl">This Week</div><div class="bar-sub">last 7 days</div></div>' +
-      '<div class="bar-col"><div class="bar-val">' + lw + '</div>' +
-      '<div class="bar-track"><div class="bar-fill gray" style="height:' + hLw + 'px;"></div></div>' +
-      '<div class="bar-lbl">Last Week</div><div class="bar-sub">prior 7 days</div></div></div>';
-  }
-  function renderProducts(m) {
-    var list = m.top_products || [];
-    if (!list.length) {
-      return '<div class="ai-card"><div class="ai-card-head"><span class="dot" style="background:#16a34a;"></span><h4>Top Products</h4><span class="sub">by quotation count</span></div><p style="color:#a5a0b8;font-size:12px;margin:0;">No product demand yet.</p></div>';
+  function renderAiMarkdown(raw) {
+    raw = String(raw || '').replace(/\[[ \t\u00A0]*SUGGEST:[^\]]*\]/gi, '');
+    var lines = escapeAiHtml(raw).replace(/\r/g, '').split('\n');
+    var html = '', inUl = false, inOl = false, inBq = false;
+    function closeUl() { if (inUl) { html += '</ul>'; inUl = false; } }
+    function closeOl() { if (inOl) { html += '</ol>'; inOl = false; } }
+    function closeBq() { if (inBq) { html += '</blockquote>'; inBq = false; } }
+    function renderTable(buf) {
+      var rows = buf.map(function (r) { return r.slice(1, -1).split('|').map(function (c) { return c.trim(); }); })
+        .filter(function (cells) { return !cells.every(function (c) { return /^:?-+:?$/.test(c); }); });
+      if (!rows.length) return;
+      html += '<div class="table-wrap"><table>';
+      var header = rows.shift();
+      html += '<thead><tr>' + header.map(function (c) { return '<th>' + inlineAi(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
+      rows.forEach(function (cells) {
+        html += '<tr>' + cells.map(function (c) { return '<td>' + inlineAi(c) + '</td>'; }).join('') + '</tr>';
+      });
+      html += '</tbody></table></div>';
     }
-    var max = Math.max.apply(Math, list.map(function (p) { return p.count; }));
-    var rows = list.map(function (p) {
-      var w = max > 0 ? Math.max(4, Math.round((p.count / max) * 100)) : 0;
-      return '<div class="ai-product-row"><div class="ai-product-top"><span class="n">' + escapeAiHtml(p.name) + '</span><span class="m">' + p.count + '× · ' + fmtMoney(p.value) + '</span></div><div class="ai-bar"><i style="width:' + w + '%;"></i></div></div>';
-    }).join('');
-    return '<div class="ai-card"><div class="ai-card-head"><span class="dot" style="background:#16a34a;"></span><h4>Top Products</h4><span class="sub">by quotation count</span></div>' + rows + '</div>';
-  }
-  function renderCrops(m) {
-    var list = m.top_crops || [];
-    if (!list.length) return '';
-    var pills = list.map(function (c) {
-      return '<span class="ai-crop">' + escapeAiHtml(c.crop) + ' <span class="cnt">' + c.count + '</span></span>';
-    }).join('');
-    return '<div class="ai-card"><div class="ai-card-head"><span class="dot" style="background:#f59e0b;"></span><h4>Top Crops</h4><span class="sub">quoted crops</span></div><div class="ai-crops">' + pills + '</div></div>';
-  }
-  function renderNarrative(raw) {
-    var lines = escapeAiHtml(String(raw || '')).replace(/\r/g, '').split('\n');
-    var html = '', bulletOpen = false;
-    lines.forEach(function (line) {
-      var t = line.trim();
-      if (!t) return;
-      if (/^[-*]\s+/.test(t)) {
-        if (!bulletOpen) { html += '<ul>'; bulletOpen = true; }
-        html += '<li>' + inlineAi(t.replace(/^[-*]\s+/, '')) + '</li>';
-      } else {
-        if (bulletOpen) { html += '</ul>'; bulletOpen = false; }
-        html += '<p>' + inlineAi(t) + '</p>';
+    for (var i = 0; i < lines.length; i++) {
+      var trimmed = lines[i].trim();
+      if (!trimmed) { closeUl(); closeOl(); closeBq(); continue; }
+      if (trimmed.charAt(0) === '|' && trimmed.charAt(trimmed.length - 1) === '|') {
+        closeUl(); closeOl();
+        var buf = [];
+        while (i < lines.length) {
+          var t = lines[i].trim();
+          if (t.charAt(0) === '|' && t.charAt(t.length - 1) === '|') { buf.push(t); i++; } else break;
+        }
+        i--;
+        renderTable(buf);
+        continue;
       }
-    });
-    if (bulletOpen) html += '</ul>';
+      if (trimmed.indexOf('&gt;') === 0) {
+        closeUl(); closeOl();
+        var warnImg = '<img src="{{ asset('images/caution.png') }}" class="warn-icon-img" alt="Warning">';
+        if (!inBq) { html += '<blockquote>'; inBq = true; }
+        html += '<p>' + warnImg + inlineAi(trimmed.replace(/^&gt;\s?/, '').replace(/^[\s\u26A0\uFE0F\u2757\u2B21]+/u, '').trim()) + '</p>';
+        continue;
+      } else { closeBq(); }
+      var hMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+      if (hMatch) {
+        closeUl(); closeOl();
+        var lvl = hMatch[1].length;
+        html += '<h' + lvl + '>' + inlineAi(hMatch[2]) + '</h' + lvl + '>';
+        continue;
+      }
+      if (/^[-*]\s+/.test(trimmed)) {
+        if (!inUl) { closeOl(); html += '<ul>'; inUl = true; }
+        html += '<li>' + inlineAi(trimmed.replace(/^[-*]\s+/, '')) + '</li>';
+        continue;
+      } else { closeUl(); }
+      if (/^\d+[.)]\s+/.test(trimmed)) {
+        if (!inOl) { closeUl(); html += '<ol>'; inOl = true; }
+        html += '<li>' + inlineAi(trimmed.replace(/^\d+[.)]\s+/, '')) + '</li>';
+        continue;
+      } else { closeOl(); }
+      html += '<p>' + inlineAi(trimmed) + '</p>';
+    }
+    closeUl(); closeOl(); closeBq();
     return html;
+  }
+  var lastAiOverview = '';
+  function openAiChat() {
+    try { sessionStorage.setItem('aiSeedOverview', lastAiOverview || ''); } catch (e) {}
+    window.location.href = '{{ route('store.ai-chat.index') }}';
   }
   function openAiModal(data) {
     if (data && typeof data === 'object' && data.error) {
@@ -602,16 +596,15 @@
       modal.setAttribute('aria-hidden', 'false');
       return;
     }
-    var m = (data && data.metrics) || {};
-    var hasMetrics = Object.keys(m).length > 0;
-    var html = hasMetrics
-      ? '<div class="ai-kpis">' + renderKpis(m) + '</div>' +
-        '<div class="ai-card"><div class="ai-card-head"><span class="dot" style="background:#7c3aed;"></span><h4>Demand Volume</h4><span class="sub">signals received</span></div>' + renderWeekChart(m) + '</div>' +
-        renderProducts(m) + renderCrops(m)
-      : '';
-    html += '<div class="ai-narrative"><div class="ai-narrative-head">' +
+    lastAiOverview = String(data.overview || '');
+    var html = '<div class="ai-narrative">' +
+      '<div class="ai-narrative-head">' +
       '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#7c3aed" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>' +
-      '<h4>AI Analyst Takeaway</h4></div><div class="ai-narrative-body">' + renderNarrative(data.overview) + '</div></div>';
+      '<h4>AI Demand Intelligence Report</h4></div><div class="ai-narrative-body">' + renderAiMarkdown(lastAiOverview) + '</div></div>' +
+      '<div class="ai-modal-foot">' +
+      '<button type="button" class="ai-chat-link" onclick="openAiChat()">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+      '<span>Open in AI Chat</span></button></div>';
     document.getElementById('aiModalBody').innerHTML = html;
     var modal = document.getElementById('aiModal');
     modal.classList.add('open');
@@ -671,7 +664,4 @@
   });
 </script>
 
-@push('scripts')
-  @include('partials.ajax-pagination')
-@endpush
 @endsection

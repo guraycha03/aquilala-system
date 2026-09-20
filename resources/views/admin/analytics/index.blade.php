@@ -17,8 +17,8 @@
     .ana-header h1 { font-size: 22px; font-weight: 700; color: #1e293b; letter-spacing: 0.02em; margin: 0 0 4px 0; }
     .ana-header p { font-size: 13px; color: #64748b; margin: 0; }
 
-    .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1); }
-    .reveal.in { opacity: 1; transform: translateY(0); }
+    .reveal-ready .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1); }
+    .reveal-ready .reveal.in { opacity: 1; transform: translateY(0); }
 
     /* KPI row */
     .ana-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
@@ -130,6 +130,23 @@
     .chart-nav.dim, .chart-wrap:hover .chart-nav.dim { opacity: 0.3; pointer-events: none; }
     .chart-hint { font-size: 11px; color: #94a3b8; margin-top: 10px; display: flex; align-items: center; gap: 6px; }
     .chart-hint svg { width: 12px; height: 12px; stroke: #94a3b8; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Empty states */
+    .ana-empty {
+      flex: 1; min-height: 170px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 10px;
+      text-align: center; padding: 28px 18px; grid-column: 1 / -1;
+    }
+    .chart-wrap-side.has-empty .chart-nav { display: none; }
+    .ana-empty-ico {
+      width: 54px; height: 54px; border-radius: 16px; flex-shrink: 0;
+      background: #f0fdf4; color: #16a34a;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: inset 0 0 0 1px rgba(22,163,74,0.14);
+    }
+    .ana-empty-ico svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .ana-empty-title { font-size: 13px; font-weight: 700; color: #334155; }
+    .ana-empty-sub { font-size: 12px; color: #94a3b8; max-width: 310px; line-height: 1.55; }
 
     /* Legend */
     .chart-legend { display: flex; gap: 16px; flex-wrap: wrap; }
@@ -365,7 +382,7 @@
               <p>Distribution between wet and dry cropping</p>
             </div>
           </div>
-          <div class="panel-body" style="display:grid;grid-template-columns:minmax(0,190px) 1fr;gap:8px;align-items:center;">
+          <div class="panel-body" id="seasonBody" style="display:grid;grid-template-columns:minmax(0,190px) 1fr;gap:8px;align-items:center;">
           <div class="chart-wrap" style="max-width:210px;justify-self:center;">
             <svg id="seasonDonut" viewBox="0 0 220 220"></svg>
           </div>
@@ -374,31 +391,29 @@
         </div>
       </section>
 
-      <!-- ROW 2: USER SIGNUPS + ACTIVITY BREAKDOWN -->
-      <section class="ana-grid equal" style="margin-bottom:22px;">
+      <!-- ROW 2A: USER LOGINS (full width) -->
+      <section style="margin-bottom:22px;">
         <div class="ana-panel reveal" data-reveal>
           <div class="panel-head">
             <div>
-              <h3>User Signups</h3>
-              <p>New registrations over the last 30 days</p>
+              <h3>User Logins</h3>
+              <p>Farmer &amp; store owner sign-ins &middot; last 14 days</p>
             </div>
           </div>
           <div class="panel-body">
-            <div class="chart-wrap chart-wrap-side" id="signupBarsWrap">
-              <button type="button" class="chart-nav chart-nav-prev" id="signupPrev" aria-label="View older dates">
-                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-              </button>
-              <div class="chart-fill" id="signupBarsArea">
-                <svg id="signupBarsSvg" viewBox="0 0 700 220"></svg>
-                <span class="range-badge" id="signupRange"></span>
+            <div class="chart-wrap chart-wrap-side" id="loginTrendWrap">
+              <div class="chart-fill" id="loginTrendArea">
+                <svg id="loginTrendSvg" viewBox="0 0 700 220"></svg>
+                <span class="range-badge" id="loginRange"></span>
               </div>
-              <button type="button" class="chart-nav chart-nav-next" id="signupNext" aria-label="View newer dates">
-                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
             </div>
+            <div class="d-legend" id="loginLegend" style="margin-top:12px;grid-template-columns:repeat(2,minmax(0,1fr));"></div>
           </div>
         </div>
+      </section>
 
+      <!-- ROW 2B: ACTIVITY BREAKDOWN -->
+      <section style="margin-bottom:22px;">
         <div class="ana-panel reveal" data-reveal>
           <div class="panel-head">
             <div>
@@ -427,7 +442,11 @@
                   <div class="hbar-track"><div class="hbar-fill" data-w="{{ $pct }}" style="background:{{ $barColor }};"></div></div>
                 </div>
               @empty
-                <div style="text-align:center;padding:30px;color:#94a3b8;font-size:13px;">No activity data yet</div>
+                <div class="ana-empty">
+                  <div class="ana-empty-ico"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+                  <div class="ana-empty-title">No activity data yet</div>
+                  <div class="ana-empty-sub">Farmer and store actions — quotations, crop updates, logins — will appear here.</div>
+                </div>
               @endforelse
             </div>
             @if($activitiesByType->count() > 5)
@@ -475,7 +494,11 @@
                   <div class="hbar-track"><div class="hbar-fill" data-w="{{ $pct }}" style="background:{{ $color }};"></div></div>
                 </div>
               @empty
-                <div style="text-align:center;padding:30px;color:#94a3b8;font-size:13px;">No crops tracked yet</div>
+                <div class="ana-empty">
+                  <div class="ana-empty-ico"><svg viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></div>
+                  <div class="ana-empty-title">No crops tracked yet</div>
+                  <div class="ana-empty-sub">Farmers haven't started tracking crops — growth stages will appear here.</div>
+                </div>
               @endforelse
             </div>
             @if($cropsByStage->count() > 5)
@@ -580,7 +603,11 @@
                   <div style="margin-top:6px;font-size:11px;color:#94a3b8;">{{ number_format($hv->count) }} report(s) · ₱{{ number_format($hv->expenses, 0) }} expenses</div>
                 </div>
               @empty
-                <div style="text-align:center;padding:30px;color:#94a3b8;font-size:13px;">No harvest reports yet. Farmers submit these after harvesting.</div>
+                <div class="ana-empty">
+                  <div class="ana-empty-ico"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14v4"/><path d="M12 10v8"/><path d="M17 6v12"/></svg></div>
+                  <div class="ana-empty-title">No harvest reports yet</div>
+                  <div class="ana-empty-sub">Farmers submit these after harvesting — yields and expenses will appear here.</div>
+                </div>
               @endforelse
             </div>
             @if($harvestsByCrop->count() > 5)
@@ -601,7 +628,7 @@
               <p>Catalog distribution across categories</p>
             </div>
           </div>
-          <div class="panel-body cat-panel">
+          <div class="panel-body cat-panel" id="categoryBody">
             <div class="cat-flex">
               <div class="cat-flex-donut">
                 <svg id="categoryDonut" viewBox="0 0 220 220"></svg>
@@ -788,6 +815,9 @@
     (function () {
       // ── Data from PHP ──
       var userSignups = @json($userSignups);
+      var loginTrend = @json($loginTrend);
+      var loginRoles = @json($loginRoleCounts->toArray());
+      var totalLogins = @js($totalLogins);
       var quotationsByDay = @json($quotationsByDay);
       var cropsBySeason = @json($cropsBySeason);
       var cropsByDay = @json($cropsByDay);
@@ -817,6 +847,32 @@
         return d.toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' });
       }
 
+      // ── Empty states ──
+      var DEF_EMPTY_ICO = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="15"/></svg>';
+      function renderEmpty(container, title, sub, svgMarkup) {
+        if (!container) return;
+        container.classList.add('has-empty');
+        var screen = container.querySelector('.ana-empty');
+        if (screen) {
+          screen.querySelector('.ana-empty-title').textContent = title;
+          screen.querySelector('.ana-empty-sub').textContent = sub;
+          return;
+        }
+        var el = document.createElement('div');
+        el.className = 'ana-empty';
+        el.innerHTML = '<div class="ana-empty-ico">' + (svgMarkup || DEF_EMPTY_ICO) + '</div>' +
+          '<div class="ana-empty-title"></div><div class="ana-empty-sub"></div>';
+        el.querySelector('.ana-empty-title').textContent = title;
+        el.querySelector('.ana-empty-sub').textContent = sub;
+        container.appendChild(el);
+      }
+      function clearEmpty(container) {
+        if (!container) return;
+        container.classList.remove('has-empty');
+        var el = container.querySelector('.ana-empty');
+        if (el) el.remove();
+      }
+
       // ── Sparklines ──
       function drawSpark(id, values, color) {
         var svg = document.getElementById(id);
@@ -827,7 +883,7 @@
         var min = Math.min.apply(null, nums), max = Math.max.apply(null, nums);
         var span = (max - min) || 1;
         var pts = nums.map(function (v, i) {
-          var x = pad + (i / (nums.length - 1)) * (W - pad * 2);
+          var x = (nums.length === 1) ? pad + (W - pad * 2) / 2 : pad + (i / (nums.length - 1)) * (W - pad * 2);
           var y = H - pad - ((v - min) / span) * (H - pad * 2);
           return x.toFixed(1) + ',' + y.toFixed(1);
         }).join(' ');
@@ -844,7 +900,14 @@
       // ── Quotation Trend (Area chart) ──
       function renderQuotationTrend() {
         var svg = document.getElementById('quotationTrendSvg');
-        if (!quotationsByDay.length) { svg.innerHTML = '<text x="350" y="130" text-anchor="middle" fill="#94a3b8" font-size="13">No quotation data yet</text>'; return; }
+        if (!quotationsByDay.length) {
+          svg.innerHTML = '';
+          renderEmpty(document.getElementById('quotationTrendWrap'), 'No quotation data yet',
+            'Farmers will see cost-estimate trends here once they generate quotations within the last 30 days.',
+            '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>');
+          return;
+        }
+        clearEmpty(document.getElementById('quotationTrendWrap'));
         var W = 700, H = 260, padL = 46, padR = 14, padT = 18, padB = 30;
         var plotW = W - padL - padR, plotH = H - padT - padB;
         var n = quotationsByDay.length;
@@ -863,7 +926,7 @@
         }
         var tickCount = Math.min(n, 7);
         for (var t = 0; t < tickCount; t++) {
-          var idx = Math.round((t / (tickCount - 1)) * (n - 1));
+          var idx = (n === 1) ? 0 : Math.round((t / (tickCount - 1)) * (n - 1));
           parts.push('<text class="ana-axis" x="' + px(idx) + '" y="' + (H - 8) + '" text-anchor="middle">' + shortDate(quotationsByDay[idx].date) + '</text>');
         }
 
@@ -924,10 +987,16 @@
       }
 
       // ── Donut helper ──
-      function renderDonut(svgId, legendId, data, colorMap, labelMap) {
+      function renderDonut(svgId, legendId, data, colorMap, labelMap, emptyHost, emptyTitle, emptySub, emptyIcon) {
         var svg = document.getElementById(svgId);
         var legend = document.getElementById(legendId);
-        if (!data.length) { svg.innerHTML = '<text x="110" y="115" text-anchor="middle" fill="#94a3b8" font-size="12">No data</text>'; legend.innerHTML = ''; return; }
+        if (!data.length) {
+          svg.innerHTML = '';
+          legend.innerHTML = '';
+          if (emptyHost) renderEmpty(emptyHost, emptyTitle, emptySub, emptyIcon);
+          return;
+        }
+        if (emptyHost) clearEmpty(emptyHost);
         var vals = data.map(function(d) { return Number(d.count); });
         var total = vals.reduce(function(a, b) { return a + b; }, 0);
         var r = 72, cx = 110, cy = 110, C = 2 * Math.PI * r;
@@ -997,90 +1066,122 @@
         }
       }
 
-      // ── Signup Bars (fills the card, paged by 30-day windows) ──
-      var SIGNUP_WINDOW = 30;
-      var signupOffset = 0;
-      var maxSignupOffset = Math.max(0, userSignups.length - SIGNUP_WINDOW);
+      // ── User Logins (area chart, last 14 days, admins excluded) ──
+      var LOGIN_CHART_COLOR = '#63856c';
+      var LOGIN_ROLE_META = [
+        { key: 'farmer', label: 'Farmers', color: '#16a34a' },
+        { key: 'store_owner', label: 'Store Owners', color: '#d97706' }
+      ];
 
-      function signupWindow() {
-        var end = Math.max(0, userSignups.length - signupOffset);
-        var start = Math.max(0, end - SIGNUP_WINDOW);
-        return userSignups.slice(start, end);
-      }
-
-      function renderSignupBars() {
-        var area = document.getElementById('signupBarsArea');
-        var svg = document.getElementById('signupBarsSvg');
+      function renderLoginTrend() {
+        var area = document.getElementById('loginTrendArea');
+        var svg = document.getElementById('loginTrendSvg');
         if (!area || !svg) return;
-        var data = signupWindow();
+        var data = loginTrend;
         var W = Math.max(240, area.clientWidth || 600);
         var H = Math.max(160, area.clientHeight || 220);
         svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-        if (!data.length) {
-          svg.innerHTML = '<text x="' + (W / 2) + '" y="' + (H / 2) + '" text-anchor="middle" fill="#94a3b8" font-size="13">No signup data yet</text>';
-          return;
-        }
+
+        var n = data.length;
+        var maxV = 1;
+        data.forEach(function (d) { maxV = Math.max(maxV, d.count); });
+        maxV = Math.ceil(maxV / 3) * 3;
+
         var padL = 40, padR = 12, padT = 18, padB = 30;
         var plotW = W - padL - padR, plotH = H - padT - padB;
-        var n = data.length;
-        var maxV = 0;
-        data.forEach(function (r) { maxV = Math.max(maxV, r.count); });
-        maxV = Math.max(3, Math.ceil(maxV / 3) * 3);
-        var bw = plotW / n;
-        var parts = [];
 
+        function px(i) { return padL + (n === 1 ? plotW / 2 : (i / (n - 1)) * plotW); }
+        function yC(v) { return padT + plotH - (v / maxV) * plotH; }
+
+        var parts = [];
         for (var g = 0; g <= 4; g++) {
           var y = padT + (g / 4) * plotH;
           parts.push('<line class="ana-grid-line" x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '"/>');
           parts.push('<text class="ana-axis" x="' + (padL - 8) + '" y="' + (y + 3) + '" text-anchor="end">' + fmtInt(Math.round(maxV - (g / 4) * maxV)) + '</text>');
         }
 
-        data.forEach(function (r, i) {
-          var x = padL + i * bw;
-          var w = Math.min(36, bw * 0.6);
-          var h = Math.max(2, (r.count / maxV) * plotH);
-          var barY = padT + plotH - h;
-          parts.push('<g class="bar-g"><rect x="' + x.toFixed(1) + '" y="' + barY.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="4" fill="#63856c"></rect></g>');
-          var showLabel = n <= 15 ? true : (i % Math.ceil(n / 6) === 0 || i === n - 1);
-          if (showLabel) {
-            parts.push('<text class="ana-axis" x="' + (x + w / 2).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + shortDate(r.date) + '</text>');
+        var areaD = '', lineD = '', pts = [];
+        for (var i = 0; i < n; i++) {
+          var x = px(i), y = yC(data[i].count);
+          areaD += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+          lineD += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+          pts.push({ x: x, y: y, i: i });
+        }
+        areaD += 'L' + px(n - 1).toFixed(1) + ' ' + (padT + plotH) + ' L' + px(0).toFixed(1) + ' ' + (padT + plotH) + ' Z';
+
+        parts.push('<defs><linearGradient id="loginGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#63856c" stop-opacity="0.25"/><stop offset="100%" stop-color="#63856c" stop-opacity="0.02"/></linearGradient></defs>');
+        parts.push('<path d="' + areaD + '" fill="url(#loginGrad)" style="opacity:0;transition:opacity 0.8s ease 0.3s;" id="loginFill"></path>');
+        parts.push('<path d="' + lineD + '" fill="none" stroke="#63856c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1s ease 0.1s;" id="loginLine" pathLength="1"></path>');
+
+        if (n <= 20) {
+          for (var d = 0; d < n; d++) {
+            parts.push('<circle cx="' + pts[d].x.toFixed(1) + '" cy="' + pts[d].y.toFixed(1) + '" r="3" fill="#fff" stroke="#63856c" stroke-width="2" class="dot" style="opacity:0;transition:opacity 0.3s ease ' + (0.3 + d * 0.02) + 's;"></circle>');
           }
-        });
+        }
+
+        var showLabelStep = n <= 10 ? 1 : Math.ceil(n / 7);
+        for (var k = 0; k < n; k++) {
+          if (k % showLabelStep !== 0 && k !== n - 1) continue;
+          parts.push('<text class="ana-axis" x="' + px(k).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' + shortDate(data[k].date) + '</text>');
+        }
+
+        parts.push('<rect x="' + padL + '" y="' + padT + '" width="' + plotW + '" height="' + plotH + '" fill="transparent" id="loginHit"></rect>');
+        parts.push('<line id="loginVline" x1="0" y1="' + padT + '" x2="0" y2="' + (padT + plotH) + '" class="ana-guide" style="display:none;"></line>');
 
         svg.innerHTML = parts.join('');
+
+        var badge = document.getElementById('loginRange');
+        if (badge) badge.textContent = shortDate(data[0].date) + ' – ' + shortDate(data[n - 1].date);
+
+        // Legend: role split (admins excluded from the query)
+        var legend = document.getElementById('loginLegend');
+        if (legend) {
+          legend.innerHTML = LOGIN_ROLE_META.map(function (r) {
+            var v = Number(loginRoles[r.key] || 0);
+            var pct = totalLogins > 0 ? Math.round(v / totalLogins * 100) : 0;
+            return '<div class="d-legend-row">' +
+              '<span class="sw" style="background:' + r.color + ';"></span>' +
+              '<span class="lbl">' + r.label + '</span>' +
+              '<span class="cnt">' + fmtInt(v) + '</span>' +
+              '<span class="pct">' + pct + '%</span></div>';
+          }).join('');
+        }
+
         requestAnimationFrame(function () {
           requestAnimationFrame(function () {
-            svg.querySelectorAll('.bar-g').forEach(function (el) { el.classList.add('in'); });
+            var f = document.getElementById('loginFill'); if (f) f.style.opacity = '1';
+            var l = document.getElementById('loginLine'); if (l) l.style.strokeDashoffset = '0';
+            svg.querySelectorAll('.dot').forEach(function (el) { el.style.opacity = '1'; });
           });
         });
-        updateSignupNav();
+
+        var hit = document.getElementById('loginHit');
+        hit.addEventListener('mousemove', function (e) {
+          var rect = svg.getBoundingClientRect();
+          var scale = W / rect.width;
+          var vx = (e.clientX - rect.left) * scale;
+          var best = 0, bd = 1e9;
+          pts.forEach(function (p) { var dd = Math.abs(p.x - vx); if (dd < bd) { bd = dd; best = p.i; } });
+          var p = pts[best];
+          document.getElementById('loginVline').setAttribute('x1', p.x);
+          document.getElementById('loginVline').setAttribute('x2', p.x);
+          document.getElementById('loginVline').style.display = 'block';
+          var sx = rect.left + (p.x / W) * rect.width;
+          var row = data[best];
+          var html = '<div class="tt-date">' + fullDate(row.date) + '</div>' +
+            '<div class="tt-row"><span><span class="sw" style="background:#63856c;"></span>Logins</span><b>' + fmtInt(row.count) + '</b></div>';
+          showTip(html, sx, rect.top + 20);
+        });
+        hit.addEventListener('mouseleave', function () {
+          document.getElementById('loginVline').style.display = 'none';
+          hideTip();
+        });
       }
 
-      function updateSignupNav() {
-        maxSignupOffset = Math.max(0, userSignups.length - SIGNUP_WINDOW);
-        var prev = document.getElementById('signupPrev');
-        var next = document.getElementById('signupNext');
-        if (prev) prev.classList.toggle('dim', signupOffset >= maxSignupOffset);
-        if (next) next.classList.toggle('dim', signupOffset <= 0);
-        var badge = document.getElementById('signupRange');
-        var d = signupWindow();
-        if (badge && d.length) badge.textContent = shortDate(d[0].date) + ' – ' + shortDate(d[d.length - 1].date);
-      }
-      function signupNav(dir) {
-        maxSignupOffset = Math.max(0, userSignups.length - SIGNUP_WINDOW);
-        var target = signupOffset + dir * SIGNUP_WINDOW;
-        if (target < 0) target = 0;
-        if (target > maxSignupOffset) target = maxSignupOffset;
-        if (target === signupOffset) return;
-        signupOffset = target;
-        renderSignupBars();
-      }
-      document.getElementById('signupPrev').addEventListener('click', function () { signupNav(1); });
-      document.getElementById('signupNext').addEventListener('click', function () { signupNav(-1); });
-      var resizeTimer;
+      var loginResizeTimer;
       window.addEventListener('resize', function () {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(renderSignupBars, 160);
+        clearTimeout(loginResizeTimer);
+        loginResizeTimer = setTimeout(renderLoginTrend, 160);
       });
 
       // ── Animate horizontal fills ──
@@ -1090,16 +1191,22 @@
         });
       }
 
-      // ── Reveal on scroll ──
+      // ── Reveal on scroll (progressive enhancement: content visible by default) ──
       function initReveal() {
         var els = document.querySelectorAll('[data-reveal]');
+        if (!els.length) return;
         if ('IntersectionObserver' in window) {
+          document.documentElement.classList.add('reveal-ready');
           var io = new IntersectionObserver(function (entries) {
             entries.forEach(function (en) {
               if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
             });
           }, { threshold: 0.08 });
           els.forEach(function (el) { io.observe(el); });
+          // Safety net: force-show anything still hidden if the observer stalls
+          setTimeout(function () {
+            document.querySelectorAll('[data-reveal]:not(.in)').forEach(function (el) { el.classList.add('in'); });
+          }, 2500);
         } else {
           els.forEach(function (el) { el.classList.add('in'); });
         }
@@ -1136,21 +1243,24 @@
         'wet': '#62829b', 'dry': '#a57f43'
       }, {
         'wet': 'Wet Season', 'dry': 'Dry Season'
-      });
+      }, document.getElementById('seasonBody'), 'No crops by season yet',
+        'Farmer crop tracking will show the wet vs. dry season split here.',
+        '<svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>');
       renderDonut('categoryDonut', 'categoryLegend', productsByCategory, {
         'Fertilizer': '#3f6212', 'Seeds': '#65a30d', 'Pesticide': '#15803d',
         'Herbicide': '#16a34a', 'Tools': '#84cc16', 'Other': '#6b8f71'
       }, {
         'Fertilizer': 'Fertilizer', 'Seeds': 'Seeds', 'Pesticide': 'Pesticide',
         'Herbicide': 'Herbicide', 'Tools': 'Tools', 'Other': 'Other'
-      });
-      renderSignupBars();
+      }, document.getElementById('categoryBody'), 'No products by category yet',
+        'Once store owners register products, the catalog distribution appears here.',
+        '<svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>');
+      renderLoginTrend();
 
       var fillTimer = setTimeout(animateFills, 600);
       window.addEventListener('load', function () { clearTimeout(fillTimer); animateFills(); });
 
-      document.addEventListener('DOMContentLoaded', initReveal);
-      setTimeout(initReveal, 100);
+      setTimeout(initReveal, 60);
     })();
   </script>
 @endsection

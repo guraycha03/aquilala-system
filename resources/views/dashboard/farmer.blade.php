@@ -24,12 +24,15 @@
   .dash-page::before { width: 360px; height: 360px; background: rgba(22,163,74,0.18); top: -90px; right: -90px; }
   .dash-page::after { width: 300px; height: 300px; background: rgba(217,119,6,0.15); bottom: -70px; left: -70px; }
   .dash-content { position: relative; z-index: 1; }
+  @media (min-width: 769px) {
+    .dash-page > .dash-content { margin-top: 57px; }
+  }
 
   .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1); }
   .reveal.in { opacity: 1; transform: translateY(0); }
 
   .hero-band {
-    background: rgb(230, 245, 195);
+    background: rgb(241, 250, 214);
     border-radius: 22px; padding: 30px 32px; color: #143d23; position: relative; overflow: hidden;
     box-shadow: 0 4px 16px rgba(20,61,35,0.10); margin-bottom: 26px;
   }
@@ -147,7 +150,7 @@
     <section class="hero-band reveal in">
       <div class="hero-inner">
         <div>
-          <div class="hero-eyebrow">Farmer Hub</div>
+          <div class="hero-eyebrow">Farmer Dashboard</div>
           <h1 class="hero-title"><span data-greeting>{{ $greeting }}</span>, {{ $user->name }}</h1>
           <p class="hero-sub">Here's your <strong>farming overview</strong> for {{ $now->format('l, F j') }}.</p>
           <span class="hero-season {{ $season === 'wet' ? 'hero-season-wet' : 'hero-season-dry' }}">
@@ -174,16 +177,16 @@
 
     <!-- 2. KPI CARDS -->
     <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
-      <x-kpi-card title="Crop Varieties" value="{{ $totalCrops }}" trendValue="{{ $supportedCrops->count() }} types" trendDirection="up" trendLabel="supported crops" accent="#eab308" link="{{ route('farmer.crops.index') }}">
+      <x-kpi-card title="Crop Varieties" value="{{ $totalCrops }}" trendValue="{{ $supportedCrops->count() }} types" trendDirection="up" trendLabel="Supported Crops" accent="#eab308" link="{{ route('farmer.crops.index') }}">
         <x-slot:icon><img src="{{ asset('images/crop.png') }}" alt="Crop" width="22" height="22" style="object-fit:contain;"></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Recommended Products" value="{{ $recommendedCount }}" trendValue="{{ $activeProductCount }} active" trendDirection="up" trendLabel="in marketplace" accent="#16a34a" link="{{ route('farmer.products.browse') }}">
+      <x-kpi-card title="Recommended Products" value="{{ $recommendedCount }}" trendValue="{{ $activeProductCount }} active" trendDirection="up" trendLabel="In marketplace" accent="#16a34a" link="{{ route('farmer.products.browse') }}">
         <x-slot:icon><img src="{{ asset('images/product.png') }}" alt="Product" width="22" height="22" style="object-fit:contain;"></x-slot:icon>
       </x-kpi-card>
       <x-kpi-card title="Cost Quotations" value="{{ $quotationCount }}" trendValue="{{ $viewedQuotations }} seen by stores" trendDirection="{{ $viewedQuotations > 0 ? 'up' : 'neutral' }}" trendLabel="{{ number_format($quotationValue, 2) }} total" accent="#7c3aed" link="{{ route('farmer.quotations.index') }}">
         <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Stores Directory" value="{{ $storeCount }}" trendValue="registered" trendDirection="neutral" trendLabel="store owners" accent="#d97706" link="{{ route('farmer.stores.index') }}">
+      <x-kpi-card title="Stores Directory" value="{{ $storeCount }}" trendValue="registered" trendDirection="neutral" trendLabel="Store Owners" accent="#d97706" link="{{ route('farmer.stores.index') }}">
         <x-slot:icon><img src="{{ asset('images/store.png') }}" alt="Store" width="22" height="22" style="object-fit:contain;"></x-slot:icon>
       </x-kpi-card>
     </section>

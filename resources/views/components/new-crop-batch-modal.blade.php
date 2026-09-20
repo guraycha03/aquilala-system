@@ -1,5 +1,6 @@
 @props([
     'allCrops' => [],
+    'crops' => [],
     'stats' => ['land_area' => 0, 'used_land_area' => 0, 'remaining_land' => 0],
     'user' => null,
     'allocPct' => 0,
@@ -82,6 +83,11 @@
         max-height: 200px; overflow-y: auto; z-index: 600; padding: 4px;
         scrollbar-width: thin;
     }
+    /* The shared sidebar layout sets a global `.ncb-select-menu { display: none }` for the
+       table-toolbar filters. That rule would keep these Alpine `x-show` menus hidden even when
+       Alpine removes the inline `display` on open, so force the modal's menus to render as block.
+       `.ncb-group` is only used inside this modal, so the table-toolbar (`.ncb-group-inline`) is unaffected. */
+    .ncb-group > .ncb-select-menu { display: block; }
     .ncb-select-option {
         padding: 8px 12px; font-size: 13px; color: #1e293b; border-radius: 6px;
         cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
@@ -257,7 +263,8 @@ span.flatpickr-weekday {
 
                     <div class="ncb-group">
                         <label>Batch Name</label>
-                        <input type="text" name="batch_name" placeholder="e.g. North Field A">
+                        <input type="text" name="batch_name" id="batchName" placeholder="e.g. North Field A" autocomplete="off">
+                        <span class="ncb-note" id="batchNameHint" style="margin-bottom: 0;">Auto-generated from Crop + Field + Planting Date, e.g. <b>TOMATO-FIELD1-160926</b>. You can edit it.</span>
                     </div>
                 </div>
 
@@ -471,6 +478,32 @@ span.flatpickr-weekday {
     var _PICKED_PRODUCT = '';
     var _harvestAuto = false;
 
+    /* ── Auto batch name: {CROP}-FIELD{N}-{DDMMYY} (e.g. TOMATO-FIELD1-160926) ── */
+    var _BATCH_COUNTS = @json(collect($crops)->reject(fn ($c) => ! $c->crop)->groupBy(fn ($c) => $c->crop->name)->map->count() ?? []);
+    var _batchNameEl = document.getElementById('batchName');
+    var _batchAuto = true;
+    function _batchSlug(name) { return (name || '').replace(/[^a-zA-Z0-9]+/g, '').toUpperCase(); }
+    function _batchDmy(ymd) {
+        var p = (ymd || '').split('-');
+        return p.length === 3 ? ((p[2] || '') + (p[1] || '') + (p[0] || '').slice(-2)) : '';
+    }
+    window.autoBatchName = function () {
+        if (!_batchNameEl || !_batchAuto) return;
+        var crop = _CROP_DEFAULTS[_PICKED_CROP];
+        if (!crop || !crop.name) return;
+        var plantEl = document.getElementById('plantingDate');
+        var d = _batchDmy(plantEl ? plantEl.value : '');
+        if (!d) return;
+        var field = (_BATCH_COUNTS[crop.name] || 0) + 1;
+        _batchNameEl.value = _batchSlug(crop.name) + '-FIELD' + field + '-' + d;
+    };
+    if (_batchNameEl) {
+        _batchNameEl.addEventListener('input', function () {
+            if (!_batchNameEl.value.trim()) { _batchAuto = true; window.autoBatchName(); }
+            else { _batchAuto = false; }
+        });
+    }
+
     /* Mass units convertible to kilograms (used when the user switches the
        Yield Unit — the estimate is re-converted so the amount stays equal). */
     var _KG_PER_UNIT = { kg: 1, tons: 1000, grams: 0.001, quintal: 100, sacks: 50, cavans: 50 };
@@ -525,6 +558,7 @@ span.flatpickr-weekday {
         filterProducts();
         window.recalcYield();
         window.recalcHarvest();
+        window.autoBatchName();
     };
 
     window.pickProduct = function (id) {
@@ -764,6 +798,7 @@ span.flatpickr-weekday {
     if (_plantingEl) {
         _plantingEl.addEventListener('change', function () {
             window.recalcHarvest && window.recalcHarvest();
+            window.autoBatchName && window.autoBatchName();
         });
     }
     if (_harvestEl) {

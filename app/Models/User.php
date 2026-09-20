@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -15,10 +14,11 @@ class User extends Authenticatable
     /**
      * @var list<string>
      */
-    public const STATUS_PENDING_APPROVAL = 'pending_approval';
-    public const STATUS_PENDING_VERIFICATION = 'pending_verification';
-    public const STATUS_ACTIVE = 'active';
-    public const STATUS_SUSPENDED = 'suspended';
+    public const STATUS_PENDING = 'pending';       // created by admin; awaiting OTP + password setup
+
+    public const STATUS_ACTIVE = 'active';         // fully activated; may sign in normally
+
+    public const STATUS_DISABLED = 'disabled';     // intentionally disabled by an administrator
 
     protected $fillable = [
         'name',
@@ -47,6 +47,9 @@ class User extends Authenticatable
         'years_farming',
         'assoc_member_no',
         'approved_at',
+        'sidebar_theme',
+        'sub_pages_style',
+        'activation_completed_at',
     ];
 
     /**
@@ -64,31 +67,52 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'activation_completed_at' => 'datetime',
             'phone_verified_at' => 'datetime',
-            'birth_date'        => 'date',
-            'approved_at'       => 'datetime',
-            'password'          => 'hashed',
+            'birth_date' => 'date',
+            'approved_at' => 'datetime',
+            'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Whether the member has set their own password yet. A NULL password
+     * means the account was created by an admin but the member has not
+     * activated it / chosen a password through the emailed link.
+     */
+    public function hasSetPassword(): bool
+    {
+        return ! empty($this->password);
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
+    public function isDisabled(): bool
+    {
+        return $this->status === self::STATUS_DISABLED;
     }
 
     public function isActivated(): bool
     {
-        return $this->status === self::STATUS_ACTIVE && $this->phone_verified_at !== null;
-    }
-
-    public function isPendingApproval(): bool
-    {
-        return $this->status === self::STATUS_PENDING_APPROVAL;
-    }
-
-    public function isPendingVerification(): bool
-    {
-        return $this->status === self::STATUS_PENDING_VERIFICATION;
+        return $this->status === self::STATUS_ACTIVE;
     }
 
     public function activations(): HasMany
     {
         return $this->hasMany(UserActivation::class);
+    }
+
+    public function emailOtps(): HasMany
+    {
+        return $this->hasMany(EmailOtp::class);
     }
 
     public function products(): HasMany

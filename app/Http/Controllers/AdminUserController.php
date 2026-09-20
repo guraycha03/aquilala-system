@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\Onboarding\DuplicateAccountException;
+use App\Exceptions\Onboarding\InvalidActivationTokenException;
 use App\Exceptions\Onboarding\MailDeliveryException;
 use App\Models\User;
 use App\Services\UserInvitationService;
@@ -20,52 +21,50 @@ class AdminUserController extends Controller
     {
         $users = User::withCount('products')
             ->orderBy('created_at', 'desc')
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
 
-        $totalUsers    = User::count();
-        $ownerCount    = User::where('role', 'store_owner')->count();
-        $farmerCount   = User::where('role', 'farmer')->count();
-        $adminCount    = User::where('role', 'admin')->count();
+        $totalUsers = User::count();
+        $ownerCount = User::where('role', 'store_owner')->count();
+        $farmerCount = User::where('role', 'farmer')->count();
+        $adminCount = User::where('role', 'admin')->count();
         $activatedCount = User::where('status', User::STATUS_ACTIVE)->count();
-        $pendingCount  = User::where(fn ($q) => $q
-            ->where('status', User::STATUS_PENDING_VERIFICATION)
-            ->orWhere('status', User::STATUS_PENDING_APPROVAL)
-        )->count();
+        $pendingCount = User::where('status', User::STATUS_PENDING)->count();
+        $disabledCount = User::where('status', User::STATUS_DISABLED)->count();
 
         $roleMeta = [
-            'admin'       => ['Administrator', '#86799f', '#f1eef6'],
+            'admin' => ['Administrator', '#86799f', '#f1eef6'],
             'store_owner' => ['Store Owner', '#a57f43', '#f6f0e6'],
-            'farmer'      => ['Farmer', '#63856c', '#eef3ef'],
+            'farmer' => ['Farmer', '#63856c', '#eef3ef'],
         ];
 
-        $profileData = $users->getCollection()->mapWithKeys(function ($u) {
+        $profileData = $users->mapWithKeys(function ($u) {
             return [
                 $u->id => [
-                    'name'          => $u->name,
-                    'email'         => $u->email,
-                    'role'          => ucwords(str_replace('_', ' ', $u->role)),
-                    'status'        => $u->status,
-                    'phone'         => $u->phone,
-                    'barangay'      => $u->barangay,
-                    'city'          => $u->city,
-                    'province'      => $u->province,
-                    'sex'           => $u->sex,
-                    'birth_date'    => $u->birth_date?->format('M d, Y'),
-                    'civil_status'  => $u->civil_status,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                    'role' => ucwords(str_replace('_', ' ', $u->role)),
+                    'status' => $u->status,
+                    'phone' => $u->phone,
+                    'barangay' => $u->barangay,
+                    'city' => $u->city,
+                    'province' => $u->province,
+                    'sex' => $u->sex,
+                    'birth_date' => $u->birth_date?->format('M d, Y'),
+                    'civil_status' => $u->civil_status,
                     'farm_location' => $u->farm_location,
-                    'land_ownership'=> $u->land_ownership,
+                    'land_ownership' => $u->land_ownership,
                     'years_farming' => $u->years_farming,
                     'assoc_member_no' => $u->assoc_member_no,
-                    'joined'        => $u->created_at?->format('M d, Y'),
-                    'products'      => $u->products_count,
+                    'password_set' => $u->hasSetPassword(),
+                    'joined' => $u->created_at?->format('M d, Y'),
+                    'products' => $u->products_count,
                 ],
             ];
         })->all();
 
         return view('admin.users.index', compact(
             'users', 'totalUsers', 'ownerCount', 'farmerCount', 'adminCount',
-            'activatedCount', 'pendingCount', 'roleMeta', 'profileData'
+            'activatedCount', 'pendingCount', 'disabledCount', 'roleMeta', 'profileData'
         ));
     }
 
@@ -91,25 +90,24 @@ class AdminUserController extends Controller
     public function update(Request $request, User $user): RedirectResponse
     {
         $validated = $request->validate([
-            'name'       => ['required', 'string', 'max:255'],
-            'email'      => ['required', 'string', 'max:254', 'email:rfc', Rule::unique('users', 'email')->ignore($user->id)],
-            'phone'      => ['nullable', 'string', 'max:25', Rule::unique('users', 'phone')->ignore($user->id)],
-            'role'       => ['nullable', Rule::in(['farmer', 'store_owner'])],
-            'status'     => ['nullable', Rule::in([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'max:254', 'email:rfc', Rule::unique('users', 'email')->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:25', Rule::unique('users', 'phone')->ignore($user->id)],
+            'role' => ['nullable', Rule::in(['farmer', 'store_owner'])],
+            'status' => ['nullable', Rule::in([
                 User::STATUS_ACTIVE,
-                User::STATUS_SUSPENDED,
-                User::STATUS_PENDING_APPROVAL,
-                User::STATUS_PENDING_VERIFICATION,
+                User::STATUS_PENDING,
+                User::STATUS_DISABLED,
             ])],
-            'barangay'   => ['nullable', 'string', 'max:120'],
-            'city'       => ['nullable', 'string', 'max:120'],
-            'province'   => ['nullable', 'string', 'max:120'],
+            'barangay' => ['nullable', 'string', 'max:120'],
+            'city' => ['nullable', 'string', 'max:120'],
+            'province' => ['nullable', 'string', 'max:120'],
         ], [
-            'name.required'   => 'Please enter the user\'s full name.',
-            'email.required'  => 'Please enter the user\'s email address.',
-            'email.unique'    => 'That email address is already in use by another account.',
-            'phone.unique'    => 'That phone number is already in use by another account.',
-            'email.email'     => 'Enter a valid email address.',
+            'name.required' => 'Please enter the user\'s full name.',
+            'email.required' => 'Please enter the user\'s email address.',
+            'email.unique' => 'That email address is already in use by another account.',
+            'phone.unique' => 'That phone number is already in use by another account.',
+            'email.email' => 'Enter a valid email address.',
         ]);
 
         // Role is only reassignable for non-admin accounts.
@@ -132,13 +130,13 @@ class AdminUserController extends Controller
         };
 
         $user->update([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
-            'phone'    => $fill('phone'),
-            'role'     => $fill('role'),
-            'status'   => $fill('status'),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $fill('phone'),
+            'role' => $fill('role'),
+            'status' => $fill('status'),
             'barangay' => $fill('barangay'),
-            'city'     => $fill('city'),
+            'city' => $fill('city'),
             'province' => $fill('province'),
         ]);
 
@@ -156,29 +154,29 @@ class AdminUserController extends Controller
         $emailRule = app()->environment('production') ? 'email:rfc,dns,spoof' : 'email:rfc';
 
         $validated = $request->validate([
-            'first_name'     => ['required', 'string', 'max:50', 'regex:/^[\pL\s\-]+$/u'],
-            'middle_initial' => ['nullable', 'string', 'max:2', 'regex:/^[\pL\s\.]+$/u'],
-            'last_name'      => ['required', 'string', 'max:50', 'regex:/^[\pL\s\-]+$/u'],
-            'email'          => ['required', 'string', 'max:254', $emailRule],
-            'phone'          => ['required', 'string', 'max:25'],
-            'role'           => ['required', Rule::in(['farmer', 'store_owner'])],
-            'barangay'       => ['nullable', 'string', 'max:120'],
-            'city'           => ['nullable', 'string', 'max:120'],
-            'province'       => ['nullable', 'string', 'max:120'],
+            'first_name' => ['required', 'string', 'max:50', 'regex:/^[\pL\s\-]+$/u'],
+            'middle_initial' => ['nullable', 'string', 'max:50', 'regex:/^[\pL\s\.]+$/u'],
+            'last_name' => ['required', 'string', 'max:50', 'regex:/^[\pL\s\-]+$/u'],
+            'email' => ['required', 'string', 'max:254', $emailRule],
+            'phone' => ['nullable', 'string', 'max:25'],
+            'role' => ['required', Rule::in(['farmer', 'store_owner'])],
+            'barangay' => ['nullable', 'string', 'max:120'],
+            'city' => ['nullable', 'string', 'max:120'],
+            'province' => ['nullable', 'string', 'max:120'],
         ], [
             'first_name.required' => 'Please enter the user\'s first name.',
-            'first_name.regex'    => 'First name may only contain letters, spaces, and hyphens.',
-            'last_name.required'  => 'Please enter the user\'s last name.',
-            'last_name.regex'     => 'Last name may only contain letters, spaces, and hyphens.',
-            'email.required'      => 'Please enter the user\'s email address.',
-            'email.email'         => 'Enter a valid email address.',
-            'phone.required'      => 'Please enter the user\'s mobile number.',
-            'role.required'       => 'Select an account role.',
-            'role.in'             => 'Select a valid account role.',
+            'first_name.regex' => 'First name may only contain letters, spaces, and hyphens.',
+            'last_name.required' => 'Please enter the user\'s last name.',
+            'last_name.regex' => 'Last name may only contain letters, spaces, and hyphens.',
+            'email.required' => 'Please enter the user\'s email address.',
+            'email.email' => 'Enter a valid email address.',
+            'role.required' => 'Select an account role.',
+            'role.in' => 'Select a valid account role.',
         ]);
 
         try {
-            $user = UserInvitationService::invite($validated);
+            $delivery = [];
+            $user = UserInvitationService::invite($validated, $delivery);
         } catch (DuplicateAccountException $e) {
             return $this->invitationFailure($request, $e->getMessage(), $e->field, 422);
         } catch (MailDeliveryException $e) {
@@ -186,7 +184,9 @@ class AdminUserController extends Controller
             return $this->invitationFailure($request, $e->getMessage(), 'email', 503);
         }
 
-        $message = "Invitation sent to {$user->email}. The account activates once the user confirms via the emailed link.";
+        $message = $delivery && empty($delivery['sent'])
+            ? "{$user->name}'s account was created, but the activation email could not be sent — {$delivery['error']} To deliver invitations, verify a sender domain at resend.com and set MAIL_FROM_ADDRESS in .env, then click Resend Activation in the Users list."
+            : "Activation code sent to {$user->email}. The account activates once the user verifies their email and sets a password.";
 
         if ($request->expectsJson()) {
             return response()->json(['message' => $message], 201);
@@ -198,13 +198,13 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Show the registration approvals page: all submitted registration
-     * requests waiting for the admin to review.
+     * Show the approvals page: farmers still awaiting account activation.
      */
     public function approvals()
     {
-        $applications = \App\Models\User::with('activations')
+        $applications = User::with('activations')
             ->where('role', 'farmer')
+            ->where('status', User::STATUS_PENDING)
             ->orderByDesc('created_at')
             ->get();
 
@@ -212,8 +212,8 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Approve a pending registration request: flip the account to
-     * pending_verification and email a secure link to set the password.
+     * Approve a pending registration request: mark it approved and email a
+     * fresh activation code to set the password.
      */
     public function approve(Request $request, User $user): JsonResponse|RedirectResponse
     {
@@ -221,11 +221,11 @@ class AdminUserController extends Controller
             UserInvitationService::approveRegistration($user);
         } catch (MailDeliveryException $e) {
             return $this->approvalFailure($request, $e->getMessage(), 503);
-        } catch (\App\Exceptions\Onboarding\InvalidActivationTokenException $e) {
+        } catch (InvalidActivationTokenException $e) {
             return $this->approvalFailure($request, $e->getMessage(), 409);
         }
 
-        $message = "{$user->name}'s registration was approved. A secure link to set their password was emailed to {$user->email}.";
+        $message = "{$user->name}'s registration was approved. A verification code was emailed to {$user->email}.";
 
         if ($request->expectsJson()) {
             return response()->json(['message' => $message]);
@@ -241,7 +241,7 @@ class AdminUserController extends Controller
     {
         try {
             UserInvitationService::rejectRegistration($user);
-        } catch (\App\Exceptions\Onboarding\InvalidActivationTokenException $e) {
+        } catch (InvalidActivationTokenException $e) {
             return $this->approvalFailure($request, $e->getMessage(), 409);
         }
 
@@ -264,31 +264,31 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Re-send the activation email for an account still pending verification.
+     * Re-send the activation code for an account still pending.
      */
     public function resend(Request $request, User $user): JsonResponse|RedirectResponse
     {
-        if (!$user->isPendingVerification()) {
+        if (! $user->isPending()) {
             $message = "{$user->name} has already activated their account.";
 
             if ($request->expectsJson()) {
                 return response()->json(['message' => $message], 409);
             }
 
-            return back()->withErrors(['resend' => $message]);
+            return back()->with('error', $message);
         }
 
         try {
-            UserInvitationService::resendInvitation($user);
+            UserInvitationService::issueActivation($user);
         } catch (MailDeliveryException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => $e->getMessage()], 503);
             }
 
-            return back()->withErrors(['resend' => $e->getMessage()]);
+            return back()->with('error', $e->getMessage());
         }
 
-        $message = "A new activation link was sent to {$user->email}. The previous link is now void.";
+        $message = "A new activation code was sent to {$user->email}. The previous code is now void.";
 
         if ($request->expectsJson()) {
             return response()->json(['message' => $message]);
@@ -302,7 +302,7 @@ class AdminUserController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'message' => $message,
-                'errors'  => [$field => [$message]],
+                'errors' => [$field => [$message]],
             ], $status);
         }
 

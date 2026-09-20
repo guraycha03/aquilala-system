@@ -105,19 +105,14 @@
           {{ ucwords(str_replace('_', ' ', $user->role)) }}
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
         </span>
-        @if($user->isPendingVerification())
+@if($user->isPending())
           <span class="profile-chip warn">
-            Pending verification
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Pending activation
+            <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
           </span>
-        @elseif($user->isPendingApproval())
-          <span class="profile-chip warn">
-            Pending approval
-            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </span>
-        @elseif($user->status === \App\Models\User::STATUS_SUSPENDED)
+        @elseif($user->isDisabled())
           <span class="profile-chip danger">
-            Suspended
+            Disabled
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
           </span>
         @else
@@ -138,15 +133,10 @@
         </div>
       @endif
 
-      @if($user->isPendingVerification())
+      @if($user->isPending())
         <div class="form-alert info">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          This account is still awaiting email activation. You can resend the activation link from the Users list.
-        </div>
-      @elseif($user->isPendingApproval())
-        <div class="form-alert info">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          This registration is awaiting approval. Approve it from the Users list to email the secure activation link.
+          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          This account is still awaiting email activation. You can resend the activation code from the Users list.
         </div>
       @endif
 
@@ -195,13 +185,11 @@
             <label>Account Status</label>
             <select name="status">
               @php($status = old('status', $user->status))
-              @if($status === \App\Models\User::STATUS_PENDING_APPROVAL)
-                <option value="{{ \App\Models\User::STATUS_PENDING_APPROVAL }}" @selected($status === \App\Models\User::STATUS_PENDING_APPROVAL)>Pending approval (unchanged)</option>
-              @elseif($status === \App\Models\User::STATUS_PENDING_VERIFICATION)
-                <option value="{{ \App\Models\User::STATUS_PENDING_VERIFICATION }}" @selected($status === \App\Models\User::STATUS_PENDING_VERIFICATION)>Pending verification (unchanged)</option>
+              @if($status === \App\Models\User::STATUS_PENDING)
+                <option value="{{ \App\Models\User::STATUS_PENDING }}" @selected($status === \App\Models\User::STATUS_PENDING)>Pending (unchanged)</option>
               @endif
               <option value="{{ \App\Models\User::STATUS_ACTIVE }}" @selected($status === \App\Models\User::STATUS_ACTIVE)>Active</option>
-              <option value="{{ \App\Models\User::STATUS_SUSPENDED }}" @selected($status === \App\Models\User::STATUS_SUSPENDED)>Suspended</option>
+              <option value="{{ \App\Models\User::STATUS_DISABLED }}" @selected($status === \App\Models\User::STATUS_DISABLED)>Disabled</option>
             </select>
             <small class="field-error">@error('status'){{ $message }}@enderror</small>
           </div>
@@ -249,7 +237,7 @@
         if (digits.length > 0 && digits.length !== 9) {
           e.preventDefault();
           phoneLocal.closest('.invite-field').querySelector('.field-error').textContent =
-            'Enter the 9-digit number after +639 (e.g. 171234567), or clear the field to leave it blank.';
+            'Enter the 9-digit number after +639.';
           phoneLocal.focus();
           return;
         }

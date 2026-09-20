@@ -44,23 +44,62 @@ class ProductController extends Controller
         $computedQuotationCount = $involvedStoreQuery(Quotation::STATUS_COMPUTED)->count();
         $viewedQuotationCount = $involvedStoreQuery(Quotation::STATUS_VIEWED)->count();
 
-        // Recent quotation activity for this store
-        $recentStoreQuotations = $involvedStoreQuery()
-            ->with(['farmer'])
-            ->latest()
+        // ─── Top performers (Most Viewed / Most Quoted / Top Rated) ─────
+        $products->load('approvedReviews');
+
+        // ─── Rating & review metrics for this store ───────────────────
+        $ratedProducts = $products->filter(fn ($p) => $p->average_rating !== null);
+        $averageRating = $ratedProducts->isNotEmpty()
+            ? round((float) $ratedProducts->avg('average_rating'), 1)
+            : null;
+        $totalReviews = $products->sum('review_count');
+
+        $topViewed = $products
+            ->where('views_count', '>', 0)
+            ->sortByDesc('views_count')
             ->take(5)
-            ->get();
+            ->values();
+
+        // Distinct quotations that include each of this store's products.
+        $quotedCounts = DB::table('quotation_items')
+            ->join('products', 'quotation_items.product_id', '=', 'products.id')
+            ->where('products.user_id', $user->id)
+            ->select('quotation_items.product_id', DB::raw('COUNT(DISTINCT quotation_items.quotation_id) as total'))
+            ->groupBy('quotation_items.product_id')
+            ->orderByDesc('total')
+            ->get()
+            ->keyBy('product_id');
+
+        $topQuoted = $products
+            ->filter(fn ($p) => isset($quotedCounts[$p->id]))
+            ->sortByDesc(fn ($p) => $quotedCounts[$p->id]->total)
+            ->take(5)
+            ->values()
+            ->map(fn ($p) => (object) [
+                'product' => $p,
+                'count'   => (int) $quotedCounts[$p->id]->total,
+            ]);
+
+        $topRated = $products
+            ->filter(fn ($p) => $p->review_count > 0)
+            ->sortByDesc(fn ($p) => [$p->average_rating, $p->review_count])
+            ->take(5)
+            ->values();
 
         // Pass $products to your dashboard blade view
         return view('dashboard.store_owner', compact(
             'products',
             'productCount',
-            'lowStockProducts',
             'lowStockCount',
             'demandQuotationCount',
             'computedQuotationCount',
             'viewedQuotationCount',
-            'recentStoreQuotations'
+            'ratedProducts',
+            'averageRating',
+            'totalReviews',
+            'topViewed',
+            'topQuoted',
+            'topRated'
         ));
     }
 
@@ -74,7 +113,14 @@ class ProductController extends Controller
             ->latest()
             ->get();
 
-        return view('store.storefront.index', compact('products'));
+        $categories = $products
+            ->pluck('category.name')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        return view('store.storefront.index', compact('products', 'categories'));
     }
 
     /**
@@ -87,7 +133,11 @@ class ProductController extends Controller
             ->latest()
             ->get();
 
-        return view('farmer.recommendations.index', compact('products'));
+        $storeCount = \App\Models\User::where('role', 'store_owner')
+            ->whereNotNull('store_name')
+            ->count();
+
+        return view('farmer.recommendations.index', compact('products', 'storeCount'));
     }
 
     /**
@@ -315,7 +365,7 @@ class ProductController extends Controller
     public function browse()
     {
         $products = Product::active()
-            ->with(['category', 'storeOwner', 'mainImage'])
+            ->with(['category', 'storeOwner', 'mainImage', 'approvedReviews'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -331,6 +381,12 @@ class ProductController extends Controller
             abort(404);
         }
 
+        // Track farmer product-page views for the store dashboard "Most Viewed" ranking.
+        // Store owners/admin viewing their own products are not counted as farmer visits.
+        if (Auth::check() && Auth::user()->role === 'farmer') {
+            Product::whereKey($product->id)->increment('views_count');
+        }
+
         $product->load([
             'category',
             'storeOwner',
@@ -340,15 +396,20 @@ class ProductController extends Controller
             'images',
             'documents',
             'mainImage',
+            'approvedReviews.farmer',
         ]);
 
         $relatedProducts = Product::active()
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
+            ->with('approvedReviews')
             ->take(4)
             ->get();
 
-        return view('farmer.products.show', compact('product', 'relatedProducts'));
+        // The farmer's own review (any status) so they can see moderation state.
+        $myReview = $product->reviews()->where('user_id', Auth::id())->first();
+
+        return view('farmer.products.show', compact('product', 'relatedProducts', 'myReview'));
     }
 
     /**

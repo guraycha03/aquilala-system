@@ -105,17 +105,21 @@
       <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 6px 0; letter-spacing: -0.02em;">
         Cost Quotation {{ $quotation->quotation_number }}
       </h1>
-      <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
+      <p class="keep-sub" style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
         Generated on {{ $quotation->created_at->format('F d, Y \a\t g:i A') }}
+        @if($quotation->effective_status === 'viewed' && $quotation->viewed_at)
+          <span style="color: #7c3aed; font-weight: 600;">&middot; Viewed by a store {{ $quotation->viewed_at->format('F d, Y \a\t g:i A') }}</span>
+        @endif
       </p>
     </div>
     <div style="display: flex; gap: 10px; align-items: center;">
-      <span class="status-pill {{ $quotation->status }}">
+      <span class="status-pill {{ $quotation->effective_status }}">
         <span class="dot"></span>
         {{ $quotation->status_label }}
       </span>
       <form action="{{ route('farmer.quotations.destroy', $quotation) }}" method="POST"
-            onsubmit="return confirm('Are you sure you want to delete this cost quotation? This cannot be undone.');"
+            data-aqui-confirm="Are you sure you want to delete this cost quotation? This cannot be undone."
+            data-aqui-danger data-aqui-confirm-label="Delete"
             style="margin: 0;">
         @csrf
         @method('DELETE')

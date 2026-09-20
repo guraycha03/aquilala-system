@@ -1,8 +1,16 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Audit Trail Logs')
+@section('title', 'Audit Logs')
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'policies', 'label' => 'Policies',       'url' => route('admin.settings.index')],
+      ['key' => 'logs',     'label' => 'Logs',           'url' => route('admin.audit.index')],
+      ['key' => 'roles',    'label' => 'Roles & Access', 'url' => route('admin.settings.roles')],
+    ],
+    'activeTab' => 'logs',
+  ])
   @php
     // SAMPLE placeholder data — replace with real audit-log model later.
     $events = [
@@ -42,7 +50,7 @@
     .audit-page::after { width: 280px; height: 280px; background: rgba(59,130,246,0.12); bottom: -60px; left: -60px; }
     .audit-content { position: relative; z-index: 1; }
 
-    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
     .header-row h1 { font-size: 24px; font-weight: 700; color: #1e293b; letter-spacing: 0.02em; margin: 0 0 4px 0; }
     .header-row p { font-size: 13px; color: #64748b; margin: 0; }
     .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -149,17 +157,13 @@
     <div class="audit-content">
       <div class="header-row">
         <div>
-          <h1>System Security Audit Trail</h1>
+          <h1>System Audit Logs</h1>
           <p>Immutable event log capturing authentication steps, approvals, formula overrides, and account modifications.</p>
         </div>
         <div class="header-actions">
           <button id="exportBtn" class="btn-audit ghost">
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export CSV
-          </button>
-          <button id="clearFiltersBtn" class="btn-audit">
-            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Clear Filters
           </button>
         </div>
       </div>
@@ -169,51 +173,48 @@
         <div class="audit-kpi">
           <div class="ak-label">Total Events</div>
           <div class="ak-value">1,284</div>
-          <div class="ak-sub">all-time records</div>
+          <div class="ak-sub">All-time records</div>
         </div>
         <div class="audit-kpi">
           <div class="ak-label">Today</div>
           <div class="ak-value">42</div>
-          <div class="ak-sub">events logged today</div>
+          <div class="ak-sub">Events logged today</div>
         </div>
         <div class="audit-kpi">
           <div class="ak-label">Authentications</div>
           <div class="ak-value">618</div>
-          <div class="ak-sub">sign-ins &amp; sign-outs</div>
+          <div class="ak-sub">Sign-ins &amp; sign-outs</div>
         </div>
         <div class="audit-kpi">
           <div class="ak-label">Modifications</div>
           <div class="ak-value">97</div>
-          <div class="ak-sub">approvals &amp; overrides</div>
+          <div class="ak-sub">Approvals &amp; overrides</div>
         </div>
       </div>
 
-      <div class="audit-panel">
-        <div class="audit-toolbar">
-          <div class="search-box">
-            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input id="searchInput" type="text" placeholder="Search actor, event, or module…">
-          </div>
-          <select id="typeFilter">
-            <option value="all">All event types</option>
-            <option value="auth">Authentications</option>
-            <option value="approval">Store Approvals</option>
-            <option value="quotation">Quotations</option>
-            <option value="formula">Formula Overrides</option>
-            <option value="update">Storefront Updates</option>
-            <option value="system">System</option>
-          </select>
-          <select id="dateFilter">
-            <option value="all">All dates</option>
-            <option value="today">Today</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-          </select>
-        </div>
+      <x-table-toolbar
+          uid="audit"
+          work-table="auditTable"
+          per-page="10"
+          noun="records"
+          search-placeholder="Search actor, event, or module…"
+          :filters="[
+              ['key' => 'cat', 'label' => 'All event types', 'options' => [['auth', 'Authentications'], ['approval', 'Store Approvals'], ['quotation', 'Quotations'], ['formula', 'Formula Overrides'], ['update', 'Storefront Updates'], ['system', 'System']]],
+              ['key' => 'age', 'label' => 'All dates', 'options' => [['<=1', 'Today'], ['<=7', 'Last 7 days'], ['<=30', 'Last 30 days']]],
+          ]"
+          :sorts="[
+              ['key' => 'epoch', 'dir' => -1, 'type' => 'num', 'label' => 'Time (newest)'],
+              ['key' => 'epoch', 'dir' => 1, 'type' => 'num', 'label' => 'Time (oldest)'],
+              ['key' => 'actor', 'dir' => 1, 'type' => 'str', 'label' => 'Actor (A–Z)'],
+              ['key' => 'module', 'dir' => 1, 'type' => 'str', 'label' => 'Module (A–Z)'],
+              ['key' => 'cat', 'dir' => 1, 'type' => 'str', 'label' => 'Event type (A–Z)'],
+          ]"
+        />
 
+      <div class="audit-panel">
         <div class="app-scroll-wrap" style="--sb-bottom: 18px;">
           <div class="app-scroll">
-            <table class="audit-table">
+            <table id="auditTable" class="audit-table">
             <thead>
               <tr>
                 <th>Timestamp</th>
@@ -227,9 +228,14 @@
               @foreach($events as $e)
                 @php
                   $meta = $typeMeta[$e['type']] ?? ['Event', '#64748b', '#f1f5f9'];
+                  $ageDays = \Illuminate\Support\Carbon::parse($e['ts'])->diffInDays(now(), false);
                 @endphp
                 <tr data-cat="{{ $e['cat'] }}"
                     data-ts="{{ $e['ts'] }}"
+                    data-age="{{ number_format(max(0, $ageDays), 2) }}"
+                    data-epoch="{{ \Illuminate\Support\Carbon::parse($e['ts'])->getTimestamp() }}"
+                    data-actor="{{ strtolower($e['actor']) }}"
+                    data-module="{{ strtolower($e['module']) }}"
                     data-search="{{ strtolower($e['actor'] . ' ' . $e['role'] . ' ' . $e['msg'] . ' ' . $e['module'] . ' ' . $meta[0]) }}">
                   <td class="audit-ts">{{ $e['ts'] }}</td>
                   <td>
@@ -261,19 +267,6 @@
             <div class="app-scrollbar-thumb"></div>
           </div>
         </div>
-
-        <div class="audit-footer">
-          <span class="rows-info" id="rowsInfo">Showing 10 of 10 records</span>
-          <div class="pager">
-            <button>&lsaquo;</button>
-            <button class="active">1</button>
-            <button>2</button>
-            <button>3</button>
-            <button>…</button>
-            <button>129</button>
-            <button>&rsaquo;</button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -295,91 +288,9 @@
         }, 2600);
       }
       var rows = Array.prototype.slice.call(document.querySelectorAll('#auditRows tr'));
-      var total = rows.length;
-      var searchInput = document.getElementById('searchInput');
-      var typeFilter = document.getElementById('typeFilter');
-      var dateFilter = document.getElementById('dateFilter');
-      var rowsInfo = document.getElementById('rowsInfo');
-
-      function visibleRows() {
-        var q = (searchInput.value || '').toLowerCase().trim();
-        var cat = typeFilter.value;
-        var range = dateFilter.value;
-        var now = new Date();
-        var cutoff7 = new Date(now); cutoff7.setDate(now.getDate() - 7);
-        var cutoff30 = new Date(now); cutoff30.setDate(now.getDate() - 30);
-
-        return rows.filter(function (row) {
-          if (q && row.getAttribute('data-search').indexOf(q) === -1) return false;
-          if (cat !== 'all' && row.getAttribute('data-cat') !== cat) return false;
-          if (range !== 'all') {
-            var ts = new Date(row.getAttribute('data-ts').replace(' ', 'T'));
-            if (range === 'today' && ts.toDateString() !== now.toDateString()) return false;
-            if (range === '7d' && ts < cutoff7) return false;
-            if (range === '30d' && ts < cutoff30) return false;
-          }
-          return true;
-        });
-      }
-
-      function applyFilters() {
-        var shown = visibleRows();
-        var before = new Map(rows.map(function (r) { return [r, r.getBoundingClientRect().top]; }));
-
-        var wasShown = new Map(rows.map(function (r) { return [r, r.style.display !== 'none']; }));
-        rows.forEach(function (row) { row.style.display = 'none'; });
-        shown.forEach(function (row) { row.style.display = ''; });
-
-        var after = new Map(rows.map(function (r) { return [r, r.getBoundingClientRect().top]; }));
-
-        shown.forEach(function (row) {
-          var wasHidden = !wasShown.get(row);
-          if (wasHidden) {
-            row.style.transition = 'none';
-            row.style.opacity = '0';
-            void row.offsetHeight;
-            row.style.transition = 'opacity 0.35s ease';
-            row.style.opacity = '1';
-          }
-          var delta = before.get(row) - after.get(row);
-          if (Math.abs(delta) < 1) return;
-          row.style.transition = 'none';
-          row.style.transform = 'translateY(' + delta + 'px)';
-          void row.offsetHeight;
-          row.style.transition = 'transform 0.4s cubic-bezier(0.25,0.8,0.25,1)';
-          row.style.transform = '';
-        });
-
-        rowsInfo.textContent = 'Showing ' + shown.length + ' of ' + total + ' records';
-
-        clearFiltersBtn.disabled = !hasActiveFilters();
-        requestAnimationFrame(updateScrollbar);
-      }
-
-      function hasActiveFilters() {
-        return (searchInput.value || '').trim() !== '' ||
-               typeFilter.value !== 'all' ||
-               dateFilter.value !== 'all';
-      }
-
-      var searchTimer;
-      searchInput.addEventListener('input', function () {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(applyFilters, 120);
-      });
-      typeFilter.addEventListener('change', applyFilters);
-      dateFilter.addEventListener('change', applyFilters);
-
-      var clearFiltersBtn = document.getElementById('clearFiltersBtn');
-      clearFiltersBtn.addEventListener('click', function () {
-        searchInput.value = '';
-        typeFilter.value = 'all';
-        dateFilter.value = 'all';
-        applyFilters();
-      });
 
       document.getElementById('exportBtn').addEventListener('click', function () {
-        var shown = visibleRows();
+        var shown = rows.filter(function (r) { return r.style.display !== 'none'; });
         if (shown.length === 0) { showToast('No records to export.'); return; }
         var lines = ['Timestamp,Actor,Role,Event,Module,IP Address'];
         shown.forEach(function (row) {
@@ -400,8 +311,6 @@
         a.click();
         URL.revokeObjectURL(url);
       });
-
-      applyFilters();
 
       // Event hover tooltip
       var tip = document.createElement('div');

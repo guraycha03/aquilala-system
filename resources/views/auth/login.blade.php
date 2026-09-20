@@ -3,7 +3,45 @@
 @section('title', 'Login')
 
 @section('form-content')
+    @push('styles')
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    @endpush
+
     <style>
+        /* Login page uses the Urbanist font (test only on this page) */
+        .auth-container { font-family: 'Urbanist', ui-sans-serif, system-ui, sans-serif; }
+
+        /* Make the brand logo slightly larger (login page only) */
+        .form-brand-logo { width: 64px; height: 64px; }
+
+        /* More breathing room below the Aquilala brand name (login page only) */
+        .form-brand-sub { margin-top: 8px; }
+
+        /* Consistent, breathable letter spacing across the whole login page */
+        .auth-container .form-brand-name,
+        .auth-container .form-brand-sub,
+        .auth-container .visual-pane h2,
+        .auth-container .visual-pane p { letter-spacing: 0.03em; }
+
+        /* Log In button — matches the app's primary green */
+        .login-btn { background: #16a34a; color: #ffffff; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); }
+        .login-btn:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(22, 163, 74, 0.3); }
+
+        /* Letter-spacing on typed input text */
+        #loginForm input:not([type="hidden"]) { letter-spacing: 0.05em; color: #4a554d; }
+
+        /* Keep autofilled text from turning dark/black */
+        #loginForm input:-webkit-autofill,
+        #loginForm input:-webkit-autofill:hover,
+        #loginForm input:-webkit-autofill:focus,
+        #loginForm input:-webkit-autofill:active {
+            -webkit-text-fill-color: #4a554d;
+            -webkit-box-shadow: 0 0 0 1000px #fafbfa inset;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
         /* Login method tabs */
         .method-tabs {
             display: flex; gap: 4px; background: #eef1ef;
@@ -25,7 +63,7 @@
             background: #fafbfa; overflow: hidden;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .phone-row:focus-within { border-color: #436149; box-shadow: 0 0 0 3px rgba(67, 97, 73, 0.12); }
+        .phone-row:focus-within { border-color: #7fae8b; }
         .phone-prefix {
             display: inline-flex; align-items: center; gap: 7px; padding: 0 12px;
             background: #eef1ef; border-right: 1px solid #e6ebe8;
@@ -41,8 +79,8 @@
         .phone-row input { flex: 1; min-width: 0; border: none; background: transparent; padding: 11px 14px; font-size: 15px; outline: none; }
     </style>
 
-    <h1 style="margin: 0 0 6px 0; font-size: 24px; font-weight: 700; color: #232f27; letter-spacing: -0.025em;">Welcome back</h1>
-    <p style="margin: 0 0 24px 0; color: #606d64; font-size: 14px;">Sign in to access your dashboard workspace.</p>
+    <h1 style="margin: 0 0 6px 0; font-size: 24px; font-weight: 700; color: #232f27; letter-spacing: 0.03em;">Welcome back</h1>
+    <p style="margin: 0 0 24px 0; color: #606d64; font-size: 14px; letter-spacing: 0.03em;">Sign in to access your dashboard.</p>
 
     @if ($errors->any())
         <div style="background: #fdf2f2; color: #9b2c2c; border: 1px solid #fde8e8; padding: 14px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
@@ -72,8 +110,8 @@
 
         {{-- Email credential --}}
         <div id="email-group" style="margin-bottom: 16px;">
-            <label for="login-email" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3d4a41;">
-                Email Address <span style="color: #dc2626;">*</span>
+            <label for="login-email" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3d4a41; letter-spacing: 0.05em;">
+                Email Address <span style="color: #e87070; font-size: 24px; font-weight: 400; font-family: Georgia, 'Times New Roman', serif; position: relative; top: -7px; vertical-align: middle; line-height: 1;">∗</span>
             </label>
             <input type="email" id="login-email" name="email" value="{{ old('email') }}" required placeholder="name@gmail.com"
                    autocomplete="email" aria-required="true"
@@ -83,8 +121,8 @@
 
         {{-- Phone credential (locked +639 prefix) --}}
         <div id="phone-group" style="margin-bottom: 16px; display: none;">
-            <label for="login-phone-local" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3d4a41;">
-                Phone Number <span style="color: #dc2626;">*</span>
+            <label for="login-phone-local" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3d4a41; letter-spacing: 0.05em;">
+                Phone Number <span style="color: #e87070; font-size: 24px; font-weight: 400; font-family: Georgia, 'Times New Roman', serif; position: relative; top: -7px; vertical-align: middle; line-height: 1;">∗</span>
             </label>
             <input type="hidden" name="phone" value="{{ old('phone') }}">
             <div class="phone-row">
@@ -111,8 +149,8 @@
         </div>
 
         <div style="margin-bottom: 24px;">
-            <label for="login-password" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3d4a41;">
-                Password <span style="color: #dc2626;">*</span>
+            <label for="login-password" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3d4a41; letter-spacing: 0.05em;">
+                Password <span style="color: #e87070; font-size: 24px; font-weight: 400; font-family: Georgia, 'Times New Roman', serif; position: relative; top: -7px; vertical-align: middle; line-height: 1;">∗</span>
             </label>
             <div style="position: relative;">
                 <input type="password" id="login-password" name="password" required placeholder="••••••••"
@@ -130,14 +168,25 @@
             <div id="login-password-feedback" style="font-size: 12px; margin-top: 4px; min-height: 18px; transition: color 0.2s;"></div>
         </div>
 
-        <button type="submit" style="width: 100%; background: #436149; color: #ffffff; border: none; padding: 12px 14px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
+        <div style="text-align: right; margin: -14px 0 18px 0;">
+            <a href="{{ route('password.request') }}" style="color: #436149; font-size: 13px; font-weight: 600; letter-spacing: 0.03em; text-decoration: none;">
+                Forgot password?
+            </a>
+        </div>
+
+        <button type="submit" class="login-btn" style="width: 100%; border: none; padding: 12px 14px; border-radius: 8px; font-size: 15px; font-weight: 600; letter-spacing: 0.08em; cursor: pointer; transition: background 0.2s, transform 0.2s, box-shadow 0.2s;">
             Log In
         </button>
 
-        <p style="margin: 20px 0 0 0; color: #606d64; font-size: 14px; text-align: center;">
-            Don't have an account yet? 
-            <a href="{{ route('register') }}" style="color: #436149; font-weight: 700; text-decoration: none;">Register</a>
-        </p>
+        <div style="margin: 24px 0 0 0; text-align: center; font-family: sans-serif;">
+            <p style="margin: 0; color: #606d64; font-size: 12px; font-weight: 500; letter-spacing: 0.03em; text-wrap: balance;">
+                Need access? Contact the Aquilala administrator.
+            </p>
+            <p style="margin: 6px 0 0 0; color: #8a968e; font-size: 12px; letter-spacing: 0.03em; text-wrap: balance;">
+                Visit the IA Office, Barangay Aquino, Bulan, Sorsogon.
+            </p>
+        </div>
+
     </form>
 @endsection
 
@@ -190,14 +239,14 @@
     // ── Inline validation helpers ──
     function setFieldState(inputEl, feedbackEl, isValid, message) {
         if (isValid) {
-            inputEl.style.borderColor = '#16a34a';
-            inputEl.style.boxShadow = '0 0 0 3px rgba(22, 163, 74, 0.18)';
+            inputEl.style.border = '1px solid #16a34a';
+            inputEl.style.boxShadow = 'none';
             feedbackEl.style.color = '#16a34a';
-            feedbackEl.textContent = message || '✓ Looks good!';
+            feedbackEl.textContent = message || '✓ Valid';
         } else {
-            inputEl.style.borderColor = '#dc2626';
-            inputEl.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.18)';
-            feedbackEl.style.color = '#dc2626';
+            inputEl.style.border = '1px solid #e87070';
+            inputEl.style.boxShadow = 'none';
+            feedbackEl.style.color = '#d05b5b';
             feedbackEl.textContent = message || 'Required';
         }
     }
@@ -212,14 +261,14 @@
         const row = document.querySelector('#phone-group .phone-row');
         const fb = document.getElementById('login-phone-local-feedback');
         if (isValid) {
-            row.style.borderColor = '#16a34a';
-            row.style.boxShadow = '0 0 0 3px rgba(22, 163, 74, 0.18)';
+            row.style.border = '1px solid #16a34a';
+            row.style.boxShadow = 'none';
             fb.style.color = '#16a34a';
-            fb.textContent = message || '✓ Looks good!';
+            fb.textContent = message || '✓ Valid';
         } else {
-            row.style.borderColor = '#dc2626';
-            row.style.boxShadow = '0 0 0 3px rgba(220, 38, 38, 0.18)';
-            fb.style.color = '#dc2626';
+            row.style.border = '1px solid #e87070';
+            row.style.boxShadow = 'none';
+            fb.style.color = '#d05b5b';
             fb.textContent = message || 'Required';
         }
     }
@@ -243,7 +292,7 @@
             const digits = phoneLocal.value.replace(/\D/g, '');
             if (digits.length !== 9) {
                 e.preventDefault();
-                setPhoneRowState(false, 'Enter the 9-digit number after +639 (e.g. 171234567).');
+                setPhoneRowState(false, 'Enter the 9-digit number after +639.');
                 phoneLocal.focus();
                 return;
             }
@@ -264,7 +313,7 @@
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
             setFieldState(this, fb, false, 'Please enter a valid email address.');
         } else {
-            setFieldState(this, fb, true);
+            setFieldState(this, fb, true, '✓ Valid email format');
         }
     });
 
@@ -275,9 +324,9 @@
         if (digits.length === 0) {
             setPhoneRowState(false, 'Phone number is required.');
         } else if (digits.length !== 9) {
-            setPhoneRowState(false, 'Enter the 9-digit number after +639 (e.g. 171234567).');
+            setPhoneRowState(false, 'Enter the 9-digit number after +639.');
         } else {
-            setPhoneRowState(true);
+            setPhoneRowState(true, '✓ Phone number is valid');
         }
     });
 
@@ -290,7 +339,7 @@
         } else if (val.length < 8) {
             setFieldState(this, fb, false, 'Password must be at least 8 characters.');
         } else {
-            setFieldState(this, fb, true);
+            setFieldState(this, fb, true, '✓ Password meets requirements');
         }
     });
 
@@ -298,19 +347,19 @@
     document.querySelectorAll('input').forEach(input => {
         input.addEventListener('focus', function () {
             const fieldId = this.getAttribute('id');
-            if (fieldId) {
-                const fb = document.getElementById(fieldId + '-feedback');
-                if (fb) {
-                    this.style.borderColor = '#e2e8f0';
-                    this.style.boxShadow = 'none';
-                    fb.textContent = '';
-                }
-                // Reset locked-prefix row styling as well
-                const row = this.closest('.phone-row');
-                if (row) {
-                    row.style.borderColor = '#e2e8f0';
-                    row.style.boxShadow = 'none';
-                }
+            const fb = fieldId ? document.getElementById(fieldId + '-feedback') : null;
+            if (fb) fb.textContent = '';
+
+            const row = this.closest('.phone-row');
+            if (row) {
+                // Phone input is borderless; the wrapper carries the border
+                this.style.border = 'none';
+                this.style.boxShadow = 'none';
+                row.style.border = '1px solid #7fae8b';
+                row.style.boxShadow = 'none';
+            } else if (fb) {
+                this.style.border = '1px solid #7fae8b';
+                this.style.boxShadow = 'none';
             }
         });
     });

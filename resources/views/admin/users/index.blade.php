@@ -3,6 +3,14 @@
 @section('title', 'User Management')
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'all',       'label' => 'All Users', 'url' => route('admin.users.index')],
+      ['key' => 'approvals', 'label' => 'Approvals', 'url' => route('admin.approvals.index')],
+      ['key' => 'stores',    'label' => 'Stores',    'url' => route('admin.stores.index')],
+    ],
+    'activeTab' => 'all',
+  ])
   @php
     $roleMeta = $roleMeta ?? [
         'admin'       => ['Administrator', '#86799f', '#f1eef6'],
@@ -23,7 +31,7 @@
     .users-page::after { width: 280px; height: 280px; background: rgba(93,194,87,0.12); bottom: -60px; left: -60px; }
     .users-content { position: relative; z-index: 1; }
 
-    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
     .header-row h1 { font-size: 24px; font-weight: 700; color: #1e293b; letter-spacing: 0.02em; margin: 0 0 4px 0; }
     .header-row p { font-size: 13px; color: #64748b; margin: 0; }
     .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -38,16 +46,45 @@
     .btn-users.ghost { background: #ffffff; border-color: rgba(20,61,35,0.10); box-shadow: none; }
     .btn-users.ghost:hover { background: #f0fdf4; }
 
-    .users-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 22px; }
+    .users-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; margin-bottom: 30px; }
     .users-kpi {
-      padding: 16px 18px; border-radius: 14px; background: rgba(255,255,255,0.84);
-      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255,255,255,0.55); box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+      padding: 24px 26px 22px; border-radius: 18px; background: #ffffff;
+      border: 1px solid rgba(20,61,35,0.08);
+      box-shadow: 0 4px 18px rgba(20,61,35,0.06), 0 1px 3px rgba(20,61,35,0.03);
     }
-    .users-kpi .uk-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: #64748b; margin-bottom: 6px; }
-    .users-kpi .uk-value { font-size: 24px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; }
-    .users-kpi .uk-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-    .users-kpi .uk-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+    .users-kpi .uk-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #6b7c72; margin-bottom: 14px; }
+    .users-kpi .uk-value { display: block; font-size: 30px; font-weight: 800; color: #143d23; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .users-kpi .uk-sub { display: block; font-size: 12px; letter-spacing: 0.06em; color: #8da096; margin-top: 10px; }
+    .users-kpi .uk-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 10px; vertical-align: 1px; }
+
+    @media (max-width: 768px) {
+      .users-kpis { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .users-kpi { padding: 20px 20px 18px; }
+      .users-kpi .uk-value { font-size: 26px; }
+    }
+
+    /* Interactive filter cards */
+    .filter-card {
+      font-family: inherit; text-align: left; cursor: pointer; display: block; width: 100%;
+      padding: 24px 26px 22px; border-radius: 18px; background: #ffffff;
+      border: 1px solid rgba(20,61,35,0.08); box-shadow: 0 4px 18px rgba(20,61,35,0.06), 0 1px 3px rgba(20,61,35,0.03);
+      transition: all 0.2s ease; position: relative;
+    }
+    .filter-card:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(20,61,35,0.10), 0 2px 6px rgba(20,61,35,0.05); border-color: rgba(20,61,35,0.16); }
+    .filter-card:focus-visible { outline: 2px solid rgb(172, 242, 121); outline-offset: 2px; }
+    .filter-card.active {
+      background: #143d23; border-color: #143d23;
+      box-shadow: 0 10px 26px rgba(20,61,35,0.24);
+    }
+    .filter-card.active .uk-label { color: #c9e4b5; }
+    .filter-card.active .uk-value { color: #ffffff; }
+    .filter-card.active .uk-sub { color: rgba(255,255,255,0.72); }
+    .filter-card.active .uk-dot { box-shadow: 0 0 0 2px rgba(255,255,255,0.25); }
+    .filter-card.active::after {
+      content: ""; position: absolute; top: 14px; right: 14px;
+      width: 8px; height: 8px; border-radius: 50%; background: rgb(172, 242, 121);
+      box-shadow: 0 0 0 3px rgba(172, 242, 121, 0.25);
+    }
 
     .users-panel {
       background: rgba(255,255,255,0.86); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
@@ -97,6 +134,16 @@
     }
     .icon-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .icon-btn:hover { background: #eef3ef; color: #14532d; }
+    .resend-btn {
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+      padding: 6px 12px; border-radius: 8px; cursor: pointer;
+      border: 1px solid rgba(59, 107, 181, 0.28); background: #eef4ff; color: #3b6bb5;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.02em; font-family: inherit;
+      transition: all 0.15s ease;
+    }
+    .resend-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+    .resend-btn:hover { background: #dfe9ff; border-color: rgba(59, 107, 181, 0.45); }
+    .resend-btn:disabled { opacity: 0.6; cursor: wait; }
 
     /* Custom overlay scrollbar moved to shared layout (.app-scrollbar) */
 
@@ -203,60 +250,62 @@
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add New User
           </a>
+          <a id="importBtn" href="{{ route('admin.users.import') }}" class="btn-users ghost">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import Members
+          </a>
         </div>
       </div>
 
-      <!-- Summary KPIs -->
-      <div class="users-kpis">
-        <div class="users-kpi">
-          <div class="uk-label">Total Accounts</div>
-          <div class="uk-value">{{ $totalUsers }}</div>
-          <div class="uk-sub">{{ $activatedCount }} active · {{ $pendingCount }} pending</div>
-        </div>
-        <div class="users-kpi">
-          <div class="uk-label"><span class="uk-dot" style="background:#63856c;"></span>Farmers</div>
-          <div class="uk-value">{{ $farmerCount }}</div>
-          <div class="uk-sub">crop producers</div>
-        </div>
-        <div class="users-kpi">
-          <div class="uk-label"><span class="uk-dot" style="background:#a57f43;"></span>Store Owners</div>
-          <div class="uk-value">{{ $ownerCount }}</div>
-          <div class="uk-sub">registered stores</div>
-        </div>
-        <div class="users-kpi">
-          <div class="uk-label"><span class="uk-dot" style="background:#86799f;"></span>Administrators</div>
-          <div class="uk-value">{{ $adminCount }}</div>
-          <div class="uk-sub">platform operators</div>
-        </div>
+      <!-- Account filter cards (click to filter the table) -->
+      <div class="users-kpis" id="userFilterCards">
+        <button type="button" class="users-kpi filter-card active" data-user-filter="">
+          <span class="uk-label">All Accounts</span>
+          <span class="uk-value">{{ $totalUsers }}</span>
+          <span class="uk-sub">{{ $activatedCount }} active · {{ $pendingCount }} pending</span>
+        </button>
+        <button type="button" class="users-kpi filter-card" data-user-filter="farmer">
+          <span class="uk-label"><span class="uk-dot" style="background:#63856c;"></span>Farmers</span>
+          <span class="uk-value">{{ $farmerCount }}</span>
+          <span class="uk-sub">Crop producers</span>
+        </button>
+        <button type="button" class="users-kpi filter-card" data-user-filter="store_owner">
+          <span class="uk-label"><span class="uk-dot" style="background:#a57f43;"></span>Store Owners</span>
+          <span class="uk-value">{{ $ownerCount }}</span>
+          <span class="uk-sub">Registered stores</span>
+        </button>
+        <button type="button" class="users-kpi filter-card" data-user-filter="admin">
+          <span class="uk-label"><span class="uk-dot" style="background:#86799f;"></span>Officers/Admins</span>
+          <span class="uk-value">{{ $adminCount }}</span>
+          <span class="uk-sub">Association leadership</span>
+        </button>
       </div>
 
-      <!-- Accounts table -->
-      <div class="users-panel">
-        <div class="users-toolbar">
-          <div class="search-box">
-            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input id="searchInput" type="text" placeholder="Search by name, email, or location…">
-          </div>
-          <select id="roleFilter">
-            <option value="all">All roles</option>
-            <option value="farmer">Farmer</option>
-            <option value="store_owner">Store Owner</option>
-            <option value="admin">Administrator</option>
-          </select>
-          <select id="verifyFilter">
-            <option value="all">Any status</option>
-            <option value="verified">Active</option>
-            <option value="approval">Pending approval</option>
-            <option value="pending">Pending verification</option>
-            <option value="suspended">Suspended</option>
-          </select>
-        </div>
+<!-- Accounts table -->
+        <x-table-toolbar
+            uid="accounts"
+            work-table="usersTable"
+            per-page="10"
+            noun="accounts"
+            search-placeholder="Search by name, email, or location…"
+            :filters="[
+                ['key' => 'role', 'label' => 'All roles', 'options' => [['farmer', 'Farmer'], ['store_owner', 'Store Owner'], ['admin', 'Administrator']]],
+                ['key' => 'verified', 'label' => 'Any status', 'options' => [['active', 'Active'], ['pending', 'Pending'], ['disabled', 'Disabled']]],
+            ]"
+            :sorts="[
+                ['key' => 'name', 'dir' => 1, 'type' => 'str', 'label' => 'Name (A–Z)'],
+                ['key' => 'name', 'dir' => -1, 'type' => 'str', 'label' => 'Name (Z–A)'],
+                ['key' => 'joined', 'dir' => -1, 'type' => 'date', 'label' => 'Joined (newest)'],
+                ['key' => 'joined', 'dir' => 1, 'type' => 'date', 'label' => 'Joined (oldest)'],
+                ['key' => 'role', 'dir' => 1, 'type' => 'str', 'label' => 'Role (A–Z)'],
+            ]"
+          />
 
-        <div data-paginated>
-        <div class="app-scroll-wrap" style="--sb-bottom: 18px;">
+        <div class="users-panel">
+          <div class="app-scroll-wrap" style="--sb-bottom: 18px;">
           <div class="app-scroll" id="usersScroll">
           @if($users->isNotEmpty())
-            <table class="users-table">
+            <table id="usersTable" class="users-table">
               <thead>
                 <tr>
                   <th>User Account</th>
@@ -264,6 +313,7 @@
                   <th>Role Assignment</th>
                   <th>Status</th>
                   <th>Joined</th>
+                  <th>Resend Activation</th>
                   <th style="text-align:right;">Actions</th>
                 </tr>
               </thead>
@@ -271,20 +321,19 @@
                 @foreach($users as $u)
                   @php
                     $role = $roleMeta[$u->role] ?? ['Member', '#64748b', '#f1f5f9'];
-                    // Status-driven: pending invites await activation; every other
-                    // usable account (admin, legacy/dev-seeded, activated) is Active.
+                    // 3-state model: pending (awaiting activation), active, disabled.
                     $accountState = match ($u->status) {
-                        \App\Models\User::STATUS_PENDING_APPROVAL    => 'approval',
-                        \App\Models\User::STATUS_PENDING_VERIFICATION => 'pending',
-                        \App\Models\User::STATUS_ACTIVE               => 'verified',
-                        \App\Models\User::STATUS_SUSPENDED            => 'suspended',
-                        default                                       => 'unverified',
+                        \App\Models\User::STATUS_PENDING  => 'pending',
+                        \App\Models\User::STATUS_DISABLED => 'disabled',
+                        default                             => 'active',
                     };
                     $location = trim(implode(', ', array_filter([$u->barangay, $u->city])));
                     $contact = $u->phone ?? ($u->contact_number ?? ($location ?: '—'));
                     $search = strtolower(($u->name ?? '') . ' ' . ($u->email ?? '') . ' ' . ($u->phone ?? '') . ' ' . $location);
                   @endphp
-                  <tr data-search="{{ $search }}" data-role="{{ $u->role }}" data-verified="{{ $accountState }}">
+                  <tr data-search="{{ $search }}" data-role="{{ $u->role }}" data-verified="{{ $accountState }}"
+                      data-name="{{ strtolower($u->name ?? '') }}"
+                      data-joined="{{ $u->created_at?->format('Y-m-d') ?? '' }}">
                     <td>
                       <div class="user-cell">
                         <div class="user-avatar">
@@ -303,30 +352,20 @@
                       <span class="role-badge" data-inline-style="background:{{ $role[2] }};color:{{ $role[1] }};">{{ $role[0] }}</span>
                     </td>
                     <td>
-                      @if($accountState === 'verified')
+                      @if($accountState === 'active')
                         <span class="verified-pill" style="background:#eef3ef;color:#3f7a4f;">
                           <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                           Active
                         </span>
-                      @elseif($accountState === 'approval')
-                        <span class="verified-pill" style="background:#eef4ff;color:#3b6bb5;" title="Registration request awaiting admin approval">
-                          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                          Pending Approval
-                        </span>
                       @elseif($accountState === 'pending')
-                        <span class="verified-pill" style="background:#fef9ec;color:#a57f43;" title="Awaiting email activation">
-                          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span class="verified-pill" style="background:#eef4ff;color:#3b6bb5;" title="Admin-created member — awaiting email verification and password setup">
+                          <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                           Pending
                         </span>
-                      @elseif($accountState === 'suspended')
-                        <span class="verified-pill" style="background:#fdf2f2;color:#b91c1c;" title="Account suspended">
+                      @elseif($accountState === 'disabled')
+                        <span class="verified-pill" style="background:#fdf2f2;color:#b91c1c;" title="Account disabled by an administrator">
                           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                          Suspended
-                        </span>
-                      @else
-                        <span class="verified-pill" style="background:#f1f5f9;color:#94a3b8;">
-                          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                          Unverified
+                          Disabled
                         </span>
                       @endif
                     </td>
@@ -334,19 +373,21 @@
                       <span class="user-joined">{{ $u->created_at ? $u->created_at->format('M d, Y') : '—' }}</span>
                     </td>
                     <td>
-                      <div class="user-actions">
-                        @if($accountState === 'approval')
-                          <button class="icon-btn approve-btn" title="Approve registration" data-user-id="{{ $u->id }}" data-user-name="{{ $u->name }}">
-                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                          </button>
-                          <button class="icon-btn reject-btn" title="Reject registration" data-user-id="{{ $u->id }}" data-user-name="{{ $u->name }}" style="color:#b91c1c;">
-                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                          </button>
-                        @elseif($accountState === 'pending')
-                          <button class="icon-btn resend-btn" title="Resend activation email" data-user-id="{{ $u->id }}" data-user-name="{{ $u->name }}" data-user-email="{{ $u->email }}">
+                      @if($accountState === 'pending')
+                        <form class="resend-form" method="POST" action="{{ route('admin.users.resend', $u) }}"
+                              data-user-name="{{ $u->name }}" data-user-email="{{ $u->email }}">
+                          @csrf
+                          <button type="submit" class="resend-btn" title="Resend activation email">
                             <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                            Resend
                           </button>
-                        @endif
+                        </form>
+                      @else
+                        <span style="color:#cbd5e1;">—</span>
+                      @endif
+                    </td>
+                    <td>
+                      <div class="user-actions">
                         <a class="icon-btn" href="{{ route('admin.users.edit', $u) }}" title="Edit user">
                           <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </a>
@@ -375,18 +416,6 @@
           @endif
         </div>
 
-        @if($users->hasPages())
-          {{ $users->links('partials.pagination') }}
-        @endif
-        </div>
-
-        <div class="users-footer">
-          <span class="rows-info" id="rowsInfo"></span>
-          <button id="clearFiltersBtn" class="btn-users ghost">
-            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Clear Filters
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -431,12 +460,6 @@
 
   <script>
     (function () {
-      var rows = [];
-      function refreshRows() { rows = Array.prototype.slice.call(document.querySelectorAll('#usersRows tr')); }
-      var searchInput = document.getElementById('searchInput');
-      var roleFilter = document.getElementById('roleFilter');
-      var verifyFilter = document.getElementById('verifyFilter');
-      var rowsInfo = document.getElementById('rowsInfo');
       var toast = document.getElementById('userToast');
       var toastTimer = null;
 
@@ -508,12 +531,11 @@
 
       function statusPill(status) {
         var map = {
-          active:                  ['Active',       '#eef3ef', '#3f7a4f', '<polyline points="20 6 9 17 4 12"/>'],
-          suspended:               ['Suspended',    '#fdf2f2', '#b91c1c', '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>'],
-          pending_approval:        ['Pending Approval', '#eef4ff', '#3b6bb5', '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'],
-          pending_verification:    ['Pending',      '#fef9ec', '#a57f43', '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>']
+          active:       ['Active',   '#eef3ef', '#3f7a4f', '<polyline points="20 6 9 17 4 12"/>'],
+          pending:      ['Pending', '#eef4ff', '#3b6bb5', '<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>'],
+          disabled:     ['Disabled', '#fdf2f2', '#b91c1c', '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>']
         };
-        var m = map[status] || ['Unverified', '#f1f5f9', '#94a3b8', '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'];
+        var m = map[status] || ['Unknown', '#f1f5f9', '#94a3b8', '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'];
         return '<span class="p-status-pill" style="background:' + m[1] + ';color:' + m[2] + ';">' +
                '<svg viewBox="0 0 24 24">' + m[3] + '</svg> ' + m[0] + '</span>';
       }
@@ -535,10 +557,17 @@
           '<div class="profile-avatar">' + initials + '</div>' +
           '<div><div class="p-name">' + p.name + '</div>' +
           '<div class="p-mail">' + p.email + '</div></div></div>';
-        var body = hero +
+        var statusKey = p.status;
+        var setupNote = (p.status === 'pending')
+          ? '<div class="form-alert info" style="margin-bottom:14px;">' +
+            '<svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>' +
+            'Pending account — awaiting email verification and password setup. ' +
+            'A new activation code can be sent from the Users list.</div>'
+          : '';
+        var body = hero + setupNote +
           '<div class="profile-grid">' +
           item('Role', p.role) +
-          '<div class="p-item"><div class="p-label">Status</div><div class="p-value">' + statusPill(p.status) + '</div></div>' +
+          '<div class="p-item"><div class="p-label">Status</div><div class="p-value">' + statusPill(statusKey) + '</div></div>' +
           item('Phone', p.phone) +
           item('Joined', p.joined) +
           item('Barangay / District', p.barangay) +
@@ -577,112 +606,55 @@
 
       // ── Resend activation email for pending accounts ──
       function bindResendButtons() {
-        document.querySelectorAll('.resend-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          askConfirm({
-            title: 'Resend activation email?',
-            message: 'A new activation link will be sent to ' + btn.dataset.userName +
-              ' (' + btn.dataset.userEmail + '). Any previously sent link becomes void.',
-            confirmLabel: 'Resend Link'
-          }).then(function (ok) {
-            if (!ok) return;
-            btn.disabled = true;
-            fetch('/admin/users/' + btn.dataset.userId + '/resend-invitation', {
-              method: 'POST',
-              headers: {
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'X-Requested-With': 'XMLHttpRequest'
-              }
-            })
-            .then(function (response) { return response.json().then(function (d) { return { ok: response.ok, data: d }; }); })
-            .then(function (result) {
-              showToast(result.data.message || (result.ok ? 'Invitation resent.' : 'Could not resend invitation.'));
-              btn.disabled = false;
-            })
-            .catch(function () {
-              showToast('Network failure — please try again.');
-              btn.disabled = false;
+        document.querySelectorAll('.resend-form').forEach(function (form) {
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var btn = form.querySelector('.resend-btn');
+            var userName = form.getAttribute('data-user-name') || 'this user';
+            var userEmail = form.getAttribute('data-user-email') || '';
+            var step = (typeof askConfirm === 'function')
+              ? askConfirm({
+                  title: 'Resend activation code?',
+                  message: 'A new activation code will be sent to ' + userName +
+                    ' (' + userEmail + '). Any previously sent code becomes void.',
+                  confirmLabel: 'Resend Code'
+                })
+              : Promise.resolve(window.confirm(
+                  'A new activation code will be sent to ' + userName + ' (' + userEmail + ').\n\nAny previously sent code becomes void.'
+                ));
+
+            step.then(function (ok) {
+              if (!ok) return;
+              btn.disabled = true;
+              btn.textContent = 'Sending…';
+              fetch(form.action, {
+                method: 'POST',
+                headers: {
+                  'Accept': 'application/json',
+                  'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                  'X-Requested-With': 'XMLHttpRequest'
+                }
+              })
+              .then(function (response) { return response.json().then(function (d) { return { ok: response.ok, data: d }; }); })
+              .then(function (result) {
+                showToast(result.data.message || (result.ok ? 'Activation code resent.' : 'Could not resend activation code.'));
+                btn.disabled = false;
+                btn.textContent = 'Resend';
+              })
+              .catch(function () {
+                showToast('Network failure — please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Resend';
+              });
             });
           });
         });
       }
       bindResendButtons();
 
-      // ── Approve / reject pending registration requests ──
-      function runApprovalAction(btn, act) {
-        askConfirm({
-          title: (act === 'approve' ? 'Approve' : 'Reject') + ' registration?',
-          message: (act === 'approve'
-            ? 'Approve the registration of ' + btn.dataset.userName +
-              '? A secure link to set their password will be emailed to them.'
-            : 'Reject the registration of ' + btn.dataset.userName +
-              '? The account will be removed from the platform.'),
-          confirmLabel: act === 'approve' ? 'Approve' : 'Reject',
-          danger: act !== 'approve'
-        }).then(function (ok) {
-          if (!ok) return;
-          btn.disabled = true;
-          fetch('/admin/users/' + btn.dataset.userId + '/' + act, {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-          .then(function (response) { return response.json().then(function (d) { return { ok: response.ok, data: d }; }); })
-          .then(function (result) {
-            if (!result.ok) { showToast(result.data.message || 'Could not complete the action.'); btn.disabled = false; return; }
-            showToast(result.data.message || (act === 'approve' ? 'Registration approved.' : 'Registration rejected.'));
-            setTimeout(function () { window.location.reload(); }, 900);
-          })
-          .catch(function () {
-            showToast('Network failure — please try again.');
-            btn.disabled = false;
-          });
-        });
-      }
-      function bindApprovalButtons() {
-        document.querySelectorAll('.approve-btn').forEach(function (btn) {
-          btn.addEventListener('click', function () { runApprovalAction(btn, 'approve'); });
-        });
-        document.querySelectorAll('.reject-btn').forEach(function (btn) {
-          btn.addEventListener('click', function () { runApprovalAction(btn, 'reject'); });
-        });
-      }
-      bindApprovalButtons();
-
-      function applyFilters() {
-        refreshRows();
-        var q = (searchInput.value || '').toLowerCase().trim();
-        var role = roleFilter.value;
-        var ver = verifyFilter.value;
-        var shown = 0;
-        rows.forEach(function (row) {
-          var ok = true;
-          if (q && row.getAttribute('data-search').indexOf(q) === -1) ok = false;
-          if (ok && role !== 'all' && row.getAttribute('data-role') !== role) ok = false;
-          if (ok && ver !== 'all' && row.getAttribute('data-verified') !== ver) ok = false;
-          row.style.display = ok ? '' : 'none';
-          if (ok) shown++;
-        });
-        rowsInfo.textContent = 'Showing ' + shown + ' of ' + rows.length + ' accounts';
-      }
-
-      searchInput.addEventListener('input', applyFilters);
-      roleFilter.addEventListener('change', applyFilters);
-      verifyFilter.addEventListener('change', applyFilters);
-      document.getElementById('clearFiltersBtn').addEventListener('click', function () {
-        searchInput.value = '';
-        roleFilter.value = 'all';
-        verifyFilter.value = 'all';
-        applyFilters();
-      });
-
       // Export CSV
       document.getElementById('exportBtn').addEventListener('click', function () {
-        var shown = rows.filter(function (r) { return r.style.display !== 'none'; });
+        var shown = Array.prototype.slice.call(document.querySelectorAll('#usersRows tr')).filter(function (r) { return r.style.display !== 'none'; });
         if (shown.length === 0) { showToast('No accounts to export'); return; }
         var lines = ['Name,Email,Role,Status,Joined'];
         shown.forEach(function (row) {
@@ -706,20 +678,56 @@
         showToast('Exported ' + shown.length + ' accounts');
       });
 
-      applyFilters();
+      })();
+  </script>
 
-      // Re-bind row actions after AJAX pagination replaces the table
-      window.initAjaxPage = function () {
-        bindToastButtons();
-        bindProfileButtons();
-        bindResendButtons();
-        bindApprovalButtons();
-        applyFilters();
-      };
+  <script>
+    (function () {
+      function setActive(card) {
+        document.querySelectorAll('#userFilterCards .filter-card').forEach(function (c) {
+          c.classList.toggle('active', c === card);
+        });
+      }
+
+      function applyRole(role, cards) {
+        var tb = document.querySelector('[data-ttb="accounts"]');
+        if (!tb) return false;
+        var group = tb.querySelector('[data-ttb-filter="role"]');
+        if (!group) return false;
+        var option = group.querySelector('.ncb-select-option[data-value="' + role + '"]');
+        if (!option) return false;
+        option.click();
+        var matched = cards.filter(function (c) { return c.getAttribute('data-user-filter') === role; })[0];
+        if (matched) setActive(matched);
+        return true;
+      }
+
+      function attach() {
+        var container = document.getElementById('userFilterCards');
+        if (!container || container.getAttribute('data-attached')) return;
+        container.setAttribute('data-attached', '1');
+        var cards = Array.prototype.slice.call(container.querySelectorAll('.filter-card'));
+        cards.forEach(function (card) {
+          card.addEventListener('click', function () {
+            applyRole(card.getAttribute('data-user-filter'), cards);
+          });
+        });
+        var tb = document.querySelector('[data-ttb="accounts"]');
+        if (tb) {
+          tb.addEventListener('click', function (e) {
+            var opt = e.target.closest('.ncb-select-option');
+            if (!opt) return;
+            var group = opt.closest('[data-ttb-filter="role"]');
+            if (!group) return;
+            var role = opt.getAttribute('data-value') || '';
+            var matched = cards.filter(function (c) { return c.getAttribute('data-user-filter') === role; })[0];
+            setActive(matched || cards[0]);
+          });
+        }
+      }
+
+      window.TableToolbarPending = attach;
     })();
   </script>
 
-@push('scripts')
-  @include('partials.ajax-pagination')
-@endpush
 @endsection

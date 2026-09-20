@@ -6,10 +6,12 @@
   @php
     // SAMPLE defaults — persist to a settings table later.
     $defaults = [
-        'org_name'       => 'Aquilala Irrigators Association Inc.',
-        'system_name'    => 'Aquilala Farm Supply Management System',
-        'address'        => 'Bulan, Sorsogon',
-        'official_address' => 'Bulan, Sorsogon, Philippines',
+        'org_name'       => 'Aquilala Irrigators Association, Inc.',
+        'system_name'    => 'Aquilala IA Management Portal',
+        'address'        => 'San Francisco RIS, Brgy. Aquino, Bulan, Sorsogon',
+        'official_address' => 'San Francisco RIS, Brgy. Aquino, Bulan, Sorsogon, Philippines',
+        'ia_president'   => 'Ana V. Lacsa',
+        'sec_reg_no'     => 'CN201228664',
         'contact'        => '0917 000 0000',
         'website'        => 'facebook.com/aquilala',
         'currency'       => 'Philippine Peso (PHP)',
@@ -55,7 +57,7 @@
     .set-page::after { width: 280px; height: 280px; background: rgba(59,130,246,0.12); bottom: -60px; left: -60px; }
     .set-content { position: relative; z-index: 1; }
 
-    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
     .header-row h1 { font-size: 24px; font-weight: 700; color: #1e293b; letter-spacing: 0.02em; margin: 0 0 4px 0; }
     .header-row p { font-size: 13px; color: #64748b; margin: 0; }
     .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -277,6 +279,15 @@
         </div>
       </div>
 
+      @include('partials.admin-tabs', [
+        'tabs' => [
+          ['key' => 'policies', 'label' => 'Policies',       'url' => route('admin.settings.index')],
+          ['key' => 'logs',     'label' => 'Logs',           'url' => route('admin.audit.index')],
+          ['key' => 'roles',    'label' => 'Roles & Access', 'url' => route('admin.settings.roles')],
+        ],
+        'activeTab' => 'policies',
+      ])
+
       <div class="set-panel">
         <div class="set-tabs">
           <button class="set-tab active" data-tab="general">
@@ -316,6 +327,15 @@
                   <div class="set-field">
                     <label>System Name</label>
                     <input type="text" name="system_name" value="{{ $defaults['system_name'] }}">
+                  </div>
+                  <div class="set-field">
+                    <label>SEC Registration No.</label>
+                    <input type="text" name="sec_reg_no" value="{{ $defaults['sec_reg_no'] }}">
+                  </div>
+                  <div class="set-field">
+                    <label>IA President</label>
+                    <input type="text" name="ia_president" value="{{ $defaults['ia_president'] }}">
+                    <div class="hint">Association presiding officer shown on admin pages.</div>
                   </div>
                 </div>
                 <div class="set-card">
@@ -373,7 +393,7 @@
                 <div class="map-footer">
                   <div class="loc">
                     <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <span id="mapAddress">Aquilala Irrigators Association Inc., Bulan, Sorsogon</span>
+                    <span id="mapAddress">Aquilala Irrigators Association, Inc., San Francisco RIS, Brgy. Aquino, Bulan, Sorsogon</span>
                   </div>
                   <button id="mapEditBtn" class="btn-set ghost">
                     <svg id="mapEditIcon" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
@@ -625,6 +645,25 @@
           <!-- INTERFACE & DISPLAY -->
           <div class="set-tab-panel" id="tab-interface">
             <div class="set-section">
+              <div class="set-section-title">Side Menu Appearance</div>
+              <p style="font-size:12px;color:#64748b;margin:-8px 0 14px 0;max-width:760px;">
+                Choose a color for your navigation sidebar.
+                and saves it to your account for every page.
+              </p>
+              @include('partials.sidebar-theme-picker')
+            </div>
+
+            <div class="set-section">
+              <div class="set-section-title">Sub-page Navigation</div>
+              <p style="font-size:12px;color:#64748b;margin:-8px 0 14px 0;max-width:760px;">
+                Choose how grouped pages appear. Side menu style shows them under
+                the current menu name inside the sidebar; Tabs on top pins them
+                above the content.
+              </p>
+              @include('partials.sub-pages-style-picker')
+            </div>
+
+            <div class="set-section">
               <div class="set-section-title">Harvest Report Summary Display</div>
               <p style="font-size:12px;color:#64748b;margin:-8px 0 14px 0;max-width:760px;">
                 Controls how actual yields and expenses are presented across the dashboard.
@@ -778,6 +817,8 @@
           var map = {
             org_name: '{{ $defaults["org_name"] }}',
             system_name: '{{ $defaults["system_name"] }}',
+            sec_reg_no: '{{ $defaults["sec_reg_no"] }}',
+            ia_president: '{{ $defaults["ia_president"] }}',
             address: '{{ $defaults["address"] }}',
             official_address: '{{ $defaults["official_address"] }}',
             contact: '{{ $defaults["contact"] }}',
@@ -938,7 +979,7 @@
       function placePin(lat, lng, zoomTo) {
         if (marker) map.removeLayer(marker);
         marker = L.marker([lat, lng], { icon: makePin() }).addTo(map)
-          .bindPopup('<b>Aquilala Irrigators Association Inc.</b><br>Bulan, Sorsogon');
+          .bindPopup('<b>Aquilala Irrigators Association, Inc.</b><br>San Francisco RIS, Brgy. Aquino, Bulan, Sorsogon');
         marker.openPopup();
         if (zoomTo) map.setView([lat, lng], 16);
       }

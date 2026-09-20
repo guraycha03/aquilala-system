@@ -1,8 +1,15 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Activity Audit')
+@section('title', 'Recent Activity')
 
 @section('content')
+@include('partials.admin-tabs', [
+  'tabs' => [
+    ['key' => 'overview', 'label' => 'Overview',       'url' => route('dashboard.admin')],
+    ['key' => 'activity', 'label' => 'Recent Activity', 'url' => route('admin.activity.index')],
+  ],
+  'activeTab' => 'activity',
+])
 <style>
   .activity-item {
     display: flex;
@@ -80,8 +87,8 @@
   .filter-bar .clear-btn:hover { background: #fee2e2; }
 </style>
 
-<div class="header-panel" style="margin-bottom: 24px;">
-  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Activity Audit Log</h1>
+<div class="header-panel" style="margin-bottom: 10px;">
+  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Recent Activity</h1>
   <p style="color: #606d64; font-size: 14px; margin: 0;">All user actions across the system — quotations, crops, products, and more.</p>
 </div>
 

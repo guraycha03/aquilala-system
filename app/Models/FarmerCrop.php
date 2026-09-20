@@ -24,6 +24,7 @@ class FarmerCrop extends Model
         'actual_yield',
         'estimated_cost',
         'notes',
+        'harvest_report_id',
     ];
 
     protected $casts = [
@@ -49,6 +50,47 @@ class FarmerCrop extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function harvestReport(): BelongsTo
+    {
+        return $this->belongsTo(HarvestReport::class);
+    }
+
+    /**
+     * Keep the linked Harvest Report in sync with this crop batch.
+     * Called when a batch reaches the "harvested" stage. Creates a new
+     * report when none is linked yet, or updates the linked one so the
+     * farmer's My Crops and the Harvest Reports page always match.
+     */
+    public function syncHarvestReport(): ?HarvestReport
+    {
+        if ($this->growth_stage !== 'harvested' || $this->actual_yield === null) {
+            return $this->harvestReport;
+        }
+
+        $report = $this->harvestReport;
+
+        $data = [
+            'user_id' => $this->user_id,
+            'crop_type' => $this->crop?->name ?? 'Unknown',
+            'season' => $this->season,
+            'land_area' => $this->land_area,
+            'actual_yield_metric_tons' => $this->actual_yield,
+            'actual_total_expenses' => $this->estimated_cost ?? $report?->actual_total_expenses ?? 0,
+            'harvest_date' => $this->actual_harvest_date ?? now()->toDateString(),
+        ];
+
+        if ($report) {
+            $report->update($data);
+        } else {
+            $data['quotation_id'] = null;
+            $report = HarvestReport::create($data);
+            $this->update(['harvest_report_id' => $report->id]);
+            \App\Services\ActivityLogger::harvestReportCreated($report);
+        }
+
+        return $report;
     }
 
     public function getGrowthStageLabelAttribute(): string
@@ -103,6 +145,37 @@ class FarmerCrop extends Model
     public function scopeActive($query)
     {
         return $query->whereNotIn('growth_stage', ['harvested', 'failed']);
+    }
+
+    /**
+     * Auto-generate a unique batch name in the form
+     *   {CROP}-FIELD{N}-{DDMMYY}
+     * e.g. TOMATO-FIELD1-160926. The field number keeps growing per crop
+     * until the full name is unique for the given user.
+     */
+    public static function uniqueBatchName(int $userId, int $cropId, string $cropName, $plantingDate, ?int $exceptId = null): string
+    {
+        $slug = strtoupper(preg_replace('/[^a-zA-Z0-9]+/', '', (string) $cropName));
+        $date = $plantingDate instanceof \Carbon\CarbonInterface
+            ? $plantingDate->format('dmy')
+            : \Carbon\Carbon::parse($plantingDate)->format('dmy');
+
+        $fieldNum = static::where('user_id', $userId)
+                ->where('crop_id', $cropId)
+                ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+                ->count() + 1;
+
+        do {
+            $name = $slug . '-FIELD' . $fieldNum . '-' . $date;
+            $exists = static::where('user_id', $userId)
+                ->where('batch_name', $name)
+                ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+                ->exists();
+            if (! $exists) {
+                return $name;
+            }
+            $fieldNum++;
+        } while (true);
     }
 
     public function scopeForSeason($query, string $season)

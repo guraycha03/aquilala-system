@@ -3,16 +3,32 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>@yield('title') | Aquilala</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://unpkg.com/lucide@1.47.0/dist/umd/lucide.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scrollbar-width: none; -ms-overflow-style: none; }
     html::-webkit-scrollbar { width: 0; height: 0; display: none; }
     body { font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif; background: #f3f6f4; color: #2c3530; display: flex; min-height: 100vh; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+    /* Global: consistent, readable letter-spacing on all validation / feedback text */
+    .field-error, .field-feedback, .form-error, .form-error-message,
+    .form-errors, .form-errors li, .form-errors ul, .alert-error, .alert-error li,
+    [id$="-feedback"], [id$="-error"], [id$="Feedback"], [id$="Error"] {
+      letter-spacing: 0.05em;
+    }
+
+    /* Global readability: readable letter-spacing across headings, labels and controls */
+    h1, h2, h3, h4, h5, h6, button, select, th,
+    label, .form-label, .menu-group-title, .user-role,
+    .aqua-tab, .aqua-tabs {
+      letter-spacing: 0.03em;
+    }
+    .nav-links li a, .nav-dropdown-btn, .sub-nav-links li a { letter-spacing: 0.02em; }
 
     /* Global select / dropdown styling — matches the Aquilala white + green theme */
     select {
@@ -79,9 +95,11 @@
       cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;
       padding: 10px 12px;
       border-radius: 12px;
-      background: linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
-      border: 1px solid rgba(255,255,255,0.09);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+      background: linear-gradient(135deg, var(--sb-card-bg-a, rgba(255,255,255,0.16)), var(--sb-card-bg-b, rgba(255,255,255,0.04)));
+      border: 1px solid var(--sb-card-border, rgba(255,255,255,0.14));
+      box-shadow: 0 6px 18px rgba(20, 40, 25, 0.12), var(--sb-card-shadow, inset 0 1px 0 rgba(255,255,255,0.08));
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
       display: flex; flex-direction: column;
       transition: background 0.2s ease, border-color 0.2s ease;
     }
@@ -90,35 +108,37 @@
     }
     .climate-card:focus-visible { outline: 2px solid #6aeb2f; outline-offset: 2px; }
     .climate-card:hover,
-    .climate-card.pinned { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.16); }
+    .climate-card.pinned { background: linear-gradient(135deg, var(--sb-card-bg-a, rgba(255,255,255,0.22)), var(--sb-card-bg-b, rgba(255,255,255,0.06))); border-color: var(--sb-card-border-hover, rgba(255,255,255,0.26)); }
     .climate-row { display: flex; align-items: center; gap: 10px; min-height: 40px; }
     .climate-mini-info { flex: 1; min-width: 0; }
-    .climate-mini-temp { font-size: 16px; font-weight: 800; color: #ffffff; font-family: ui-monospace, monospace; letter-spacing: -0.02em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .climate-mini-sub { font-size: 10px; color: #87a992; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .climate-chevron { width: 16px; height: 16px; stroke: #87a992; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; transition: transform 0.25s ease; }
+    .climate-mini-temp { font-size: 16px; font-weight: 800; color: var(--sb-fg); font-family: ui-monospace, monospace; letter-spacing: -0.02em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .climate-mini-sub { font-size: 10px; color: var(--sb-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .climate-chevron { width: 16px; height: 16px; stroke: var(--sb-muted); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; transition: transform 0.25s ease; }
     .climate-card.pinned .climate-chevron { transform: rotate(180deg); }
     .climate-details {
       display: none; margin-top: 10px; padding-top: 11px;
-      border-top: 1px dashed rgba(255,255,255,0.10);
+      border-top: 1px dashed var(--sb-border-soft);
       animation: climateIn 0.2s ease;
     }
     .climate-card:hover .climate-details,
     .climate-card.pinned .climate-details { display: block; }
     .climate-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .climate-meta .climate-updated { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #87a992; font-weight: 700; }
-    .climate-meta .climate-clock { font-size: 11px; color: #b9cfc0; font-family: ui-monospace, monospace; font-weight: 600; }
+    .climate-meta .climate-updated { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sb-muted); font-weight: 700; }
+    .climate-meta .climate-clock { font-size: 11px; color: var(--sb-fg); font-family: ui-monospace, monospace; font-weight: 600; }
     .climate-season { display: flex; align-items: center; gap: 10px; }
     .season-badge {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 38px; height: 38px; flex-shrink: 0;
-      border-radius: 50%;
-      background: rgba(135,169,146,0.25);
+      display: flex; align-items: center; gap: 9px;
+      width: 100%;
+      padding: 7px 12px;
+      border-radius: 10px;
+      background: var(--sb-badge-bg);
       box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
+      max-width: 100%; box-sizing: border-box;
     }
-    .season-badge img { width: 22px; height: 22px; object-fit: contain; display: block; }
-    .climate-season-info { min-width: 0; }
-    .climate-season-label { font-size: 13px; font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .climate-season-sub { font-size: 10px; color: #87a992; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .season-badge img { width: 20px; height: 20px; object-fit: contain; display: block; flex-shrink: 0; background: rgba(255, 255, 255, 0.55); border-radius: 50%; padding: 4px; box-sizing: content-box; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+    .climate-season-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+    .climate-season-label { display: block; font-size: 13px; font-weight: 800; color: var(--sb-fg); white-space: nowrap; }
+    .climate-season-sub { display: block; font-size: 10px; color: var(--sb-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-top: 2px; white-space: normal; line-height: 1.35; }
     @media (hover: none) {
       .climate-card:hover .climate-details { display: none; }
       .climate-card.pinned .climate-details, .climate-card.pinned .climate-chevron { display: block; }
@@ -135,6 +155,8 @@
     .nav-links li a { display: flex; align-items: center; gap: 12px; padding: 14px 16px; color: #b9cfc0; text-decoration: none; border-top-left-radius: 12px; border-bottom-left-radius: 12px; border-top-right-radius: 0px; border-bottom-right-radius: 0px; font-size: 14px; font-weight: 600; transition: color 0.2s ease, background 0.2s ease, margin 0.2s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .nav-links li a svg { width: 18px; height: 18px; stroke: #b9cfc0; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: stroke 0.2s ease; flex-shrink: 0; }
     .nav-links li a img { width: 18px; height: 18px; flex-shrink: 0; transition: content 0.2s ease; }
+    .nav-links .nav-count { margin-left: auto; font-size: 10px; font-weight: 800; background: #dc2626; color: #ffffff; border-radius: 999px; padding: 1px 7px; line-height: 1.6; flex-shrink: 0; }
+    .nav-links li a.active .nav-count { background: #dc2626; color: #ffffff; }
     .nav-links li a:hover:not(.active) img { content: url('{{ asset("images/store-%23ffffff.png") }}'); }
     .nav-links li a.active img { content: url('{{ asset("images/store-%23143d23.png") }}'); }
     .nav-links li a:hover:not(.active) { background: rgba(255, 255, 255, 0.05); color: #ffffff; margin-right: 14px; border-radius: 12px; }
@@ -172,27 +194,45 @@
     .nav-dropdown-btn:hover .nav-dropdown-title svg { stroke: #ffffff; }
     .dropdown-chevron { width: 16px; height: 16px; stroke: #87a992; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.25s ease; }
     .nav-dropdown.open .dropdown-chevron { transform: rotate(180deg); }
-    .sub-nav-links { list-style: none; display: none; padding-left: 20px; margin-top: 2px; }
+    .sub-nav-links { list-style: none; display: none; padding-left: 32px; margin-top: 2px; }
     .nav-dropdown.open .sub-nav-links { display: block; }
     .sub-nav-links li a { padding: 10px 14px; font-size: 13px; color: #87a992; }
     .sub-nav-links li a svg { width: 16px; height: 16px; }
 
     /* Footer badge and logout */
     .sidebar-footer { padding: 16px; background: #0d2917; border-top: 1px solid rgba(255, 255, 255, 0.08); position: relative; z-index: 110; }
-    .user-profile-badge { display: flex; align-items: center; gap: 12px; padding: 4px 8px 16px 8px; margin-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+    .profile-card { margin: 0 0 12px; }
+    .user-profile-badge {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; padding: 6px 8px 12px; margin: 0;
+      background: transparent; border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px; cursor: pointer; font-family: inherit; text-align: left; color: inherit;
+      text-decoration: none;
+      transition: background 0.18s ease, border-color 0.18s ease;
+    }
+    .user-profile-badge:hover { background: rgba(255, 255, 255, 0.06); border-bottom-color: rgba(255, 255, 255, 0.12); }
+    .profile-chevron { margin-left: auto; width: 15px; height: 15px; stroke: var(--sb-muted); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
     .avatar { width: 36px; height: 36px; background: #1b4d2e; color: #c8e6c9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; text-transform: uppercase; }
     .user-info { display: flex; flex-direction: column; min-width: 0; }
     .user-name { font-size: 14px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .user-role { font-size: 11px; color: #87a992; text-transform: capitalize; }
-    .logout-btn { background: rgba(239, 68, 68, 0.08); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.15); padding: 11px 16px; width: 100%; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; gap: 12px; transition: all 0.2s ease; }
-    .logout-btn svg { width: 16px; height: 16px; stroke: #fca5a5; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .logout-btn:hover { background: #ef4444; color: #ffffff; border-color: #ef4444; }
+    .logout-btn { background: var(--sb-logout-bg, rgba(239, 68, 68, 0.08)); color: var(--sb-logout-fg, #fca5a5); border: 1px solid var(--sb-logout-border, rgba(239, 68, 68, 0.15)); padding: 11px 16px; width: 100%; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; gap: 12px; transition: all 0.2s ease; }
+    .logout-btn svg { width: 16px; height: 16px; stroke: var(--sb-logout-fg, #fca5a5); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .logout-btn:hover { background: var(--sb-logout-hover-bg, #ef4444); color: var(--sb-logout-hover-fg, #ffffff); border-color: var(--sb-logout-hover-bg, #ef4444); }
+    .logout-btn:hover svg { stroke: var(--sb-logout-hover-fg, #ffffff); }
+
+    /* Hide page-description sub-texts under titles; keep clear space below each title */
+    .page-subtitle, .hero-sub { display: none !important; }
+    .main-content h1 + p:not(.keep-sub) { display: none !important; }
+    .main-content .keep-sub { display: block !important; }
+    .main-content > :first-child h1:first-child { margin-bottom: 18px !important; }
+    .page-header { margin-bottom: 36px !important; }
 
     .mobile-header { display: none; background: #143d23; color: white; padding: 14px 16px; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 90; }
     .burger-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; }
     .burger-btn:active { background: rgba(255, 255, 255, 0.08); }
 
-    .desktop-notif-wrap { position: fixed; top: 14px; right: 20px; z-index: 200; transition: transform 0.3s ease; }
+    .desktop-notif-wrap { position: fixed; top: 26px; right: 20px; z-index: 200; transition: transform 0.3s ease; }
     .desktop-notif-wrap.hidden { transform: translateY(-80px); }
     .desktop-notif {
       width: 40px; height: 40px; border-radius: 50%;
@@ -221,6 +261,32 @@
     .notif-empty svg { width: 30px; height: 30px; stroke: #cbd5e1; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
     .notif-empty p { font-size: 13px; color: #94a3b8; margin: 8px 0 0 0; }
 
+    .desktop-notif { position: relative; }
+    .notif-badge {
+      position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px;
+      border-radius: 999px; background: #dc2626; color: #ffffff;
+      font-size: 10px; font-weight: 800; line-height: 18px; text-align: center;
+      display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    }
+    .notif-body { padding: 8px 10px 10px; max-height: 320px; overflow-y: auto; scrollbar-width: thin; }
+    .notif-item { padding: 10px 12px; border-radius: 10px; }
+    .notif-item + .notif-item { border-top: 1px solid #f1f5f9; border-radius: 0; }
+    .notif-item:hover { background: #f8fafc; }
+    .notif-item-stars { display: inline-flex; align-items: center; gap: 2px; margin-bottom: 4px; }
+    .notif-item-stars svg { width: 12px; height: 12px; fill: #f59e0b; }
+    .notif-item-stars svg.empty { fill: #e2e8f0; }
+    .notif-item-text { font-size: 12px; color: #334155; line-height: 1.45; font-weight: 500; }
+    .notif-item-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; font-size: 11px; color: #94a3b8; flex-wrap: wrap; }
+    .notif-item-meta a { color: #15803d; font-weight: 700; text-decoration: none; }
+    .notif-item-meta a:hover { text-decoration: underline; }
+    .notif-item-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: capitalize; }
+    .notif-foot { padding: 10px 12px 2px; border-top: 1px solid #f1f5f9; }
+    .notif-foot button {
+      width: 100%; border: none; background: #f0fdf4; color: #15803d; font-size: 12px; font-weight: 700;
+      padding: 9px; border-radius: 9px; cursor: pointer; font-family: inherit; transition: background 0.15s ease;
+    }
+    .notif-foot button:hover { background: #dcfce7; }
+
     @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
@@ -231,6 +297,7 @@
 
   .desktop-notif { background: transparent; border: none; box-shadow: none; color: #ffffff; }
   .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(255, 255, 255, 0.08); }
+  .desktop-notif-wrap { top: 11px; right: 16px; }
 
   /* --- UPDATE HERE --- */
   /* 1. Add right padding to nav-body so space matches the left (14px on both sides) */
@@ -251,9 +318,280 @@
     display: none;
   }
 }
+
+    /* -- Shared table toolbar: search + styled dropdowns (ncb-select) + sort + clear -- */
+    .table-toolbar {
+      position: relative; z-index: 5;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 12px 14px; margin-bottom: 22px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0; border-radius: 14px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 6px 18px rgba(15,23,42,0.07);
+    }
+    .ctl-search {
+      position: relative; flex: 1; min-width: 240px;
+    }
+    .ctl-search svg {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      width: 17px; height: 17px; stroke: #94a3b8; fill: none;
+    }
+    .ctl-search input {
+      width: 100%; height: 42px; padding: 0 16px 0 40px;
+      border: 1.5px solid #e2e8f0; border-radius: 10px;
+      font-size: 13px; color: #0f172a; outline: none; background: #f8fafc;
+      font-weight: 500; font-family: inherit; box-sizing: border-box;
+      transition: all .2s ease;
+    }
+    .ctl-search input:focus {
+      border-color: #16a34a; background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(22,163,74,.08);
+    }
+    .ctl-search input::placeholder { color: #94a3b8; }
+    .ncb-group-inline { position: relative; min-width: 170px; }
+    .ncb-select-trigger {
+      width: 100%; height: 42px; padding: 0 13px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+      font-size: 13px; color: #1e293b; background-color: #ffffff; transition: all 0.2s ease;
+      box-sizing: border-box; font-family: inherit; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center; user-select: none;
+      text-align: left; gap: 8px; white-space: nowrap;
+    }
+    .ncb-select-trigger.placeholder { color: #94a3b8; }
+    .ncb-select-trigger:hover { border-color: #cbd5e1; }
+    .ncb-select-trigger.active { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); outline: none; }
+    .ncb-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ncb-select-arrow { transition: transform 0.2s ease; color: #64748b; flex-shrink: 0; }
+    .ncb-select-arrow.rotate { transform: rotate(180deg); }
+    .ncb-select-menu {
+      display: none;
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+      max-height: 240px; overflow-y: auto; z-index: 600; padding: 4px;
+      scrollbar-width: thin;
+    }
+    .ncb-select-option {
+      padding: 8px 12px; font-size: 13px; color: #1e293b; border-radius: 6px;
+      cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+    }
+    .ncb-select-option:hover { background: #f1f5f9; color: #16a34a; }
+    .ncb-select-option.selected { background: #f0fdf4; color: #16a34a; font-weight: 600; }
+    .btn-clear {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 42px; padding: 0 14px; border: 1.5px solid #16a34a; border-radius: 10px;
+      background: #16a34a; color: #ffffff; font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(22,163,74,0.2); flex-shrink: 0;
+    }
+    .btn-clear:hover { border-color: #15803d; background: #15803d; box-shadow: 0 4px 12px rgba(22,163,74,0.3); }
+    .btn-clear[hidden] { display: none; }
+    .ttb-sort { min-width: 210px; }
+    .btn-filter {
+      position: relative; width: 42px; height: 42px; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1.5px solid #e2e8f0; border-radius: 10px;
+      background: #ffffff; color: #64748b; cursor: pointer;
+      font-family: inherit; transition: all 0.2s ease;
+    }
+    .btn-filter svg { width: 18px; height: 18px; }
+    .btn-filter:hover { border-color: #cbd5e1; color: #334155; }
+    .btn-filter.active { border-color: #16a34a; background: #f0fdf4; color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); }
+    .btn-filter-dot {
+      position: absolute; top: -3px; right: -3px; width: 9px; height: 9px;
+      border-radius: 50%; background: #dc2626; border: 2px solid #ffffff;
+    }
+    .btn-filter-dot[hidden] { display: none; }
+    .ttb-filters { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1 1 100%; }
+    .ttb-filters[hidden] { display: none; }
+    .ttb-pagination {
+      display: flex; align-items: center; gap: 10px;
+      padding: 4px 0; flex-wrap: wrap; margin-left: auto;
+    }
+    .ttb-pagination .pagination-info { font-size: 13px; color: #64748b; font-weight: 500; }
+    .ttb-pagination .pagination-controls { display: flex; align-items: center; gap: 6px; }
+    .ttb-pagination .page-btn {
+      min-width: 34px; height: 34px; padding: 0 10px; border: 1.5px solid #e2e8f0;
+      border-radius: 8px; background: #ffffff; color: #475569; font-size: 13px;
+      font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .ttb-pagination .page-btn:hover:not(:disabled) { border-color: #16a34a; color: #16a34a; }
+    .ttb-pagination .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .ttb-pagination .page-btn.active { background: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700; }
+    .ttb-pagination .page-ellipsis { color: #94a3b8; font-size: 13px; padding: 0 2px; }
+
+    /* -- Bottom-of-table pagination bar (client-side tables) -- */
+    .ttb-bottom-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 14px 20px; border-top: 1px solid #f1f5f9;
+      background: #fafdfb; flex-wrap: wrap;
+    }
+    .ttb-bottom-bar .pagination-info { font-size: 13px; color: #64748b; font-weight: 500; }
+    .ttb-bottom-bar .pagination-controls { display: flex; align-items: center; gap: 6px; }
+    .ttb-bottom-bar .page-btn {
+      min-width: 34px; height: 34px; padding: 0 10px; border: 1.5px solid #e2e8f0;
+      border-radius: 8px; background: #ffffff; color: #475569; font-size: 13px;
+      font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .ttb-bottom-bar .page-btn:hover:not(:disabled) { border-color: #16a34a; color: #16a34a; }
+    .ttb-bottom-bar .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .ttb-bottom-bar .page-btn.active { background: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700; }
+    .ttb-bottom-bar .page-ellipsis { color: #94a3b8; font-size: 13px; padding: 0 2px; }
+
+    /* -- Smooth page navigation: fade in fresh pages, softly fade out clicks -- */
+    body { animation: aqua-page-in .28s ease; transition: opacity .18s ease; }
+    @keyframes aqua-page-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: none; }
+    }
+    body.aqua-leaving { opacity: .6; }
+
+    /* Themed top progress bar shown while a page is loading */
+    #aqua-progress {
+      position: fixed; top: 0; left: 0; height: 3px; width: 0;
+      background: linear-gradient(90deg, #6aeb2f, #2f9e54);
+      box-shadow: 0 0 8px rgba(52, 129, 16, 0.55);
+      z-index: 9999; border-radius: 0 3px 3px 0;
+      opacity: 0; pointer-events: none;
+      transition: width .18s ease, opacity .25s ease;
+    }
+    #aqua-progress.active { opacity: 1; }
+
+    /* ------------------------------------------------------------
+       Sidebar themes — switch the side menu color per user.
+       The palettes below are generated from config/sidebar.php and
+       applied through a data-sidebar-theme attribute on the body element.
+    ------------------------------------------------------------ */
+    @php
+      $stThemes = config('sidebar.themes');
+      $stDefault = config('sidebar.default');
+    @endphp
+    @foreach ($stThemes as $stKey => $stTheme)
+      @php $stC = $stTheme['colors']; @endphp
+      @if ($stKey === $stDefault) :root, @endif body[data-sidebar-theme="{{ $stKey }}"] {
+      --sb-bg:{{ $stC['bg'] }}; --sb-deep:{{ $stC['deep'] }};
+      --sb-fg:{{ $stC['fg'] }}; --sb-nav:{{ $stC['nav'] }}; --sb-muted:{{ $stC['muted'] }}; --sb-nav-hover:{{ $stC['nav_hover'] }};
+      --sb-hover-bg:{{ $stC['hover_bg'] }}; --sb-hover-strong:{{ $stC['hover_strong'] }};
+      --sb-active-bg:{{ $stC['active_bg'] }}; --sb-active-fg:{{ $stC['active_fg'] }};
+      --sb-accent:{{ $stC['accent'] }};
+      --sb-avatar-bg:{{ $stC['avatar_bg'] }}; --sb-avatar-fg:{{ $stC['avatar_fg'] }};
+      --sb-border:{{ $stC['border'] }}; --sb-border-soft:{{ $stC['border_soft'] }};
+      --sb-card-bg-a:{{ $stC['card_a'] }}; --sb-card-bg-b:{{ $stC['card_b'] }};
+      --sb-card-border:{{ $stC['card_border'] }}; --sb-card-border-hover:{{ $stC['card_border_hover'] }};
+      --sb-card-shadow:{{ $stC['card_shadow'] }};
+      --sb-badge-bg:{{ $stC['badge_bg'] }};
+      @if (!empty($stC['menu_ico_dark']))
+      --sb-menu-ico-url:url('{{ asset("images/store-%23143d23.png") }}');
+      @else
+      --sb-menu-ico-url:url('{{ asset("images/store-%23ffffff.png") }}');
+      @endif
+      --sb-logout-bg:{{ $stC['logout_bg'] }}; --sb-logout-fg:{{ $stC['logout_fg'] }}; --sb-logout-border:{{ $stC['logout_border'] }};
+      --sb-logout-hover-bg:{{ $stC['logout_hover_bg'] }}; --sb-logout-hover-fg:{{ $stC['logout_hover_fg'] }};
+    }
+    @endforeach
+
+    /* Theme-aware sidebar overrides (defaults recreate the original emerald design) */
+    .sidebar { background: var(--sb-bg); color: var(--sb-fg); }
+    .mobile-header { background: var(--sb-bg); color: var(--sb-fg); }
+    .sidebar-footer { background: var(--sb-deep); color: var(--sb-fg); border-top-color: var(--sb-border); }
+    .brand-section { color: var(--sb-fg); border-bottom-color: var(--sb-border); }
+    .brand-title { color: var(--sb-fg); }
+    .brand-accent { color: var(--sb-accent); }
+    .menu-group-title { color: var(--sb-muted); }
+    .nav-links li a { color: var(--sb-nav); }
+    .nav-links li a svg { stroke: var(--sb-nav); }
+    .nav-links li a:hover:not(.active) { background: var(--sb-hover-bg); color: var(--sb-nav-hover); }
+    .nav-links li a:hover:not(.active) svg { stroke: var(--sb-nav-hover); }
+    .nav-links li a.active { background: var(--sb-active-bg); color: var(--sb-active-fg); }
+    .nav-links li a.active svg { stroke: var(--sb-active-fg); }
+    .nav-links li:not(.nav-dropdown):has(a.active)::before { box-shadow: 10px 10px 0 10px var(--sb-active-bg); }
+    .nav-links li:not(.nav-dropdown):has(a.active)::after { box-shadow: 10px -10px 0 10px var(--sb-active-bg); }
+    .nav-dropdown-btn { color: var(--sb-nav); }
+    .nav-dropdown-btn:hover { background: var(--sb-hover-bg); color: var(--sb-nav-hover); }
+    .nav-dropdown-title svg { stroke: var(--sb-nav); }
+    .nav-dropdown-btn:hover .nav-dropdown-title svg { stroke: var(--sb-nav-hover); }
+    .dropdown-chevron { stroke: var(--sb-muted); }
+    .sub-nav-links li a { color: var(--sb-muted); }
+    .user-profile-badge { border-bottom-color: var(--sb-border-soft); }
+    .avatar { background: var(--sb-avatar-bg); color: var(--sb-avatar-fg); }
+    .user-name { color: var(--sb-fg); }
+    .user-role { color: var(--sb-muted); }
+    /* Weather card uses the active sidebar theme's translucent "glass" colors */
+    .climate-card { background: linear-gradient(135deg, var(--sb-card-bg-a), var(--sb-card-bg-b)); border: 1px solid var(--sb-card-border); box-shadow: 0 6px 18px rgba(20, 40, 25, 0.12), var(--sb-card-shadow); }
+    .climate-card:hover, .climate-card.pinned { background: linear-gradient(135deg, var(--sb-card-bg-a), var(--sb-card-bg-b)); border: 1px solid var(--sb-card-border-hover); }
+    .climate-card:focus-visible { outline-color: var(--sb-accent); }
+    .climate-mini-temp { color: var(--sb-fg); }
+    .climate-mini-sub { color: var(--sb-muted); }
+    .climate-chevron { stroke: var(--sb-muted); }
+    .climate-details { border-top-color: var(--sb-border-soft); }
+    .climate-meta .climate-updated { color: var(--sb-muted); }
+    .climate-meta .climate-clock { color: var(--sb-fg); }
+    .season-badge { background: var(--sb-badge-bg); }
+    .climate-season-label { color: var(--sb-fg); }
+    .climate-season-sub { color: var(--sb-muted); }
+    .nav-links li a:hover:not(.active) img { content: var(--sb-menu-ico-url); }
+
+/* -- Sub-page navigation inside the side menu ("Side menu" UI style):
+   each main menu name becomes a dropdown and only the sub-page link
+   carries the active state, styled with the same continuous active
+   pill and curve hooks as the side menu's main active item. */
+    .sub-nav-links { position: relative; }
+    .sub-nav-links::before {
+      content: "";
+      position: absolute; left: 12px; top: 8px; bottom: 8px;
+      width: 2px; border-radius: 2px;
+      background: var(--sb-muted); opacity: 0.35;
+      pointer-events: none;
+    }
+    .sub-nav-links li { position: relative; }
+    .sub-nav-links li a { border-radius: 8px; transition: color 0.18s ease, background 0.18s ease; }
+    .sub-nav-links li a:hover { color: var(--sb-nav-hover); background: var(--sb-hover-bg); }
+    .sub-nav-links li a.active {
+      background: var(--sb-active-bg); color: var(--sb-active-fg);
+      font-weight: 700; position: relative;
+      margin-right: -1px;
+      border-top-left-radius: 12px; border-bottom-left-radius: 12px;
+      border-top-right-radius: 0; border-bottom-right-radius: 0;
+    }
+    .sub-nav-links li:has(a.active) { z-index: 12; }
+    .sub-nav-links li:has(a.active)::before {
+      content: ""; position: absolute; top: -20px; right: 0;
+      height: 20px; width: 20px; background-color: transparent;
+      border-bottom-right-radius: 20px;
+      box-shadow: 10px 10px 0 10px var(--sb-active-bg);
+      pointer-events: none; z-index: 12;
+    }
+    .sub-nav-links li:has(a.active)::after {
+      content: ""; position: absolute; bottom: -20px; right: 0;
+      height: 20px; width: 20px; background-color: transparent;
+      border-top-right-radius: 20px;
+      box-shadow: 10px -10px 0 10px var(--sb-active-bg);
+      pointer-events: none; z-index: 12;
+    }
   </style>
 </head>
-<body>
+@php $stActive = in_array((string) optional(auth()->user())->sidebar_theme, array_keys(config('sidebar.themes')), true) ? auth()->user()->sidebar_theme : config('sidebar.default'); @endphp
+@php
+  $subPagesStyle = (string) optional(auth()->user())->sub_pages_style;
+  $adminNav = $subPagesStyle === 'sidebar' ? (config('admin-nav') ?? []) : [];
+  $activeAdminSection = null;
+  if ($adminNav) {
+    foreach ($adminNav as $ai => $section) {
+      foreach ($section['items'] as $item) {
+        if (request()->routeIs(...$item['routes'])) { $activeAdminSection = $ai; break 2; }
+      }
+    }
+  }
+@endphp
+<body data-sidebar-theme="{{ $stActive }}">
+
+  @if(auth()->check() && auth()->user()->role === 'store_owner')
+  @php
+    $storeNotifQuery = \App\Models\ActivityLog::forUser(auth()->id())->reviewNotifications();
+    $storeUnreadCount = $storeNotifQuery->unread()->count();
+    $storeUnreadList  = $storeNotifQuery->unread()->latest()->limit(5)->get();
+  @endphp
+  @endif
 
   <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
 
@@ -263,7 +601,7 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div style="font-weight: 700; font-size: 18px; line-height: 1;">
-        Aqui<span style="color: #6aeb2f; font-weight: 800;">lala</span>
+        Aqui<span style="color: var(--sb-accent, #6aeb2f); font-weight: 800;">lala</span>
       </div>
     </div>
   </header>
@@ -271,7 +609,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="brand-section">
       <span class="brand-title">Aqui<span class="brand-accent">lala</span></span>
-      Irrigators Association Inc.
+      Irrigators Association, Inc.
     </div>
 
     <div class="nav-body">
@@ -314,18 +652,18 @@
     <div class="climate-season">
       <span class="season-badge">
         <img src="{{ asset('images/weather/' . $seasonIconFile . '.png') }}" alt="{{ $climate['label'] ?? ($isWet ? 'Wet Season' : 'Dry Season') }}">
+        <span class="climate-season-info">
+          <span class="climate-season-label">{{ $climate['label'] ?? 'Dry Season' }}</span>
+          <span class="climate-season-sub">{{ $climate['months'] ?? ($isWet ? 'June – January' : 'February – May') }}</span>
+        </span>
       </span>
-      <div class="climate-season-info">
-        <div class="climate-season-label">{{ $climate['label'] ?? 'Dry Season' }}</div>
-        <div class="climate-season-sub">{{ $climate['months'] ?? ($isWet ? 'June – January' : 'February – May') }}</div>
-      </div>
     </div>
   </div>
 </div>
 
 
       <div class="menu-group-title">
-        @if(auth()->user()->role === 'farmer') Farmer Hub @elseif(auth()->user()->role === 'store_owner') My Store @else Admin Control @endif
+        @if(auth()->user()->role === 'farmer') Farmer Dashboard @elseif(auth()->user()->role === 'store_owner') My Store @else Admin Control @endif
       </div>
       <ul class="nav-links">
         @if(auth()->user()->role === 'farmer')
@@ -348,9 +686,21 @@
             </a>
           </li>
           <li>
+            <a href="{{ route('farmer.harvests.index') }}" class="{{ request()->is('farmer/harvests*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+              Harvest Reports
+            </a>
+          </li>
+          <li>
             <a href="{{ route('farmer.products.browse') }}" class="{{ request()->is('farmer/products/browse*') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               Browse Products
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('farmer.reviews.index') }}" class="{{ request()->is('farmer/reviews*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Top Rated Products
             </a>
           </li>
           <li>
@@ -384,6 +734,12 @@
               Activity Log
             </a>
           </li>
+          <li>
+            <a href="{{ route('farmer.settings.index') }}" class="{{ request()->routeIs('farmer.settings.index') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              Settings
+            </a>
+          </li>
 
         @elseif(auth()->user()->role === 'store_owner')
           <li>
@@ -405,78 +761,105 @@
             </a>
           </li>
           <li>
+            <a href="{{ route('store.ai-chat.index') }}" class="{{ request()->routeIs('store.ai-chat.*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7l.9 2.4L15.3 10l-2.4.9L12 13.3l-.9-2.4L8.7 10l2.4-.6z"/></svg>
+              AI Assistant
+            </a>
+          </li>
+          <li>
             <a href="{{ route('store.storefront.index') }}" class="{{ request()->routeIs('store.storefront.index') ? 'active' : '' }}">
               <img src="{{ asset('images/store-%23b9cfc0.png') }}" alt="" />
               My Store
             </a>
           </li>
-          <li>
+<li>
             <a href="{{ route('store.formulas.index') }}" class="{{ request()->is('store/formulas*') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
               Input Formulas
             </a>
           </li>
-
-        @elseif(auth()->user()->role === 'admin')
           <li>
-            <a href="{{ route('dashboard.admin') }}" class="{{ request()->routeIs('dashboard.admin') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
-              Admin Dashboard
+            <a href="{{ route('store.notifications.index') }}" class="{{ request()->is('store/notifications*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              Notifications
+              @if(($storeUnreadCount ?? 0) > 0)
+                <span class="nav-count" id="storeNavBadge">{{ $storeUnreadCount }}</span>
+              @endif
             </a>
           </li>
           <li>
-            <a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.index') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              Users
+            <a href="{{ route('store.activity.index') }}" class="{{ request()->routeIs('store.activity.index') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Activity Log
             </a>
           </li>
           <li>
-            <a href="{{ route('admin.approvals.index') }}" class="{{ request()->routeIs('admin.approvals.index') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              Approvals
-            </a>
-          </li>
-          <li>
-            <a href="{{ route('admin.quotations.index') }}" class="{{ request()->routeIs('admin.quotations.index') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              Quotation Analytics
-            </a>
-          </li>
-          <li>
-            <a href="{{ route('admin.analytics.index') }}" class="{{ request()->routeIs('admin.analytics.*') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              Analytics
-            </a>
-          </li>
-          <li>
-            <a href="{{ route('admin.settings.index') }}" class="{{ request()->routeIs('admin.settings.index') ? 'active' : '' }}">
+            <a href="{{ route('store.settings.index') }}" class="{{ request()->routeIs('store.settings.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               Settings
             </a>
           </li>
-          <li class="nav-dropdown {{ request()->is('admin/activity*') || request()->is('admin/audit*') ? 'open' : '' }}">
-            <button type="button" class="nav-dropdown-btn" onclick="toggleNavDropdown(this)">
-              <div class="nav-dropdown-title">
-                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                <span>System Logs</span>
-              </div>
-              <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-            </button>
-            <ul class="sub-nav-links">
-              <li>
-                <a href="{{ route('admin.activity.index') }}" class="{{ request()->routeIs('admin.activity.index') ? 'active' : '' }}">
-                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 16 14"/></svg>
-                  User Activity Log
-                </a>
+
+        @elseif(auth()->user()->role === 'admin')
+          @if($subPagesStyle === 'sidebar' && $adminNav)
+            @foreach($adminNav as $ai => $section)
+              @php $isOpen = ($activeAdminSection === $ai); @endphp
+              <li class="nav-dropdown {{ $isOpen ? 'open' : '' }}">
+                <button type="button" class="nav-dropdown-btn" aria-expanded="{{ $isOpen ? 'true' : 'false' }}">
+                  <span class="nav-dropdown-title">
+                    {!! $section['icon'] !!}
+                    <span>{{ $section['label'] }}</span>
+                  </span>
+                  <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <ul class="sub-nav-links">
+                  @foreach($section['items'] as $item)
+                    <li>
+                      <a href="{{ route($item['routes'][0]) }}" class="{{ request()->routeIs(...$item['routes']) ? 'active' : '' }}">
+                        {{ $item['label'] }}
+                      </a>
+                    </li>
+                  @endforeach
+                </ul>
               </li>
-              <li>
-                <a href="{{ route('admin.audit.index') }}" class="{{ request()->routeIs('admin.audit.index') ? 'active' : '' }}">
-                  <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  Login & Auth Logs
-                </a>
-              </li>
-            </ul>
+            @endforeach
+          @else
+          <li>
+            <a href="{{ route('dashboard.admin') }}" class="{{ request()->routeIs('dashboard.admin') || request()->routeIs('admin.activity.index') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+              Dashboard
+            </a>
           </li>
+          @yield('sidebar-tabs-nav')
+          <li>
+            <a href="{{ route('admin.users.index') }}" class="{{ request()->is('admin/users*') || request()->is('admin/approvals*') || request()->is('admin/stores*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Users
+            </a>
+          </li>
+          @yield('sidebar-tabs-nav')
+          <li>
+            <a href="{{ route('admin.operations.formulas') }}" class="{{ request()->is('admin/operations*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
+              Crops &amp; Inputs
+            </a>
+          </li>
+          @yield('sidebar-tabs-nav')
+          <li>
+            <a href="{{ route('admin.quotations.index') }}" class="{{ request()->is('admin/analytics*') || request()->is('admin/quotations*') || request()->routeIs('admin.harvests.index') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Analytics
+            </a>
+          </li>
+          @yield('sidebar-tabs-nav')
+          <li>
+            <a href="{{ route('admin.settings.index') }}" class="{{ request()->is('admin/settings*') || request()->routeIs('admin.audit.index') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              Settings
+            </a>
+          </li>
+          @yield('sidebar-tabs-nav')
+          @endif
         @endif
 
         @yield('nav-links')
@@ -484,23 +867,26 @@
     </div>
 
     <div class="sidebar-footer">
-      <div class="user-profile-badge">
-        <div class="avatar">
-          @php
-            $words = explode(' ', trim(auth()->user()->name));
-            if (count($words) >= 2) {
-                echo mb_substr($words[0], 0, 1) . mb_substr(end($words), 0, 1);
-            } else {
-                echo mb_substr(auth()->user()->name, 0, 2);
-            }
-          @endphp
-        </div>
-        <div class="user-info">
-          <span class="user-name">{{ auth()->user()->name }}</span>
-          <span class="user-role">{{ str_replace('_', ' ', auth()->user()->role) }}</span>
-        </div>
+      <div class="profile-card">
+        <a href="{{ route('profile.index') }}" class="user-profile-badge" title="View my profile">
+          <div class="avatar">
+            @php
+              $words = explode(' ', trim(auth()->user()->name));
+              if (count($words) >= 2) {
+                  echo mb_substr($words[0], 0, 1) . mb_substr(end($words), 0, 1);
+              } else {
+                  echo mb_substr(auth()->user()->name, 0, 2);
+              }
+            @endphp
+          </div>
+          <div class="user-info">
+            <span class="user-name">{{ auth()->user()->name }}</span>
+            <span class="user-role">{{ str_replace('_', ' ', auth()->user()->role) }}</span>
+          </div>
+          <svg class="profile-chevron" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+        </a>
       </div>
-      
+
       <form method="POST" action="{{ route('logout') }}">
         @csrf
         <button type="submit" class="logout-btn">
@@ -518,19 +904,66 @@
   <div class="desktop-notif-wrap">
     <button class="desktop-notif" id="desktopNotifBtn" aria-label="Notifications" title="Notifications">
       <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      @if(auth()->user()->role === 'store_owner' && ($storeUnreadCount ?? 0) > 0)
+        <span class="notif-badge" id="desktopNotifBadge">{{ $storeUnreadCount }}</span>
+      @endif
     </button>
     <div class="notif-dropdown" id="notifDropdown">
       <div class="notif-head">
         <b>Notifications</b>
-        @if(auth()->user()->role === 'farmer')
+        @if(auth()->user()->role === 'store_owner')
+          <a href="{{ route('store.notifications.index') }}">View all</a>
+        @elseif(auth()->user()->role === 'farmer')
           <a href="{{ route('farmer.notifications.index') }}">View all</a>
         @endif
       </div>
       <div class="notif-body">
-        <div class="notif-empty">
-          <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <p>No new notifications</p>
-        </div>
+        @if(auth()->user()->role === 'store_owner')
+          @if(($storeUnreadList ?? collect())->isNotEmpty())
+            @foreach($storeUnreadList as $n)
+              @php
+                $nMeta = $n->metadata ?? [];
+                $nRating = (int) ($nMeta['rating'] ?? 0);
+                $nStatus = $nMeta['status'] ?? '';
+                $nPill = match ($nStatus) {
+                  'approved' => ['#eef3ef', '#63856c'],
+                  'rejected' => ['#f6ecec', '#a86464'],
+                  'deleted'  => ['#f1f5f9', '#64748b'],
+                  default    => ['#f6f0e6', '#a57f43'],
+                };
+              @endphp
+              <div class="notif-item">
+                <div class="notif-item-stars">
+                  @for($i = 1; $i <= 5; $i++)
+                    <svg viewBox="0 0 24 24" class="{{ $i <= $nRating ? '' : 'empty' }}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  @endfor
+                </div>
+                <div class="notif-item-text">{{ $n->description }}</div>
+                <div class="notif-item-meta">
+                  <span class="notif-item-pill" style="background:{{ $nPill[0] }};color:{{ $nPill[1] }};">{{ ucfirst($nStatus ?: 'new') }}</span>
+                  <span>{{ optional($n->created_at)->diffForHumans() }}</span>
+                  @if(($nMeta['product_id'] ?? null))
+                    <a href="{{ route('store.products.show', $nMeta['product_id']) }}">View</a>
+                  @endif
+                </div>
+              </div>
+            @endforeach
+            <form method="POST" action="{{ route('store.notifications.read-all') }}" class="notif-foot">
+              @csrf
+              <button type="submit">Mark all as read</button>
+            </form>
+          @else
+            <div class="notif-empty">
+              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <p>No new notifications</p>
+            </div>
+          @endif
+        @else
+          <div class="notif-empty">
+            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <p>No new notifications</p>
+          </div>
+        @endif
       </div>
     </div>
   </div>
@@ -658,8 +1091,15 @@ updateLiveTime();
 
     function toggleNavDropdown(btn) {
       var li = btn.closest('.nav-dropdown');
-      if (li) li.classList.toggle('open');
+      if (!li) return;
+      var open = li.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.nav-dropdown-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () { toggleNavDropdown(btn); });
+      });
+    });
 
     // Climate widget: click/tap toggles open/closed (pins it; hover also expands on desktop)
     function toggleClimate() {
@@ -726,6 +1166,292 @@ updateLiveTime();
       }, { passive: true });
     });
   </script>
+
+  <style>
+    /* -- Global notice modal (replaces native alert()/confirm()) -- */
+    body.aqn-lock { overflow: hidden; }
+    .aqn-overlay {
+      position: fixed; inset: 0; z-index: 12000;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      background: rgba(243, 246, 244, 0.30);
+      opacity: 0; visibility: hidden; transition: opacity 0.18s ease;
+    }
+    .aqn-overlay.open { opacity: 1; visibility: visible; }
+    .aqn-card {
+      width: 100%; max-width: 400px; background: #ffffff; border: 1px solid #e5ebe7;
+      border-radius: 18px; padding: 28px 26px 22px; text-align: center;
+      box-shadow: 0 18px 48px rgba(20, 61, 35, 0.16), 0 2px 8px rgba(20, 61, 35, 0.06);
+      transform: translateY(8px) scale(0.97); opacity: 0;
+      transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+    .aqn-overlay.open .aqn-card { transform: translateY(0) scale(1); opacity: 1; }
+    .aqn-icon {
+      width: 58px; height: 58px; margin: 0 auto 14px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .aqn-icon svg { width: 27px; height: 27px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .aqn-icon.help   { background: #eef7ef; color: #15803d; }
+    .aqn-icon.info   { background: #eef4ff; color: #2563eb; }
+    .aqn-icon.warn   { background: #fdf3e7; color: #c2620b; }
+    .aqn-icon.danger { background: #fdeeee; color: #c0392b; }
+    .aqn-title { font-size: 17px; font-weight: 700; color: #1f2a24; margin-bottom: 6px; }
+    .aqn-message { font-size: 14px; line-height: 1.55; color: #55625b; word-break: break-word; }
+    .aqn-actions { display: flex; gap: 10px; margin-top: 22px; }
+    .aqn-btn {
+      flex: 1; border: none; border-radius: 999px; padding: 10px 16px;
+      font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer;
+      transition: background 0.15s ease, transform 0.05s ease;
+    }
+    .aqn-btn:active { transform: scale(0.98); }
+    .aqn-btn.primary { background: #16a34a; color: #ffffff; }
+    .aqn-btn.primary:hover { background: #15803d; }
+    .aqn-btn.danger { background: #c0392b; color: #ffffff; }
+    .aqn-btn.danger:hover { background: #a93226; }
+    .aqn-btn.ghost { background: #eef2ef; color: #33413a; }
+    .aqn-btn.ghost:hover { background: #e2e8e4; }
+  </style>
+
+  <div class="aqn-overlay" id="aqnOverlay" aria-hidden="true">
+    <div class="aqn-card" role="dialog" aria-modal="true" aria-labelledby="aqnTitle" aria-describedby="aqnMsg">
+      <div class="aqn-icon" id="aqnIcon"></div>
+      <div class="aqn-title" id="aqnTitle"></div>
+      <p class="aqn-message" id="aqnMsg"></p>
+      <div class="aqn-actions" id="aqnActions"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+      var overlay = document.getElementById('aqnOverlay');
+      var icon = document.getElementById('aqnIcon');
+      var titleEl = document.getElementById('aqnTitle');
+      var msgEl = document.getElementById('aqnMsg');
+      var actionsEl = document.getElementById('aqnActions');
+      var resolver = null;
+      var hideTimer = null;
+
+      var ICONS = {
+        help: '<svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        info: '<svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        warn: '<svg viewBox="0 0 24 24" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        danger: '<svg viewBox="0 0 24 24" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+        success: '<svg viewBox="0 0 24 24" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+      };
+
+      function settle(value) {
+        if (resolver) { var r = resolver; resolver = null; r(value); }
+      }
+
+      function dismiss() {
+        overlay.classList.remove('open');
+        document.body.classList.remove('aqn-lock');
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(function () { overlay.setAttribute('aria-hidden', 'true'); }, 200);
+      }
+
+      function open(options) {
+        var tone = options.tone || (options.danger ? 'danger' : 'help');
+        icon.className = 'aqn-icon ' + tone;
+        icon.innerHTML = ICONS[tone] || ICONS.help;
+        titleEl.textContent = options.title || '';
+        titleEl.style.display = options.title ? '' : 'none';
+        msgEl.textContent = options.message || '';
+        actionsEl.innerHTML = '';
+
+        var addBtn = function (label, cls, value) {
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'aqn-btn ' + cls;
+          b.textContent = label;
+          b.addEventListener('click', function () { settle(value); dismiss(); });
+          actionsEl.appendChild(b);
+          return b;
+        };
+
+        if (options.showCancel !== false) {
+          addBtn(options.cancelLabel || 'Cancel', 'ghost', false);
+        }
+        var ok = addBtn(
+          options.confirmLabel || (options.danger ? 'Delete' : 'Confirm'),
+          options.danger ? 'danger' : 'primary',
+          true
+        );
+        ok.focus();
+
+        overlay.classList.add('open');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('aqn-lock');
+      }
+
+      function confirm(options) {
+        return new Promise(function (resolve) {
+          resolver = resolve;
+          open(options);
+        });
+      }
+
+      function notice(options) {
+        return new Promise(function (resolve) {
+          resolver = resolve;
+          open(Object.assign({}, options, {
+            showCancel: false,
+            confirmLabel: options.confirmLabel || 'OK',
+            tone: options.tone || 'success'
+          }));
+        });
+      }
+
+      window.AquiNotice = { confirm: confirm, notice: notice };
+
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) { settle(false); dismiss(); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { settle(false); dismiss(); }
+      });
+
+      // Clicking buttons/links that carry data-aqui-confirm.
+      document.addEventListener('click', function (e) {
+        var el = e.target.closest ? e.target.closest('[data-aqui-confirm]') : null;
+        if (!el || e.defaultPrevented || e.button !== 0) return;
+        if (el.tagName === 'FORM') return; // forms are handled on submit
+        e.preventDefault();
+        var tone = el.getAttribute('data-aqui-tone');
+        var danger = el.hasAttribute('data-aqui-danger') || tone === 'danger';
+        confirm({
+          message: el.getAttribute('data-aqui-confirm'),
+          title: el.getAttribute('data-aqui-title'),
+          tone: tone,
+          danger: danger,
+          confirmLabel: el.getAttribute('data-aqui-confirm-label') || (danger ? 'Delete' : 'Continue')
+        }).then(function (ok) {
+          if (!ok) return;
+          if (el.tagName === 'A') {
+            window.location.href = el.href;
+          } else if (el.form) {
+            el.form.setAttribute('data-aqui-confirm-ok', '1');
+            if (el.form.requestSubmit) el.form.requestSubmit(el); else el.form.submit();
+          }
+        });
+      });
+
+      // Forms whose submitter (or the form itself) carries data-aqui-confirm.
+      document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (!form || !form.matches || !form.matches('form')) return;
+        if (form.hasAttribute('data-aqui-confirm-ok')) {
+          form.removeAttribute('data-aqui-confirm-ok');
+          return;
+        }
+        var sub = e.submitter || null;
+        var el = sub && sub.hasAttribute('data-aqui-confirm') ? sub : (form.hasAttribute('data-aqui-confirm') ? form : null);
+        if (!el) return;
+        e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+        if (sub) sub.disabled = true;
+        var tone = el.getAttribute('data-aqui-tone');
+        var danger = el.hasAttribute('data-aqui-danger') || tone === 'danger';
+        confirm({
+          message: el.getAttribute('data-aqui-confirm'),
+          title: el.getAttribute('data-aqui-title'),
+          tone: tone,
+          danger: danger,
+          confirmLabel: el.getAttribute('data-aqui-confirm-label') || (danger ? 'Delete' : 'Continue')
+        }).then(function (ok) {
+          if (!ok) { if (sub) sub.disabled = false; return; }
+          form.setAttribute('data-aqui-confirm-ok', '1');
+          if (form.requestSubmit && sub) form.requestSubmit(sub);
+          else form.submit();
+        });
+      });
+    })();
+  </script>
   @stack('scripts')
+
+  <script>
+    // -- Smooth page navigation layer -----------------------------
+    // 1) Top progress bar while a page loads 2) fade the old page out
+    // on click 3) prefetch internal links on hover/long-press so the
+    // next page is already in the browser cache.
+    (function () {
+      var progress = document.createElement('div');
+      progress.id = 'aqua-progress';
+      document.body.appendChild(progress);
+
+      function isInternalLink(a) {
+        if (!a || !a.href || a.href.indexOf('http') === -1) return false;
+        if (a.hasAttribute('download') || a.target === '_blank') return false;
+        if (a.getAttribute('href') === '#' || /^#/.test(a.getAttribute('href') || '')) return false;
+        try {
+          return a.origin === window.location.origin;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function startProgress() {
+        progress.classList.add('active');
+        progress.style.width = '0%';
+        // Fake-advance so it feels alive even on slow loads.
+        var width = 0;
+        var tick = setInterval(function () {
+          width = Math.min(92, width + Math.random() * 14);
+          progress.style.width = width + '%';
+        }, 180);
+        window.aquaProgressTick = tick;
+      }
+
+      function finishProgress() {
+        clearInterval(window.aquaProgressTick);
+        progress.style.width = '100%';
+        setTimeout(function () {
+          progress.style.width = '0%';
+          progress.classList.remove('active');
+        }, 260);
+      }
+
+      // Fade the current page slightly as the browser starts navigating.
+      document.addEventListener('click', function (e) {
+        var a = e.target.closest ? e.target.closest('a') : null;
+        if (e.defaultPrevented || e.button !== 0 || !isInternalLink(a)) return;
+        // Let the browser keep default navigation; we only enhance it.
+        document.body.classList.add('aqua-leaving');
+        startProgress();
+      });
+
+      // New page finished loading (also fires on back/forward cache).
+      window.addEventListener('pageshow', function () {
+        document.body.classList.remove('aqua-leaving');
+        finishProgress();
+      });
+      window.addEventListener('load', finishProgress);
+
+      // Prefetch internal pages into the browser's low-priority cache.
+      var prefetched = {};
+      function prefetch(url) {
+        if (prefetched[url]) return;
+        if (window.location.href === url) return;
+        prefetched[url] = true;
+        var link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = url;
+        document.head.appendChild(link);
+      }
+
+      // Desktop: hover near a link warms the cache.
+      document.addEventListener('mouseover', function (e) {
+        var a = e.target.closest ? e.target.closest('a') : null;
+        if (isInternalLink(a)) prefetch(a.href);
+      }, { passive: true });
+
+      // Mobile: press-and-hold (or tap) starts fetching a moment early.
+      document.addEventListener('touchstart', function (e) {
+        var a = e.target.closest ? e.target.closest('a') : null;
+        if (isInternalLink(a)) prefetch(a.href);
+      }, { passive: true });
+    })();
+  </script>
 </body>
 </html>
+

@@ -24,15 +24,35 @@
   .reveal.in { opacity: 1; transform: translateY(0); }
 
   .hero-band {
-    background: rgb(230, 245, 195);
-    border-radius: 22px; padding: 30px 32px; color: #143d23; position: relative;
+    background: rgb(241, 250, 214);
+    border-radius: 22px; padding: 30px 32px; color: #143d23; position: relative; overflow: hidden;
     box-shadow: 0 4px 16px rgba(20,61,35,0.10); margin-bottom: 26px;
   }
-  .hero-inner { display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .hero-band::before { content: ""; position: absolute; top: -110px; right: -60px; width: 280px; height: 280px; border-radius: 50%; background: rgba(16,185,129,0.15); }
+  .hero-band::after { content: ""; position: absolute; bottom: -90px; left: 25%; width: 200px; height: 200px; border-radius: 50%; background: rgba(59,130,246,0.10); }
+  .hero-inner { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; }
   .hero-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #166534; margin-bottom: 6px; }
   .hero-title { font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.01em; color: #14532d; }
   .hero-sub { font-size: 13px; color: #40632d; margin: 6px 0 0 0; }
   .hero-sub strong { color: #14532d; }
+
+  /* Pending action queue */
+  .queue-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; padding: 4px 20px 20px 20px; }
+  .queue-item {
+    display: flex; align-items: center; gap: 14px; text-decoration: none;
+    background: rgba(255,255,255,0.7); border: 1px solid rgba(20,61,35,0.09);
+    border-radius: 14px; padding: 16px 18px; transition: all 0.2s ease; position: relative;
+  }
+  .queue-item:hover { background: #ffffff; box-shadow: 0 8px 24px rgba(0,0,0,0.07); transform: translateY(-1px); border-color: rgba(20,61,35,0.18); }
+  .queue-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .queue-icon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .queue-info { min-width: 0; flex: 1; }
+  .queue-info b { display: block; font-size: 13.5px; color: #1e293b; font-weight: 700; }
+  .queue-info small { font-size: 11px; color: #94a3b8; display: block; margin-top: 2px; }
+  .queue-count { font-size: 22px; font-weight: 800; color: #143d23; font-variant-numeric: tabular-nums; }
+  .queue-arrow { width: 16px; height: 16px; stroke: #94a3b8; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .queue-empty { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #40632d; font-weight: 600; }
+  .queue-empty svg { width: 16px; height: 16px; stroke: #16a34a; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
   .btn-hero {
     display: inline-flex; align-items: center; gap: 8px;
@@ -53,12 +73,12 @@
   }
   .dash-panel:hover { box-shadow: 0 16px 48px rgba(0,0,0,0.09); }
   .panel-head { padding: 18px 22px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-  .panel-head h3 { font-size: 15px; font-weight: 700; color: #1e293b; margin: 0; letter-spacing: 0.03em; }
-  .panel-head p { font-size: 12px; color: #64748b; margin: 2px 0 0 0; }
+  .panel-head h3 { font-size: 15px; font-weight: 700; color: #1e293b; margin: 0; letter-spacing: 0.06em; }
+  .panel-head p { font-size: 12px; color: #64748b; margin: 2px 0 0 0; letter-spacing: 0.03em; }
   .panel-body { padding: 18px 22px; }
 
   .btn-ghost {
-    font-size: 12px; font-weight: 700; color: #143d23; text-decoration: none;
+    font-size: 12px; font-weight: 700; color: #143d23; text-decoration: none; letter-spacing: 0.03em;
     padding: 7px 14px; border-radius: 9px; background: rgba(20,61,35,0.07);
     display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
     transition: all 0.2s ease;
@@ -106,33 +126,52 @@
   /* Chart summary panels */
   .chart-grid { display: flex; gap: 28px; padding: 24px 26px; align-items: center; flex-wrap: wrap; }
   .chart-box { flex: 0 1 170px; max-width: 170px; position: relative; }
-  .chart-legend { flex: 1 1 180px; display: flex; flex-direction: column; gap: 11px; }
-  .legend-row { display: flex; align-items: center; gap: 10px; }
-  .legend-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
-  .legend-label { font-size: 13px; color: #64748b; flex: 1; }
-  .legend-value { font-size: 14px; font-weight: 800; color: #1e2922; }
-  .legend-pct { font-size: 11px; color: #94a3b8; width: 40px; text-align: right; }
-
-  .bar-list { padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; }
-  .bar-row { display: flex; align-items: center; gap: 12px; }
-  .bar-label { font-size: 12px; font-weight: 600; color: #475569; width: 86px; flex-shrink: 0; text-align: right; }
-  .bar-track { flex: 1; height: 24px; background: #f1f5f9; border-radius: 8px; overflow: hidden; }
-  .bar-fill { width: 0; height: 100%; border-radius: 8px; transition: width 0.75s cubic-bezier(0.4,0,0.2,1); min-width: 0; }
-  .bar-fill.empty { background: transparent !important; }
-  .bar-val { font-size: 13px; font-weight: 800; color: #1e2922; width: 30px; }
-  .bar-pct { font-size: 11px; color: #94a3b8; width: 42px; text-align: right; }
 
   .chart-grid canvas { max-height: 220px; min-height: 200px; }
-  .chart-caption { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .chart-caption { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 0; }
+  .yield-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 26px 0; flex-wrap: wrap; }
+  .yield-big { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+  .yield-big-value { font-size: 28px; font-weight: 800; color: #143d23; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: 0.02em; }
+  .yield-big-unit { font-size: 13px; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* Harvest graph period filter (dropdown) */
+  .harvest-head-actions { display: flex; align-items: center; gap: 8px; }
+  .filter-dropdown { position: relative; }
+  .filter-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font: inherit; font-size: 12px; font-weight: 900; letter-spacing: 0.04em; color: #14532d;
+    padding: 6px 11px; border-radius: 9px;
+    background: #ffffff; border: 1px solid rgba(20,61,35,0.14);
+    cursor: pointer; transition: all 0.18s ease;
+  }
+  .filter-btn:hover { background: #f8faf9; border-color: rgba(20,61,35,0.28); }
+  .filter-btn .funnel { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .filter-btn .chev { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s ease; }
+  .filter-dropdown.open .filter-btn .chev { transform: rotate(180deg); }
+  .filter-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+    min-width: 168px; padding: 6px; margin: 0; list-style: none;
+    background: #ffffff; border: 1px solid rgba(20,61,35,0.12);
+    border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+    display: none;
+  }
+  .filter-dropdown.open .filter-menu { display: block; }
+  .filter-option {
+    display: block; width: 100%; text-align: left; font: inherit;
+    font-size: 12.5px; font-weight: 600; color: #40632d; letter-spacing: 0.02em;
+    background: transparent; border: none; cursor: pointer;
+    padding: 8px 12px; border-radius: 8px; transition: background 0.15s ease;
+    white-space: nowrap;
+  }
+  .filter-option:hover { background: #f0fdf4; }
+  .filter-option.is-active { background: #dcfce7; color: #166534; font-weight: 800; }
+  .chart-empty {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; color: #64748b; font-weight: 600; text-align: center;
+    background: rgba(255,255,255,0.78); border-radius: 10px; padding: 10px;
+  }
 
   @media (min-width: 981px) {
-    .chart-legend {
-      background: #f8fafc;
-      border: 1px solid rgba(0,0,0,0.05);
-      border-radius: 14px;
-      padding: 16px 20px;
-      max-width: 220px;
-    }
   }
 
   @media (max-width: 980px) {
@@ -148,13 +187,21 @@
 <div class="dash-page">
   <div class="dash-content">
 
+    @include('partials.admin-tabs', [
+      'tabs' => [
+        ['key' => 'overview', 'label' => 'Overview',       'url' => route('dashboard.admin')],
+        ['key' => 'activity', 'label' => 'Recent Activity', 'url' => route('admin.activity.index')],
+      ],
+      'activeTab' => 'overview',
+    ])
+
     <!-- 1. HERO -->
     <section class="hero-band reveal in">
       <div class="hero-inner">
         <div>
-          <div class="hero-eyebrow">System Administration</div>
+          <div class="hero-eyebrow">Aquilala IA Management Portal</div>
           <h1 class="hero-title"><span data-greeting>{{ $greeting }}</span>, {{ $user->name }}</h1>
-          <p class="hero-sub">Here's your <strong>platform overview</strong> for {{ $now->format('l, F j, Y') }}.</p>
+          <p class="hero-sub">Association overview for <strong>{{ $now->format('l, F j, Y') }}</strong> &middot; currently in the <strong>{{ $currentSeasonLabel }}</strong>.</p>
         </div>
         <div class="hero-actions">
           <a href="{{ route('admin.users.index') }}" class="btn-hero">
@@ -171,117 +218,78 @@
 
     <!-- 2. KPI CARDS -->
     <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:22px;">
-      <x-kpi-card title="Total Users" value="{{ $totalUsers }}" trendValue="{{ $farmersCount }} farmers" trendDirection="{{ $totalUsers > 0 ? 'up' : 'neutral' }}" trendLabel="registered accounts" accent="#2563eb" link="{{ route('admin.users.index') }}">
-        <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></x-slot:icon>
+      <x-kpi-card title="Total IA Members" value="214" trendLabel="Official IA registry" accent="#16a34a" link="{{ route('admin.users.index') }}">
+        <x-slot:icon><img src="{{ asset('images/farmer.png') }}" alt="Farmer" width="26" height="26" style="object-fit:contain;"></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Store Owners" value="{{ $storeOwnersCount }}" trendValue="{{ $activeProducts }} active" trendDirection="{{ $activeProducts > 0 ? 'up' : 'neutral' }}" trendLabel="products listed" accent="#d97706" link="{{ route('admin.users.index') }}">
+      <x-kpi-card title="Partner Stores" value="{{ $storeOwnersCount }}" trendLabel="Local supply stores" accent="#d97706" link="{{ route('admin.stores.index') }}">
         <x-slot:icon><img src="{{ asset('images/store.png') }}" alt="Store" width="22" height="22" style="object-fit:contain;"></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Quotations" value="{{ $totalQuotations }}" trendValue="{{ $computedQuotations }} estimate-ready" trendDirection="{{ $computedQuotations > 0 ? 'up' : 'neutral' }}" trendLabel="{{ $viewedQuotations }} viewed" accent="#7c3aed" link="{{ route('admin.quotations.index') }}">
-        <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></x-slot:icon>
-      </x-kpi-card>
-      <x-kpi-card title="Active Products" value="{{ $activeProducts }}" trendValue="{{ $outOfStockProducts }} out of stock" trendDirection="{{ $outOfStockProducts > 0 ? 'down' : 'up' }}" trendLabel="needs restocking" accent="#16a34a" link="{{ route('admin.analytics.index') }}">
+      <x-kpi-card title="Active Store Items" value="{{ $activeProducts }}" trendLabel="Items listed in store catalogs" accent="#7c3aed" link="{{ route('admin.operations.catalog') }}">
         <x-slot:icon><img src="{{ asset('images/product.png') }}" alt="Product" width="22" height="22" style="object-fit:contain;"></x-slot:icon>
+      </x-kpi-card>
+      <x-kpi-card title="Seasonal Harvest Logs" value="{{ $currentSeasonHarvests }}" trendLabel="{{ $currentSeasonLabel }} yield records" accent="#2563eb" link="{{ route('admin.harvests.index') }}">
+        <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></x-slot:icon>
       </x-kpi-card>
     </section>
 
-<!-- 3. REGISTRATION OVERVIEW -->
-<section style="margin-bottom:22px;">
+    <!-- 4. HARVEST REPORTS -->
+<section style="margin-top:22px;">
   <div class="dash-panel reveal" data-reveal>
     <div class="panel-head">
       <div>
-        <h3>Registration Overview</h3>
-        <p>Account distribution across the platform</p>
+        <h3>Harvest Reports</h3>
+        <p>Farmer harvest submissions across the platform</p>
       </div>
-      <a href="{{ route('admin.users.index') }}" class="btn-ghost">
-        Full View
-        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </a>
+      <div class="harvest-head-actions">
+        <a href="{{ route('admin.harvests.index') }}" class="btn-ghost">
+          Full View
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
     </div>
-    @if($totalUsers > 0)
-      <div class="chart-grid" style="align-items:stretch;">
+    <div class="panel-body" style="padding:0;">
+      <div class="yield-row">
+        <div>
+          <div class="yield-big">
+            <span class="yield-big-value" id="harvestYieldValue">0</span>
+            <span class="yield-big-unit">MT</span>
+          </div>
+          <div class="chart-caption">Total yield</div>
+        </div>
+        <div class="filter-dropdown" id="harvestFilter">
+          <button type="button" class="filter-btn" id="harvestFilterBtn" aria-haspopup="true" aria-expanded="false" aria-label="Filter harvest period">
+            <svg class="funnel" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <span id="harvestFilterLabel">This Year</span>
+            <svg class="chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <ul class="filter-menu" id="harvestFilterMenu" role="menu" aria-label="Harvest period">
+            <li role="none">
+              <button type="button" class="filter-option is-active" data-period="year" data-label="This Year">This Year</button>
+            </li>
+            <li role="none">
+              <button type="button" class="filter-option" data-period="month" data-label="This Month">This Month</button>
+            </li>
+            <li role="none">
+              <button type="button" class="filter-option" data-period="week" data-label="This Week">This Week</button>
+            </li>
+            <li role="none">
+              <button type="button" class="filter-option" data-period="days" data-label="Last 30 Days">Last 30 Days</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="chart-grid" style="align-items:stretch;padding-top:18px;">
         <div class="chart-box" style="flex:1 1 340px; max-width:none; min-width:260px;">
-          <div class="chart-caption">New accounts &middot; last 14 days</div>
-          <canvas id="roleChart"></canvas>
+          <div style="position:relative;height:220px;">
+            <canvas id="harvestChart"></canvas>
+            <div id="harvestEmpty" class="chart-empty" hidden></div>
+          </div>
         </div>
-        <div class="chart-legend" id="roleLegend" style="justify-content:center;"></div>
       </div>
-    @else
-      <div class="panel-body" style="text-align:center;padding:34px 16px;">
-        <svg viewBox="0 0 24 24" width="34" height="34" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        <p style="font-size:13px;color:#64748b;margin:8px 0 0 0;">No platform registrations yet.</p>
-      </div>
-    @endif
+    </div>
   </div>
 </section>
 
-<!-- 4. MARKETPLACE + QUOTATION SUMMARIES -->
-<section class="dash-grid equal">
-  <!-- Marketplace stock health -->
-  <div class="dash-panel reveal" data-reveal>
-    <div class="panel-head">
-      <div>
-        <h3>Marketplace Stock</h3>
-        <p>Inventory health across stores</p>
-      </div>
-      <a href="{{ route('admin.analytics.index') }}" class="btn-ghost">
-        Full View
-        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </a>
-    </div>
-    <div class="bar-list">
-      @php $stockMax = max(1, $stockCounts['in_stock'], $stockCounts['low_stock'], $stockCounts['out_of_stock']); @endphp
-      @foreach([
-        ['label' => 'In stock', 'count' => $stockCounts['in_stock'], 'color' => '#16a34a'],
-        ['label' => 'Low stock', 'count' => $stockCounts['low_stock'], 'color' => '#f59e0b'],
-        ['label' => 'Out of stock', 'count' => $stockCounts['out_of_stock'], 'color' => '#94a3b8'],
-      ] as $stockRow)
-        <div class="bar-row">
-          <span class="bar-label">{{ $stockRow['label'] }}</span>
-          <div class="bar-track">
-            <div class="bar-fill {{ $stockRow['count'] > 0 ? '' : 'empty' }}"
-                 style="background:{{ $stockRow['color'] }};" data-w="{{ $stockRow['count'] > 0 ? round($stockRow['count'] / $stockMax * 100) : 0 }}"></div>
-          </div>
-          <span class="bar-val">{{ $stockRow['count'] }}</span>
-          <span class="bar-pct">{{ $stockRow['count'] > 0 ? round($stockRow['count'] / $stockMax * 100) : 0 }}%</span>
-        </div>
-      @endforeach
-    </div>
-  </div>
-
-  <!-- Quotation status summary -->
-  <div class="dash-panel reveal" data-reveal>
-    <div class="panel-head">
-      <div>
-        <h3>Quotation Status</h3>
-        <p>Current state of platform quotations</p>
-      </div>
-      <a href="{{ route('admin.quotations.index') }}" class="btn-ghost">
-        Full View
-        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </a>
-    </div>
-    <div class="bar-list">
-      @php $qtMax = max(1, $quotationStatusCounts['computed'], $quotationStatusCounts['viewed'], $quotationStatusCounts['expired']); @endphp
-      @foreach([
-        ['label' => 'Estimate-ready', 'key' => 'computed', 'color' => '#16a34a'],
-        ['label' => 'Viewed', 'key' => 'viewed', 'color' => '#2563eb'],
-        ['label' => 'Expired', 'key' => 'expired', 'color' => '#94a3b8'],
-      ] as $qtRow)
-        @php $qtCount = $quotationStatusCounts[$qtRow['key']]; @endphp
-        <div class="bar-row">
-          <span class="bar-label">{{ $qtRow['label'] }}</span>
-          <div class="bar-track">
-            <div class="bar-fill {{ $qtCount > 0 ? '' : 'empty' }}"
-                 style="background:{{ $qtRow['color'] }};" data-w="{{ $qtCount > 0 ? round($qtCount / $qtMax * 100) : 0 }}"></div>
-          </div>
-          <span class="bar-val">{{ $qtCount }}</span>
-          <span class="bar-pct">{{ $qtCount > 0 ? round($qtCount / $qtMax * 100) : 0 }}%</span>
-        </div>
-      @endforeach
-    </div>
-  </div>
-</section>
   </div>
 </div>
 
@@ -312,53 +320,67 @@
       revealEls.forEach(function (el) { el.classList.add('in'); });
     }
 
-    // Animated summary bar fills
-    document.querySelectorAll('.bar-fill').forEach(function (fill, i) {
-      setTimeout(function () {
-        fill.style.width = (fill.dataset.w || '0') + '%';
-      }, 350 + i * 120);
-    });
+    // Harvest report graph with Year / Month / Week / Days period filter (dropdown)
+    var harvestPeriods = {
+      year: @js($harvestGraphYear),
+      month: @js($harvestGraphMonth),
+      week: @js($harvestGraphWeek),
+      days: @js($harvestGraphDays)
+    };
+    var harvestCanvas = document.getElementById('harvestChart');
+    var harvestYieldValue = document.getElementById('harvestYieldValue');
+    var harvestEmptyEl = document.getElementById('harvestEmpty');
+    var harvestChart = null;
+    var harvestFilter = document.getElementById('harvestFilter');
+    var harvestFilterBtn = document.getElementById('harvestFilterBtn');
+    var harvestFilterLabel = document.getElementById('harvestFilterLabel');
 
-    // Registration activity over the past 14 days + account distribution
-    var regData = @js($registrationTrend);
-    var roleData = @js([
-      ['label' => 'Admins', 'value' => $adminCount, 'color' => '#0369a1'],
-      ['label' => 'Store Owners', 'value' => $storeOwnersCount, 'color' => '#d97706'],
-      ['label' => 'Farmers', 'value' => $farmersCount, 'color' => '#16a34a'],
-    ]);
-    var regCanvas = document.getElementById('roleChart');
-    if (regCanvas && window.Chart) {
-      new Chart(regCanvas, {
-        type: 'line',
+    function buildHarvestChart(periodKey) {
+      if (!harvestCanvas || !window.Chart) return;
+      var data = harvestPeriods[periodKey] || [];
+      var yTotal = 0;
+      data.forEach(function (d) { yTotal += d.yield; });
+
+      if (harvestYieldValue) {
+        harvestYieldValue.textContent = yTotal > 0 ? yTotal.toFixed(1) : '0';
+      }
+
+      if (harvestEmptyEl) {
+        harvestEmptyEl.textContent = yTotal === 0
+          ? 'No harvest reports submitted in this period yet.'
+          : '';
+        harvestEmptyEl.hidden = yTotal !== 0;
+      }
+
+      var fillColors = data.map(function (d, i) {
+        return 'rgba(22, 163, 74, ' + (0.28 + 0.65 * Math.min(1, i / (data.length - 1 || 1))) + ')';
+      });
+
+      if (harvestChart) harvestChart.destroy();
+      harvestChart = new Chart(harvestCanvas, {
+        type: 'bar',
         data: {
-          labels: regData.map(function (d) { return d.label; }),
+          labels: data.map(function (d) { return d.label; }),
           datasets: [{
-            label: 'New accounts',
-            data: regData.map(function (d) { return d.count; }),
-            borderColor: '#2563eb',
-            backgroundColor: 'rgba(37, 99, 235, 0.12)',
-            fill: true,
-            tension: 0.35,
-            borderWidth: 2,
-            pointRadius: 3,
-            pointBackgroundColor: '#2563eb',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 1.5,
-            hoverRadius: 5
+            label: 'Total yield (MT)',
+            data: data.map(function (d) { return d.yield; }),
+            backgroundColor: fillColors,
+            hoverBackgroundColor: 'rgba(22, 163, 74, 0.92)',
+            borderRadius: 5,
+            barPercentage: periodKey === 'month' || periodKey === 'days' ? 0.7 : 0.6,
+            categoryPercentage: 0.6
           }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
             tooltip: {
               callbacks: {
-                title: function (items) {
-                  var idx = items[0].dataIndex;
-                  return regData[idx].date;
-                },
                 label: function (ctx) {
-                  return ctx.parsed.y + (ctx.parsed.y === 1 ? ' new account' : ' new accounts');
+                  var v = ctx.parsed.y;
+                  return v.toFixed(1) + ' MT total yield';
                 }
               }
             }
@@ -366,32 +388,55 @@
           scales: {
             x: {
               grid: { display: false },
-              ticks: { color: '#94a3b8', maxTicksLimit: 7, maxRotation: 0, autoSkipPadding: 14 },
+              ticks: { color: '#334155', font: { weight: '600', size: 12 }, maxRotation: 0, autoSkipPadding: 6, maxTicksLimit: periodKey === 'days' ? 10 : 14 },
               border: { display: false }
             },
             y: {
               beginAtZero: true,
-              ticks: { precision: 0, color: '#94a3b8', maxTicksLimit: 5 },
-              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: { color: '#334155', font: { weight: '600', size: 12 }, maxTicksLimit: 5 },
+              grid: { color: 'rgba(0,0,0,0.08)' },
               border: { display: false }
             }
           }
         }
       });
+    }
 
-      var legend = document.getElementById('roleLegend');
-      var total = roleData.reduce(function (sum, r) { return sum + r.value; }, 0);
-      roleData.forEach(function (r) {
-        var row = document.createElement('div');
-        row.className = 'legend-row';
-        row.innerHTML =
-          '<span class="legend-dot" style="background:' + r.color + '"></span>' +
-          '<span class="legend-label">' + r.label + '</span>' +
-          '<span class="legend-value">' + r.value + '</span>' +
-          '<span class="legend-pct">' + (total > 0 ? Math.round(r.value / total * 100) : 0) + '%</span>';
-        legend.appendChild(row);
+    function setHarvestPeriod(periodKey, label, activeBtn) {
+      document.querySelectorAll('.filter-option').forEach(function (o) {
+        o.classList.toggle('is-active', o === activeBtn || o.dataset.period === periodKey);
+      });
+      if (harvestFilterLabel) harvestFilterLabel.textContent = label;
+      if (harvestFilterBtn) harvestFilterBtn.setAttribute('aria-label', 'Filter harvest period: ' + label);
+      buildHarvestChart(periodKey);
+      closeHarvestFilter();
+    }
+
+    function closeHarvestFilter() {
+      if (harvestFilter) harvestFilter.classList.remove('open');
+      if (harvestFilterBtn) harvestFilterBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    if (harvestFilterBtn) {
+      harvestFilterBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = harvestFilter.classList.toggle('open');
+        harvestFilterBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       });
     }
+    document.addEventListener('click', function (e) {
+      if (harvestFilter && !harvestFilter.contains(e.target)) closeHarvestFilter();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeHarvestFilter();
+    });
+    document.querySelectorAll('.filter-option').forEach(function (opt) {
+      opt.addEventListener('click', function () {
+        setHarvestPeriod(opt.dataset.period, opt.dataset.label, opt);
+      });
+    });
+
+    buildHarvestChart('year');
   });
 </script>
 @endsection

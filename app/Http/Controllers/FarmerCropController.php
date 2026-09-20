@@ -57,6 +57,26 @@ class FarmerCropController extends Controller
         ));
     }
 
+    public function show(FarmerCrop $farmerCrop)
+    {
+        if ($farmerCrop->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $farmerCrop->load(['crop', 'product']);
+
+        $stats = [
+            'land_area' => $farmerCrop->land_area,
+            'land_area_unit' => $farmerCrop->land_area_unit,
+            'estimated_cost' => $farmerCrop->estimated_cost,
+            'estimated_yield' => $farmerCrop->estimated_yield,
+            'yield_unit' => $farmerCrop->yield_unit,
+            'actual_yield' => $farmerCrop->actual_yield,
+        ];
+
+        return view('farmer.crops.show', compact('farmerCrop', 'stats'));
+    }
+
     /**
      * Build the data used by the New Crop Batch modal:
      *  - cropDefaults:  crop_id -> {name, default_yield_per_ha, yield_unit} from the Bulan catalog
@@ -249,6 +269,16 @@ class FarmerCropController extends Controller
         $validated['user_id'] = Auth::id();
         $validated['growth_stage'] = 'seeding';
 
+        if (blank($validated['batch_name'] ?? null)) {
+            $crop = Crop::find($validated['crop_id']);
+            $validated['batch_name'] = FarmerCrop::uniqueBatchName(
+                Auth::id(),
+                (int) $validated['crop_id'],
+                $crop?->name ?? 'Crop',
+                $validated['planting_date']
+            );
+        }
+
         $farmerCrop = FarmerCrop::create($validated);
 
         ActivityLogger::cropPlanted($farmerCrop);
@@ -285,14 +315,14 @@ class FarmerCropController extends Controller
         $farmerCrop->update($validated);
 
         if ($validated['growth_stage'] === 'harvested') {
+            $farmerCrop->syncHarvestReport();
             ActivityLogger::cropHarvested($farmerCrop);
         } else {
             $change = collect($validated)->except(['growth_stage'])->filter()->implode(', ');
             ActivityLogger::cropUpdated($farmerCrop, $change ?: 'growth_stage → ' . $validated['growth_stage']);
         }
 
-        return redirect()->route('farmer.crops.index')
-            ->with('success', 'Crop batch updated successfully!');
+        return back()->with('success', 'Crop batch updated successfully!');
     }
 
     public function destroy(FarmerCrop $farmerCrop)
@@ -302,6 +332,11 @@ class FarmerCropController extends Controller
         }
 
         ActivityLogger::cropDeleted($farmerCrop->crop?->name ?? 'Unknown', $farmerCrop->batch_name ?? 'Unnamed');
+
+        if ($farmerCrop->harvest_report_id) {
+            $farmerCrop->harvestReport?->delete();
+        }
+
         $farmerCrop->delete();
 
         return redirect()->route('farmer.crops.index')
