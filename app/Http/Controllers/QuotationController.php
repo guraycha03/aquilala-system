@@ -54,7 +54,14 @@ class QuotationController extends Controller
 
         $quotation->load(['items.product.storeOwner', 'farmer']);
 
-        return view('farmer.quotations.show', compact('quotation'));
+        // Decision formulas for this crop + season drive the per-line
+        // calculation breakdown shown on the page (rate/ha -> quantity).
+        $formulas = DecisionFormula::whereCrop($quotation->crop_type)
+            ->where('season', $quotation->season)
+            ->get()
+            ->keyBy('product_id');
+
+        return view('farmer.quotations.show', compact('quotation', 'formulas'));
     }
 
     /**
@@ -74,6 +81,188 @@ class QuotationController extends Controller
         return redirect()
             ->route('farmer.quotations.index')
             ->with('success', 'Cost estimate has been deleted.');
+    }
+
+    /**
+     * Generate an AI readability overview of ONE quotation for the farmer.
+     *
+     * Uses Groq when configured; otherwise (or on failure) returns a
+     * deterministic "smart response" computed from the quotation itself so
+     * the page always has something useful to show — never a dead end.
+     */
+    public function farmerAiOverview(Request $request, Quotation $quotation)
+    {
+        abort_unless($request->user()?->role === 'farmer', 403);
+
+        if ($quotation->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $quotation->load(['items.product.storeOwner']);
+
+        $items = $quotation->items
+            ->map(fn ($item) => [
+                'name'     => $item->product_name,
+                'store'    => $item->product?->storeOwner?->name ?? null,
+                'price'    => (float) $item->price_at_generation,
+                'quantity' => (float) $item->calculated_quantity,
+                'unit'     => strtolower(trim($item->product?->stock_unit ?? 'unit')),
+                'subtotal' => round((float) $item->subtotal, 2),
+            ])
+            ->map(fn ($i) => $i['unit'] === 'piece' ? array_merge($i, ['unit' => 'unit']) : $i)
+            ->values();
+
+        $total     = (float) $quotation->estimated_total_cost;
+        $landArea  = (float) $quotation->land_area;
+        $perHectare = $landArea > 0 ? round($total / $landArea, 2) : $total;
+
+        $context = [
+            'farm_area'    => $landArea,
+            'crop'         => $quotation->crop_type,
+            'season'       => $quotation->season,
+            'total'        => $total,
+            'per_hectare'  => $perHectare,
+            'item_count'   => $items->count(),
+            'generated'    => $quotation->created_at->format('F d, Y'),
+            'valid_until'  => $quotation->valid_until?->format('F d, Y'),
+            'items'        => $items,
+            'top_items'    => $items->sortByDesc('subtotal')->take(5)->values(),
+            'stores'       => $quotation->items
+                ->pluck('product.storeOwner.name')
+                ->filter()
+                ->unique()
+                ->values(),
+        ];
+
+        $fallback = $this->buildFarmerSmartFallback($quotation, $context);
+
+        $apiKey = config('services.groq.key');
+
+        if (!$apiKey) {
+            return response()->json([
+                'overview' => $fallback,
+                'source'   => 'fallback',
+                'metrics'  => $context,
+            ]);
+        }
+
+        $system = <<<'PROMPT'
+You are a senior agronomist-farm advisor for the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). A farmer generated an auto-computed cost quotation for their planned crop. Explain the SINGLE quotation provided as clear, practical farming guidance. Use ONLY the JSON telemetry given. Never invent numbers, prices, or products.
+
+Write in warm, plain English a farmer would trust. Structure your response EXACTLY with these markdown headings:
+
+### AI Takeaway
+ONE punchy sentence summing up the quotation (total for the crop/season, per-hectare cost, and one observation on whether it looks reasonable).
+
+### What You're Spending On
+3-5 short bullet points (- ) about the biggest cost items: product name, price each, quantity, unit, and subtotal, plus which store sells it. Always reference the actual figure.
+
+### Your Farm & Season Context
+2-3 bullets recalling farm area, crop, season, and total cost spread over the hectares (cost per hectare). Note anything about timing (valid_until) if helpful.
+
+### Practical Advice
+2-4 specific, actionable bullets a real farmer can act on (e.g. buy in bulk to negotiate, confirm prices with the listed stores before purchase, compare the unit price, adjust land prep budget). Ground every tip in the quotation; never invent external prices.
+
+### Next Move
+ONE closing sentence suggesting the immediate next step (e.g. contact the store listed to confirm availability and totals before the quote expires).
+
+FORMATTING RULES:
+1. Use **bold** for all money amounts, quantities, and product names.
+2. Keep bullets short and scannable - no emojis, no long paragraphs, no markdown tables.
+3. Never include a [SUGGEST:...] line.
+PROMPT;
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Content-Type'  => 'application/json',
+            ])->withoutVerifying()->timeout(90)->post('https://api.groq.com/openai/v1/chat/completions', [
+                'model'            => 'openai/gpt-oss-20b',
+                'messages'         => [
+                    ['role' => 'system', 'content' => $system],
+                    ['role' => 'user', 'content' => json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)],
+                ],
+                'temperature'     => 0.4,
+                'max_tokens'      => 4096,
+                'reasoning_effort'=> 'low',
+            ]);
+
+            if ($response->failed()) {
+                return response()->json([
+                    'overview' => $fallback,
+                    'source'   => 'fallback',
+                    'metrics'  => $context,
+                ]);
+            }
+
+            $overview = trim((string) $response->json('choices.0.message.content', ''));
+
+            return response()->json([
+                'overview' => $overview !== '' ? $overview : $fallback,
+                'source'   => $overview !== '' ? 'ai' : 'fallback',
+                'metrics'  => $context,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'overview' => $fallback,
+                'source'   => 'fallback',
+                'metrics'  => $context,
+            ]);
+        }
+    }
+
+    /**
+     * Deterministic "smart response" shown when the AI service is unavailable.
+     * Built entirely from the quotation's own data so it is always truthful.
+     */
+    private function buildFarmerSmartFallback(Quotation $quotation, array $context): string
+    {
+        $total     = (float) $quotation->estimated_total_cost;
+        $landArea  = (float) $quotation->land_area;
+        $perHectare = $landArea > 0 ? round($total / $landArea, 2) : $total;
+
+        $top = $context['top_items'];
+
+        $lines = '### AI Takeaway' . "\n"
+            . 'Your **' . $quotation->crop_type . '** plan for ' . $landArea . ' ha comes to **₱' . number_format($total, 2)
+            . '** — about **₱' . number_format($perHectare, 2) . ' per hectare** — built from ' . $context['item_count']
+            . ' farm input(s).' . "\n\n"
+            . '### What You\'re Spending On' . "\n";
+
+        if ($top->isEmpty()) {
+            $lines .= '- No products matched the formulas for this crop and season, so the total may be incomplete.' . "\n";
+        } else {
+            foreach ($top as $i) {
+                $unit = $i['unit'] ?: 'unit';
+                $store = $i['store'] ? ' (from ' . $i['store'] . ')' : '';
+                $lines .= '- **' . $i['name'] . '** — ' . rtrim(rtrim(number_format($i['price'], 2), '0'), '.')
+                    . ' × ' . rtrim(rtrim(number_format($i['quantity'], 2), '0'), '.') . ' ' . $unit
+                    . ' = **₱' . number_format($i['subtotal'], 2) . '**' . $store . "\n";
+            }
+            if ($context['item_count'] > $top->count()) {
+                $lines .= '- Plus ' . ($context['item_count'] - $top->count()) . ' smaller item(s).' . "\n";
+            }
+        }
+
+        $storeText = $context['stores']->isNotEmpty()
+            ? implode(', ', $context['stores']->all())
+            : 'the general catalog';
+
+        $lines .= "\n" . '### Your Farm & Season Context' . "\n"
+            . '- **Farm area:** ' . $landArea . ' hectares' . "\n"
+            . '- **Crop / Season:** ' . $quotation->crop_type . ' — ' . ucfirst($quotation->season) . ' season' . "\n"
+            . '- **Total spread:** ' . $landArea . ' ha at **₱' . number_format($perHectare, 2) . '/ha**' . "\n"
+            . '- **Generated:** ' . $context['generated']
+            . ($context['valid_until'] ? ' · **Valid until:** ' . $context['valid_until'] : '') . "\n\n"
+            . '### Practical Advice' . "\n"
+            . '- Contact **' . $storeText . '** to confirm the listed prices and availability before you buy.' . "\n"
+            . '- Review the quantities against your actual land preparation plan — buying whole bags/units may raise the total.' . "\n"
+            . '- Ask about volume discounts or free delivery for larger purchases this season.' . "\n\n"
+            . '### Next Move' . "\n"
+            . 'Reach out to the store ' . ($context['stores']->isNotEmpty() ? 'listed above ' : '')
+            . 'to lock in prices before the quotation expires.';
+
+        return $lines;
     }
 
     /**

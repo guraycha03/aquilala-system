@@ -189,6 +189,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/quotations/request', [QuotationController::class, 'farmerCreate'])->name('quotations.request');
         Route::get('/quotations/products', [QuotationController::class, 'farmerProducts'])->name('quotations.products');
         Route::get('/quotations/{quotation}', [QuotationController::class, 'farmerShow'])->name('quotations.show');
+        Route::post('/quotations/{quotation}/ai-overview', [QuotationController::class, 'farmerAiOverview'])->name('quotations.ai-overview');
         Route::post('/quotations', [QuotationController::class, 'farmerStore'])->name('quotations.store');
         Route::delete('/quotations/{quotation}', [QuotationController::class, 'farmerDestroy'])->name('quotations.destroy');
 
