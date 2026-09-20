@@ -27,8 +27,38 @@ class FarmerQuotationShowTest extends TestCase
         ]);
     }
 
+    private function makeStore(): User
+    {
+        return User::create([
+            'name' => 'Green Valley Store',
+            'first_name' => 'Green',
+            'last_name' => 'Valley',
+            'email' => 'store_' . uniqid() . '@example.com',
+            'role' => 'store_owner',
+            'password' => 'password123',
+        ]);
+    }
+
+    private function makeProduct(User $store, string $name, string $sku, int $price): Product
+    {
+        return Product::create([
+            'user_id'           => $store->id,
+            'sku'               => $sku,
+            'name'              => $name,
+            'category'          => 'Fertilizer',
+            'price'             => $price,
+            'stock_quantity'    => 10,
+            'reorder_threshold' => 2,
+            'status'            => 'active',
+        ]);
+    }
+
     private function makeQuotation(User $farmer): Quotation
     {
+        $store = $this->makeStore();
+        $urea = $this->makeProduct($store, 'Premium Urea', 'SKU-TEST-UREA', 100);
+        $seeds = $this->makeProduct($store, 'Inbred Rice Seeds', 'SKU-TEST-SEED', 14);
+
         $quotation = Quotation::create([
             'user_id'              => $farmer->id,
             'quotation_number'     => 'QT-2026-TEST',
@@ -42,14 +72,14 @@ class FarmerQuotationShowTest extends TestCase
         ]);
 
         $quotation->items()->create([
-            'product_id'          => null,
+            'product_id'          => $urea->id,
             'product_name'        => 'Premium Urea',
             'price_at_generation' => 100,
             'calculated_quantity' => 6,
             'subtotal'            => 300,
         ]);
         $quotation->items()->create([
-            'product_id'          => null,
+            'product_id'          => $seeds->id,
             'product_name'        => 'Inbred Rice Seeds',
             'price_at_generation' => 14,
             'calculated_quantity' => 1.5,
