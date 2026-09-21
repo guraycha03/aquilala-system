@@ -313,7 +313,7 @@
                   <th>Role Assignment</th>
                   <th>Status</th>
                   <th>Joined</th>
-                  <th>Resend Activation</th>
+                  <th>Resend Invitation</th>
                   <th style="text-align:right;">Actions</th>
                 </tr>
               </thead>
@@ -327,6 +327,9 @@
                         \App\Models\User::STATUS_DISABLED => 'disabled',
                         default                             => 'active',
                     };
+                    // Invited (active) accounts that have not set a permanent
+                    // password yet — they signed in with the emailed temp one.
+                    $needsPasswordSetup = $accountState === 'active' && $u->mustChangePassword();
                     $location = trim(implode(', ', array_filter([$u->barangay, $u->city])));
                     $contact = $u->phone ?? ($u->contact_number ?? ($location ?: '—'));
                     $search = strtolower(($u->name ?? '') . ' ' . ($u->email ?? '') . ' ' . ($u->phone ?? '') . ' ' . $location);

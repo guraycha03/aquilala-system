@@ -19,8 +19,9 @@ class AdminUserImportTest extends TestCase
 
         $this->withoutMiddleware(ValidateCsrfToken::class);
 
-        // Import confirm now issues an activation OTP + email per account;
-        // fake the mailer so confirm never talks to the real Resend API.
+        // Import confirm now issues a password-setup invitation (link + temp
+        // password) per account; fake the mailer so confirm never talks to the
+        // real Resend API.
         Mail::fake();
     }
 
@@ -60,7 +61,7 @@ class AdminUserImportTest extends TestCase
         $this->assertSame(0, $import['errors']);
     }
 
-    public function test_csv_confirm_creates_pending_accounts(): void
+    public function test_csv_confirm_creates_active_accounts_invited_to_set_password(): void
     {
         $this->preview($this->csv('Juan,Dela Cruz,juan.delacruz@example.com,09171234567,Malaybalay,Valencia,Bukidnon,farmer'));
 
@@ -78,7 +79,8 @@ class AdminUserImportTest extends TestCase
             'barangay' => 'Malaybalay',
             'city' => 'Valencia',
             'province' => 'Bukidnon',
-            'status' => User::STATUS_PENDING,
+            'status' => User::STATUS_ACTIVE,
+            'must_change_password' => true,
         ]);
 
         $this->assertNull(session('admin.user_import'));

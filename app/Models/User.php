@@ -50,6 +50,7 @@ class User extends Authenticatable
         'sidebar_theme',
         'sub_pages_style',
         'activation_completed_at',
+        'must_change_password',
     ];
 
     /**
@@ -72,6 +73,7 @@ class User extends Authenticatable
             'birth_date' => 'date',
             'approved_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
         ];
     }
 
@@ -83,6 +85,15 @@ class User extends Authenticatable
     public function hasSetPassword(): bool
     {
         return ! empty($this->password);
+    }
+
+    /**
+     * Whether the account is required to set a password before anything else
+     * (admin-created accounts arrive with a temporary password and this flag).
+     */
+    public function mustChangePassword(): bool
+    {
+        return (bool) $this->must_change_password;
     }
 
     public function isPending(): bool

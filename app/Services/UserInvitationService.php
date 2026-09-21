@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\Onboarding\DuplicateAccountException;
 use App\Exceptions\Onboarding\InvalidActivationTokenException;
 use App\Exceptions\Onboarding\MailDeliveryException;
+use App\Mail\NewAccountCreatedMail;
 use App\Models\EmailOtp;
 use App\Models\User;
 use App\Models\UserActivation;
@@ -13,7 +14,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Throwable;
 
 class UserInvitationService
 {
@@ -74,8 +78,8 @@ class UserInvitationService
     }
 
     /**
-     * Create a pending user account (random unusable password) and issue its
-     * activation code.
+     * Create a user account (random temporary password) and email a single-use
+     * "Set Your Password" link plus the temporary password itself.
      *
      * @throws DuplicateAccountException
      * @throws MailDeliveryException
@@ -103,18 +107,23 @@ class UserInvitationService
 
         $user = DB::transaction(function () use ($data, $phone, $email) {
             try {
-                return User::create([
-                    'name' => self::buildFullName($data),
-                    'first_name' => trim($data['first_name']),
-                    'middle_initial' => ! empty($data['middle_initial']) ? strtoupper(trim($data['middle_initial'])) : null,
-                    'last_name' => trim($data['last_name']),
-                    'email' => $email,
-                    'phone' => $phone,
-                    'role' => $data['role'],
-                    'status' => User::STATUS_PENDING,
-                    // Random unusable password until the user sets their own on activation.
-                    'password' => Hash::make(Str::random(64)),
-                ] + array_filter([
+return User::create([
+                'name' => self::buildFullName($data),
+                'first_name' => trim($data['first_name']),
+                'middle_initial' => ! empty($data['middle_initial']) ? strtoupper(trim($data['middle_initial'])) : null,
+                'last_name' => trim($data['last_name']),
+                'email' => $email,
+                'phone' => $phone,
+                'role' => $data['role'],
+                'status' => User::STATUS_ACTIVE,
+                // Temporary password until the member sets a permanent one
+                // (either via the emailed link or on first sign-in).
+                'password' => Hash::make(Str::random(64)),
+                // Email is considered verified when the password is actually
+                // set — the emailed link / temporary password prove ownership.
+                'email_verified_at' => null,
+                'must_change_password' => true,
+            ] + array_filter([
                     'barangay' => $data['barangay'] ?? null,
                     'city' => $data['city'] ?? null,
                     'province' => $data['province'] ?? null,
@@ -136,10 +145,10 @@ class UserInvitationService
         $delivery = ['sent' => false, 'error' => null];
 
         try {
-            self::issueActivation($user);
+            self::issueSetPassword($user);
             $delivery['sent'] = true;
         } catch (MailDeliveryException $e) {
-            // The account is created and its activation code is stored even
+            // The account is created and the temporary password is stored even
             // when the email cannot be delivered. A transient mail outage must
             // not fail the invitation — the admin re-issues the code with the
             // "Resend Invitation" action from the Users list.
@@ -185,6 +194,53 @@ class UserInvitationService
             $user,
             EmailOtp::PURPOSE_ACTIVATION
         );
+    }
+
+    /**
+     * (Re)issue the password-setup invitation for an admin-created account:
+     * rolls a fresh temporary password, stores it hashed, attaches a
+     * single-use password-reset token, and emails both the "Set Your Password"
+     * link and the temporary password. Every resend voids the previous temp
+     * password and token.
+     *
+     * @throws InvalidActivationTokenException
+     * @throws MailDeliveryException
+     */
+    public static function issueSetPassword(User $user): void
+    {
+        if (! $user->isActive()) {
+            throw new InvalidActivationTokenException('Only invited (active) accounts can receive a password-setup email.');
+        }
+
+        if (! $user->mustChangePassword()) {
+            throw new InvalidActivationTokenException('This account has already set a permanent password.');
+        }
+
+        // Letters + numbers only (no confusing symbols) — readable enough to
+        // type out when a farmer prefers to sign in manually.
+        $tempPassword = Str::password(10, letters: true, numbers: true, symbols: false);
+
+        DB::transaction(function () use ($user, $tempPassword) {
+            $user->forceFill([
+                'password' => Hash::make($tempPassword),
+            ])->save();
+        });
+
+        // Replaces any previously issued token for the same email address.
+        $token = Password::createToken($user);
+
+        try {
+            Mail::mailer('resend')->to($user->email)->send(
+                new NewAccountCreatedMail($user, $token, $tempPassword)
+            );
+        } catch (Throwable $e) {
+            Log::error('Password-setup email failed to send.', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new MailDeliveryException('The password-setup email could not be sent. '.$e->getMessage());
+        }
     }
 
     /**

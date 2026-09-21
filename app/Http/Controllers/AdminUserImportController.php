@@ -291,7 +291,7 @@ class AdminUserImportController extends Controller
         $deliveryFailures = 0;
         foreach ($result['createdUsers'] as $importUser) {
             try {
-                UserInvitationService::issueActivation($importUser);
+                UserInvitationService::issueSetPassword($importUser);
             } catch (MailDeliveryException) {
                 $deliveryFailures++;
             }
@@ -315,7 +315,7 @@ class AdminUserImportController extends Controller
             if ($skipped > 0) {
                 $message .= ' '.number_format($skipped).' duplicate'.($skipped > 1 ? 's were' : ' was').' skipped.';
             }
-            $message .= ' Activation codes were emailed to each new account.';
+            $message .= ' Password-setup invitations were emailed to each new account.';
             if ($deliveryFailures > 0) {
                 $message .= ' '.$deliveryFailures.' email'.($deliveryFailures > 1 ? 's' : '').' could not be sent — resend from the Users list once connectivity is restored.';
             }
@@ -347,13 +347,14 @@ class AdminUserImportController extends Controller
         $inserted = $result['inserted'];
         $skipped = $result['skipped'];
 
-        // Email an activation code to every freshly imported account. A single
-        // delivery failure must never roll back the whole import — leave those
-        // accounts pending and actionable from the Users list.
+        // Email a password-setup invitation (link + temporary password) to
+        // every freshly imported account. A single delivery failure must never
+        // roll back the whole import — leave those accounts actionable
+        // (resend) from the Users list.
         $deliveryFailures = 0;
         foreach ($result['createdUsers'] as $importUser) {
             try {
-                UserInvitationService::issueActivation($importUser);
+                UserInvitationService::issueSetPassword($importUser);
             } catch (MailDeliveryException) {
                 $deliveryFailures++;
             }
@@ -377,7 +378,7 @@ class AdminUserImportController extends Controller
             if ($skipped > 0) {
                 $message .= ' '.number_format($skipped).' duplicate'.($skipped > 1 ? 's were' : ' was').' skipped.';
             }
-            $message .= ' Activation codes were emailed to each new account.';
+            $message .= ' Password-setup invitations were emailed to each new account.';
             if ($deliveryFailures > 0) {
                 $message .= ' '.$deliveryFailures.' email'.($deliveryFailures > 1 ? 's' : '').' could not be sent — resend from the Users list once connectivity is restored.';
             }
@@ -423,8 +424,11 @@ class AdminUserImportController extends Controller
 
                     $createdUsers[] = User::create([
                         ...$row['data'],
-                        'status' => User::STATUS_PENDING,
+                        'status' => User::STATUS_ACTIVE,
+                        // Placeholder until issueSetPassword() stores the real
+                        // temporary password that gets emailed to the member.
                         'password' => Hash::make(Str::random(64)),
+                        'must_change_password' => true,
                     ]);
 
                     $inserted++;

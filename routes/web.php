@@ -16,6 +16,7 @@ use App\Http\Controllers\FormulaController;
 use App\Http\Controllers\HarvestReportController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\PasswordSetupController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\QuotationController;
@@ -75,6 +76,14 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password/reset', [PasswordResetController::class, 'reset'])
         ->name('password.reset')->middleware('throttle:password');
 
+    // ── Set Password (admin-created account invitation link) ──
+    // Reached from the emailed "Set Your Password" link. The token is a
+    // standard password-reset token; the email query param selects the owner.
+    Route::get('/set-password/{token}', [PasswordSetupController::class, 'showSetPassword'])
+        ->name('password.setup');
+    Route::post('/set-password/{token}', [PasswordSetupController::class, 'storeSetPassword'])
+        ->name('password.setup.post')->middleware('throttle:password');
+
     // Initial-administrator email/OTP verification. Guest-only by design:
     // a pending admin cannot sign in until their email is verified.
     Route::get('/verify-email', [EmailVerificationController::class, 'show'])
@@ -91,10 +100,18 @@ Route::middleware('guest')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'password.setup'])->group(function () {
 
     // Handled by AuthController@logout to invalidate sessions and prevent 419 Page Expired errors
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Forced first-sign-in password change for admin-created accounts that
+    // signed in with the emailed temporary password. Exempt from the
+    // password.setup redirect (handled inside EnsurePasswordChanged).
+    Route::get('/change-password', [PasswordSetupController::class, 'showChangePassword'])
+        ->name('password.change');
+    Route::post('/change-password', [PasswordSetupController::class, 'storeChangePassword'])
+        ->name('password.change.post')->middleware('throttle:password');
 
     // Own profile page — available to all roles
     Route::get('/profile', function () {

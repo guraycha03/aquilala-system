@@ -146,8 +146,8 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Admin pre-registers a user account and triggers the free
-     * email-link activation flow.
+     * Admin pre-registers a user account and emails the password-setup
+     * invitation (single-use link + temporary password).
      */
     public function store(Request $request): JsonResponse|RedirectResponse
     {
@@ -185,8 +185,8 @@ class AdminUserController extends Controller
         }
 
         $message = $delivery && empty($delivery['sent'])
-            ? "{$user->name}'s account was created, but the activation email could not be sent — {$delivery['error']} To deliver invitations, verify a sender domain at resend.com and set MAIL_FROM_ADDRESS in .env, then click Resend Activation in the Users list."
-            : "Activation code sent to {$user->email}. The account activates once the user verifies their email and sets a password.";
+            ? "{$user->name}'s account was created, but the invitation email could not be sent — {$delivery['error']} To deliver invitations, verify a sender domain at resend.com and set MAIL_FROM_ADDRESS in .env, then click Resend Invitation in the Users list."
+            : "Account created for {$user->email}. An invitation with the password-setup link and the temporary password was sent to their inbox.";
 
         if ($request->expectsJson()) {
             return response()->json(['message' => $message], 201);
@@ -264,12 +264,18 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Re-send the activation code for an account still pending.
+     * Re-issue an invitation for an account that has not finished setting up:
+     * pending accounts get a legacy activation code, invited active accounts
+     * get a fresh password-setup email.
      */
     public function resend(Request $request, User $user): JsonResponse|RedirectResponse
     {
-        if (! $user->isPending()) {
-            $message = "{$user->name} has already activated their account.";
+        $alreadySetUp = $user->isActive() && ! $user->mustChangePassword();
+
+        if ($alreadySetUp || $user->isDisabled()) {
+            $message = $alreadySetUp
+                ? "{$user->name} has already activated their account."
+                : "{$user->name} is disabled and cannot receive an invitation.";
 
             if ($request->expectsJson()) {
                 return response()->json(['message' => $message], 409);
@@ -279,7 +285,13 @@ class AdminUserController extends Controller
         }
 
         try {
-            UserInvitationService::issueActivation($user);
+            if ($user->isPending()) {
+                UserInvitationService::issueActivation($user);
+                $noun = 'activation code';
+            } else {
+                UserInvitationService::issueSetPassword($user);
+                $noun = 'password-setup invitation';
+            }
         } catch (MailDeliveryException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => $e->getMessage()], 503);
@@ -288,7 +300,7 @@ class AdminUserController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        $message = "A new activation code was sent to {$user->email}. The previous code is now void.";
+        $message = "A new {$noun} was sent to {$user->email}. Any previously issued one is now void.";
 
         if ($request->expectsJson()) {
             return response()->json(['message' => $message]);
