@@ -72,11 +72,11 @@
   .btn-apply:hover { background: #15803d; transform: translateY(-1px); }
   .btn-clear {
     height: 42px; padding: 0 14px; border-radius: 10px;
-    background: transparent; border: 1px solid #e2e8f0; color: #64748b;
+    background: #f3faf4; border: 1.5px solid #bfe3c7; color: #166534;
     font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
     display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;
   }
-  .btn-clear:hover { background: #f8fafc; border-color: #cbd5e1; }
+  .btn-clear:hover { background: #eaf6ee; border-color: #a3d4ad; }
   .result-count {
     font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap;
     background: #f1f5f9; padding: 4px 10px; border-radius: 20px;

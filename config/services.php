@@ -58,4 +58,24 @@ return [
         'key' => env('GROQ_API_KEY'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Tesseract OCR
+    |--------------------------------------------------------------------------
+    |
+    | Local OCR engine used by the optional "Import from Scanned Document"
+    | member import path. Tesseract is only needed when an administrator scans
+    | a document; the CSV / Excel / JSON importer never depends on it.
+    |
+    |   TESSERACT_PATH="C:\Program Files\Tesseract-OCR\tesseract.exe"
+    |
+    | Leave TESSERACT_PATH empty to resolve the `tesseract` command from the
+    | system PATH (common on Linux/macOS).
+    |
+    */
+    'ocr' => [
+        'tesseract_path' => env('TESSERACT_PATH', ''),
+        'tesseract_lang' => env('TESSERACT_LANG', 'eng'),
+    ],
+
 ];

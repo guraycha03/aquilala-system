@@ -31,7 +31,7 @@
     .users-page::after { width: 280px; height: 280px; background: rgba(93,194,87,0.12); bottom: -60px; left: -60px; }
     .users-content { position: relative; z-index: 1; }
 
-    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
     .header-row h1 { font-size: 24px; font-weight: 700; color: #1e293b; letter-spacing: 0.02em; margin: 0 0 4px 0; }
     .header-row p { font-size: 13px; color: #64748b; margin: 0; }
     .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -73,18 +73,13 @@
     .filter-card:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(20,61,35,0.10), 0 2px 6px rgba(20,61,35,0.05); border-color: rgba(20,61,35,0.16); }
     .filter-card:focus-visible { outline: 2px solid rgb(172, 242, 121); outline-offset: 2px; }
     .filter-card.active {
-      background: #143d23; border-color: #143d23;
-      box-shadow: 0 10px 26px rgba(20,61,35,0.24);
+      background: #e9f6d2; border-color: #b5d97d;
+      box-shadow: 0 10px 26px rgba(20,61,35,0.12);
     }
-    .filter-card.active .uk-label { color: #c9e4b5; }
-    .filter-card.active .uk-value { color: #ffffff; }
-    .filter-card.active .uk-sub { color: rgba(255,255,255,0.72); }
-    .filter-card.active .uk-dot { box-shadow: 0 0 0 2px rgba(255,255,255,0.25); }
-    .filter-card.active::after {
-      content: ""; position: absolute; top: 14px; right: 14px;
-      width: 8px; height: 8px; border-radius: 50%; background: rgb(172, 242, 121);
-      box-shadow: 0 0 0 3px rgba(172, 242, 121, 0.25);
-    }
+    .filter-card.active .uk-label { color: #4d7c0f; }
+    .filter-card.active .uk-value { color: #14532d; }
+    .filter-card.active .uk-sub { color: #5f7d5c; }
+    .filter-card.active .uk-dot { box-shadow: 0 0 0 2px rgba(255,255,255,0.9); }
 
     .users-panel {
       background: rgba(255,255,255,0.86); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
@@ -260,22 +255,22 @@
       <!-- Account filter cards (click to filter the table) -->
       <div class="users-kpis" id="userFilterCards">
         <button type="button" class="users-kpi filter-card active" data-user-filter="">
-          <span class="uk-label">All Accounts</span>
+          <span class="uk-label"><span class="uk-dot" style="background:#3f6b3e;"></span>All Accounts</span>
           <span class="uk-value">{{ $totalUsers }}</span>
           <span class="uk-sub">{{ $activatedCount }} active · {{ $pendingCount }} pending</span>
         </button>
         <button type="button" class="users-kpi filter-card" data-user-filter="farmer">
-          <span class="uk-label"><span class="uk-dot" style="background:#63856c;"></span>Farmers</span>
+          <span class="uk-label"><span class="uk-dot" style="background:#9dbe5c;"></span>Farmers</span>
           <span class="uk-value">{{ $farmerCount }}</span>
           <span class="uk-sub">Crop producers</span>
         </button>
         <button type="button" class="users-kpi filter-card" data-user-filter="store_owner">
-          <span class="uk-label"><span class="uk-dot" style="background:#a57f43;"></span>Store Owners</span>
+          <span class="uk-label"><span class="uk-dot" style="background:#8b6a44;"></span>Store Owners</span>
           <span class="uk-value">{{ $ownerCount }}</span>
           <span class="uk-sub">Registered stores</span>
         </button>
         <button type="button" class="users-kpi filter-card" data-user-filter="admin">
-          <span class="uk-label"><span class="uk-dot" style="background:#86799f;"></span>Officers/Admins</span>
+          <span class="uk-label"><span class="uk-dot" style="background:#d4a42e;"></span>Officers/Admins</span>
           <span class="uk-value">{{ $adminCount }}</span>
           <span class="uk-sub">Association leadership</span>
         </button>

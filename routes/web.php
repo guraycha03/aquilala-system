@@ -343,6 +343,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/settings', function () {
             return view('admin.settings.index');
         })->name('settings.index');
+        Route::get('/settings/seasons', function () {
+            return view('admin.settings.seasons');
+        })->name('settings.seasons');
+        Route::get('/settings/interface', function () {
+            return view('admin.settings.interface');
+        })->name('settings.interface');
         Route::post('/settings/interface', function (Request $request) {
             $data = $request->validate([
                 'yield_unit' => ['required', 'in:auto,mt,kg,cavan'],
@@ -475,19 +481,6 @@ Route::middleware('auth')->group(function () {
         })->name('analytics.expenses');
 
         // ── Settings (grouped pages) ───────────────────────────────
-        // Roles & Access — role scope + permission matrix
-        Route::get('/settings/roles', function () {
-            $officers = User::where('role', 'admin')
-                ->orderBy('name')
-                ->get(['id', 'name', 'email', 'status', 'created_at']);
-
-            $storeOwners = User::where('role', 'store_owner')
-                ->orderBy('name')
-                ->get(['id', 'name', 'email', 'phone', 'status', 'store_name', 'approved_at']);
-
-            return view('admin.settings.roles', compact('officers', 'storeOwners'));
-        })->name('settings.roles');
-
         Route::get('/audit', function () {
             return view('admin.audit.index');
         })->name('audit.index');

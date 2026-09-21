@@ -287,6 +287,51 @@
     }
     .notif-foot button:hover { background: #dcfce7; }
 
+    /* Sub-page pill tab bar (partials/admin-tabs).
+       Floats at the very top of the screen, mirrored to the notification bell
+       (bell = top-right, tabs = top-left). */
+    .aqua-tabs {
+      position: fixed;
+      top: 26px;
+      left: 280px;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px;
+      background: #ffffff;
+      border: 1px solid #eef1f4;
+      border-radius: 999px;
+      box-shadow: 0 2px 12px rgba(16, 24, 40, 0.10);
+      max-width: calc(100vw - 340px);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      transition: transform 0.3s ease;
+    }
+    .aqua-tabs::-webkit-scrollbar { display: none; }
+    .aqua-tabs.hidden { transform: translateY(-90px); }
+    .aqua-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 12px 26px;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #5b6b60;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .aqua-tab:hover { background: #f1f5f9; color: #143d23; }
+    .aqua-tab.active {
+      background: #14532d;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(20, 83, 45, 0.30);
+    }
+    .aqua-tabs-spacer { height: 18px; }
+
     @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
@@ -298,6 +343,18 @@
   .desktop-notif { background: transparent; border: none; box-shadow: none; color: #ffffff; }
   .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(255, 255, 255, 0.08); }
   .desktop-notif-wrap { top: 11px; right: 16px; }
+
+  .aqua-tabs {
+    top: 68px;
+    left: 16px;
+    right: 16px;
+    max-width: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .aqua-tabs::-webkit-scrollbar { display: none; }
+  .aqua-tab { padding: 12px 20px; flex: 0 0 auto; }
+  .aqua-tabs-spacer { height: 48px; }
 
   /* --- UPDATE HERE --- */
   /* 1. Add right padding to nav-body so space matches the left (14px on both sides) */
@@ -377,12 +434,12 @@
     .ncb-select-option.selected { background: #f0fdf4; color: #16a34a; font-weight: 600; }
     .btn-clear {
       display: inline-flex; align-items: center; gap: 6px;
-      height: 42px; padding: 0 14px; border: 1.5px solid #16a34a; border-radius: 10px;
-      background: #16a34a; color: #ffffff; font-size: 13px; font-weight: 700;
+      height: 42px; padding: 0 14px; border: 1.5px solid #bfe3c7; border-radius: 10px;
+      background: #f3faf4; color: #166534; font-size: 13px; font-weight: 600;
       cursor: pointer; font-family: inherit; transition: all 0.2s ease;
-      box-shadow: 0 1px 2px rgba(22,163,74,0.2); flex-shrink: 0;
+      box-shadow: 0 1px 2px rgba(22,101,52,0.06); flex-shrink: 0;
     }
-    .btn-clear:hover { border-color: #15803d; background: #15803d; box-shadow: 0 4px 12px rgba(22,163,74,0.3); }
+    .btn-clear:hover { border-color: #a3d4ad; background: #eaf6ee; box-shadow: 0 2px 8px rgba(22,101,52,0.10); }
     .btn-clear[hidden] { display: none; }
     .ttb-sort { min-width: 210px; }
     .btn-filter {
@@ -1152,14 +1209,17 @@ updateLiveTime();
 
       // Hide on scroll down, show on scroll up (desktop only)
       var lastY = window.scrollY;
+      var tabsBar = document.querySelector('.aqua-tabs');
       window.addEventListener('scroll', function () {
         var y = window.scrollY;
         if (window.innerWidth > 768) {
           if (y > lastY && y > 80) {
             wrap.classList.add('hidden');
             dropdown.classList.remove('open');
+            if (tabsBar) tabsBar.classList.add('hidden');
           } else if (y < lastY || y <= 80) {
             wrap.classList.remove('hidden');
+            if (tabsBar) tabsBar.classList.remove('hidden');
           }
         }
         lastY = y;

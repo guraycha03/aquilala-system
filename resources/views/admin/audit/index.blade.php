@@ -5,9 +5,10 @@
 @section('content')
   @include('partials.admin-tabs', [
     'tabs' => [
-      ['key' => 'policies', 'label' => 'Policies',       'url' => route('admin.settings.index')],
-      ['key' => 'logs',     'label' => 'Logs',           'url' => route('admin.audit.index')],
-      ['key' => 'roles',    'label' => 'Roles & Access', 'url' => route('admin.settings.roles')],
+      ['key' => 'general',   'label' => 'General',              'url' => route('admin.settings.index')],
+      ['key' => 'seasons',   'label' => 'Seasons',              'url' => route('admin.settings.seasons')],
+      ['key' => 'interface', 'label' => 'Interface',            'url' => route('admin.settings.interface')],
+      ['key' => 'logs',      'label' => 'Audit Log',            'url' => route('admin.audit.index')],
     ],
     'activeTab' => 'logs',
   ])
