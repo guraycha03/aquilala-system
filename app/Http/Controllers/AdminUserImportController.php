@@ -3,15 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\Onboarding\MailDeliveryException;
+use App\Exceptions\OcrException;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\OcrMemberExtractor;
+use App\Services\OcrService;
 use App\Services\UserInvitationService;
 use DateTimeImmutable;
+use finfo;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
@@ -23,6 +28,10 @@ class AdminUserImportController extends Controller
     private const SESSION_KEY = 'admin.user_import';
 
     private const ALLOWED_EXTENSIONS = ['csv', 'xls', 'xlsx', 'json'];
+
+    private const ALLOWED_OCR_EXTENSIONS = ['jpg', 'jpeg', 'png'];
+
+    private const OCR_IMAGE_MIMES = ['image/jpeg', 'image/png'];
 
     private const MAX_TOTAL_ROWS = 2000;
 
@@ -146,6 +155,175 @@ class AdminUserImportController extends Controller
         return view('admin.users.import', ['import' => session(self::SESSION_KEY)]);
     }
 
+    public function previewOcr(Request $request)
+    {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
+        $request->validate([
+            'file' => ['required', 'file', 'max:5120'],
+        ]);
+
+        $file = $request->file('file');
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        if (! in_array($extension, self::ALLOWED_OCR_EXTENSIONS, true)) {
+            return back()
+                ->with('error', 'Unsupported image type. Upload a .jpg, .jpeg, or .png scanned document.')
+                ->withInput();
+        }
+
+        if (! $this->isValidOcrImage($file)) {
+            return back()
+                ->with('error', 'The uploaded file is not a valid JPG or PNG image. Use the Excel/CSV option for non-image files.')
+                ->withInput();
+        }
+
+        $ocr = app(OcrService::class);
+
+        if (! $ocr->isAvailable()) {
+            Log::warning('OCR skipped: Tesseract is not available.', [
+                'configured_path' => $ocr->binaryPath(),
+            ]);
+
+            return back()
+                ->with('error', 'OCR scanning is not available on this server — Tesseract could not be found. You can still import using the CSV / Excel / JSON option below.')
+                ->withInput();
+        }
+
+        try {
+            $text = $ocr->extractText($file->getRealPath());
+        } catch (OcrException $e) {
+            Log::error('OCR extraction failed.', ['error' => $e->getMessage()]);
+
+            return back()
+                ->with('error', 'Unable to process this document with OCR. Please check the image quality or use the Excel/CSV import option instead.')
+                ->withInput();
+        }
+
+        if (trim($text) === '') {
+            return back()
+                ->with('error', 'OCR did not find any readable text in this image. Try a clearer scan or use the Excel/CSV import option instead.')
+                ->withInput();
+        }
+
+        $candidates = app(OcrMemberExtractor::class)->extract($text);
+
+        if ($candidates === []) {
+            return back()
+                ->with('error', 'No recognizable member records were found in this document. Check the scan quality or use the Excel/CSV import option.')
+                ->withInput();
+        }
+
+        if (count($candidates) > self::MAX_TOTAL_ROWS) {
+            return back()
+                ->with('error', 'The document contains about '.number_format(count($candidates)).' possible records. Split the scan and import up to '.number_format(self::MAX_TOTAL_ROWS).' at a time.')
+                ->withInput();
+        }
+
+        // Reuse the exact same normalization + duplicate detection as the
+        // structured-file importer, so OCR rows flow through one pipeline.
+        $rows = array_map(fn (array $raw) => $this->normalizeRow($raw), $candidates);
+
+        $this->markDuplicates($rows);
+
+        foreach ($rows as $index => &$row) {
+            $row['_row'] = $index + 1;
+            $row['_source'] = 'ocr';
+        }
+        unset($row);
+
+        $validRows = array_values(array_filter($rows, fn (array $row) => $row['issues'] === []));
+
+        if (count($validRows) > self::MAX_BATCH) {
+            return back()
+                ->with('error', 'This document has '.number_format(count($validRows)).' importable members, above the '.self::MAX_BATCH.' per-import limit. Split the scan and import in batches.')
+                ->withInput();
+        }
+
+        session()->put(self::SESSION_KEY, [
+            'token' => Str::random(32),
+            'filename' => $file->getClientOriginalName(),
+            'source' => 'ocr',
+            'ocr_text' => $text,
+            'rows' => $rows,
+            'valid' => count($validRows),
+            'errors' => count($rows) - count($validRows),
+            'expires' => now()->addMinutes(60)->timestamp,
+        ]);
+
+        return view('admin.users.import', ['import' => session(self::SESSION_KEY)]);
+    }
+
+    public function confirmOcr(Request $request): RedirectResponse
+    {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
+        $import = session(self::SESSION_KEY);
+
+        if (! is_array($import) || ($import['source'] ?? 'file') !== 'ocr'
+            || ! hash_equals((string) ($import['token'] ?? ''), (string) $request->input('token'))) {
+            return redirect()->route('admin.users.import')
+                ->with('error', 'The OCR review session has expired. Please scan the document again.');
+        }
+
+        $approvedIndexes = (array) $request->input('approve', []);
+        $approvedIndexes = array_map('strval', $approvedIndexes);
+
+        // Only OCR rows the administrator explicitly checked, and only rows
+        // that also pass the same validation the file importer applies.
+        $validRows = array_values(array_filter(
+            $import['rows'],
+            fn (array $row) => ($row['_source'] ?? 'file') === 'ocr'
+                && $row['issues'] === []
+                && in_array((string) $row['_row'], $approvedIndexes, true)
+        ));
+
+        if ($validRows === []) {
+            return back()
+                ->with('error', 'No OCR records were selected for import. Tick the boxes next to the records you want to add, then import again.')
+                ->withInput(['token' => $import['token']]);
+        }
+
+        $result = $this->createAccounts($validRows);
+        $inserted = $result['inserted'];
+        $skipped = $result['skipped'];
+
+        $deliveryFailures = 0;
+        foreach ($result['createdUsers'] as $importUser) {
+            try {
+                UserInvitationService::issueActivation($importUser);
+            } catch (MailDeliveryException) {
+                $deliveryFailures++;
+            }
+        }
+
+        session()->forget(self::SESSION_KEY);
+
+        if ($inserted > 0) {
+            ActivityLogger::log(
+                'user.imported',
+                "Imported {$inserted} member".($inserted > 1 ? 's' : '').' from a scanned document'.($skipped > 0 ? " ({$skipped} duplicate".($skipped > 1 ? 's' : '').' skipped)' : ''),
+                null,
+                ['inserted' => $inserted, 'skipped' => $skipped, 'source' => 'ocr']
+            );
+        }
+
+        if ($inserted === 0) {
+            $message = 'No new members were imported — every approved OCR record was invalid or already registered.';
+        } else {
+            $message = 'Imported '.number_format($inserted).' member'.($inserted > 1 ? 's' : '').' from the scanned document.';
+            if ($skipped > 0) {
+                $message .= ' '.number_format($skipped).' duplicate'.($skipped > 1 ? 's were' : ' was').' skipped.';
+            }
+            $message .= ' Activation codes were emailed to each new account.';
+            if ($deliveryFailures > 0) {
+                $message .= ' '.$deliveryFailures.' email'.($deliveryFailures > 1 ? 's' : '').' could not be sent — resend from the Users list once connectivity is restored.';
+            }
+        }
+
+        return redirect()->route('admin.users.index')->with('success', $message);
+    }
+
     public function confirm(Request $request): RedirectResponse
     {
         abort_unless(auth()->user()?->role === 'admin', 403);
@@ -157,49 +335,23 @@ class AdminUserImportController extends Controller
                 ->with('error', 'The import session has expired. Please upload the file again.');
         }
 
-        $validRows = array_values(array_filter($import['rows'], fn (array $row) => $row['issues'] === []));
+        // Only structured-file rows may ever be imported through the classic
+        // confirm action. OCR records require explicit per-row approval on
+        // their own confirm route.
+        $validRows = array_values(array_filter(
+            $import['rows'],
+            fn (array $row) => ($row['_source'] ?? 'file') === 'file' && $row['issues'] === []
+        ));
 
-        $inserted = 0;
-        $skipped = 0;
-        $createdUsers = [];
-
-        DB::transaction(function () use ($validRows, &$inserted, &$skipped, &$createdUsers) {
-            foreach ($validRows as $row) {
-                try {
-                    $email = strtolower($row['data']['email']);
-                    $phone = $row['data']['phone'] ?? null;
-
-                    if (User::where('email', $email)->exists()
-                        || ($phone !== null && User::where('phone', $phone)->exists())) {
-                        $skipped++;
-
-                        continue;
-                    }
-
-                    $createdUsers[] = User::create([
-                        ...$row['data'],
-                        'status' => User::STATUS_PENDING,
-                        'password' => Hash::make(Str::random(64)),
-                    ]);
-
-                    $inserted++;
-                } catch (QueryException $e) {
-                    if ($this->isDuplicateKeyError($e)) {
-                        $skipped++;
-
-                        continue;
-                    }
-
-                    throw $e;
-                }
-            }
-        });
+        $result = $this->createAccounts($validRows);
+        $inserted = $result['inserted'];
+        $skipped = $result['skipped'];
 
         // Email an activation code to every freshly imported account. A single
         // delivery failure must never roll back the whole import — leave those
         // accounts pending and actionable from the Users list.
         $deliveryFailures = 0;
-        foreach ($createdUsers as $importUser) {
+        foreach ($result['createdUsers'] as $importUser) {
             try {
                 UserInvitationService::issueActivation($importUser);
             } catch (MailDeliveryException) {
@@ -241,6 +393,68 @@ class AdminUserImportController extends Controller
         session()->forget(self::SESSION_KEY);
 
         return redirect()->route('admin.users.index');
+    }
+
+    /**
+     * Shared account-creation step used by both the file import and the OCR
+     * import. Returns the number inserted/skipped and the created models.
+     *
+     * @param  list<array<string, mixed>>  $validRows
+     * @return array{inserted: int, skipped: int, createdUsers: list<User>}
+     */
+    private function createAccounts(array $validRows): array
+    {
+        $inserted = 0;
+        $skipped = 0;
+        $createdUsers = [];
+
+        DB::transaction(function () use ($validRows, &$inserted, &$skipped, &$createdUsers) {
+            foreach ($validRows as $row) {
+                try {
+                    $email = strtolower($row['data']['email']);
+                    $phone = $row['data']['phone'] ?? null;
+
+                    if (User::where('email', $email)->exists()
+                        || ($phone !== null && User::where('phone', $phone)->exists())) {
+                        $skipped++;
+
+                        continue;
+                    }
+
+                    $createdUsers[] = User::create([
+                        ...$row['data'],
+                        'status' => User::STATUS_PENDING,
+                        'password' => Hash::make(Str::random(64)),
+                    ]);
+
+                    $inserted++;
+                } catch (QueryException $e) {
+                    if ($this->isDuplicateKeyError($e)) {
+                        $skipped++;
+
+                        continue;
+                    }
+
+                    throw $e;
+                }
+            }
+        });
+
+        return compact('inserted', 'skipped', 'createdUsers');
+    }
+
+    private function isValidOcrImage(\Illuminate\Http\UploadedFile $file): bool
+    {
+        $path = $file->getRealPath();
+
+        if (! is_string($path) || ! is_file($path)) {
+            return false;
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($path);
+
+        return in_array((string) $mime, self::OCR_IMAGE_MIMES, true);
     }
 
     private function readRawRows(string $path, string $extension): array

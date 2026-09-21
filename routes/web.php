@@ -299,6 +299,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/users/import/cancel', [AdminUserImportController::class, 'cancel'])
             ->name('users.import.cancel');
 
+        // Optional OCR path: scan a JPG/PNG member list via Tesseract.
+        // Records only ever become accounts after explicit per-row approval.
+        Route::post('/users/import/ocr', [AdminUserImportController::class, 'previewOcr'])
+            ->name('users.import.ocr');
+        Route::post('/users/import/ocr/confirm', [AdminUserImportController::class, 'confirmOcr'])
+            ->name('users.import.ocr.confirm');
+
         Route::get('/approvals', [AdminUserController::class, 'approvals'])
             ->name('approvals.index');
 

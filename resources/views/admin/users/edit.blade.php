@@ -79,16 +79,20 @@
       margin-top: 22px; padding-top: 18px; border-top: 1px solid #eef1ef;
     }
     .btn-users {
-      display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
-      background: rgb(172, 242, 121); border: 1px solid rgba(20,61,35,0.12);
-      color: #14532d; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 700;
-      transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(20,61,35,0.08); cursor: pointer;
-      font-family: inherit;
+      display: inline-flex; align-items: center; gap: 8px; text-decoration: none; cursor: pointer;
+      font-family: inherit; letter-spacing: 0.01em; line-height: 1;
+      background: #14532d; border: 1px solid rgba(255,255,255,0.10);
+      color: #f4faf5; padding: 11px 20px; border-radius: 11px; font-size: 13px; font-weight: 600;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(20,61,35,0.06), 0 4px 12px rgba(20,61,35,0.10);
     }
-    .btn-users:hover { background: rgb(160, 232, 108); transform: translateY(-1px); }
-    .btn-users svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-    .btn-users.ghost { background: #ffffff; border-color: rgba(20,61,35,0.10); box-shadow: none; }
-    .btn-users.ghost:hover { background: #f0fdf4; transform: translateY(-1px); }
+    .btn-users:hover { background: #0f4228; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(20,61,35,0.08), 0 7px 16px rgba(20,61,35,0.14); }
+    .btn-users:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(20,61,35,0.06); }
+    .btn-users:focus-visible { outline: 3px solid rgba(22,163,74,0.28); outline-offset: 2px; }
+    .btn-users:disabled { opacity: 0.5; cursor: not-allowed; transform: none; background: #e6ece6; color: #8aa296; border-color: #d8e3db; box-shadow: none; }
+    .btn-users svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .btn-users.ghost { background: #ffffff; color: #334c3e; border-color: #d8e3db; box-shadow: 0 1px 2px rgba(20,61,35,0.05); }
+    .btn-users.ghost:hover { background: #f3f8f4; border-color: #b9cec0; color: #1e3829; transform: translateY(-1px); }
   </style>
 
   <div class="register-page">
