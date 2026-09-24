@@ -62,20 +62,22 @@ return [
         'matcha' => [
             'name' => 'Pistachio',
             'desc' => 'Soft light green',
-            'chip' => ['bg' => '#e5f3c3', 'fg' => '#4c5c30'],
+            'chip' => ['bg' => '#f1efe2', 'fg' => '#4c5c30'],
             'colors' => [
-                'bg'                => '#e5f3c3',
-                'deep'              => '#c4e092',
+                'bg'                => '#f1efe2',
+                'deep'              => '#e3e0cc',
                 'fg'                => '#33421d',
                 'nav'               => '#4c5c30',
                 'muted'             => '#758954',
                 'nav_hover'         => '#20280f',
-                'hover_bg'          => 'rgba(51,66,29,0.10)',
-                'hover_strong'      => 'rgba(51,66,29,0.16)',
+                'hover_bg'          => 'rgba(51, 66, 29, 0.08)',
+                'hover_strong'      => 'rgba(51, 66, 29, 0.14)',
                 'active_bg'         => '#f3f6f4',
                 'active_fg'         => '#5f7c2e',
                 'accent'            => '#3ca811',
-                'avatar_bg'         => 'rgba(51,66,29,0.12)',
+                'avatar_bg'         => 'rgba(51, 66, 29, 0.12)',
+
+               
                 'avatar_fg'         => '#4c5c30',
                 'border'            => 'rgba(51,66,29,0.16)',
                 'border_soft'       => 'rgba(51,66,29,0.10)',
@@ -97,9 +99,9 @@ return [
         'khaki' => [
             'name' => 'Sage Green',
             'desc' => 'Muted earthy green',
-            'chip' => ['bg' => '#49802a', 'fg' => '#eef3dd'],
+            'chip' => ['bg' => '#5b8d3e', 'fg' => '#eef3dd'],
             'colors' => [
-                'bg'                => '#49802a',
+                'bg'                => '#5b8d3e',
                 'deep'              => '#417921',
                 'fg'                => '#ffffff',
                 'nav'               => '#eef3dd',

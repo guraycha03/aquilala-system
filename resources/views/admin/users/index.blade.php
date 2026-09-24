@@ -202,8 +202,8 @@
     .btn-modal.cancel:hover { background: #e2e8f0; }
     .btn-modal.ok { background: rgb(172, 242, 121); color: #14532d; }
     .btn-modal.ok:hover { background: rgb(160, 232, 108); }
-    .btn-modal.danger { background: #b91c1c; color: #ffffff; }
-    .btn-modal.danger:hover { background: #991b1b; }
+    .btn-modal.danger { background: #b0403a; color: #ffffff; }
+    .btn-modal.danger:hover { background: #963530; }
     .btn-modal[disabled] { opacity: 0.6; cursor: not-allowed; }
 
     /* Profile modal specific */

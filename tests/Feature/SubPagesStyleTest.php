@@ -22,9 +22,22 @@ class SubPagesStyleTest extends TestCase
         ], $overrides));
     }
 
-    public function test_top_tab_bar_is_rendered_by_default(): void
+    public function test_sidebar_sub_pages_are_rendered_by_default(): void
     {
         $admin = $this->makeAdmin();
+
+        $this->actingAs($admin)
+            ->get('/admin/users')
+            ->assertOk()
+            ->assertDontSee('<div class="aqua-tabs"', false)
+            ->assertSee('<li class="nav-dropdown open">', false)
+            ->assertSee('<button type="button" class="nav-dropdown-btn"', false)
+            ->assertSee('<a href="'.route('admin.users.index').'" class="active">', false);
+    }
+
+    public function test_top_tab_bar_is_rendered_when_style_is_top(): void
+    {
+        $admin = $this->makeAdmin(['sub_pages_style' => 'top']);
 
         $this->actingAs($admin)
             ->get('/admin/users')
@@ -70,7 +83,7 @@ class SubPagesStyleTest extends TestCase
             ->assertStatus(422)
             ->assertJson(['ok' => false]);
 
-        $this->assertSame('top', $admin->fresh()->sub_pages_style);
+        $this->assertSame('sidebar', $admin->fresh()->sub_pages_style);
     }
 
     public function test_settings_tabs_style_saves_top_preference(): void

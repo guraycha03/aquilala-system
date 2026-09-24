@@ -1,6 +1,6 @@
 @php
     $sppSaved = (string) optional(auth()->user())->sub_pages_style;
-    $sppCurrent = $sppSaved === 'sidebar' ? 'sidebar' : 'top';
+    $sppCurrent = $sppSaved === 'top' ? 'top' : 'sidebar';
 @endphp
 
 <style>
@@ -83,7 +83,7 @@
         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       </span>
     </span>
-    <span class="spp-desc">Pill buttons pinned along the top of each page, above the content (the current style).</span>
+    <span class="spp-desc">Pill buttons pinned along the top of each page, above the content.</span>
   </button>
 </div>
 <p class="spp-hint" style="font-size:11px;color:#94a3b8;margin:10px 2px 0;">Click a style to apply instantly — the page reloads and your choice is saved to your account automatically.</p>

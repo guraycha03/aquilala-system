@@ -3,18 +3,26 @@
 @section('title', 'Generate Cost Quotation')
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'generate', 'label' => 'Generate Quotation',  'url' => route('farmer.quotations.request')],
+      ['key' => 'my',       'label' => 'My Cost Quotations', 'url' => route('farmer.quotations.index')],
+    ],
+    'activeTab' => 'generate',
+  ])
 @php
   $selSeason = old('season') ?? $globalSeason;
   $climate = $globalClimateInfo;
   $cardStyle = function ($season) use ($selSeason) {
-      return 'display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 2px solid ' . ($selSeason === $season ? '#143d23' : '#e8ecea') . '; border-radius: 12px; cursor: pointer; transition: all 0.2s; background: ' . ($selSeason === $season ? 'linear-gradient(135deg, #f0fdf4, #dcfce7)' : '#ffffff') . ';';
+      $selected = $selSeason === $season;
+      return 'display: flex; align-items: center; gap: 10px; padding: 13px 16px; border: 1.5px solid ' . ($selected ? '#143d23' : '#d7dfda') . '; border-radius: 11px; cursor: pointer; transition: all 0.15s; background: ' . ($selected ? '#f0fdf4' : '#ffffff') . ';';
   };
-  $climateDotStyle = 'display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ' . ($climate['season'] === 'wet' ? '#0284c7' : '#d97706') . ';';
+  $climateDotStyle = 'display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: ' . ($climate['season'] === 'wet' ? '#0284c7' : '#d97706') . ';';
 @endphp
 <style>
   .input-field {
-    width: 100%; padding: 13px 16px; border: 1px solid #e2e8f0;
-    border-radius: 12px; font-size: 14px; font-family: inherit;
+    width: 100%; padding: 12px 15px; border: 1px solid #d7dfda;
+    border-radius: 10px; font-size: 14px; font-family: inherit;
     background: #ffffff; transition: border-color 0.2s, box-shadow 0.2s;
   }
   .input-field:focus {
@@ -22,11 +30,11 @@
     box-shadow: 0 0 0 3px rgba(20, 61, 35, 0.08);
   }
   .input-label {
-    display: block; font-size: 13px; font-weight: 700;
-    color: #1a2b1e; margin-bottom: 6px;
+    display: block; font-size: 13.5px; font-weight: 700;
+    color: #1a2b1e; margin-bottom: 7px;
   }
   .input-hint {
-    font-size: 12px; color: #879a8c; margin-top: 6px; line-height: 1.4;
+    font-size: 12px; color: #879a8c; margin-top: 7px; line-height: 1.45;
   }
   select.input-field {
     appearance: none;
@@ -37,27 +45,110 @@
   .submit-btn {
     background: linear-gradient(135deg, #143d23 0%, #1a5230 100%);
     color: white; border: none;
-    padding: 14px 32px; border-radius: 12px; font-size: 15px;
+    padding: 14px 30px; border-radius: 11px; font-size: 15px;
     font-weight: 700; cursor: pointer; transition: all 0.2s;
-    display: inline-flex; align-items: center; gap: 8px;
-    box-shadow: 0 4px 16px rgba(20,61,35,0.25);
+    display: inline-flex; align-items: center; gap: 9px;
+    box-shadow: 0 3px 12px rgba(20,61,35,0.22);
   }
-  .submit-btn:hover { box-shadow: 0 6px 24px rgba(20,61,35,0.3); transform: translateY(-1px); }
+  .submit-btn:hover { box-shadow: 0 5px 18px rgba(20,61,35,0.3); transform: translateY(-1px); }
   .submit-btn:active { transform: scale(0.98); }
+  .submit-btn svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 
-  .info-card {
-    background: #ffffff; border: 1px solid #f0f2f1;
-    border-radius: 14px; padding: 20px; display: flex; gap: 14px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.02);
-    transition: all 0.2s;
+  /* Guided question layout — clean, organized, breathable */
+  .q-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px 40px;
+    align-items: start;
   }
-  .info-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+  .q-block { display: flex; gap: 15px; }
+  .q-span { grid-column: 1 / -1; }
+  @media (max-width: 860px) { .q-grid { grid-template-columns: 1fr; } }
+  .q-num {
+    width: 34px; height: 34px; border-radius: 11px; flex-shrink: 0;
+    background: #eef5ee; color: #143d23;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; margin-top: 1px;
+  }
+  .q-body { flex: 1; min-width: 0; }
+
+  .form-sheet {
+    background: #ffffff; border: 1px solid #e4ebe6; border-radius: 18px;
+    padding: 34px 38px 36px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+
+  /* Page header + help button */
+  .page-title-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 16px; margin-bottom: 22px; flex-wrap: wrap;
+  }
+  .help-btn {
+    width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+    background: #ffffff; border: 1px solid #d7dfda; cursor: pointer;
+    color: #143d23; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .help-btn:hover { border-color: #143d23; background: #f0fdf4; transform: translateY(-1px); }
+  .help-btn:active { transform: scale(0.96); }
+  .help-btn svg { width: 19px; height: 19px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ── Instructions modal ── */
+  .imodal-overlay {
+    position: fixed; inset: 0; background: rgba(20, 30, 24, 0.45);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1500; padding: 18px;
+    opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+  .imodal-overlay.open { opacity: 1; visibility: visible; }
+  .imodal {
+    background: #ffffff; border-radius: 18px; width: min(620px, 100%);
+    max-height: 84vh; overflow-y: auto;
+    box-shadow: 0 28px 70px rgba(15, 25, 18, 0.35);
+    transform: translateY(10px) scale(0.98); transition: transform 0.22s ease;
+    scrollbar-width: thin;
+  }
+  .imodal-overlay.open .imodal { transform: translateY(0) scale(1); }
+  .imodal-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+    padding: 20px 24px; border-bottom: 1px solid #f0f2f1;
+    position: sticky; top: 0; background: #ffffff; border-radius: 18px 18px 0 0; z-index: 1;
+  }
+  .imodal-head h3 { font-size: 16px; font-weight: 800; color: #1a2b1e; margin: 0; }
+  .imodal-head p { font-size: 13px; color: #879a8c; margin: 4px 0 0 0; }
+  .imodal-close {
+    width: 32px; height: 32px; border-radius: 9px; border: none; cursor: pointer;
+    background: #f0f2f1; color: #6b7c6e; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .imodal-close:hover { background: #fee2e2; color: #b91c1c; }
+  .imodal-close svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .imodal-body { padding: 22px 24px 26px; }
+  .im-step { display: flex; gap: 14px; padding: 12px 0; }
+  .im-step + .im-step { border-top: 1px solid #f0f2f1; }
+  .im-step-badge {
+    width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
+  }
+  .im-step-badge.green { background: #dcfce7; color: #166534; }
+  .im-step-badge.blue  { background: #dbeafe; color: #1d4ed8; }
+  .im-step-badge.amber { background: #fef3c7; color: #b45309; }
+  .im-step-badge.violet{ background: #ede9fe; color: #6d28d9; }
+  .im-step-title { font-size: 13.5px; font-weight: 700; color: #1a2b1e; }
+  .im-step-desc { font-size: 13px; color: #51605a; line-height: 1.6; margin-top: 3px; }
+  .im-note {
+    margin-top: 16px; padding: 14px 16px; background: #f0fdf4;
+    border: 1px solid #bbf7d0; border-radius: 12px;
+    font-size: 12.5px; color: #15803d; line-height: 1.6;
+  }
 
   /* Product Selector */
   .product-selector-wrap { position: relative; }
   .product-search-input {
-    width: 100%; padding: 13px 16px 13px 40px; border: 1px solid #e2e8f0;
-    border-radius: 12px; font-size: 14px; font-family: inherit;
+    width: 100%; padding: 12px 15px 12px 38px; border: 1px solid #d7dfda;
+    border-radius: 10px; font-size: 14px; font-family: inherit;
     background: #ffffff; transition: border-color 0.2s, box-shadow 0.2s;
   }
   .product-search-input:focus {
@@ -65,20 +156,20 @@
     box-shadow: 0 0 0 3px rgba(20, 61, 35, 0.08);
   }
   .product-search-icon {
-    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
     pointer-events: none; color: #879a8c;
   }
   .product-dropdown {
     position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-    background: #ffffff; border: 1px solid #e8ecea; border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1); max-height: 260px;
+    background: #ffffff; border: 1px solid #e0e5e1; border-radius: 11px;
+    box-shadow: 0 10px 34px rgba(20,61,35,0.14); max-height: 260px;
     overflow-y: auto; z-index: 50; display: none;
   }
   .product-dropdown.open { display: block; }
   .product-dropdown-item {
-    padding: 12px 16px; cursor: pointer; display: flex;
+    padding: 11px 15px; cursor: pointer; display: flex;
     align-items: center; gap: 12px; font-size: 14px;
-    border-bottom: 1px solid #f5f7f6; transition: background 0.15s;
+    border-bottom: 1px solid #f4f6f5; transition: background 0.15s;
   }
   .product-dropdown-item:last-child { border-bottom: none; }
   .product-dropdown-item:hover { background: #f0fdf4; }
@@ -87,31 +178,31 @@
   .product-dropdown-item .prod-meta { font-size: 12px; color: #b0b8b3; }
   .product-dropdown-item .prod-price { font-weight: 700; color: #143d23; white-space: nowrap; }
   .product-dropdown-empty {
-    padding: 24px 16px; text-align: center; color: #b0b8b3; font-size: 13px;
+    padding: 22px 15px; text-align: center; color: #b0b8b3; font-size: 13px;
   }
   .selected-products { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .selected-product-chip {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 14px; background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-    border: 1px solid #bbf7d0; border-radius: 10px;
+    padding: 6px 13px; background: #f0fdf4;
+    border: 1px solid #bbf7d0; border-radius: 9px;
     font-size: 13px; color: #166534; font-weight: 600;
   }
   .selected-product-chip button {
     background: none; border: none; color: #b0b8b3; cursor: pointer;
     padding: 0; display: flex; line-height: 1; transition: color 0.15s;
   }
-  .selected-product-chip button:hover { color: #dc2626; }
-  .product-loading { padding: 20px; text-align: center; color: #879a8c; font-size: 13px; }
+  .selected-product-chip button:hover { color: #b0403a; }
+  .product-loading { padding: 18px; text-align: center; color: #879a8c; font-size: 13px; }
   .product-prompt {
-    padding: 24px; text-align: center; color: #879a8c; font-size: 13px;
-    border: 2px dashed #e8ecea; border-radius: 12px; background: #fafdfb;
+    padding: 22px; text-align: center; color: #879a8c; font-size: 13px;
+    border: 1.5px dashed #d3dcd6; border-radius: 11px; background: #fafdfb;
   }
 
   /* Searchable Crop Selector */
   .crop-selector-wrap { position: relative; }
   .crop-search-input {
-    width: 100%; padding: 13px 16px 13px 40px; border: 1px solid #e2e8f0;
-    border-radius: 12px; font-size: 14px; font-family: inherit;
+    width: 100%; padding: 12px 15px 12px 38px; border: 1px solid #d7dfda;
+    border-radius: 10px; font-size: 14px; font-family: inherit;
     background: #ffffff; transition: border-color 0.2s, box-shadow 0.2s;
   }
   .crop-search-input:focus {
@@ -119,31 +210,31 @@
     box-shadow: 0 0 0 3px rgba(20, 61, 35, 0.08);
   }
   .crop-search-icon {
-    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
     pointer-events: none; color: #879a8c;
   }
   .crop-dropdown {
     position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-    background: #ffffff; border: 1px solid #e8ecea; border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1); max-height: 260px;
+    background: #ffffff; border: 1px solid #e0e5e1; border-radius: 11px;
+    box-shadow: 0 10px 34px rgba(20,61,35,0.14); max-height: 260px;
     overflow-y: auto; z-index: 50; display: none;
   }
   .crop-dropdown.open { display: block; }
   .crop-dropdown-item {
-    padding: 12px 16px; cursor: pointer; font-size: 14px;
-    border-bottom: 1px solid #f5f7f6; transition: background 0.15s;
+    padding: 11px 15px; cursor: pointer; font-size: 14px;
+    border-bottom: 1px solid #f4f6f5; transition: background 0.15s;
     color: #1a2b1e;
   }
   .crop-dropdown-item:last-child { border-bottom: none; }
   .crop-dropdown-item:hover { background: #f0fdf4; }
   .crop-dropdown-item.active { background: #f0fdf4; font-weight: 600; color: #143d23; }
   .crop-dropdown-empty {
-    padding: 24px 16px; text-align: center; color: #879a8c; font-size: 13px;
+    padding: 22px 15px; text-align: center; color: #879a8c; font-size: 13px;
   }
 
-  @media (max-width: 768px) {
-    .info-row { grid-template-columns: 1fr !important; }
-    #info-help-btn { right: 8px !important; top: -52px !important; }
+  .submit-row {
+    margin-top: 28px; padding-top: 24px; border-top: 1px solid #f0f2f1;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
   }
 </style>
 
@@ -152,34 +243,32 @@
   ['label' => 'Generate Quotation'],
 ]"/>
 
-<div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; position: relative;">
+<div class="page-title-row">
   <div>
-    <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">
+    <h1 style="font-size: 24px; font-weight: 800; color: #1a2b1e; margin: 0 0 5px 0; letter-spacing: -0.02em;">
       Generate a Cost Quotation
     </h1>
     <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
-      Get an instant farming cost breakdown — no approval needed. Store owners see this as demand intel.
+      Answer 3 quick questions to get an instant, itemized cost estimate — no approval needed.
     </p>
   </div>
-  <button type="button" id="info-help-btn" aria-label="Help and information"
-          style="width: 40px; height: 40px; flex-shrink: 0; position: absolute; top: 0; right: -11px; border-radius: 50%; background: #ffffff; border: 1px solid #e2e8f0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: all 0.2s;">
-    <img src="{{ asset('images/question-mark.png') }}" alt="Help and information"
-         style="width: 20px; height: 20px; object-fit: contain; display: block;">
+  <button type="button" class="help-btn" id="helpBtn" title="How it works" aria-label="How it works">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
   </button>
 </div>
 
 @if(session('success'))
-  <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(22,163,74,0.06);">
-    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(22,163,74,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+  <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 11px; padding: 13px 17px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px;">
+    <div style="width: 26px; height: 26px; border-radius: 8px; background: rgba(22,163,74,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="15" height="15" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <span style="font-size: 14px; color: #166534; font-weight: 600;">{{ session('success') }}</span>
   </div>
 @endif
 
 @if($errors->any())
-  <div style="background: linear-gradient(135deg, #fef2f2, #fee2e2); border: 1px solid #fca5a5; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(220,38,38,0.06);">
-    <ul style="margin: 0; padding-left: 20px; color: #dc2626; font-size: 14px;">
+  <div style="background: linear-gradient(135deg, #fef2f2, #fee2e2); border: 1px solid #fca5a5; border-radius: 11px; padding: 13px 17px; margin-bottom: 18px;">
+    <ul style="margin: 0; padding-left: 20px; color: #dc2626; font-size: 13.5px;">
       @foreach($errors->all() as $error)
         <li>{{ $error }}</li>
       @endforeach
@@ -187,187 +276,180 @@
   </div>
 @endif
 
-<!-- Main Form -->
-<div style="background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.02); border: 1px solid #f0f2f1; overflow: hidden;">
-  <div style="padding: 22px 28px; border-bottom: 1px solid #f0f2f1; background: #fafdfb;">
-      <h2 style="font-size: 17px; font-weight: 700; color: #1a2b1e; margin: 0;">Farming Requirements</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">Fill in the details to get an instant cost quotation.</p>
+<form action="{{ route('farmer.quotations.store') }}" method="POST" class="form-sheet" id="quotationForm">
+  @csrf
+
+  <div class="q-grid">
+
+  <!-- 1. Crop Type -->
+  <div class="q-block">
+    <div class="q-num">1</div>
+    <div class="q-body">
+      <label for="crop_type" class="input-label">What crop are you planting?</label>
+      <div class="crop-selector-wrap">
+        <svg class="crop-search-icon" viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="crop-search" class="crop-search-input"
+               placeholder="Search or select a crop..." autocomplete="off"
+               value="{{ old('crop_type') }}">
+        <input type="hidden" name="crop_type" id="crop_type" value="{{ old('crop_type') }}">
+        <div id="crop-dropdown" class="crop-dropdown">
+          @foreach($cropTypes as $type)
+            <div class="crop-dropdown-item" data-value="{{ $type }}">{{ $type }}</div>
+          @endforeach
+        </div>
+      </div>
+      <div class="input-hint">Type to search the crop directory, or pick from the list.</div>
+    </div>
   </div>
 
-    <form action="{{ route('farmer.quotations.store') }}" method="POST" style="padding: 28px;">
-      @csrf
-
-      <!-- Instant quotation indicator -->
-      <div style="display: flex; gap: 8px; margin-bottom: 28px;">
-        <div style="flex: 1; height: 4px; background: linear-gradient(90deg, #143d23, #22c55e); border-radius: 2px;"></div>
-      </div>
-
-      <!-- Crop Type -->
-      <div style="margin-bottom: 20px;">
-        <label for="crop_type" class="input-label">Crop Type</label>
-        <div class="crop-selector-wrap">
-          <svg class="crop-search-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="crop-search" class="crop-search-input"
-                 placeholder="Search or select a crop..." autocomplete="off"
-                 value="{{ old('crop_type') }}">
-          <input type="hidden" name="crop_type" id="crop_type" value="{{ old('crop_type') }}">
-          <div id="crop-dropdown" class="crop-dropdown">
-            @foreach($cropTypes as $type)
-              <div class="crop-dropdown-item" data-value="{{ $type }}">{{ $type }}</div>
-            @endforeach
+  <!-- 2. Season -->
+  <div class="q-block">
+    <div class="q-num">2</div>
+    <div class="q-body">
+      <label class="input-label">Which season are you planting for?</label>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <label data-inline-style="{{ $cardStyle('wet') }}">
+          <input type="radio" name="season" value="wet" @checked((old('season') ?? $globalSeason) === 'wet') style="accent-color: #143d23;" required>
+          <div>
+            <div style="font-weight: 600; font-size: 14px; color: #1e2922;">Wet Season</div>
+            <div style="font-size: 12px; color: #94a3b8;">June – January</div>
           </div>
-        </div>
-        <div class="input-hint">What crop are you planning to plant this season?</div>
-      </div>
-
-      <!-- Season — Auto-detected based on Philippine climate -->
-      <div style="margin-bottom: 20px;">
-        <label class="input-label">Farming Season</label>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-          <label data-inline-style="{{ $cardStyle('wet') }}">
-            <input type="radio" name="season" value="wet" @checked((old('season') ?? $globalSeason) === 'wet') style="accent-color: #143d23;" required>
-            <div>
-              <div style="font-weight: 600; font-size: 14px; color: #1e2922;">Wet Season</div>
-              <div style="font-size: 12px; color: #94a3b8;">June – January</div>
-            </div>
-          </label>
-          <label data-inline-style="{{ $cardStyle('dry') }}">
-            <input type="radio" name="season" value="dry" @checked((old('season') ?? $globalSeason) === 'dry') style="accent-color: #143d23;" required>
-            <div>
-              <div style="font-weight: 600; font-size: 14px; color: #1e2922;">Dry Season</div>
-              <div style="font-size: 12px; color: #94a3b8;">February – May</div>
-            </div>
-          </label>
-        </div>
-        <div class="input-hint">
-          <span style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
-            <span data-inline-style="{{ $climateDotStyle }}"></span>
-            <strong>Currently:</strong> {{ $globalSeasonLabel }} — {{ $climate['months'] }}
-            @if(isset($climate['sub_season']))
-              <span style="color: #64748b;">({{ $climate['sub_season'] }})</span>
-            @endif
-          </span>
-        </div>
-      </div>
-
-      <!-- Land Area -->
-      <div style="margin-bottom: 20px;">
-        <label for="land_area" class="input-label">Land Area (Hectares)</label>
-        <div style="display: flex; gap: 10px;">
-          <input type="number" name="land_area" id="land_area" class="input-field"
-                 placeholder="e.g., 1.5" step="0.01" min="0.01" max="999.99"
-                 value="{{ old('land_area') }}" required>
-          <div style="display: flex; align-items: center; padding: 0 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #64748b; font-weight: 600; white-space: nowrap;">ha</div>
-        </div>
-        <div class="input-hint">Enter the total size of your farm area for this crop.</div>
-      </div>
-
-      <!-- Available Products -->
-      <div style="margin-bottom: 20px;">
-        <label class="input-label">Select Products <span style="color: #94a3b8; font-weight: 400;">(optional)</span></label>
-        <div id="product-selector-section">
-          <div id="product-prompt" class="product-prompt">
-            Select a crop type and season above to browse available products.
+        </label>
+        <label data-inline-style="{{ $cardStyle('dry') }}">
+          <input type="radio" name="season" value="dry" @checked((old('season') ?? $globalSeason) === 'dry') style="accent-color: #143d23;" required>
+          <div>
+            <div style="font-weight: 600; font-size: 14px; color: #1e2922;">Dry Season</div>
+            <div style="font-size: 12px; color: #94a3b8;">February – May</div>
           </div>
-          <div id="product-loading" class="product-loading" style="display: none;">
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="#94a3b8" stroke-width="2" fill="none" style="vertical-align: middle; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            Loading products...
-          </div>
-          <div id="product-selector-container" style="display: none;">
-            <div class="product-selector-wrap">
-              <svg class="product-search-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="text" id="product-search" class="product-search-input"
-                     placeholder="Search products by name, brand, or SKU..." autocomplete="off">
-              <div id="product-dropdown" class="product-dropdown"></div>
-            </div>
-            <div id="selected-products" class="selected-products"></div>
-          </div>
-        </div>
-        <div class="input-hint">      Optionally pick specific products you'd like included in the quotation. Quantities will be calculated based on your land area.</div>
+        </label>
       </div>
-
-      <!-- Notes -->
-      <div style="margin-bottom: 24px;">
-        <label for="notes" class="input-label">Additional Notes <span style="color: #94a3b8; font-weight: 400;">(optional)</span></label>
-        <textarea name="notes" id="notes" class="input-field" rows="3"
-                  placeholder="Any specific requirements, preferred varieties, or special instructions...">{{ old('notes') }}</textarea>
+      <div class="input-hint">
+        <span style="display: flex; align-items: center; gap: 6px;">
+          <span data-inline-style="{{ $climateDotStyle }}"></span>
+          <strong>Currently:</strong> {{ $globalSeasonLabel }} — {{ $climate['months'] }}
+          @if(isset($climate['sub_season']))
+            <span style="color: #64748b;">({{ $climate['sub_season'] }})</span>
+          @endif
+        </span>
       </div>
-
-      <button type="submit" class="submit-btn">
-        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-        Generate Cost Quotation
-      </button>
-    </form>
+    </div>
   </div>
-</div>
 
-<!-- Info Modal -->
-<div id="info-modal" role="dialog" aria-modal="true" aria-label="Help and information"
-     style="position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px;">
-  <div id="info-modal-backdrop" style="position: absolute; inset: 0; background: rgba(15, 30, 20, 0.18); backdrop-filter: blur(4px);"></div>
-  <div style="position: relative; background: #ffffff; border-radius: 18px; max-width: 560px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,0.2);">
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #f0f2f1; position: sticky; top: 0; background: #ffffff;">
-      <h2 style="font-size: 17px; font-weight: 800; color: #1a2b1e; margin: 0;">Need Some Help?</h2>
-      <button type="button" id="info-modal-close" aria-label="Close"
-              style="width: 34px; height: 34px; border-radius: 50%; background: #f8fafc; border: 1px solid #eef1f4; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #64748b; transition: background 0.2s;">
-        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  <!-- 3. Land Area -->
+  <div class="q-block">
+    <div class="q-num">3</div>
+    <div class="q-body">
+      <label for="land_area" class="input-label">How big is your farm area?</label>
+      <div style="display: flex; gap: 10px; max-width: 320px;">
+        <input type="number" name="land_area" id="land_area" class="input-field"
+               placeholder="e.g., 1.5" step="0.01" min="0.01" max="999.99"
+               value="{{ old('land_area') }}" required>
+        <div style="display: flex; align-items: center; padding: 0 14px; background: #f4f6f5; border: 1px solid #d7dfda; border-radius: 10px; font-size: 14px; color: #64748b; font-weight: 600; white-space: nowrap;">hectares</div>
+      </div>
+      <div class="input-hint">The quantity of each input is calculated from this area.</div>
+    </div>
+  </div>
+
+  <!-- 4. Products -->
+  <div class="q-block q-span">
+    <div class="q-num">4</div>
+    <div class="q-body">
+      <label class="input-label">Select products <span style="color: #94a3b8; font-weight: 400;">(optional)</span></label>
+      <div id="product-selector-section">
+        <div id="product-prompt" class="product-prompt">
+          Pick your crop and season above to see the available products.
+        </div>
+        <div id="product-loading" class="product-loading" style="display: none;">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="#94a3b8" stroke-width="2" fill="none" style="vertical-align: middle; animation: spin 1s linear infinite;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Loading products...
+        </div>
+        <div id="product-selector-container" style="display: none;">
+          <div class="product-selector-wrap">
+            <svg class="product-search-icon" viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="product-search" class="product-search-input"
+                   placeholder="Search products by name, brand, or SKU..." autocomplete="off">
+            <div id="product-dropdown" class="product-dropdown"></div>
+          </div>
+          <div id="selected-products" class="selected-products"></div>
+        </div>
+      </div>
+      <div class="input-hint">Leave empty to auto-include every input recommended for your crop and season.</div>
+    </div>
+  </div>
+
+  <!-- 5. Notes -->
+  <div class="q-block q-span">
+    <div class="q-num">5</div>
+    <div class="q-body">
+      <label for="notes" class="input-label">Additional notes <span style="color: #94a3b8; font-weight: 400;">(optional)</span></label>
+      <textarea name="notes" id="notes" class="input-field" rows="3"
+                placeholder="Any specific requirements, preferred varieties, or special instructions...">{{ old('notes') }}</textarea>
+    </div>
+  </div>
+
+  </div>
+
+  <div class="submit-row">
+    <button type="submit" class="submit-btn">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      Generate Cost Quotation
+    </button>
+    <span style="font-size: 12.5px; color: #879a8c;">Instant estimate — store owners see it as demand intel.</span>
+  </div>
+</form>
+
+<!-- Instructions modal -->
+<div class="imodal-overlay" id="helpModal" aria-hidden="true">
+  <div class="imodal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+    <div class="imodal-head">
+      <div>
+        <h3 id="helpModalTitle">How to Generate a Cost Quotation</h3>
+        <p>Three quick questions, one instant estimate</p>
+      </div>
+      <button type="button" class="imodal-close" id="helpModalClose" aria-label="Close">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <div style="padding: 24px; display: flex; flex-direction: column; gap: 18px;">
-
-      <!-- How It Works -->
-      <div class="info-card" style="padding: 18px;">
-        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #bbf7d0;">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="#143d23" stroke-width="2" fill="none">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-          </svg>
+    <div class="imodal-body">
+      <div class="im-step">
+        <div class="im-step-badge green">
+          <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
         </div>
         <div>
-          <div style="font-weight: 700; font-size: 14px; color: #1a2b1e; margin-bottom: 4px;">How It Works</div>
-          <ol style="margin: 0; padding-left: 16px; font-size: 13px; color: #4b5c50; line-height: 1.9;">
-            <li>You enter your crop type, season, and land area</li>
-            <li>The system instantly computes a cost quotation using Decision Support formulas</li>
-            <li>You see a full breakdown with product quantities and pricing</li>
-            <li>Store owners see your quotation as demand intelligence — no pressure to buy</li>
-            <li>Contact the store directly if you decide to proceed with a purchase</li>
-          </ol>
+          <div class="im-step-title">1. Pick your crop &amp; season</div>
+          <div class="im-step-desc">Search the crop directory (e.g., Rice, Corn) and choose the planting season. This sets the recommended input rates.</div>
         </div>
       </div>
-
-      <!-- Supported Crops -->
-      <div class="info-card" style="padding: 18px;">
-        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #fffbeb, #fef3c7); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #fde68a;">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="#d97706" stroke-width="2" fill="none">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          </svg>
+      <div class="im-step">
+        <div class="im-step-badge blue">
+          <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
         </div>
         <div>
-          <div style="font-weight: 700; font-size: 14px; color: #1a2b1e; margin-bottom: 4px;">Supported Crops</div>
-          <p style="margin: 0; font-size: 13px; color: #4b5c50; line-height: 1.5;">
-            Our system supports instant cost quotations for Rice, Corn, Vegetables, Fruits, and more.
-            Quotations are based on standard application rates that vary between Wet and Dry seasons.
-          </p>
+          <div class="im-step-title">2. Enter your farm area</div>
+          <div class="im-step-desc">Tell us your land area in hectares. Every input quantity is computed from this number.</div>
         </div>
       </div>
-
-      <!-- Validity Period -->
-      <div class="info-card" style="padding: 18px;">
-        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #eff6ff, #dbeafe); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #bfdbfe;">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="#0284c7" stroke-width="2" fill="none">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-          </svg>
+      <div class="im-step">
+        <div class="im-step-badge amber">
+          <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
         </div>
         <div>
-          <div style="font-weight: 700; font-size: 14px; color: #1a2b1e; margin-bottom: 4px;">Quotation Validity</div>
-          <p style="margin: 0; font-size: 13px; color: #4b5c50; line-height: 1.5;">
-            Quotations are valid for 14 days. Prices may change, so generate a new quotation if needed.
-            This is for planning — not a purchase commitment.
-          </p>
+          <div class="im-step-title">3. Select products (optional)</div>
+          <div class="im-step-desc">Choose specific inputs and their quantities. Leave this empty to auto-include every recommended input.</div>
         </div>
       </div>
-
+      <div class="im-step">
+        <div class="im-step-badge violet">
+          <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div>
+          <div class="im-step-title">4. Generate &amp; review</div>
+          <div class="im-step-desc">Hit &ldquo;Generate Cost Quotation&rdquo; and get a plain-language summary with a full itemized breakdown on the next page.</div>
+        </div>
+      </div>
+      <div class="im-note">
+        <strong>How the price works:</strong> recommended rate per hectare &times; your land area = quantity needed; quantity &times; current store price = each line. Quotations are valid for 14 days and are for planning — not a purchase commitment.
+      </div>
     </div>
   </div>
 </div>
@@ -389,7 +471,6 @@
       if (match) anyVisible = true;
     });
     if (!anyVisible && q) {
-      // Show a "type custom" option
       let customItem = cropDropdown.querySelector('.crop-custom-option');
       if (!customItem) {
         customItem = document.createElement('div');
@@ -415,7 +496,6 @@
     cropItems.forEach(item => {
       item.classList.toggle('active', item.dataset.value === value);
     });
-    // Trigger product fetch
     cropHiddenInput.dispatchEvent(new Event('change'));
   }
 
@@ -427,7 +507,6 @@
   cropSearchInput.addEventListener('input', function () {
     cropDropdown.classList.add('open');
     filterCrops(cropSearchInput.value);
-    // Clear hidden value while typing so stale value isn't submitted
     cropHiddenInput.value = '';
   });
 
@@ -442,7 +521,7 @@
     }
   });
 
-  // --- Product Selector (unchanged logic, updated reference) ---
+  // --- Product Selector ---
   const cropInput = cropHiddenInput;
   const seasonInputs = document.querySelectorAll('input[name="season"]');
   const promptEl = document.getElementById('product-prompt');
@@ -537,6 +616,7 @@
   function renderSelected() {
     if (selectedIds.size === 0) {
       selectedEl.innerHTML = '';
+      updateHiddenInput();
       return;
     }
 
@@ -561,7 +641,7 @@
       hidden.type = 'hidden';
       hidden.name = 'selected_product_ids';
       hidden.id = 'selected_product_ids';
-      document.querySelector('form').appendChild(hidden);
+      document.getElementById('quotationForm').appendChild(hidden);
     }
     hidden.value = JSON.stringify([...selectedIds]);
   }
@@ -577,7 +657,6 @@
     renderDropdown(searchInput.value);
   };
 
-  // Event listeners
   cropInput.addEventListener('change', fetchProducts);
   seasonInputs.forEach(r => r.addEventListener('change', fetchProducts));
 
@@ -598,34 +677,33 @@
     }
   });
 
-  // Initial load if values already set (e.g. validation error)
   if (cropInput.value.trim() && getSelectedSeason()) {
     fetchProducts();
   }
-})();
 
-// --- Info Modal ---
-(function () {
-  const btn = document.getElementById('info-help-btn');
-  const modal = document.getElementById('info-modal');
-  const backdrop = document.getElementById('info-modal-backdrop');
-  const closeBtn = document.getElementById('info-modal-close');
-  if (!btn || !modal) return;
+  // --- Instructions modal ---
+  const helpBtn = document.getElementById('helpBtn');
+  const helpModal = document.getElementById('helpModal');
+  const helpModalClose = document.getElementById('helpModalClose');
 
-  function open() {
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+  function openHelpModal() {
+    helpModal.classList.add('open');
+    helpModal.setAttribute('aria-hidden', 'false');
   }
-  function close() {
-    modal.style.display = 'none';
-    document.body.style.overflow = '';
+  function closeHelpModal() {
+    helpModal.classList.remove('open');
+    helpModal.setAttribute('aria-hidden', 'true');
   }
 
-  btn.addEventListener('click', open);
-  closeBtn.addEventListener('click', close);
-  backdrop.addEventListener('click', close);
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && modal.style.display === 'flex') close();
+  if (helpBtn) helpBtn.addEventListener('click', openHelpModal);
+  if (helpModalClose) helpModalClose.addEventListener('click', closeHelpModal);
+  if (helpModal) {
+    helpModal.addEventListener('click', (e) => {
+      if (e.target === helpModal) closeHelpModal();
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && helpModal.classList.contains('open')) closeHelpModal();
   });
 })();
 </script>

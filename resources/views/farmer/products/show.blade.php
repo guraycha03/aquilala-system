@@ -3,6 +3,14 @@
 @section('title', $product->name)
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'browse',  'label' => 'Browse Products',    'url' => route('farmer.products.browse')],
+      ['key' => 'reviews', 'label' => 'Top Rated Products', 'url' => route('farmer.reviews.index')],
+      ['key' => 'stores',  'label' => 'Stores Directory',   'url' => route('farmer.stores.index')],
+    ],
+    'activeTab' => 'browse',
+  ])
 <x-breadcrumb :items="[
   ['label' => 'Browse Products', 'url' => route('farmer.products.browse')],
   ['label' => $product->name],
@@ -188,12 +196,12 @@
     .my-review .stars svg { width: 15px; height: 15px; fill: #f59e0b; stroke: none; }
     .btn-ghost-danger {
         display: inline-flex; align-items: center; gap: 6px;
-        background: transparent; color: #dc2626;
-        border: 1px solid #fecaca; border-radius: 8px;
+        background: transparent; color: #b0403a;
+        border: 1px solid #e4c6c3; border-radius: 8px;
         padding: 7px 12px; font-size: 12px; font-weight: 700; cursor: pointer;
         transition: background 0.2s;
     }
-    .btn-ghost-danger:hover { background: #fef2f2; }
+    .btn-ghost-danger:hover { background: #faf2f1; }
     .btn-ghost-danger svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
     /* Individual reviews */

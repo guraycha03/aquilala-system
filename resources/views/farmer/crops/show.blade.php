@@ -3,6 +3,13 @@
 @section('title', $farmerCrop->crop->name . ' — Crop Batch')
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'crops',    'label' => 'My Crops',       'url' => route('farmer.crops.index')],
+      ['key' => 'harvests', 'label' => 'Harvest Reports', 'url' => route('farmer.harvests.index')],
+    ],
+    'activeTab' => 'crops',
+  ])
 <style>
     /* ── Page Shell ── */
     .crops-page { position: relative; }
@@ -44,8 +51,8 @@
     }
     .btn-hero:hover { background: #f0fdf4; color: #14532d; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(20,61,35,0.12); }
     .btn-hero:active { transform: translateY(0); }
-    .btn-hero.danger { color: #b91c1c; border-color: #fecaca; background: #fff; }
-    .btn-hero.danger:hover { background: #fef2f2; color: #b91c1c; }
+    .btn-hero.danger { color: #b0403a; border-color: #e4c6c3; background: #fff; }
+    .btn-hero.danger:hover { background: #faf2f1; color: #b0403a; }
 
     /* ── Stage Badge ── */
     .stage-badge {

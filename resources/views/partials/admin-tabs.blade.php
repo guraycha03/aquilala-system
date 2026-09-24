@@ -5,7 +5,7 @@
 @php
   $adminTabs     = $tabs ?? [];
   $adminActiveTab = $activeTab ?? '';
-  $tabsStyle     = $tabsStyle ?? (string) optional(auth()->user())->sub_pages_style ?? 'top';
+  $tabsStyle     = $tabsStyle ?? ((string) optional(auth()->user())->sub_pages_style === 'top' ? 'top' : 'sidebar');
 @endphp
 
 @if($tabsStyle === 'sidebar')

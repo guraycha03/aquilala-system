@@ -68,7 +68,7 @@
     border: none; background: transparent; cursor: pointer; color: #94a3b8; padding: 5px;
     display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.15s ease;
   }
-  .nf-dismiss:hover { background: #fef2f2; color: #dc2626; }
+  .nf-dismiss:hover { background: #faf2f1; color: #b0403a; }
   .nf-dismiss svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
   .nf-empty { text-align: center; padding: 56px 20px; }

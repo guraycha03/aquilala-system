@@ -3,6 +3,13 @@
 @section('title', 'Notifications')
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'notifications', 'label' => 'Notifications', 'url' => route('farmer.notifications.index')],
+      ['key' => 'activity',      'label' => 'Activity Log',  'url' => route('farmer.activity.index')],
+    ],
+    'activeTab' => 'notifications',
+  ])
 <style>
     .page-header {
         display: flex;

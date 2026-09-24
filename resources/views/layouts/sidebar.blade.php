@@ -218,7 +218,7 @@
     .user-role { font-size: 11px; color: #87a992; text-transform: capitalize; }
     .logout-btn { background: var(--sb-logout-bg, rgba(239, 68, 68, 0.08)); color: var(--sb-logout-fg, #fca5a5); border: 1px solid var(--sb-logout-border, rgba(239, 68, 68, 0.15)); padding: 11px 16px; width: 100%; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; gap: 12px; transition: all 0.2s ease; }
     .logout-btn svg { width: 16px; height: 16px; stroke: var(--sb-logout-fg, #fca5a5); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .logout-btn:hover { background: var(--sb-logout-hover-bg, #ef4444); color: var(--sb-logout-hover-fg, #ffffff); border-color: var(--sb-logout-hover-bg, #ef4444); }
+    .logout-btn:hover { background: var(--sb-logout-hover-bg, #b0403a); color: var(--sb-logout-hover-fg, #ffffff); border-color: var(--sb-logout-hover-bg, #b0403a); }
     .logout-btn:hover svg { stroke: var(--sb-logout-hover-fg, #ffffff); }
 
     /* Hide page-description sub-texts under titles; keep clear space below each title */
@@ -229,7 +229,7 @@
     .page-header { margin-bottom: 36px !important; }
 
     .mobile-header { display: none; background: #143d23; color: white; padding: 14px 16px; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 90; }
-    .burger-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; }
+    .burger-btn { background: none; border: none; color: var(--sb-fg); font-size: 24px; cursor: pointer; padding: 0; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; }
     .burger-btn:active { background: rgba(255, 255, 255, 0.08); }
 
     .desktop-notif-wrap { position: fixed; top: 26px; right: 20px; z-index: 200; transition: transform 0.3s ease; }
@@ -340,7 +340,7 @@
   .sidebar-overlay { display: none; position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.4); z-index: 95; }
   .sidebar-overlay.open { display: block; }
 
-  .desktop-notif { background: transparent; border: none; box-shadow: none; color: #ffffff; }
+  .desktop-notif { background: transparent; border: none; box-shadow: none; color: var(--sb-fg); }
   .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(255, 255, 255, 0.08); }
   .desktop-notif-wrap { top: 11px; right: 16px; }
 
@@ -630,12 +630,31 @@
 @php $stActive = in_array((string) optional(auth()->user())->sidebar_theme, array_keys(config('sidebar.themes')), true) ? auth()->user()->sidebar_theme : config('sidebar.default'); @endphp
 @php
   $subPagesStyle = (string) optional(auth()->user())->sub_pages_style;
+  $subPagesStyle = $subPagesStyle === 'top' ? 'top' : 'sidebar';
   $adminNav = $subPagesStyle === 'sidebar' ? (config('admin-nav') ?? []) : [];
   $activeAdminSection = null;
   if ($adminNav) {
     foreach ($adminNav as $ai => $section) {
       foreach ($section['items'] as $item) {
         if (request()->routeIs(...$item['routes'])) { $activeAdminSection = $ai; break 2; }
+      }
+    }
+  }
+  $storeNav = $subPagesStyle === 'sidebar' ? (config('store-nav') ?? []) : [];
+  $activeStoreSection = null;
+  if ($storeNav) {
+    foreach ($storeNav as $si => $section) {
+      foreach ($section['items'] as $item) {
+        if (request()->routeIs(...$item['routes'])) { $activeStoreSection = $si; break 2; }
+      }
+    }
+  }
+  $farmerNav = $subPagesStyle === 'sidebar' ? (config('farmer-nav') ?? []) : [];
+  $activeFarmerSection = null;
+  if ($farmerNav) {
+    foreach ($farmerNav as $fi => $section) {
+      foreach ($section['items'] as $item) {
+        if (request()->routeIs(...$item['routes'])) { $activeFarmerSection = $fi; break 2; }
       }
     }
   }
@@ -724,63 +743,109 @@
       </div>
       <ul class="nav-links">
         @if(auth()->user()->role === 'farmer')
+          @if($subPagesStyle === 'sidebar' && $farmerNav)
+            <li>
+              <a href="{{ route('dashboard.farmer') }}" class="{{ request()->routeIs('dashboard.farmer') || request()->routeIs('farmer.dashboard') ? 'active' : '' }}">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                Dashboard
+              </a>
+            </li>
+            @foreach($farmerNav as $fi => $section)
+              @php $isFarmerOpen = ($activeFarmerSection === $fi); @endphp
+              <li class="nav-dropdown {{ $isFarmerOpen ? 'open' : '' }}">
+                <button type="button" class="nav-dropdown-btn" aria-expanded="{{ $isFarmerOpen ? 'true' : 'false' }}">
+                  <span class="nav-dropdown-title">
+                    {!! $section['icon'] !!}
+                    <span>{{ $section['label'] }}</span>
+                  </span>
+                  <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <ul class="sub-nav-links">
+                  @foreach($section['items'] as $item)
+                    <li>
+                      <a href="{{ route($item['routes'][0]) }}" class="{{ request()->routeIs(...$item['routes']) ? 'active' : '' }}">
+                        {{ $item['label'] }}
+                      </a>
+                    </li>
+                  @endforeach
+                </ul>
+              </li>
+            @endforeach
+            <li>
+              <a href="{{ route('farmer.settings.index') }}" class="{{ request()->routeIs('farmer.settings.index') ? 'active' : '' }}">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Settings
+              </a>
+            </li>
+          @else
           <li>
-            <a href="{{ route('dashboard.farmer') }}" class="{{ request()->routeIs('dashboard.farmer') ? 'active' : '' }}">
+            <a href="{{ route('dashboard.farmer') }}" class="{{ request()->routeIs('dashboard.farmer') || request()->routeIs('farmer.dashboard') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
               Dashboard
             </a>
           </li>
           <li>
-            <a href="{{ route('farmer.crops.index') }}" class="{{ request()->is('farmer/crops*') ? 'active' : '' }}">
+            <a href="{{ route('farmer.crops.index') }}" class="{{ request()->routeIs('farmer.crops.index', 'farmer.crops.show') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
               My Crops
             </a>
           </li>
           <li>
-            <a href="{{ route('farmer.recommendations.index') }}" class="{{ request()->is('farmer/recommendations*') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              Recommendations
-            </a>
-          </li>
-          <li>
-            <a href="{{ route('farmer.harvests.index') }}" class="{{ request()->is('farmer/harvests*') ? 'active' : '' }}">
+            <a href="{{ route('farmer.harvests.index') }}" class="{{ request()->routeIs('farmer.harvests.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
               Harvest Reports
             </a>
           </li>
           <li>
-            <a href="{{ route('farmer.products.browse') }}" class="{{ request()->is('farmer/products/browse*') ? 'active' : '' }}">
+            <a href="{{ route('farmer.recommendations.index') }}" class="{{ request()->routeIs('farmer.recommendations.index') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Recommendations
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('farmer.crops-directory.index') }}" class="{{ request()->routeIs('farmer.crops-directory.index') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              Crop Directory
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('farmer.ai-chat.index') }}" class="{{ request()->routeIs('farmer.ai-chat.*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7l.9 2.4L15.3 10l-2.4.9L12 13.3l-.9-2.4L8.7 10l2.4-.6z"/></svg>
+              AI Assistant
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('farmer.products.browse') }}" class="{{ request()->routeIs('farmer.products.browse', 'farmer.products.show') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               Browse Products
             </a>
           </li>
           <li>
-            <a href="{{ route('farmer.reviews.index') }}" class="{{ request()->is('farmer/reviews*') ? 'active' : '' }}">
+            <a href="{{ route('farmer.reviews.index') }}" class="{{ request()->routeIs('farmer.reviews.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               Top Rated Products
             </a>
           </li>
           <li>
-            <a href="{{ route('farmer.quotations.request') }}" class="{{ request()->is('farmer/quotations/request*') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              Generate Quotation
-            </a>
-          </li>
-            <li>
-            <a href="{{ route('farmer.quotations.index') }}" class="{{ request()->routeIs('farmer.quotations.index') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              My Cost Quotations
-            </a>
-          </li>
-          </li>
-          <li>
-            <a href="{{ route('farmer.stores.index') }}" class="{{ request()->is('farmer/stores*') ? 'active' : '' }}">
+            <a href="{{ route('farmer.stores.index') }}" class="{{ request()->routeIs('farmer.stores.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               Stores Directory
             </a>
           </li>
           <li>
-            <a href="{{ route('farmer.notifications.index') }}" class="{{ request()->is('farmer/notifications*') ? 'active' : '' }}">
+            <a href="{{ route('farmer.quotations.request') }}" class="{{ request()->routeIs('farmer.quotations.request', 'farmer.quotations.products') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Generate Quotation
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('farmer.quotations.index') }}" class="{{ request()->routeIs('farmer.quotations.index', 'farmer.quotations.show', 'farmer.quotations.breakdown') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              My Cost Quotations
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('farmer.notifications.index') }}" class="{{ request()->routeIs('farmer.notifications.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
               Notifications
             </a>
@@ -797,14 +862,50 @@
               Settings
             </a>
           </li>
+          @endif
 
         @elseif(auth()->user()->role === 'store_owner')
-          <li>
-            <a href="{{ route('store.dashboard') }}" class="{{ request()->routeIs('store.dashboard') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
-              Store Dashboard
-            </a>
-          </li>
+          @if($subPagesStyle === 'sidebar' && $storeNav)
+            <li>
+              <a href="{{ route('store.dashboard') }}" class="{{ request()->routeIs('store.dashboard') ? 'active' : '' }}">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                Store Dashboard
+              </a>
+            </li>
+            @foreach($storeNav as $si => $section)
+              @php $isStoreOpen = ($activeStoreSection === $si); @endphp
+              <li class="nav-dropdown {{ $isStoreOpen ? 'open' : '' }}">
+                <button type="button" class="nav-dropdown-btn" aria-expanded="{{ $isStoreOpen ? 'true' : 'false' }}">
+                  <span class="nav-dropdown-title">
+                    {!! $section['icon'] !!}
+                    <span>{{ $section['label'] }}@if($si === 'notifications' && ($storeUnreadCount ?? 0) > 0)<span class="nav-count" id="storeNavBadge">{{ $storeUnreadCount }}</span>@endif</span>
+                  </span>
+                  <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <ul class="sub-nav-links">
+                  @foreach($section['items'] as $item)
+                    <li>
+                      <a href="{{ route($item['routes'][0]) }}" class="{{ request()->routeIs(...$item['routes']) ? 'active' : '' }}">
+                        {{ $item['label'] }}
+                      </a>
+                    </li>
+                  @endforeach
+                </ul>
+              </li>
+            @endforeach
+            <li>
+              <a href="{{ route('store.settings.index') }}" class="{{ request()->routeIs('store.settings.index') ? 'active' : '' }}">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Settings
+              </a>
+            </li>
+          @else
+            <li>
+              <a href="{{ route('store.dashboard') }}" class="{{ request()->routeIs('store.dashboard') ? 'active' : '' }}">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                Store Dashboard
+              </a>
+            </li>
           <li>
             <a href="{{ route('store.inventory.index') }}" class="{{ request()->routeIs('store.inventory.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -856,6 +957,7 @@
               Settings
             </a>
           </li>
+          @endif
 
         @elseif(auth()->user()->role === 'admin')
           @if($subPagesStyle === 'sidebar' && $adminNav)

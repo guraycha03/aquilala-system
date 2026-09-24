@@ -2,6 +2,15 @@
 
 @section('content')
 
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'recommendations', 'label' => 'Recommendations', 'url' => route('farmer.recommendations.index')],
+      ['key' => 'directory',       'label' => 'Crop Directory',  'url' => route('farmer.crops-directory.index')],
+      ['key' => 'ai',              'label' => 'AI Assistant',    'url' => route('farmer.ai-chat.index')],
+    ],
+    'activeTab' => 'directory',
+  ])
+
 @php
     $fallbackImage = 'images/crop.png';
 

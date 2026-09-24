@@ -8,14 +8,14 @@ return new class extends Migration
 {
     /**
      * Per-user preference for how grouped "sub-pages" are presented:
-     *   'top'     – pill tab bar pinned along the top of the page (default)
-     *   'sidebar' – sub-page buttons rendered inside the side menu,
-     *               directly below the active menu item.
+     *   'sub_pages_style' default 'sidebar' – sub-page buttons rendered inside the side menu,
+     *               directly below the active menu item (default)
+     *   'top'     – pill tab bar pinned along the top of the page
      */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('sub_pages_style', 20)->default('top')->after('sidebar_theme');
+            $table->string('sub_pages_style', 20)->default('sidebar')->after('sidebar_theme');
         });
     }
 

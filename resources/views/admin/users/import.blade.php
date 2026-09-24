@@ -38,8 +38,8 @@
     .btn-users svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .btn-users.ghost { background: #ffffff; color: #334c3e; border-color: #d8e3db; box-shadow: 0 1px 2px rgba(20,61,35,0.05); }
     .btn-users.ghost:hover { background: #f3f8f4; border-color: #b9cec0; color: #1e3829; }
-    .btn-users.danger { background: #ffffff; color: #b03030; border-color: #efd0d0; box-shadow: 0 1px 2px rgba(176,48,48,0.05); }
-    .btn-users.danger:hover { background: #fdf4f4; border-color: #e2b5b5; color: #a02626; }
+    .btn-users.danger { background: #ffffff; color: #b0403a; border-color: #e6ccc9; box-shadow: 0 1px 2px rgba(176,64,58,0.05); }
+    .btn-users.danger:hover { background: #faf2f1; border-color: #d8a49f; color: #963530; }
 
     .import-alert {
       margin-bottom: 18px; padding: 13px 16px; border-radius: 12px; font-size: 13px; font-weight: 600;

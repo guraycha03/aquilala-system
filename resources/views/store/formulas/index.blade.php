@@ -84,8 +84,8 @@
     transition: all 0.2s;
   }
   .btn-icon-edit:hover { border-color: #143d23; color: #143d23; background: #f0fdf4; }
-  .btn-icon-delete { color: #b91c1c; border-color: #fecaca; }
-  .btn-icon-delete:hover { background: #fef2f2; border-color: #dc2626; color: #dc2626; }
+  .btn-icon-delete { color: #b0403a; border-color: #e4c6c3; }
+  .btn-icon-delete:hover { background: #faf2f1; border-color: #b0403a; color: #b0403a; }
 
   .info-banner {
     background: #f0fdf4;
@@ -138,8 +138,8 @@
     color: #475569; transition: all 0.2s;
   }
   .btn-icon-edit:hover { border-color: #143d23; color: #143d23; background: #f0fdf4; }
-  .btn-icon-delete { color: #b91c1c; border-color: #fecaca; }
-  .btn-icon-delete:hover { background: #fef2f2; border-color: #dc2626; color: #dc2626; }
+  .btn-icon-delete { color: #b0403a; border-color: #e4c6c3; }
+  .btn-icon-delete:hover { background: #faf2f1; border-color: #b0403a; color: #b0403a; }
 
   .table-empty {
     display: none; text-align: center; padding: 48px 20px; color: #64748b; font-size: 14px;

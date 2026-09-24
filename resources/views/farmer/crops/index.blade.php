@@ -3,6 +3,13 @@
 @section('title', 'My Crops')
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'crops',    'label' => 'My Crops',       'url' => route('farmer.crops.index')],
+      ['key' => 'harvests', 'label' => 'Harvest Reports', 'url' => route('farmer.harvests.index')],
+    ],
+    'activeTab' => 'crops',
+  ])
 <style>
     /* ── Page Shell ── */
     .crops-page { position: relative; }

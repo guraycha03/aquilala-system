@@ -3,6 +3,13 @@
 @section('title', 'My Activity')
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'notifications', 'label' => 'Notifications', 'url' => route('farmer.notifications.index')],
+      ['key' => 'activity',      'label' => 'Activity Log',  'url' => route('farmer.activity.index')],
+    ],
+    'activeTab' => 'activity',
+  ])
 <!-- Load AlpineJS -->
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 

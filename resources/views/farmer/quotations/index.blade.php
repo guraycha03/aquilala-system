@@ -3,6 +3,13 @@
 @section('title', 'My Cost Quotations')
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'generate', 'label' => 'Generate Quotation',  'url' => route('farmer.quotations.request')],
+      ['key' => 'my',       'label' => 'My Cost Quotations', 'url' => route('farmer.quotations.index')],
+    ],
+    'activeTab' => 'my',
+  ])
 <style>
   .stats-grid {
     display: grid;
@@ -142,7 +149,7 @@
     padding: 6px 8px; cursor: pointer; color: #b0b8b3;
     transition: all 0.15s; display: inline-flex; align-items: center;
   }
-  .delete-btn:hover { border-color: #fecaca; color: #dc2626; background: #fef2f2; }
+  .delete-btn:hover { border-color: #e4c6c3; color: #b0403a; background: #faf2f1; }
 
   /* Empty state */
   .empty-state {

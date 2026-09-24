@@ -1,4 +1,11 @@
 
+
+ngrok http 8000
+
+
+
+
+
 PLAN
 
 sync the review and rate made by users and make it appear on the noficiation modal and page of admin and after apporoval on store owners, same witht he cost qoutation, notify the 2 other users after farmer mde it
@@ -15,8 +22,41 @@ make the qoutation page on farmer user inclide complete prrocsss for qoutation, 
 
 
 
-
+CURRENTLY, ONLY 1 ADMIN CAN BE CREATED
 php artisan aquilala:create-admin
 
 
 php artisan view:clear
+
+
+
+the loading of pages on the system is too slow, its taking 1 or more than a minute to access each page, going from page to page is a hasle , you have to wait a long tinme going to a page,
+is there any way to make it faster and seamless, and give users the best user experience
+
+
+i made this request earlier but opencode stoped working and turned off, check the progress and finish the supposed PLAN
+
+
+
+
+just like the interface for store owner and admin interface, can you also improve and update the sidemenu and sub pages structure/stling for farmer interface
+
+check my curent code for admin and store owner to do the changes, changes should be just about the sidemenu and sub page, do not unnecessar change anthing, also sort out and organize the pages' groupings
+
+
+
+
+
+
+is it okay to make the this system run on remote tunnel as if and just like how i do it locally on cmd using phph artisan serve, willl the system and every features work? is the shared link will work the same and synv data with others/globally
+
+
+can you already join information from Estimated Total Cost
+₱6,450.00
+≈ ₱6,450.00 per hectare · based on current store prices
+1.00 ha
+Land Area
+1
+Line Items
+1
+Store(s)  lower banner to the very top banner si i wont have too much seperate card and page become overwhelming with too much haapening, optimize the organize the upper top banner card 

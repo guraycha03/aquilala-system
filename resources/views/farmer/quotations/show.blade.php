@@ -3,38 +3,89 @@
 @section('title', 'Cost Quotation ' . $quotation->quotation_number)
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'generate', 'label' => 'Generate Quotation',  'url' => route('farmer.quotations.request')],
+      ['key' => 'my',       'label' => 'My Cost Quotations', 'url' => route('farmer.quotations.index')],
+    ],
+    'activeTab' => 'my',
+  ])
 @php
-  $total     = (float) $quotation->estimated_total_cost;
-  $landArea  = (float) $quotation->land_area;
+  $total      = (float) $quotation->estimated_total_cost;
+  $landArea   = (float) $quotation->land_area;
   $perHectare = $landArea > 0 ? round($total / $landArea, 2) : $total;
-  $daysLeft  = $quotation->valid_until ? (int) max(0, now()->diffInDays($quotation->valid_until, false)) : null;
-  $effStatus = $quotation->effective_status;
-  $storeNames = $quotation->items->pluck('product.storeOwner.name')->filter()->unique();
-  $discreteUnits = ['sack','sacks','bag','bags','piece','pieces','unit','units','carton','cartons','box','boxes','pack','packs','bottle','bottles','sachet','sachets','kit','kits','length','lengths','set','sets'];
+  $daysLeft   = $quotation->valid_until ? (int) max(0, now()->diffInDays($quotation->valid_until, false)) : null;
+  $effStatus  = $quotation->effective_status;
+  $storeOwners = $quotation->items->pluck('product.storeOwner')->filter()->unique('id');
 @endphp
 <style>
   .page-header-card {
-    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdf4 100%);
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #e0f7ea 100%);
     border: 1px solid #bbf7d0;
-    border-radius: 16px;
-    padding: 24px 28px;
-    margin-bottom: 24px;
+    border-radius: 18px;
+    padding: 26px 30px;
+    margin-bottom: 22px;
   }
 
-  .detail-card {
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 16px; border-radius: 24px;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.01em;
+  }
+  .status-pill.computed { background: #eff6ff; color: #1d4ed8; }
+  .status-pill.viewed   { background: #f5f3ff; color: #6d28d9; }
+  .status-pill.expired  { background: #f5f5f5; color: #9ca3af; }
+  .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: linear-gradient(135deg, #143d23, #1a5230);
+    color: #fff; text-decoration: none; cursor: pointer;
+    padding: 11px 20px; border-radius: 12px;
+    font-size: 13.5px; font-weight: 700; font-family: inherit; border: none;
+    box-shadow: 0 3px 10px rgba(20,61,35,0.28);
+    transition: all 0.2s ease;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(20,61,35,0.35); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #ffffff; color: #166534; text-decoration: none; cursor: pointer;
+    padding: 10px 16px; border-radius: 12px;
+    font-size: 13px; font-weight: 700; font-family: inherit;
+    border: 1px solid #bbf7d0;
+    transition: all 0.2s ease;
+  }
+  .btn-ghost:hover { background: #f0fdf4; }
+  .btn-ghost svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+  .delete-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 16px; background: #faf2f1; border: 1px solid #e4c6c3;
+    border-radius: 12px; color: #b0403a; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .delete-btn:hover { background: #f5e5e3; border-color: #d8a49f; transform: translateY(-1px); }
+  .delete-btn:active { transform: scale(0.98); }
+  .delete-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+  .panel-card {
     background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.02);
-    border: 1px solid #f0f2f1;
+    border-radius: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 18px rgba(0,0,0,0.03);
+    border: 1px solid #eef1ef;
     overflow: hidden;
     margin-bottom: 20px;
   }
-  .detail-card-header {
+  .panel-head {
     padding: 18px 24px;
     border-bottom: 1px solid #f0f2f1;
     background: #fafdfb;
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
   }
-  .detail-card-body { padding: 24px; }
+  .panel-body { padding: 22px 24px; }
 
   .info-label {
     font-size: 11px; font-weight: 600; text-transform: uppercase;
@@ -42,63 +93,64 @@
   }
   .info-value { font-weight: 700; font-size: 15px; color: #1a2b1e; }
 
-  .status-pill {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 7px 16px; border-radius: 24px;
-    font-size: 13px; font-weight: 700;
-    letter-spacing: 0.01em;
+  /* Total spotlight — merged into header card */
+  .header-total {
+    margin-top: 22px;
+    background: linear-gradient(135deg, #14532d 0%, #166534 55%, #1a7a42 100%);
+    border-radius: 14px;
+    padding: 22px 26px;
+    color: #fff;
+    position: relative; overflow: hidden;
+    box-shadow: 0 10px 30px rgba(20,83,45,0.18);
   }
-  .status-pill.computed { background: #eff6ff; color: #1d4ed8; }
-  .status-pill.viewed   { background: #f5f3ff; color: #6d28d9; }
-  .status-pill.expired  { background: #f5f5f5; color: #9ca3af; }
-  .status-pill.pending  { background: #fffbeb; color: #b45309; }
-  .status-pill.accepted { background: #f0fdf4; color: #15803d; }
-  .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .header-total::before {
+    content: ""; position: absolute; top: -80px; right: -60px; width: 240px; height: 240px;
+    border-radius: 50%; background: rgba(255,255,255,0.08);
+  }
+  .header-total::after {
+    content: ""; position: absolute; bottom: -90px; left: 30%; width: 200px; height: 200px;
+    border-radius: 50%; background: rgba(110,235,47,0.12);
+  }
+  .spot-inner { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .spot-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.72); margin-bottom: 6px; }
+  .spot-value { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05; }
+  .spot-sub { font-size: 13px; color: rgba(255,255,255,0.85); margin-top: 6px; }
+  .spot-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+  .spot-stat {
+    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 14px; padding: 13px 18px; min-width: 118px;
+  }
+  .spot-stat b { display: block; font-size: 18px; font-weight: 800; }
+  .spot-stat span { font-size: 11px; color: rgba(255,255,255,0.78); text-transform: uppercase; letter-spacing: 0.05em; }
 
-  .items-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .items-table th {
-    padding: 13px 16px; font-weight: 600;
-    color: #6b7c6e; border-bottom: 1px solid #f0f2f1; text-align: left;
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-    background: #fafdfb;
+  /* How-it-works */
+  .how-step { display: flex; gap: 14px; align-items: flex-start; padding: 10px 0; }
+  .how-step + .how-step { border-top: 1px dashed #eef1ef; }
+  .how-badge {
+    width: 30px; height: 30px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800;
   }
-  .items-table td { padding: 14px 16px; border-bottom: 1px solid #f5f7f6; color: #374138; }
-  .items-table tbody tr { transition: background 0.15s; }
-  .items-table tbody tr:hover td { background: #f8faf9; }
+  .how-badge.green { background: #dcfce7; color: #166534; }
+  .how-badge.blue  { background: #dbeafe; color: #1d4ed8; }
+  .how-badge.amber { background: #fef3c7; color: #b45309; }
+  .how-badge.violet{ background: #ede9fe; color: #6d28d9; }
+  .how-title { font-size: 13.5px; font-weight: 700; color: #1a2b1e; }
+  .how-desc { font-size: 13px; color: #51605a; line-height: 1.6; margin-top: 3px; }
 
-  .calc-line {
-    font-size: 12px; color: #4b5c50;
-    margin-top: 6px; padding: 8px 10px;
-    background: #f8faf9; border: 1px dashed #d7dfda; border-radius: 8px;
-    line-height: 1.5; font-family: 'SF Mono', ui-monospace, monospace;
+  .example-box {
+    background: #f8faf9; border: 1px solid #e6ece7; border-radius: 14px;
+    padding: 16px 18px; font-family: 'SF Mono', ui-monospace, monospace;
+    font-size: 13px; line-height: 1.9; color: #33463a;
   }
-
-  .delete-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 16px; background: #fef2f2; border: 1px solid #fecaca;
-    border-radius: 10px; color: #dc2626; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: all 0.15s;
-  }
-  .delete-btn:hover { background: #fee2e2; border-color: #fca5a5; transform: translateY(-1px); }
-  .delete-btn:active { transform: scale(0.98); }
-
-  .total-badge {
-    display: inline-flex; align-items: baseline; gap: 6px;
-    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-    border: 1px solid #bbf7d0;
-    border-radius: 12px;
-    padding: 10px 18px;
-  }
-  .total-badge .total-label { font-size: 12px; font-weight: 600; color: #15803d; text-transform: uppercase; letter-spacing: 0.04em; }
-  .total-badge .total-value { font-size: 24px; font-weight: 800; color: #166534; letter-spacing: -0.02em; }
+  .example-box strong { color: #14532d; }
 
   .store-chip {
     display: flex; align-items: center; gap: 12px;
-    padding: 10px 14px; border-radius: 10px;
-    border: 1px solid #f0f2f1;
-    transition: all 0.15s;
+    padding: 11px 14px; border-radius: 12px;
+    border: 1px solid #eef1ef; transition: all 0.15s;
   }
-  .store-chip:hover { background: #f8faf9; border-color: #e5e7eb; }
+  .store-chip:hover { background: #f8faf9; border-color: #dbe4de; }
 
   .info-banner {
     background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
@@ -106,88 +158,21 @@
     border-radius: 14px;
     padding: 18px 22px;
     display: flex; align-items: flex-start; gap: 14px;
-    margin-top: 4px;
   }
 
-  /* ── Process timeline ── */
-  .process-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
-  .process-step { position: relative; padding: 6px 18px 0 0; }
-  .process-step .step-dot {
-    width: 32px; height: 32px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 800; flex-shrink: 0;
-  }
-  .process-step .step-connector {
-    position: absolute; top: 21px; left: 44px; right: 6px; height: 2px;
-    background: #e8ecea;
-  }
-  .process-step.done .step-connector { background: #86efac; }
-  .process-step.done .step-dot { background: #16a34a; color: #fff; box-shadow: 0 3px 8px rgba(22,163,74,0.25); }
-  .process-step.active .step-dot { background: #6d28d9; color: #fff; box-shadow: 0 3px 8px rgba(109,40,217,0.28); animation: stepPulse 1.6s ease infinite; }
-  .process-step.todo .step-dot { background: #f8faf9; color: #94a3b8; border: 1px solid #e5e7eb; }
-  .process-step.danger .step-dot { background: #f5f5f5; color: #9ca3af; border: 1px solid #e5e7eb; }
-  @keyframes stepPulse { 0%,100% { box-shadow: 0 3px 8px rgba(109,40,217,0.28); } 50% { box-shadow: 0 3px 16px rgba(109,40,217,0.45); } }
-  .process-step .step-title { font-size: 13px; font-weight: 700; color: #1a2b1e; margin-top: 8px; }
-  .process-step .step-sub { font-size: 11.5px; color: #879a8c; margin-top: 3px; line-height: 1.45; }
-  @media (max-width: 900px) {
-    .process-steps { grid-template-columns: 1fr 1fr; gap: 16px 0; }
-    .process-step .step-connector { display: none; }
-  }
-
-  /* ── AI Overview ── */
+  /* AI Overview */
   .ai-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-    color: #ffffff; border: none; cursor: pointer;
-    padding: 10px 16px; border-radius: 10px;
-    font-size: 13px; font-weight: 700; font-family: inherit;
-    box-shadow: 0 2px 8px rgba(109, 40, 217, 0.28);
+    background: #ffffff; color: #6d28d9; border: 1px solid #ddd6fe; cursor: pointer;
+    padding: 9px 14px; border-radius: 10px;
+    font-size: 12.5px; font-weight: 700; font-family: inherit;
     transition: all 0.2s ease;
   }
-  .ai-btn:hover:not(:disabled) { box-shadow: 0 5px 14px rgba(109, 40, 217, 0.36); transform: translateY(-1px); }
-  .ai-btn:active:not(:disabled) { transform: scale(0.97); }
-  .ai-btn:disabled { opacity: 0.65; cursor: wait; }
-  .ai-spin { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #ffffff; border-radius: 50%; animation: aiSpin 0.7s linear infinite; }
+  .ai-btn:hover:not(:disabled) { background: #faf5ff; }
+  .ai-btn:disabled { opacity: 0.6; cursor: wait; }
+  .ai-spin { width: 13px; height: 13px; border: 2px solid rgba(109,40,217,0.25); border-top-color: #6d28d9; border-radius: 50%; animation: aiSpin 0.7s linear infinite; }
   @keyframes aiSpin { to { transform: rotate(360deg); } }
 
-  .ai-floating {
-    position: fixed; bottom: 26px; right: 26px; z-index: 1300;
-    display: flex; align-items: center; gap: 10px;
-    background: #ffffff; border: 1px solid #ede9fe; border-radius: 999px;
-    padding: 12px 18px;
-    box-shadow: 0 12px 32px rgba(109, 40, 217, 0.18);
-    font-size: 13px; font-weight: 700; color: #5b21b6;
-  }
-  .ai-floating[hidden] { display: none; }
-  .ai-floating .ai-spin { border-color: rgba(124,58,237,0.25); border-top-color: #7c3aed; }
-
-  .ai-modal {
-    position: fixed; top: 50%; left: 50%;
-    transform: translate(-50%, -50%) scale(0.96);
-    width: min(660px, calc(100vw - 32px)); max-height: 80vh; overflow-y: auto;
-    background: #ffffff; border: 1px solid #ede9fe; border-radius: 18px;
-    box-shadow: 0 28px 70px rgba(30, 15, 60, 0.32);
-    z-index: 1400;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
-    scrollbar-width: thin;
-  }
-  .ai-modal.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
-  .ai-modal-head {
-    display: flex; justify-content: space-between; align-items: center; gap: 12px;
-    padding: 16px 20px; border-bottom: 1px solid #f0f2f1;
-    position: sticky; top: 0; background: #fafafd; border-radius: 18px 18px 0 0; z-index: 1;
-  }
-  .ai-modal-head h3 { font-size: 15px; margin: 0; color: #1a2b1e; }
-  .ai-modal-head p { font-size: 12px; color: #879a8c; margin: 2px 0 0 0; }
-  .ai-modal-close {
-    width: 30px; height: 30px; border-radius: 9px; border: none; cursor: pointer;
-    background: #f0f2f1; color: #6b7c6e; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s ease; font-size: 16px; line-height: 1;
-  }
-  .ai-modal-close:hover { background: #fee2e2; color: #b91c1c; }
-  .ai-modal-body { padding: 20px; font-size: 13.5px; color: #3f3f46; }
   .ai-source-badge {
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
@@ -196,74 +181,51 @@
   .ai-source-badge.fallback { background: #f0fdf4; color: #15803d; }
 
   .ai-narrative {
-    background: linear-gradient(135deg, #faf5ff 0%, #f6efff 100%);
-    border: 1px solid #ede9fe; border-radius: 12px; padding: 16px 18px;
+    font-size: 14px; color: #3b3b40; line-height: 1.75;
   }
-  .ai-narrative-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .ai-narrative-head h4 { font-size: 15px; font-weight: 700; color: #5b21b6; margin: 0; }
-  .ai-narrative-body { font-size: 14px; color: #3b2a63; line-height: 1.7; }
-  .ai-narrative-body p { margin: 8px 0 0 0; }
-  .ai-narrative-body ul, .ai-narrative-body ol { margin: 10px 0 0 18px; padding: 0; }
-  .ai-narrative-body li { margin-bottom: 7px; line-height: 1.6; }
-  .ai-narrative-body strong { color: #6d28d9; }
-  .ai-narrative-body h1, .ai-narrative-body h2, .ai-narrative-body h3, .ai-narrative-body h4 {
-    margin: 16px 0 6px; font-weight: 700; color: #4c1d95; line-height: 1.35;
+  .ai-narrative p { margin: 8px 0 0 0; }
+  .ai-narrative ul, .ai-narrative ol { margin: 10px 0 0 18px; padding: 0; }
+  .ai-narrative li { margin-bottom: 7px; line-height: 1.6; }
+  .ai-narrative strong { color: #5b21b6; font-weight: 700; }
+  .ai-narrative h1, .ai-narrative h2, .ai-narrative h3, .ai-narrative h4 {
+    margin: 18px 0 6px; font-weight: 700; color: #4c1d95; line-height: 1.35;
   }
-  .ai-narrative-body h1 { font-size: 16px; }
-  .ai-narrative-body h2 { font-size: 15px; }
-  .ai-narrative-body h3 { font-size: 14.5px; }
-  .ai-narrative-body h4 { font-size: 14px; }
-  .ai-narrative-body > *:first-child { margin-top: 0; }
-  .ai-narrative-body table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
-  .ai-narrative-body th { background: #f3e8ff; text-align: left; font-weight: 700; color: #4c1d95; }
-  .ai-narrative-body th, .ai-narrative-body td { border: 1px solid #e9d5ff; padding: 7px 9px; }
-  .ai-narrative-body .table-wrap { overflow-x: auto; max-width: 100%; }
+  .ai-narrative h1 { font-size: 16px; }
+  .ai-narrative h2 { font-size: 15.5px; }
+  .ai-narrative h3 { font-size: 15px; }
+  .ai-narrative h4 { font-size: 14.5px; }
+  .ai-narrative > *:first-child { margin-top: 0; }
+  .ai-narrative table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+  .ai-narrative th { background: #f3e8ff; text-align: left; font-weight: 700; color: #4c1d95; }
+  .ai-narrative th, .ai-narrative td { border: 1px solid #e9d5ff; padding: 7px 9px; }
+
+  .ai-loading { display: flex; gap: 14px; padding: 6px 2px; }
+  .ai-loading .shimmer-lines { flex: 1; }
+  .shimmer-line {
+    height: 12px; border-radius: 6px; margin-bottom: 10px;
+    background: linear-gradient(90deg, #f1f0f5 25%, #e5e2f0 50%, #f1f0f5 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
   .ai-error {
     background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
     border-radius: 10px; padding: 12px 14px; font-size: 12.5px; line-height: 1.5;
     display: flex; gap: 8px; align-items: flex-start;
   }
+
+  .two-col { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; margin-bottom: 20px; align-items: start; }
+  @media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }
+
+  .fact-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 11px 0; }
+  .fact-row + .fact-row { border-top: 1px dashed #f0f2f1; }
 </style>
 
 <x-breadcrumb :items="[
   ['label' => 'My Cost Quotations', 'url' => route('farmer.quotations.index')],
   ['label' => $quotation->quotation_number],
 ]"/>
-
-<div class="page-header-card">
-  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
-    <div>
-      <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 6px 0; letter-spacing: -0.02em;">
-        Cost Quotation {{ $quotation->quotation_number }}
-      </h1>
-      <p class="keep-sub" style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
-        Generated on {{ $quotation->created_at->format('F d, Y \a\t g:i A') }}
-        @if($effStatus === 'viewed' && $quotation->viewed_at)
-          <span style="color: #7c3aed; font-weight: 600;">&middot; Viewed by a store {{ $quotation->viewed_at->format('F d, Y \a\t g:i A') }}</span>
-        @elseif($effStatus !== 'expired')
-          <span style="color: #879a8c;">&middot; No store has viewed it yet</span>
-        @endif
-      </p>
-    </div>
-    <div style="display: flex; gap: 10px; align-items: center;">
-      <span class="status-pill {{ $effStatus }}">
-        <span class="dot"></span>
-        {{ $quotation->status_label }}
-      </span>
-      <form action="{{ route('farmer.quotations.destroy', $quotation) }}" method="POST"
-            data-aqui-confirm="Are you sure you want to delete this cost quotation? This cannot be undone."
-            data-aqui-danger data-aqui-confirm-label="Delete"
-            style="margin: 0;">
-        @csrf
-        @method('DELETE')
-        <button type="submit" class="delete-btn">
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          Delete
-        </button>
-      </form>
-    </div>
-  </div>
-</div>
 
 @if(session('success'))
   <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(22,163,74,0.06);">
@@ -274,303 +236,204 @@
   </div>
 @endif
 
-<!-- Quotation Process -->
-<div class="detail-card">
-  <div class="detail-card-header">
-    <h2 style="font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0;">Quotation Process</h2>
-    <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">What has happened with this estimate so far</p>
-  </div>
-  <div class="detail-card-body">
-    <div class="process-steps">
-      @php
-        $stepGenerated = true;
-        $stepViewed = $effStatus === 'viewed';
-        $stepExpired = $effStatus === 'expired';
-      @endphp
-      <div class="process-step done">
-        <div class="step-dot">
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="#fff" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <div class="step-connector"></div>
-        <div class="step-title">Generated</div>
-        <div class="step-sub">{{ $quotation->created_at->format('M d, Y · g:i A') }}</div>
-      </div>
-
-      <div class="process-step {{ $stepGenerated ? 'done' : 'todo' }}">
-        <div class="step-dot">
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        </div>
-        <div class="step-connector"></div>
-        <div class="step-title">Shared as Demand Intel</div>
-        <div class="step-sub">Visible to stores selling your products</div>
-      </div>
-
-      <div class="process-step {{ $stepViewed ? 'done' : ($stepExpired ? 'danger' : 'active') }}">
-        <div class="step-dot">
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </div>
-        <div class="step-connector"></div>
-        <div class="step-title">Viewed by Store</div>
-        <div class="step-sub">
-          @if($stepViewed)
-            {{ $quotation->viewed_at ? $quotation->viewed_at->format('M d, Y · g:i A') : 'Yes' }}
-          @elseif($stepExpired)
-            Expired before it was viewed
-          @else
-            Waiting for a store to look
-          @endif
-        </div>
-      </div>
-
-      <div class="process-step {{ $stepExpired ? 'done' : 'todo' }}">
-        <div class="step-dot" style="{{ $stepExpired ? 'background:#94a3b8;color:#fff;box-shadow:none;' : '' }}">
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <div class="step-title">Expires</div>
-        <div class="step-sub">
+<!-- Header -->
+<div class="page-header-card">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px;">
+        <span class="status-pill {{ $effStatus }}">
+          <span class="dot"></span>
+          {{ $quotation->status_label }}
+        </span>
+        <span style="font-size: 12px; color: #879a8c;">
           @if($quotation->valid_until)
-            @if($stepExpired)
+            @if($effStatus === 'expired')
               Expired {{ $quotation->valid_until->format('M d, Y') }}
+            @elseif(is_numeric($daysLeft))
+              Valid until {{ $quotation->valid_until->format('M d, Y') }} &middot; {{ $daysLeft }} day(s) left
             @else
               Valid until {{ $quotation->valid_until->format('M d, Y') }}
-              @if(is_numeric($daysLeft)) · {{ $daysLeft }} day(s) left @endif
             @endif
           @else
             No expiration set
           @endif
-        </div>
+        </span>
+      </div>
+      <h1 style="font-size: 24px; font-weight: 800; color: #1a2b1e; margin: 0 0 6px 0; letter-spacing: -0.02em; font-family: 'SF Mono', ui-monospace, monospace;">
+        {{ $quotation->quotation_number }}
+      </h1>
+      <p style="color: #51605a; font-size: 14px; margin: 0; line-height: 1.5;">
+        <strong style="text-transform: capitalize; color: #143d23;">{{ $quotation->crop_type }}</strong>
+        &middot; {{ ucfirst($quotation->season) }} Season &middot; {{ number_format($landArea, 2) }} ha
+        &middot; generated {{ $quotation->created_at->format('M d, Y \a\t g:i A') }}
+      </p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      <a href="{{ route('farmer.quotations.breakdown', $quotation) }}" class="btn-primary">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Full Itemized Breakdown
+      </a>
+      <form action="{{ route('farmer.quotations.destroy', $quotation) }}" method="POST"
+            data-aqui-confirm="Are you sure you want to delete this cost quotation? This cannot be undone."
+            data-aqui-danger data-aqui-confirm-label="Delete" style="margin: 0;">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="delete-btn">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Delete
+        </button>
+      </form>
+    </div>
+  </div>
+  <div class="header-total">
+    <div class="spot-inner">
+      <div>
+        <div class="spot-label">Estimated Total Cost</div>
+        <div class="spot-value">₱{{ number_format($total, 2) }}</div>
+        <div class="spot-sub">≈ ₱{{ number_format($perHectare, 2) }} per hectare &middot; based on current store prices</div>
+      </div>
+      <div class="spot-stats">
+        <div class="spot-stat"><b>{{ number_format($landArea, 2) }} ha</b><span>Land Area</span></div>
+        <div class="spot-stat"><b>{{ $quotation->items->count() }}</b><span>Line Items</span></div>
+        <div class="spot-stat"><b>{{ max(1, $storeOwners->count()) }}</b><span>Store(s)</span></div>
       </div>
     </div>
   </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
-  <!-- Farming Plan Details -->
-  <div class="detail-card">
-    <div class="detail-card-header">
-      <h2 style="font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0;">Farming Plan Details</h2>
-    </div>
-    <div class="detail-card-body">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div>
-          <div class="info-label">Crop Type</div>
-          <div class="info-value" style="text-transform: capitalize;">{{ $quotation->crop_type }}</div>
-        </div>
-        <div>
-          <div class="info-label">Season</div>
-          <div class="info-value" style="display: flex; align-items: center; gap: 8px;">
-            @if($quotation->season === 'wet')
-              <span style="width: 10px; height: 10px; background: linear-gradient(135deg, #38bdf8, #0284c7); border-radius: 50%;"></span> Wet Season
-            @else
-              <span style="width: 10px; height: 10px; background: linear-gradient(135deg, #fbbf24, #d97706); border-radius: 50%;"></span> Dry Season
-            @endif
-          </div>
-        </div>
-        <div>
-          <div class="info-label">Land Area</div>
-          <div class="info-value">{{ number_format($landArea, 2) }} <span style="font-weight: 500; font-size: 13px; color: #879a8c;">hectares</span></div>
-        </div>
-        <div>
-          <div class="info-label">Generated On</div>
-          <div class="info-value" style="font-weight: 600;">{{ $quotation->created_at->format('M d, Y') }}</div>
-        </div>
-        <div>
-          <div class="info-label">Cost per Hectare</div>
-          <div class="info-value">₱{{ number_format($perHectare, 2) }}<span style="font-weight: 500; font-size: 13px; color: #879a8c;"> /ha</span></div>
-        </div>
-        <div>
-          <div class="info-label">Line Items</div>
-          <div class="info-value">{{ $quotation->items->count() }} product(s)</div>
-        </div>
-      </div>
-      @if($quotation->notes)
-        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #f0f2f1;">
-          <div class="info-label">Notes</div>
-          <p style="margin: 4px 0 0 0; font-size: 14px; color: #374138; line-height: 1.5;">{{ $quotation->notes }}</p>
-        </div>
-      @endif
-      @if($quotation->store_notes)
-        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #f0f2f1;">
-          <div class="info-label">Store Response</div>
-          <p style="margin: 4px 0 0 0; font-size: 14px; color: #374138; line-height: 1.5;">{{ $quotation->store_notes }}</p>
-        </div>
-      @endif
-    </div>
-  </div>
-
-  <!-- Stores Involved -->
-  <div class="detail-card">
-    <div class="detail-card-header">
-      <h2 style="font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0;">Supply Stores</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">Where your inputs come from</p>
-    </div>
-    <div class="detail-card-body">
-      @php
-        $storeIds = $quotation->items->pluck('product.storeOwner')->filter()->unique('id');
-      @endphp
-      @if($storeIds->count() > 0)
-        @foreach($storeIds as $store)
-          <div class="store-chip" style="{{ !$loop->last ? 'margin-bottom: 10px;' : '' }}">
-            <div style="width: 42px; height: 42px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1d4ed8; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; border: 1px solid #bfdbfe;">
-              @php $w = explode(' ', trim($store->name)); echo count($w) >= 2 ? mb_substr($w[0],0,1).mb_substr(end($w),0,1) : mb_substr($store->name,0,2); @endphp
-            </div>
-            <div style="flex: 1; min-width: 0;">
-              <div style="font-weight: 700; color: #1a2b1e; font-size: 14px;">{{ $store->name }}</div>
-              <div style="font-size: 12px; color: #879a8c;">{{ $quotation->items->where('product.user_id', $store->id)->count() }} product(s) · ₱{{ number_format($quotation->items->where('product.user_id', $store->id)->sum('subtotal'), 2) }}</div>
-            </div>
-          </div>
-        @endforeach
-      @else
-        <p style="color: #94a3b8; font-size: 14px; margin: 0;">Products from the general catalog were used.</p>
-      @endif
-
-      <div style="margin-top: 20px; padding: 14px 16px; background: #fafdfb; border: 1px solid #e8ecea; border-radius: 12px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <span style="font-size: 13px; color: #6b7c6e; display: flex; align-items: center; gap: 6px;">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-            </svg>
-            @if($quotation->valid_until)
-              Valid until <strong style="color: #1a2b1e;">{{ $quotation->valid_until->format('F d, Y') }}</strong>
-              @if($effStatus === 'expired')
-                <span style="color: #dc2626; font-weight: 600; background: #fef2f2; padding: 2px 8px; border-radius: 6px; font-size: 11px;">Expired</span>
-              @elseif(is_numeric($daysLeft))
-                <span style="color: #15803d; font-weight: 600; background: #f0fdf4; padding: 2px 8px; border-radius: 6px; font-size: 11px;">{{ $daysLeft }} day(s) left</span>
-              @endif
-            @else
-              No expiration set
-            @endif
-          </span>
-          <span style="color: #b0b8b3; font-size: 12px;">Based on current product prices</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Cost Breakdown -->
-<div class="detail-card">
-  <div class="detail-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+<!-- AI Overview (auto-loaded) -->
+<div class="panel-card">
+  <div class="panel-head">
     <div>
-      <h2 style="font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0;">Cost Breakdown</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">Auto-calculated via Decision Support formulas — rate per hectare &times; land area</p>
-    </div>
-    @if($total > 0)
-      <div class="total-badge">
-        <div class="total-label">Total</div>
-        <div class="total-value">₱{{ number_format($total, 2) }}</div>
-      </div>
-    @endif
-  </div>
-  <div style="padding: 0;">
-    @if($quotation->items->count() > 0)
-      <table class="items-table">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Store</th>
-            <th>Calculation</th>
-            <th>Price per Unit</th>
-            <th>Quantity</th>
-            <th style="text-align: right;">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($quotation->items as $item)
-            @php
-              $formula = $formulas->get($item->product_id);
-              $unit    = strtolower(trim($formula?->unit ?? $item->product?->stock_unit ?? 'unit'));
-              $rate    = $formula ? (float) $formula->rate_per_hectare : null;
-              if ($rate === null && $landArea > 0) {
-                  $rate = round((float) $item->calculated_quantity / $landArea, 2);
-              }
-              $baseQty = $rate !== null ? round($rate * $landArea, 2) : null;
-              $qty     = (float) $item->calculated_quantity;
-              $rounded = in_array($unit, $discreteUnits) && is_numeric($baseQty) && ceil($baseQty) != $baseQty;
-              $storeOwner = $item->product?->storeOwner;
-            @endphp
-            <tr>
-              <td>
-                <div style="font-weight: 600; color: #1a2b1e;">{{ $item->product_name }}</div>
-                @if($item->product)
-                  <div style="font-size: 11px; color: #b0b8b3; font-family: 'SF Mono', ui-monospace, monospace;">SKU: {{ $item->product->sku }}</div>
-                  <div style="font-size: 11px; color: #b0b8b3; text-transform: capitalize;">{{ $item->product->category?->name ?? '' }}</div>
-                @endif
-              </td>
-              <td style="font-size: 13px; color: #6b7c6e;">
-                @if($storeOwner)
-                  {{ $storeOwner->name }}
-                @else
-                  <span style="color: #d1d9d3;">—</span>
-                @endif
-              </td>
-              <td style="max-width: 260px;">
-                @if($rate !== null && $baseQty !== null)
-                  <div class="calc-line">
-                    {{ rtrim(rtrim(number_format($rate, 3), '0'), '.') }} {{ $unit }}/ha &times; {{ number_format($landArea, 2) }} ha
-                    @if($rounded)
-                      = {{ number_format($baseQty, 2) }} {{ $unit }} &rarr; rounded up to <strong>{{ number_format($qty, 0) }} {{ $unit }}</strong>
-                    @else
-                      &asymp; <strong>{{ rtrim(rtrim(number_format($baseQty, 2), '0'), '.') }} {{ $unit }}</strong>
-                    @endif
-                    <br>&times; ₱{{ number_format($item->price_at_generation, 2) }}/{{ $unit }} = <strong>₱{{ number_format($item->subtotal, 2) }}</strong>
-                  </div>
-                @else
-                  <span style="font-size: 12px; color: #b0b8b3;">No formula rate — quantity estimated</span>
-                @endif
-              </td>
-              <td>₱{{ number_format($item->price_at_generation, 2) }}</td>
-              <td><span style="font-weight: 600;">{{ number_format($qty, 2) }}</span> <span style="font-size: 11px; color: #b0b8b3;">{{ $unit }}</span></td>
-              <td style="text-align: right; font-weight: 700; color: #1a2b1e;">₱{{ number_format($item->subtotal, 2) }}</td>
-            </tr>
-          @endforeach
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colspan="5" style="text-align: right; padding: 16px; font-weight: 700; color: #6b7c6e; border-bottom: none; background: #fafdfb;">Estimated Total</td>
-            <td style="text-align: right; padding: 16px; font-weight: 800; color: #143d23; font-size: 18px; border-bottom: none; background: #fafdfb;">
-              ₱{{ number_format($total, 2) }}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
-    @else
-      <div style="text-align: center; padding: 48px 24px;">
-        <svg viewBox="0 0 24 24" width="40" height="40" stroke="#d1d9d3" stroke-width="1.5" fill="none" style="margin-bottom: 12px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <p style="color: #879a8c; font-size: 14px; margin: 0;">No products matched the formulas for this crop and season.</p>
-      </div>
-    @endif
-  </div>
-</div>
-
-<!-- AI Overview -->
-<div class="detail-card">
-  <div class="detail-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-    <div>
-      <h2 style="font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0;">AI Overview</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">A plain-language read of this quotation</p>
+      <h2 style="font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0;">AI Farm Advisor</h2>
+      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">A plain-language explanation of what your quotation means</p>
     </div>
     <button type="button" class="ai-btn" id="aiOverviewBtn" onclick="generateAiOverview(this)">
       <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
-      <span>Generate AI Overview</span>
+      <span>Regenerate</span>
     </button>
   </div>
-  <div style="padding: 20px 24px;">
-    <div style="display: flex; gap: 12px; align-items: flex-start;">
+  <div class="panel-body" id="aiOverviewPanel">
+    <div id="aiNarrative" class="ai-loading">
       <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #f5f3ff, #ede9fe); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #ddd6fe;">
-        <svg viewBox="0 0 24 24" width="18" height="18" stroke="#6d28d9" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
+        <svg viewBox="0 0 24 24" width="17" height="17" stroke="#6d28d9" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
       </div>
-      <div>
-        <p style="margin: 0; font-size: 13.5px; color: #4b5c50; line-height: 1.6;">
-          Get a quick explanation of what this quotation means — the totals, what's driving the cost, and a practical next step.
-          If the AI service is unavailable, a smart summary built straight from your quotation data will be shown instead.
-        </p>
+      <div class="shimmer-lines">
+        <div class="shimmer-line" style="width: 42%;"></div>
+        <div class="shimmer-line" style="width: 96%;"></div>
+        <div class="shimmer-line" style="width: 88%;"></div>
+        <div class="shimmer-line" style="width: 74%;"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Info Banner -->
+<div class="two-col">
+  <!-- Plan at a glance -->
+  <div class="panel-card" style="margin-bottom: 0;">
+    <div class="panel-head">
+      <h2 style="font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0;">Your Plan at a Glance</h2>
+    </div>
+    <div class="panel-body" style="padding-top: 8px; padding-bottom: 8px;">
+      <div class="fact-row">
+        <span style="font-size: 13px; color: #51605a;">Crop Type</span>
+        <span style="font-weight: 700; color: #1a2b1e; text-transform: capitalize;">{{ $quotation->crop_type }}</span>
+      </div>
+      <div class="fact-row">
+        <span style="font-size: 13px; color: #51605a;">Season</span>
+        <span style="font-weight: 700; color: #1a2b1e; display: flex; align-items: center; gap: 7px;">
+          @if($quotation->season === 'wet')
+            <span style="width: 9px; height: 9px; background: linear-gradient(135deg, #38bdf8, #0284c7); border-radius: 50%;"></span> Wet Season
+          @else
+            <span style="width: 9px; height: 9px; background: linear-gradient(135deg, #fbbf24, #d97706); border-radius: 50%;"></span> Dry Season
+          @endif
+        </span>
+      </div>
+      <div class="fact-row">
+        <span style="font-size: 13px; color: #51605a;">Land Area</span>
+        <span style="font-weight: 700; color: #1a2b1e;">{{ number_format($landArea, 2) }} hectares</span>
+      </div>
+      <div class="fact-row">
+        <span style="font-size: 13px; color: #51605a;">Cost per Hectare</span>
+        <span style="font-weight: 700; color: #1a2b1e;">₱{{ number_format($perHectare, 2) }}</span>
+      </div>
+      <div class="fact-row">
+        <span style="font-size: 13px; color: #51605a;">Selected Inputs</span>
+        <span style="font-weight: 700; color: #1a2b1e;">{{ $quotation->items->count() }} item(s)</span>
+      </div>
+      <div class="fact-row">
+        <span style="font-size: 13px; color: #51605a;">Generated On</span>
+        <span style="font-weight: 700; color: #1a2b1e;">{{ $quotation->created_at->format('M d, Y') }}</span>
+      </div>
+      <div class="fact-row">
+        <span style="font-size: 13px; color: #51605a;">Valid Until</span>
+        <span style="font-weight: 700; color: {{ $effStatus === 'expired' ? '#dc2626' : '#166534' }};">
+          @if($quotation->valid_until)
+            {{ $quotation->valid_until->format('M d, Y') }}
+            @if($effStatus === 'expired')
+              (expired)
+            @elseif(is_numeric($daysLeft))
+              ({{ $daysLeft }} day(s) left)
+            @endif
+          @else
+            No expiration
+          @endif
+        </span>
+      </div>
+      @if($quotation->notes)
+        <div style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed #f0f2f1;">
+          <div class="info-label">Your Notes</div>
+          <p style="margin: 4px 0 0 0; font-size: 13.5px; color: #374138; line-height: 1.5;">{{ $quotation->notes }}</p>
+        </div>
+      @endif
+    </div>
+  </div>
+
+  <!-- Supply stores -->
+  <div>
+    <div class="panel-card" style="margin-bottom: 0;">
+      <div class="panel-head">
+        <h2 style="font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0;">Supply Stores</h2>
+        <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">Where your inputs come from</p>
+      </div>
+      <div class="panel-body" style="padding-top: 16px;">
+        @if($storeOwners->count() > 0)
+          @foreach($storeOwners as $store)
+            <div class="store-chip" style="{{ !$loop->last ? 'margin-bottom: 10px;' : '' }}">
+              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1d4ed8; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; border: 1px solid #bfdbfe;">
+                @php $w = explode(' ', trim($store->name)); echo count($w) >= 2 ? mb_substr($w[0],0,1).mb_substr(end($w),0,1) : mb_substr($store->name,0,2); @endphp
+              </div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 700; color: #1a2b1e; font-size: 13.5px;">{{ $store->name }}</div>
+                <div style="font-size: 12px; color: #879a8c;">{{ $quotation->items->where('product.user_id', $store->id)->count() }} product(s) &middot; ₱{{ number_format($quotation->items->where('product.user_id', $store->id)->sum('subtotal'), 2) }}</div>
+              </div>
+            </div>
+          @endforeach
+        @else
+          <p style="color: #94a3b8; font-size: 13.5px; margin: 0;">Products from the general catalog were used.</p>
+        @endif
+      </div>
+    </div>
+
+    <div class="panel-card" style="margin-bottom: 0; margin-top: 20px;">
+      <div class="panel-head">
+        <h2 style="font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0;">Full Itemized Breakdown</h2>
+        <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">Every line of your quotation</p>
+      </div>
+      <div class="panel-body">
+        <p style="font-size: 13.5px; color: #51605a; margin: 0 0 16px 0; line-height: 1.6;">
+          See the exact quantity, unit price, and subtotal for each of your selected inputs.
+        </p>
+        <a href="{{ route('farmer.quotations.breakdown', $quotation) }}" class="btn-ghost" style="width: 100%; justify-content: center;">
+          View the full line-by-line breakdown
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Info banner -->
 <div class="info-banner">
   <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(22,163,74,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
     <svg viewBox="0 0 24 24" width="18" height="18" stroke="#16a34a" stroke-width="2" fill="none">
@@ -580,28 +443,10 @@
   <div>
     <div style="font-weight: 700; font-size: 14px; color: #166534; margin-bottom: 4px;">This is a cost quotation, not a purchase order</div>
     <p style="margin: 0; font-size: 13px; color: #15803d; line-height: 1.6;">
-      This cost breakdown was auto-generated using current product prices and standard farming formulas.
-      Store owners can see this as demand intelligence. Contact the store directly to finalize any purchase.
+      Prices are the current store prices at the time of generation and may change. Store owners can see this as demand intelligence.
+      Contact the store directly to finalize any purchase.
     </p>
   </div>
-</div>
-
-<div class="ai-floating" id="aiFloatingLoading" hidden>
-  <span class="ai-spin"></span>
-  <span>Preparing your AI overview&hellip;</span>
-</div>
-
-<div class="ai-modal" id="aiModal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" aria-hidden="true">
-  <div class="ai-modal-head">
-    <div>
-      <h3 id="aiModalTitle">AI Overview</h3>
-      <p>LLM-generated readability overview</p>
-    </div>
-    <button type="button" class="ai-modal-close" id="aiModalClose" aria-label="Close AI overview" title="Close">
-      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <div class="ai-modal-body" id="aiModalBody"></div>
 </div>
 
 <script>
@@ -625,7 +470,7 @@
       var rows = buf.map(function (r) { return r.slice(1, -1).split('|').map(function (c) { return c.trim(); }); })
         .filter(function (cells) { return !cells.every(function (c) { return /^:?-+:?$/.test(c); }); });
       if (!rows.length) return;
-      html += '<div class="table-wrap"><table>';
+      html += '<div class="table-wrap" style="overflow-x:auto;"><table>';
       var header = rows.shift();
       html += '<thead><tr>' + header.map(function (c) { return '<th>' + inlineAi(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
       rows.forEach(function (cells) {
@@ -670,43 +515,52 @@
     return html;
   }
 
-  function openAiModal(data) {
-    var body = document.getElementById('aiModalBody');
+  var aiLoading = false;
+
+  function renderAiOverview(data) {
+    var container = document.getElementById('aiNarrative');
     if (data && typeof data === 'object' && data.error) {
-      body.innerHTML = '<div class="ai-error"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>' + escapeAiHtml(data.error) + '</span></div>';
-    } else {
-      var source = (data && data.source === 'ai')
-        ? '<span class="ai-source-badge ai"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>AI-assisted</span>'
-        : '<span class="ai-source-badge fallback"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>Smart summary (AI offline)</span>';
-      body.innerHTML = '<div style="margin-bottom: 12px;">' + source + '</div>' +
-        '<div class="ai-narrative">' +
-        '<div class="ai-narrative-head">' +
-        '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#7c3aed" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>' +
-        '<h4>' + (data.source === 'ai' ? 'AI Readability Overview' : 'Smart Summary — Quotation Data') + '</h4></div>' +
-        '<div class="ai-narrative-body">' + renderAiMarkdown(data.overview || '') + '</div></div>';
+      container.className = 'ai-error';
+      container.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>' + escapeAiHtml(data.error) + ' <button onclick="generateAiOverview(document.getElementById(\'aiOverviewBtn\'))" style="background:none;border:none;padding:0;color:#b91c1c;font-weight:700;cursor:pointer;text-decoration:underline;">Try again</button></span>';
+      return;
     }
-    var modal = document.getElementById('aiModal');
-    modal.classList.add('open');
-    modal.setAttribute('aria-hidden', 'false');
+    var source = (data && data.source === 'ai')
+      ? '<span class="ai-source-badge ai"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>AI assisted</span>'
+      : '<span class="ai-source-badge fallback"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>Smart summary (AI offline)</span>';
+    container.className = 'ai-narrative';
+    container.innerHTML =
+      '<div style="margin-bottom: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">' + source +
+      '<span style="font-size: 11.5px; color: #879a8c;">Generated from your quotation data &mdash; it never invents numbers.</span></div>' +
+      '<div>' + renderAiMarkdown(data.overview || '') + '</div>';
   }
-  function closeAiModal() {
-    var modal = document.getElementById('aiModal');
-    modal.classList.remove('open');
-    modal.setAttribute('aria-hidden', 'true');
+
+  function setAiBusy(busy) {
+    aiLoading = busy;
+    var btn = document.getElementById('aiOverviewBtn');
+    if (btn) {
+      btn.disabled = busy;
+      var label = btn.querySelector('span');
+      if (label) label.textContent = busy ? 'Preparing\u2026' : 'Regenerate';
+    }
   }
+
   function showAiLoading() {
-    document.getElementById('aiFloatingLoading').hidden = false;
+    var container = document.getElementById('aiNarrative');
+    container.className = 'ai-loading';
+    container.innerHTML =
+      '<div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #f5f3ff, #ede9fe); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #ddd6fe;">' +
+      '<svg viewBox="0 0 24 24" width="17" height="17" stroke="#6d28d9" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg></div>' +
+      '<div class="shimmer-lines">' +
+      '<div class="shimmer-line" style="width: 42%;"></div>' +
+      '<div class="shimmer-line" style="width: 96%;"></div>' +
+      '<div class="shimmer-line" style="width: 88%;"></div>' +
+      '<div class="shimmer-line" style="width: 74%;"></div>' +
+      '</div>';
   }
-  function hideAiLoading() {
-    document.getElementById('aiFloatingLoading').hidden = true;
-  }
-  function setAiBtnState(btn, busy) {
-    var label = btn.querySelector('span');
-    btn.disabled = busy;
-    label.textContent = busy ? 'Generating\u2026' : 'Regenerate Overview';
-  }
+
   function generateAiOverview(btn) {
-    setAiBtnState(btn, true);
+    if (aiLoading) return;
+    setAiBusy(true);
     showAiLoading();
 
     fetch('{{ route('farmer.quotations.ai-overview', $quotation) }}', {
@@ -720,26 +574,23 @@
     })
     .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
     .then(function (res) {
-      hideAiLoading();
-      setAiBtnState(btn, false);
+      setAiBusy(false);
       if (res.ok && res.data && res.data.overview) {
-        openAiModal(res.data);
+        renderAiOverview(res.data);
       } else if (res.data && res.data.error) {
-        openAiModal({ error: res.data.error });
+        renderAiOverview({ error: res.data.error });
       } else {
-        openAiModal({ error: 'The AI overview could not be generated right now. Please try again.' });
+        renderAiOverview({ error: 'The AI overview could not be generated right now. Please try again.' });
       }
     })
     .catch(function () {
-      hideAiLoading();
-      setAiBtnState(btn, false);
-      openAiModal({ error: 'Connection failed. Please try again.' });
+      setAiBusy(false);
+      renderAiOverview({ error: 'Connection failed. Please try again.' });
     });
   }
 
-  document.getElementById('aiModalClose').addEventListener('click', closeAiModal);
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeAiModal();
+  document.addEventListener('DOMContentLoaded', function () {
+    generateAiOverview(document.getElementById('aiOverviewBtn'));
   });
 </script>
 @endsection
