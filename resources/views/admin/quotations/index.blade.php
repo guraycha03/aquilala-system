@@ -60,7 +60,7 @@
 
 <div class="header-panel" style="margin-bottom: 10px;">
   <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Demand Trends</h1>
-  <p style="color: #606d64; font-size: 14px; margin: 0;">System-wide demand visibility — farmer cost quotations, store performance, and crop trends.</p>
+  <p style="color: #606d64; font-size: 14px; margin: 0;">System-wide demand visibility — which products and crops are in demand.</p>
 </div>
 
 <!-- System-wide metrics -->
@@ -95,170 +95,72 @@
   </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
-  <!-- Store Performance -->
-  <div class="data-table-container" style="margin-bottom: 0;">
-    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
-      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Store Performance</h2>
-      <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Which stores' products farmers are exploring most</p>
-    </div>
-    <div style="padding: 16px 20px;">
-      @if(count($storePerformance) > 0)
-        @php $maxQ = max(array_column($storePerformance, 'quotation_count')); @endphp
-        @foreach($storePerformance as $store)
-          <div style="{{ !$loop->last ? 'margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;' : '' }}">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <div class="avatar" style="background: #fef3c7; color: #92400e; width: 28px; height: 28px;">
-                  @php $w = explode(' ', trim($store['store_name'])); echo count($w) >= 2 ? mb_substr($w[0], 0, 1).mb_substr(end($w), 0, 1) : mb_substr($store['store_name'], 0, 2); @endphp
-                </div>
-                <span style="font-weight: 600; color: #1e2922; font-size: 14px;">{{ $store['store_name'] }}</span>
-              </div>
-              <span style="font-size: 13px; color: #64748b;">{{ $store['quotation_count'] }} quotation(s)</span>
-            </div>
-            <div class="demand-bar">
-              <div class="demand-bar-fill" style="width: {{ ($store['quotation_count'] / $maxQ) * 100 }}%;"></div>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #94a3b8;">
-              <span>{{ $store['product_count'] }} unique product(s)</span>
-              <span>₱{{ number_format($store['total_value'], 0) }} value</span>
-            </div>
-          </div>
-        @endforeach
-      @else
-        <div style="text-align: center; padding: 32px; color: #94a3b8;">
-          <p style="margin: 0;">No store demand data yet.</p>
-        </div>
-      @endif
-    </div>
+<!-- Product & Crop Demand (de-identified — products/crops only) -->
+<div class="data-table-container" style="margin-bottom: 24px;">
+  <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
+    <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Product Demand</h2>
+    <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Most-quoted products across all estimates, with their crop types.</p>
   </div>
-
-  <!-- Crop Demand Breakdown -->
-  <div class="data-table-container" style="margin-bottom: 0;">
-    <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
-      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Crop Demand Breakdown</h2>
-      <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Which crops farmers are planning for</p>
-    </div>
-    <div style="padding: 16px 20px;">
-      @if(count($cropDemand) > 0)
-        @php $maxCrop = max(array_column($cropDemand, 'count')); @endphp
-        @foreach($cropDemand as $crop)
-          <div style="{{ !$loop->last ? 'margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;' : '' }}">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span style="font-weight: 600; color: #1e2922; font-size: 14px; text-transform: capitalize;">{{ $crop['crop'] ?? 'Unspecified' }}</span>
-              <span style="font-size: 13px; color: #64748b;">{{ $crop['count'] }} estimate(s)</span>
+  <div style="padding: 16px 20px;">
+    @if(count($productDemand) > 0)
+      @php $maxP = max(array_column($productDemand, 'quotation_count')); @endphp
+      @foreach($productDemand as $prod)
+        <div style="{{ !$loop->last ? 'margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;' : '' }}">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+              <span style="width: 28px; height: 28px; border-radius: 8px; background: #f0fdf4; color: #16a34a; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              </span>
+              <span style="font-weight: 600; color: #1e2922; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $prod['name'] }}</span>
+              <span style="font-size: 11px; font-weight: 600; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 10px; white-space: nowrap;">{{ $prod['category'] }}</span>
             </div>
-            <div class="demand-bar">
-              <div class="demand-bar-fill" style="width: {{ ($crop['count'] / $maxCrop) * 100 }}%;"></div>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #94a3b8;">
-              <span>{{ number_format($crop['total_area'], 1) }} ha total area</span>
-              <span>₱{{ number_format($crop['total_value'], 0) }} value</span>
-            </div>
+            <span style="font-size: 13px; color: #64748b; white-space: nowrap;">{{ $prod['quotation_count'] }} estimate(s)</span>
           </div>
-        @endforeach
-      @else
-        <div style="text-align: center; padding: 32px; color: #94a3b8;">
-          <p style="margin: 0;">No crop demand data yet.</p>
+          <div class="demand-bar">
+            <div class="demand-bar-fill" style="width: {{ ($prod['quotation_count'] / max($maxP, 1)) * 100 }}%;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; font-size: 12px; color: #94a3b8; flex-wrap: wrap;">
+            <span>Crops: {{ $prod['crops'] ?: '—' }}</span>
+            <span>{{ rtrim(rtrim(number_format($prod['total_qty'], 2), '0'), '.') }} {{ $prod['unit'] }} · ₱{{ number_format($prod['total_value'], 0) }}</span>
+          </div>
         </div>
-      @endif
-    </div>
+      @endforeach
+    @else
+      <div style="text-align: center; padding: 32px; color: #94a3b8;">
+        <p style="margin: 0;">No product demand data yet.</p>
+      </div>
+    @endif
   </div>
 </div>
 
-<x-table-toolbar
-    uid="admin-quotes"
-    work-table="adminQuotesTable"
-    per-page="10"
-    noun="quotations"
-    search-placeholder="Search by reference, farmer, crop, or status…"
-    :filters="[
-        ['key' => 'crop', 'label' => 'All crops', 'options' => collect($quotations->pluck('crop_type')->unique()->values())->map(fn($c) => [strtolower($c), $c])->all()],
-        ['key' => 'season', 'label' => 'All seasons', 'options' => collect($quotations->pluck('season')->unique()->values())->map(fn($s) => [strtolower($s), ucfirst($s)])->all()],
-        ['key' => 'status', 'label' => 'All statuses', 'options' => collect($quotations->pluck('status')->unique()->values())->map(fn($st) => [strtolower($st), ucwords(str_replace('_', ' ', $st))])->all()],
-    ]"
-    :sorts="[
-        ['key' => 'date', 'dir' => -1, 'type' => 'date', 'label' => 'Submitted (newest)'],
-        ['key' => 'date', 'dir' => 1, 'type' => 'date', 'label' => 'Submitted (oldest)'],
-        ['key' => 'value', 'dir' => -1, 'type' => 'num', 'label' => 'Est. value (highest)'],
-        ['key' => 'value', 'dir' => 1, 'type' => 'num', 'label' => 'Est. value (lowest)'],
-        ['key' => 'farmer', 'dir' => 1, 'type' => 'str', 'label' => 'Farmer (A–Z)'],
-        ['key' => 'crop', 'dir' => 1, 'type' => 'str', 'label' => 'Crop (A–Z)'],
-    ]"
-  />
-
-<!-- Full Quotation Log -->
-<div class="data-table-container">
+<div class="data-table-container" style="margin-bottom: 24px;">
   <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
-    <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Global Quotation Log</h2>
+    <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Crop Demand</h2>
+    <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Which crop types farmers are planning for.</p>
   </div>
-  <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
-    <div class="app-scroll">
-      <table id="adminQuotesTable">
-      <thead>
-        <tr>
-          <th>Reference</th>
-          <th>Farmer</th>
-          <th>Crop</th>
-          <th>Area</th>
-          <th>Est. Value</th>
-          <th>Status</th>
-          <th>Submitted</th>
-        </tr>
-      </thead>
-      <tbody>
-        @forelse($quotations as $q)
-          @php $badgeStyle = 'background:' . $q->status_bg . ';color:' . $q->status_color . ';'; @endphp
-          <tr data-search="{{ strtolower(($q->quotation_number ?? '') . ' ' . ($q->farmer?->name ?? '') . ' ' . ($q->crop_type ?? '') . ' ' . ($q->season ?? '') . ' ' . ($q->status ?? '')) }}"
-            data-farmer="{{ strtolower($q->farmer?->name ?? '') }}"
-            data-crop="{{ strtolower($q->crop_type ?? '') }}"
-            data-season="{{ strtolower($q->season ?? '') }}"
-            data-status="{{ strtolower($q->status ?? '') }}"
-            data-value="{{ (float) ($q->estimated_total_cost ?? 0) }}"
-            data-date="{{ $q->created_at?->format('Y-m-d') ?? '' }}">
-            <td style="font-weight: 600; color: #143d23; font-family: monospace; font-size: 13px;">{{ $q->quotation_number }}</td>
-            <td>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <div class="avatar" style="background: #dbeafe; color: #1e40af;">
-                  @php $w = explode(' ', trim($q->farmer?->name ?? '?')); echo count($w) >= 2 ? mb_substr($w[0], 0, 1).mb_substr(end($w), 0, 1) : '?'; @endphp
-                </div>
-                <span>{{ $q->farmer?->name ?? 'Unknown' }}</span>
-              </div>
-            </td>
-            <td style="text-transform: capitalize;">{{ $q->crop_type }} — {{ $q->season }}</td>
-            <td>{{ number_format($q->land_area, 1) }} ha</td>
-            <td style="font-weight: 700;">
-              @if($q->estimated_total_cost > 0)
-                ₱{{ number_format($q->estimated_total_cost, 2) }}
-              @else
-                <span style="color: #94a3b8;">—</span>
-              @endif
-            </td>
-            <td>
-              <span class="badge" data-inline-style="{{ $badgeStyle }}">
-                <span class="badge-dot" style="background: currentColor;"></span>
-                {{ $q->status_label }}
-              </span>
-            </td>
-            <td style="font-size: 13px; color: #64748b;">{{ $q->created_at->format('M d, Y') }}</td>
-          </tr>
-        @empty
-          <tr>
-            <td colspan="7" style="text-align: center; padding: 48px 20px; color: #64748b;">
-              <svg viewBox="0 0 24 24" width="36" height="36" stroke="#94a3b8" stroke-width="1.5" fill="none" style="margin-bottom: 8px;">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-              </svg>
-              <p style="font-size: 15px; font-weight: 600; margin: 0;">No Quotations in System</p>
-            </td>
-          </tr>
-        @endforelse
-      </tbody>
-    </table>
-    </div>
-    <div class="app-scrollbar">
-      <div class="app-scrollbar-track"></div>
-      <div class="app-scrollbar-thumb"></div>
-    </div>
+  <div style="padding: 16px 20px;">
+    @if(count($cropDemand) > 0)
+      @php $maxCrop = max(array_column($cropDemand, 'count')); @endphp
+      @foreach($cropDemand as $crop)
+        <div style="{{ !$loop->last ? 'margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;' : '' }}">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-weight: 600; color: #1e2922; font-size: 14px; text-transform: capitalize;">{{ $crop['crop'] }}</span>
+            <span style="font-size: 13px; color: #64748b;">{{ $crop['count'] }} estimate(s)</span>
+          </div>
+          <div class="demand-bar">
+            <div class="demand-bar-fill" style="width: {{ ($crop['count'] / max($maxCrop, 1)) * 100 }}%;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #94a3b8;">
+            <span>{{ number_format($crop['total_area'], 1) }} ha total area</span>
+            <span>₱{{ number_format($crop['total_value'], 0) }} value</span>
+          </div>
+        </div>
+      @endforeach
+    @else
+      <div style="text-align: center; padding: 32px; color: #94a3b8;">
+        <p style="margin: 0;">No crop demand data yet.</p>
+      </div>
+    @endif
   </div>
 </div>
 @endsection

@@ -23,9 +23,7 @@ class HarvestReportController extends Controller
 
         [$reports, $stats, $allReports] = $this->applyFiltersAndStats($query, $request);
 
-        $cropTypes = Crop::orderBy('name')->pluck('name');
-
-        return view('farmer.harvests.index', compact('reports', 'stats', 'allReports', 'cropTypes'));
+        return view('farmer.harvests.index', compact('reports', 'stats', 'allReports'));
     }
 
     /**

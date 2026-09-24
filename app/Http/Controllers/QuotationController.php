@@ -841,12 +841,12 @@ FORMATTING RULES:
     // ────────────────────────────────────────────────────────────────
 
     /**
-     * Admin view: all quotations + per-store demand metrics.
+     * Admin view: product & crop demand analytics, de-identified.
      */
     public function adminIndex()
     {
-        // Full dataset for metrics, store performance, crop demand
-        $allQuotations = Quotation::with(['farmer', 'items.product.storeOwner'])
+        // Full dataset for metrics, product demand, crop demand
+        $allQuotations = Quotation::with(['items.product'])
             ->latest()
             ->get();
 
@@ -859,45 +859,69 @@ FORMATTING RULES:
             'totalValue' => $allQuotations->sum('estimated_total_cost'),
         ];
 
-        // Per-store demand performance
-        $storePerformance = $allQuotations
-            ->pluck('items')
-            ->flatten()
-            ->filter(fn ($item) => $item->product && $item->product->storeOwner)
-            ->groupBy(fn ($item) => $item->product->user_id)
-            ->map(function ($items, $storeId) {
-                $store = $items->first()->product->storeOwner;
-                return [
-                    'store_name'      => $store->name,
-                    'store_id'        => $storeId,
-                    'quotation_count' => $items->pluck('quotation_id')->unique()->count(),
-                    'product_count'   => $items->pluck('product_id')->unique()->count(),
-                    'total_value'     => $items->sum('subtotal'),
-                    'total_qty'       => $items->sum('calculated_quantity'),
+        // ─── Aggregate demand — product/crop focus only, no store or farmer identity ───
+        $productDemand = [];
+        $cropDemand = [];
+
+        foreach ($allQuotations as $q) {
+            $crop = $q->crop_type ?: 'Unspecified';
+            if (!isset($cropDemand[$crop])) {
+                $cropDemand[$crop] = [
+                    'crop'        => $crop,
+                    'count'       => 0,
+                    'total_area'  => 0.0,
+                    'total_value' => 0.0,
                 ];
+            }
+            $cropDemand[$crop]['count'] += 1;
+            $cropDemand[$crop]['total_area'] += (float) $q->land_area;
+            $cropDemand[$crop]['total_value'] += (float) $q->estimated_total_cost;
+
+            foreach ($q->items as $item) {
+                if (!$item->product) {
+                    continue;
+                }
+
+                $pid = $item->product_id;
+                if (!isset($productDemand[$pid])) {
+                    $productDemand[$pid] = [
+                        'name'            => $item->product->name,
+                        'category'        => $item->product->category_display_name,
+                        'unit'            => $item->product->stock_unit ?? $item->product->package_unit ?? 'units',
+                        'quotation_ids'   => [],
+                        'total_qty'       => 0.0,
+                        'total_value'     => 0.0,
+                        'crops'           => [],
+                    ];
+                }
+
+                $productDemand[$pid]['quotation_ids'][$q->id] = true;
+                $productDemand[$pid]['total_qty']   += (float) $item->calculated_quantity;
+                $productDemand[$pid]['total_value'] += (float) $item->subtotal;
+                if ($crop && !in_array($crop, $productDemand[$pid]['crops'], true)) {
+                    $productDemand[$pid]['crops'][] = $crop;
+                }
+            }
+        }
+
+        $productDemand = collect($productDemand)
+            ->map(function ($p) {
+                $p['quotation_count'] = count($p['quotation_ids']);
+                unset($p['quotation_ids']);
+                $p['crops'] = collect($p['crops'])->filter()->join(', ');
+                return $p;
             })
             ->sortByDesc('quotation_count')
+            ->take(8)
             ->values()
             ->toArray();
 
-        // Crop demand breakdown
-        $cropDemand = $allQuotations
-            ->groupBy('crop_type')
-            ->map(fn ($qs, $crop) => [
-                'crop' => $crop,
-                'count' => $qs->count(),
-                'total_area' => $qs->sum('land_area'),
-                'total_value' => $qs->sum('estimated_total_cost'),
-            ])
+        $cropDemand = collect($cropDemand)
             ->sortByDesc('count')
             ->values()
             ->toArray();
 
-        $quotations = Quotation::with(['farmer', 'items.product.storeOwner'])
-            ->latest()
-            ->get();
-
-        return view('admin.quotations.index', compact('quotations', 'metrics', 'storePerformance', 'cropDemand'));
+        return view('admin.quotations.index', compact('metrics', 'productDemand', 'cropDemand'));
     }
 
     // ────────────────────────────────────────────────────────────────

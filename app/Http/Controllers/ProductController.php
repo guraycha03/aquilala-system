@@ -137,7 +137,18 @@ class ProductController extends Controller
             ->whereNotNull('store_name')
             ->count();
 
-        return view('farmer.recommendations.index', compact('products', 'storeCount'));
+        // Product categories present among the recommended products, with counts.
+        $categories = $products
+            ->filter(fn ($p) => $p->category_display_name !== 'Uncategorized')
+            ->groupBy(fn ($p) => $p->category_display_name)
+            ->sortKeys()
+            ->map(fn ($group) => (object) [
+                'name'  => $group->first()->category_display_name,
+                'count' => $group->count(),
+            ])
+            ->values();
+
+        return view('farmer.recommendations.index', compact('products', 'storeCount', 'categories'));
     }
 
     /**

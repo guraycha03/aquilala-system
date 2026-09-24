@@ -174,6 +174,20 @@ class Product extends Model
         return $counts;
     }
 
+    public function getCategoryDisplayNameAttribute(): string
+    {
+        // The products table keeps a legacy string `category` column that
+        // shadows the `category()` relation on attribute access. Resolve the
+        // display name from the relation (preferred) with the legacy fallback.
+        $cat = $this->getRelation('category');
+        if ($cat instanceof Category && $cat->name) {
+            return $cat->name;
+        }
+
+        $legacy = $this->getRawOriginal('category');
+        return is_string($legacy) && trim($legacy) !== '' ? $legacy : 'Uncategorized';
+    }
+
     public function getStockStatusAttribute(): string
     {
         if ($this->status === 'discontinued') {

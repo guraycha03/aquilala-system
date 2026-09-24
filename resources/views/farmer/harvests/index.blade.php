@@ -178,55 +178,16 @@
   }
   .delete-btn:hover { border-color: #e4c6c3; color: #b0403a; background: #faf2f1; }
 
-  /* Record form card */
-  .record-card {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    margin-bottom: 20px;
-    overflow: hidden;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  .btn-submit {
+    appearance: none; -webkit-appearance: none; height: 44px; padding: 0 22px;
+    border: none; border-radius: 11px; font-size: 13px; font-weight: 700;
+    background: linear-gradient(135deg, #143d23 0%, #1a5230 100%); color: #fff; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(20,61,35,0.22);
+    display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+    transition: all 0.2s ease;
   }
-  .record-head {
-    padding: 14px 18px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    user-select: none;
-  }
-  .record-head b { font-size: 14px; color: #1e2922; }
-  .record-head .rec-icon {
-    width: 30px; height: 30px; border-radius: 9px;
-    background: #f0fdf4; color: #16a34a;
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  .record-chevron { color: #94a3b8; transition: transform 0.2s ease; }
-  .record-card.open .record-chevron { transform: rotate(180deg); }
-  .record-body { display: none; padding: 0 18px 18px; border-top: 1px solid #f1f5f9; padding-top: 16px; }
-  .record-card.open .record-body { display: block; }
-  .form-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-  }
-  @media (max-width: 820px) { .form-grid { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } }
-  .form-field label {
-    display: block; font-size: 12px; font-weight: 600;
-    color: #4b5c50; margin-bottom: 6px;
-  }
-  .form-field input, .form-field select {
-    width: 100%; height: 42px; padding: 0 12px;
-    border: 1.5px solid #e2e8f0; border-radius: 10px;
-    font-size: 13px; color: #1e293b; background: #fff;
-    font-family: inherit; outline: none; transition: all 0.2s ease;
-  }
-  .form-field input:focus, .form-field select:focus {
-    border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.08);
-  }
-  .form-errors { padding: 12px 18px; background: #fef2f2; border-bottom: 1px solid #fecaca; }
-  .form-errors ul { margin: 0; padding-left: 16px; color: #b91c1c; font-size: 13px; }
+  .btn-submit:hover { background: #1a5230; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(20,61,35,0.28); }
+  .btn-submit svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
   /* Empty state */
   .empty-state {
@@ -250,6 +211,10 @@
         Recorded harvests are instantly visible to the Aquilala administrator — yields, expenses, and planted areas stay in sync system-wide.
       </p>
     </div>
+    <a href="{{ route('farmer.harvests.create') }}" class="btn-submit">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Submit Harvest Report
+    </a>
   </div>
 </div>
 
@@ -261,78 +226,6 @@
     <span style="font-size: 14px; color: #166534; font-weight: 600;">{{ session('success') }}</span>
   </div>
 @endif
-
-@if($errors->any())
-  <div class="record-card" style="border-color: #fecaca;">
-    <div class="form-errors">
-      <b style="font-size: 13px; color: #b91c1c;">Could not save your harvest report:</b>
-      <ul>
-        @foreach($errors->all() as $error)
-          <li>{{ $error }}</li>
-        @endforeach
-      </ul>
-    </div>
-  </div>
-@endif
-
-<!-- Record Harvest Report -->
-<div class="record-card {{ $errors->any() ? 'open' : '' }}" id="recordCard">
-  <div class="record-head" onclick="document.getElementById('recordCard').classList.toggle('open')">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <span class="rec-icon">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </span>
-      <b>Record a Harvest Report</b>
-    </div>
-    <svg class="record-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-  </div>
-  <div class="record-body">
-    <form method="POST" action="{{ route('farmer.harvests.store') }}">
-      @csrf
-      <div class="form-grid">
-        <div class="form-field">
-          <label>Crop Type</label>
-          <select name="crop_type" required>
-            <option value="">Select crop…</option>
-            @foreach($cropTypes as $cropName)
-              <option value="{{ $cropName }}" {{ old('crop_type') === $cropName ? 'selected' : '' }}>{{ $cropName }}</option>
-            @endforeach
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Season</label>
-          <select name="season" required>
-            <option value="dry" {{ old('season') === 'dry' ? 'selected' : '' }}>Dry Season</option>
-            <option value="wet" {{ old('season') === 'wet' ? 'selected' : '' }}>Wet Season</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label>Harvest Date</label>
-          <input type="date" name="harvest_date" value="{{ old('harvest_date', now()->toDateString()) }}" max="{{ now()->toDateString() }}" required>
-        </div>
-        <div class="form-field">
-          <label>Land Area (hectares)</label>
-          <input type="number" name="land_area" step="0.01" min="0.01" max="999.99" value="{{ old('land_area') }}" placeholder="e.g. 1.50" required>
-        </div>
-        <div class="form-field">
-          <label>Actual Yield (metric tons)</label>
-          <input type="number" name="actual_yield_metric_tons" step="0.01" min="0" value="{{ old('actual_yield_metric_tons') }}" placeholder="e.g. 4.20" required>
-        </div>
-        <div class="form-field">
-          <label>Actual Total Expenses (₱)</label>
-          <input type="number" name="actual_total_expenses" step="0.01" min="0" value="{{ old('actual_total_expenses') }}" placeholder="e.g. 68500" required>
-        </div>
-      </div>
-      <div style="margin-top: 16px; display: flex; gap: 10px; align-items: center;">
-        <button type="submit" style="appearance: none; height: 42px; padding: 0 24px; border: none; border-radius: 10px; background: linear-gradient(135deg, #143d23 0%, #1a5230 100%); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(20,61,35,0.25); display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Save Harvest Report
-        </button>
-        <span style="font-size: 12px; color: #94a3b8;">Syncs instantly with the admin's Harvest Reports page.</span>
-      </div>
-    </form>
-  </div>
-</div>
 
 <!-- Stats -->
 <div class="stats-grid">
@@ -472,7 +365,7 @@
                     </div>
                     <p style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">No Harvest Reports Found</p>
                     <p style="font-size: 14px; color: #64748b; margin: 0; line-height: 1.5;">
-                      Record your first harvest above — it will sync to the admin instantly.
+                      Submit your first harvest report — it will sync to the admin instantly.
                     </p>
                   </div>
                 </td>
