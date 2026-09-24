@@ -120,13 +120,13 @@
     </div>
   @endif
 
-  <div class="sync-note">
+  {{-- <div class="sync-note">
     <svg viewBox="0 0 24 24" width="18" height="18" stroke="#16a34a" stroke-width="2" fill="none"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="2" width="4" height="19"/></svg>
     <div>
       <b>Synced with the administrator</b>
       <p>Harvest data is shared only between you and the admin. Once submitted, it appears instantly on the admin's Harvest Reports page.</p>
     </div>
-  </div>
+  </div> --}}
 
   <div class="record-card">
     <div class="record-head">
