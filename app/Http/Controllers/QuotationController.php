@@ -846,7 +846,7 @@ FORMATTING RULES:
     public function adminIndex()
     {
         // Full dataset for metrics, product demand, crop demand
-        $allQuotations = Quotation::with(['items.product'])
+        $allQuotations = Quotation::with(['items.product.category'])
             ->latest()
             ->get();
 

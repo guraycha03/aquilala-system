@@ -7,7 +7,6 @@
   'tabs' => [
     ['key' => 'demand',   'label' => 'Demand Trends',       'url' => route('admin.quotations.index')],
     ['key' => 'harvests', 'label' => 'Harvest Performance',  'url' => route('admin.harvests.index')],
-    ['key' => 'expenses', 'label' => 'Expenses',             'url' => route('admin.analytics.expenses')],
   ],
   'activeTab' => 'harvests',
 ])
@@ -130,7 +129,13 @@
       <div class="stat-value">{{ $stats['reports'] }}</div>
       <div class="stat-label">Harvest Reports</div>
     </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#16a34a" stroke-width="1.5" fill="none"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
+    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#16a34a" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 20V10"/>
+      <path d="M12 10C9 10 6 9 6 5c3 0 6 2 6 5"/>
+      <path d="M12 14c3 0 6-1 6-5-3 0-6 2-6 5"/>
+      <path d="M3 20h18"/>
+      <path d="M3 12l4-4 4 4 5-5 5 5"/>
+    </svg>
   </div>
   <div class="stat-card">
     <div>

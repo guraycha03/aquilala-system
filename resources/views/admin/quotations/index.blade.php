@@ -7,7 +7,6 @@
   'tabs' => [
     ['key' => 'demand',   'label' => 'Demand Trends',       'url' => route('admin.quotations.index')],
     ['key' => 'harvests', 'label' => 'Harvest Performance',  'url' => route('admin.harvests.index')],
-    ['key' => 'expenses', 'label' => 'Expenses',             'url' => route('admin.analytics.expenses')],
   ],
   'activeTab' => 'demand',
 ])

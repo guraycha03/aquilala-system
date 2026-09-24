@@ -178,10 +178,13 @@ class Product extends Model
     {
         // The products table keeps a legacy string `category` column that
         // shadows the `category()` relation on attribute access. Resolve the
-        // display name from the relation (preferred) with the legacy fallback.
-        $cat = $this->getRelation('category');
-        if ($cat instanceof Category && $cat->name) {
-            return $cat->name;
+        // display name from the relation (when loaded, preferred) with the
+        // legacy string as fallback.
+        if ($this->relationLoaded('category') && $this->relations['category'] instanceof Category) {
+            $name = $this->relations['category']->name;
+            if (is_string($name) && trim($name) !== '') {
+                return $name;
+            }
         }
 
         $legacy = $this->getRawOriginal('category');

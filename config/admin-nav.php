@@ -46,7 +46,6 @@ return [
         'items' => [
             ['label' => 'Demand Trends', 'routes' => ['admin.quotations.index']],
             ['label' => 'Harvest Performance', 'routes' => ['admin.harvests.index']],
-            ['label' => 'Expenses', 'routes' => ['admin.analytics.expenses']],
         ],
     ],
     'settings' => [
