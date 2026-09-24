@@ -191,8 +191,8 @@
       </x-kpi-card>
     </section>
 
-    <!-- 3. SEASON & DECISION SUPPORT -->
-    <section class="dash-grid">
+    <!-- 3. SEASON & DECISION SUPPORT (hidden) -->
+    <section class="dash-grid" style="display:none;">
 
       <!-- Current Season -->
       <div class="dash-panel reveal" data-reveal>
@@ -369,8 +369,8 @@
       </div>
     </section>
 
-    <!-- 4. WORKFLOW -->
-    <section class="dash-grid">
+    <!-- 4. WORKFLOW (hidden) -->
+    <section class="dash-grid" style="display:none;">
       <!-- From Planning to Harvest -->
       <div class="dash-panel reveal" data-reveal>
         <div class="panel-head">

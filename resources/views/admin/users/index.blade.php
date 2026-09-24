@@ -6,7 +6,6 @@
   @include('partials.admin-tabs', [
     'tabs' => [
       ['key' => 'all',       'label' => 'All Users', 'url' => route('admin.users.index')],
-      ['key' => 'approvals', 'label' => 'Approvals', 'url' => route('admin.approvals.index')],
       ['key' => 'stores',    'label' => 'Stores',    'url' => route('admin.stores.index')],
     ],
     'activeTab' => 'all',
