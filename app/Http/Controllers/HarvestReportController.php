@@ -29,6 +29,16 @@ class HarvestReportController extends Controller
     }
 
     /**
+     * Farmer-facing harvest report submission form (dashboard sub-page).
+     */
+    public function farmerCreate()
+    {
+        $cropTypes = Crop::orderBy('name')->pluck('name');
+
+        return view('farmer.harvests.create', compact('cropTypes'));
+    }
+
+    /**
      * Admin-facing list of every farmer's harvest reports (read-only).
      */
     public function adminIndex(Request $request)

@@ -16,6 +16,14 @@
 */
 
 return [
+    'dashboard' => [
+        'label' => 'Dashboard',
+        'icon' => '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+        'items' => [
+            ['label' => 'Overview',             'routes' => ['dashboard.farmer', 'farmer.dashboard']],
+            ['label' => 'Submit Harvest Report', 'routes' => ['farmer.harvests.create']],
+        ],
+    ],
     'my-farm' => [
         'label' => 'My Farm',
         'icon' => '<svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>',

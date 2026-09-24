@@ -220,6 +220,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
 
         // Harvest Reports (shared with admin — same harvest_reports table)
         Route::get('/harvests', [HarvestReportController::class, 'farmerIndex'])->name('harvests.index');
+        Route::get('/harvests/create', [HarvestReportController::class, 'farmerCreate'])->name('harvests.create');
         Route::post('/harvests', [HarvestReportController::class, 'store'])->name('harvests.store');
         Route::delete('/harvests/{harvestReport}', [HarvestReportController::class, 'destroy'])->name('harvests.destroy');
 
