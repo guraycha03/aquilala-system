@@ -311,11 +311,11 @@
               <a class="top-row" href="{{ route('store.products.show', $product->id) }}">
                 <span class="top-rank">#{{ $idx + 1 }}</span>
                 @if($product->mainImage && !empty($product->mainImage->file_path))
-                  <img class="top-thumb" src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->name }}" loading="lazy">
+                  <img class="top-thumb" src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
                 @else
                   <span class="top-thumb"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
                 @endif
-                <span class="top-name">{{ $product->name }}</span>
+                <span class="top-name">{{ $product->display_name }}</span>
                 <span class="top-stat"><b>{{ $product->views_count }}</b><i>views</i></span>
               </a>
             @empty
@@ -341,11 +341,11 @@
               <a class="top-row" href="{{ route('store.products.show', $product->id) }}">
                 <span class="top-rank">#{{ $idx + 1 }}</span>
                 @if($product->mainImage && !empty($product->mainImage->file_path))
-                  <img class="top-thumb" src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->name }}" loading="lazy">
+                  <img class="top-thumb" src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
                 @else
                   <span class="top-thumb"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
                 @endif
-                <span class="top-name">{{ $product->name }}</span>
+                <span class="top-name">{{ $product->display_name }}</span>
                 <span class="top-stat"><b>{{ $row->count }}</b><i>quotes</i></span>
               </a>
             @empty
@@ -370,11 +370,11 @@
               <a class="top-row" href="{{ route('store.products.show', $product->id) }}">
                 <span class="top-rank">#{{ $idx + 1 }}</span>
                 @if($product->mainImage && !empty($product->mainImage->file_path))
-                  <img class="top-thumb" src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->name }}" loading="lazy">
+                  <img class="top-thumb" src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
                 @else
                   <span class="top-thumb"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
                 @endif
-                <span class="top-name">{{ $product->name }}</span>
+                <span class="top-name">{{ $product->display_name }}</span>
                 <span class="top-stat">
                   <span class="top-stars">
                     @for($i = 1; $i <= 5; $i++)

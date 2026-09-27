@@ -287,17 +287,17 @@
         </thead>
         <tbody id="formulaTableBody">
           @foreach($formulas as $formula)
-          <tr data-search="{{ strtolower(trim(($formula->product->name ?? '') . ' ' . ($formula->product->category->name ?? '') . ' ' . ($formula->crop_type ?? '') . ' ' . ($formula->season ?? '') . ' ' . ($formula->unit ?? '') . ' ' . ($formula->notes ?? ''))) }}"
+          <tr data-search="{{ strtolower(trim(($formula->product->name ?? '') . ' ' . ($formula->product->size_label ?? '') . ' ' . ($formula->product->category_display_name ?? '') . ' ' . ($formula->crop_type ?? '') . ' ' . ($formula->season ?? '') . ' ' . ($formula->unit ?? '') . ' ' . ($formula->notes ?? ''))) }}"
               data-crop="{{ strtolower($formula->crop_type) }}"
               data-season="{{ $formula->season }}"
               data-rate="{{ (float) $formula->rate_per_hectare }}"
               data-unit="{{ strtolower(trim($formula->unit ?? '')) }}"
               data-name="{{ strtolower($formula->product->name ?? '') }}">
             <td>
-              <div class="prod-cell">{{ $formula->product->name ?? 'Unknown Product' }}</div>
+              <div class="prod-cell">{{ $formula->product->display_name ?? 'Unknown Product' }}</div>
               @if($formula->product)
                 <div class="prod-meta">
-                  {{ $formula->product->category->name ?? 'General' }}
+                  {{ $formula->product->category_display_name }}
                   · ₱{{ number_format($formula->product->price ?? 0, 2) }}/{{ $formula->product->price_unit ?? 'piece' }}
                 </div>
               @endif

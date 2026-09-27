@@ -1450,11 +1450,14 @@
         row.className = 'ai-suggestion';
         let cards = '';
         list.forEach(function (s) {
+            // The carousel card has no separate size row, so it shows the
+            // full label; the modal keeps the plain name plus its Package row.
+            var label = s.display_name || s.name;
             cards +=
                 '<a class="suggestion-card" href="' + s.url + '" data-product=\'' + JSON.stringify(s).replace(/'/g, '&#39;') + '\'>' +
-                '<div class="suggestion-card-img"><img src="' + s.image + '" alt="' + escapeHtml(s.name) + '" loading="lazy"></div>' +
+                '<div class="suggestion-card-img"><img src="' + s.image + '" alt="' + escapeHtml(label) + '" loading="lazy"></div>' +
                 '<div class="suggestion-card-body">' +
-                '<div class="suggestion-card-name">' + escapeHtml(s.name) + '</div>' +
+                '<div class="suggestion-card-name">' + escapeHtml(label) + '</div>' +
                 '<div class="suggestion-card-price">₱' + s.price + ' / ' + escapeHtml(s.price_unit) + '</div>' +
                 (s.store ? '<div class="suggestion-card-store">' + escapeHtml(s.store) + '</div>' : '') +
                 '</div></a>';

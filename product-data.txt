@@ -1,0 +1,507 @@
+================================================================================
+PRODUCT DATA REFERENCE
+Fields required to add a product manually, where to find them, per category.
+Generated from the live validation rules, DB schema and existing 41-product
+catalog. Keep this file in the repo root as the single source of truth.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+ORIGINAL NOTE (preserved)
+--------------------------------------------------------------------------------
+
+This are the specific products i want as a dummy data on our system during
+system development
+
+
+================================================================================
+1. REQUIRED FIELDS — the form will not submit without these 8
+================================================================================
+
+name                 required, max 255
+                     PLAIN NAME ONLY. Never type the size/measure here.
+                     Good:  Urea Fertilizer (46-0-0)
+                     Bad:   Urea Fertilizer (46-0-0) - 50 kg
+                     The system appends the measure automatically from
+                     package_size + package_unit and renders it as:
+                        Urea Fertilizer (46-0-0) - 50 kg
+
+sku                  required, max 100, MUST BE UNIQUE
+                     Convention in use: OKR-<GROUP>-<ITEM>-<SIZE>
+                       OKR-UREA-46-50
+                       OKR-SEED-RC222-25
+                       OKR-PROT-ROUNDUP-1L
+                       OKR-TOOL-BOLO14
+
+category_id          required, must be an existing category (21 total, see §5)
+                     Pick the SPECIFIC sub-category, not the top-level group.
+
+price                required, number, >= 0
+
+stock_quantity       required, WHOLE number, >= 0  (no decimals)
+
+reorder_threshold    required, WHOLE number, >= 0
+                     Triggers the low-stock warning when stock falls below it.
+
+recommended_season   required, one of:  wet | dry | both
+
+status               required, one of:
+                     active | inactive | out_of_stock | discontinued
+
+
+================================================================================
+2. OPTIONAL CORE FIELDS — fill these or listings look empty
+================================================================================
+
+brand                max 255   e.g. Bayer, Syngenta, Atlas, Philphos, Indofil
+product_type         max 255   use the controlled list in section 4
+description          max 5000  usage, benefits, application notes
+
+package_size         number >= 0      THIS is the measure. 50, 0.5, 2.5 are all OK
+package_unit         max 50           pairs with package_size (see section 4)
+packaging_type       max 100          see section 4
+price_unit           max 100          e.g. "per sack", "per bottle"
+stock_unit           max 50           PLURAL, e.g. sacks, bottles, pcs
+
+
+================================================================================
+3. IMAGES
+================================================================================
+
+- Optional. 0 to 10 images per product (server-enforced, Product::MAX_IMAGES).
+- Formats: JPEG, PNG, WebP, GIF.  Max 5 MB each.
+- THE FIRST IMAGE YOU UPLOAD BECOMES THE COVER shown on catalog cards.
+  Put your best / cleanest / most representative shot first.
+- Additional images become gallery thumbnails on the product detail page.
+- On the Edit page you can Set main or Remove any image.
+  Removing the cover automatically promotes the next image.
+- 0 images is valid but every card then shows a placeholder. The seeded
+  catalog currently has 0 images on all 41 products.
+
+
+================================================================================
+4. CONTROLLED VOCABULARIES — use these exact values for consistency
+================================================================================
+
+package_unit         kg | g | mL | L | m | piece | pcs
+                     Casing is auto-normalised, so KG->kg, l->L, ml->mL,
+                     PIECE->piece. Decimal sizes keep their value (1.5 L).
+
+packaging_type       Bag | Bottle | Box | None | Pack | Packet | Sachet | Sack
+
+price_unit           per bottle | per kit | per pack | per piece
+                     per sachet | per sack | per unit
+
+stock_unit           bottles | kits | packs | pcs | pieces
+                     sachets | sacks | units
+
+product_type         Fertilizer | Organic Fertilizer | Micronutrient
+                     Seeds | Seedling
+                     Insecticide | Molluscicide | Fungicide | Herbicide
+                     Tool | Irrigation | Feed | Soil Amendment | Post-Harvest
+
+recommended_season   wet | dry | both
+
+status               active | inactive | out_of_stock | discontinued
+
+
+================================================================================
+5. CATEGORIES (21 total — always pick the specific sub-category)
+================================================================================
+
+id  1  Fertilizer                    (group)
+id  2    Complete Fertilizer
+id  3    Nitrogen Fertilizer
+id  4    Organic Fertilizer
+id  5    Micronutrient Fertilizer
+id  6  Seeds and Planting Materials  (group)
+id  7    Rice Seeds
+id  8    Corn Seeds
+id  9    Vegetable Seeds
+id 10    Fruit Seedlings
+id 11  Crop Protection               (group)
+id 12    Insecticide
+id 13    Fungicide
+id 14    Herbicide
+id 15  Farm Tools
+id 16  Agricultural Machinery
+id 17  Irrigation
+id 18  Animal Feed
+id 19  Soil Amendments
+id 20  Post-Harvest and Storage
+id 21  Other Agricultural Inputs
+
+NOTE: products.category (a legacy text column) stores the TOP-LEVEL group name
+and products.category_id points at the specific sub-category. The system now
+keeps both in sync automatically when you save, and every screen displays the
+specific sub-category name. Legacy rows were normalized to match, so the group
+label is always the exact category name above, e.g. "Seeds and Planting
+Materials" (not a shortened "Seeds").
+
+NOTE: you never have to fill in products.category yourself. Pick category_id
+and the group label is derived for you.
+
+
+================================================================================
+6. PER-CATEGORY GUIDE — what to look up online
+================================================================================
+
+--------------------------------------------------------------------------------
+FERTILIZER
+--------------------------------------------------------------------------------
+  category_id 2 Complete Fertilizer     product_type Fertilizer
+  category_id 3 Nitrogen Fertilizer     product_type Fertilizer
+  category_id 4 Organic Fertilizer      product_type Organic Fertilizer
+  category_id 5 Micronutrient Fertilizer product_type Micronutrient
+
+  Typical:  package_unit kg | packaging_type Sack | price_unit per sack
+            stock_unit sacks | size 25-50 kg
+  Liquid:   package_unit mL or L | packaging_type Bottle
+            price_unit per bottle | stock_unit bottles | size 200 mL - 1 L
+
+  LOOK UP ONLINE:  NPK ratio -> put it in `name` like (14-14-14)
+                   grade / form (granular, prilled, liquid, foliar)
+                   typical sack or bottle weight
+                   -> ALSO fill the Fertilizer Analysis section (§7)
+
+  Examples:
+    Urea Fertilizer (46-0-0)                 50 kg  Sack   per sack
+    Complete Fertilizer (14-14-14)           50 kg  Sack   per sack
+    Muriate of Potash (0-0-60)               50 kg  Sack   per sack
+    Superphosphate (0-20-0)                  50 kg  Sack   per sack
+    Vermicast Organic Fertilizer             25 kg  Sack   per sack
+    Zinc Sulfate Micronutrient (33% Zn)       1 kg  Pack   per pack
+    Bio-N Nitrogen Biofertilizer            500 mL Bottle per bottle
+
+--------------------------------------------------------------------------------
+SEEDS & PLANTING MATERIALS
+--------------------------------------------------------------------------------
+  category_id 7  Rice Seeds        product_type Seeds
+  category_id 8  Corn Seeds        product_type Seeds
+  category_id 9  Vegetable Seeds   product_type Seeds
+  category_id 10 Fruit Seedlings   product_type Seedling
+
+  Bulk seeds:   packaging_type Sack, size 20-25 kg, per sack, stock_unit sacks
+  Small seeds:  packaging_type Packet, size 100-500 g, per pack, stock_unit packs
+  Seedlings:    packaging_type Bag, size 1 piece, per piece, stock_unit pcs
+
+  LOOK UP ONLINE:  variety / hybrid name (NSIC Rc222, NK 8828, RAMGO F1)
+                   certification body (NSIC, PhilRice)
+                   pack weight, germination %
+                   -> ALSO fill Registration & Batch for certification no. (§7)
+
+  Examples:
+    NSIC Rc222 Rice Seeds             25 kg  Sack    per sack
+    NK 8828 Hybrid Corn Seeds        20 kg  Sack    per sack
+    RAMGO F1 Tomato Seeds            500 g  Packet  per pack
+    F1 Ampalaya Seeds               200 g  Packet  per pack
+    Cacao Grafted Seedlings           1 piece Bag    per piece
+
+--------------------------------------------------------------------------------
+CROP PROTECTION
+--------------------------------------------------------------------------------
+  category_id 12 Insecticide  product_type Insecticide or Molluscicide
+  category_id 13 Fungicide    product_type Fungicide
+  category_id 14 Herbicide    product_type Herbicide
+
+  Liquids:  package_unit mL or L | packaging_type Bottle
+            price_unit per bottle | stock_unit bottles | size 200 mL - 1 L
+  Powders:  package_unit g | packaging_type Sachet or Pack
+            price_unit per sachet | per pack | stock_unit sachets | packs
+
+  LOOK UP ONLINE:  active ingredient + concentration, put in `name`:
+                     Karate Lambda-Cyhalothrin
+                     Decis 2.5 EC          (formulation EC = emulsifiable)
+                     Confidor Imidacloprid
+                   target pest / disease
+                   FPA or PCNB registration number
+                   -> ALSO fill Registration & Batch (§7), this is REQUIRED
+                      for legal sale in the Philippines.
+
+  Examples:
+    Karate Lambda-Cyhalothrin      1 L     Bottle  per bottle
+    Confidor Imidacloprid          200 mL  Bottle  per bottle
+    Beam Tricyclazole              500 g   Sachet  per sachet
+    Roundup Glyphosate             1 L     Bottle  per bottle
+
+--------------------------------------------------------------------------------
+FARM TOOLS / MACHINERY / IRRIGATION
+--------------------------------------------------------------------------------
+  category_id 15 Farm Tools             product_type Tool
+  category_id 16 Agricultural Machinery product_type Tool
+  category_id 17 Irrigation             product_type Irrigation
+
+  Loose items:  packaging_type None, size 1 piece, per piece, stock_unit pieces
+  Boxed:        packaging_type Box, per unit, stock_unit units
+  Capacity:     knapsack sprayer -> package_unit L, size 16 L
+  Length:       pipe / drip line -> package_unit m, size 3 m / 100 m
+                put the diameter in `name`: HDPE Irrigation Pipe (2 in)
+
+  LOOK UP ONLINE:  material (HDPE, stainless steel), dimensions, capacity,
+                   power spec for machinery, warranty
+
+  Examples:
+    Stainless Steel Bolo Knife (14 in)  1 piece None  per piece
+    Manual Knapsack Sprayer             16 L     Box   per unit
+    HDPE Irrigation Pipe (2 in)         3 m      None  per piece
+    Drip Irrigation Kit                 100 m    Box   per kit
+
+--------------------------------------------------------------------------------
+ANIMAL FEED / SOIL / POST-HARVEST
+--------------------------------------------------------------------------------
+  category_id 18 Animal Feed            product_type Feed
+  category_id 19 Soil Amendments        product_type Soil Amendment
+  category_id 20 Post-Harvest and Storage product_type Post-Harvest
+  category_id 21 Other Agricultural Inputs
+
+  Typical:  packaging_type Sack, size 25 kg, per sack, stock_unit sacks
+  Examples:
+    Chicken Layer Mash                25 kg  Sack per sack
+    Pig Starter/Grower Feed           25 kg  Sack per sack
+    Agricultural Lime (Calcium Carbonate) 25 kg Sack per sack
+    PP Rice Grain Sack (25 kg)        25 pcs Pack per pack
+
+  LOOK UP ONLINE:  feed protein % / energy, target animal + life stage
+                   lime CaCO3 %
+
+
+================================================================================
+7. FERTILIZER ANALYSIS SECTION (optional — fertilizers only)
+================================================================================
+Leave the whole section blank for non-fertilizers; nothing is saved.
+
+  nitrogen_percentage      0-100   use 0 when the grade genuinely has none
+                                    e.g. Superphosphate 0-20-0 -> N = 0
+  phosphorus_percentage    0-100
+  potassium_percentage     0-100
+  form_type                Granular | Prilled | Liquid | Powder | Foliar |
+                           Suspension | Crystals
+  fertilizer_rate_min      number >= 0
+  fertilizer_rate_max      number >= 0   (must be >= rate_min)
+  fertilizer_rate_unit     kg/ha | g/ha | L/ha | mL/ha | kg/pack | L/pack
+  fertilizer_method        e.g. Broadcasting at planting, Top-dressing
+  fertilizer_timing        e.g. Basal and early vegetative growth
+
+Example row:
+  Nitrogen 46, Phosphorus 0, Potassium 0, Prilled, 25-50 kg/ha,
+  Broadcasting at planting, Basal and early vegetative growth
+
+
+================================================================================
+8. REGISTRATION & BATCH SECTION (optional — chemicals, pesticides, seeds)
+================================================================================
+Leave blank if not applicable; nothing is saved.
+
+  registration_status      Registered | Pending | Expired | Cancelled |
+                           Not Required
+  registration_authority   e.g. Fertilizer and Pesticide Authority
+  registration_number      e.g. 1234-ABC-5678
+  lot_number               e.g. LOT-2026-014
+  batch_number             e.g. BATCH-0142
+  manufacturing_date       date  (YYYY-MM-DD)
+  expiration_date          date  (cannot be earlier than manufacturing_date)
+
+NOTE: this section is per-product. Batch/expiry that varies per delivery should
+live in the inventory system, not here.
+
+
+================================================================================
+9. NOT ENTERABLE THROUGH THE UI (known gap)
+================================================================================
+Crop applications — which specific crops a product is recommended for, with a
+per-crop application rate.
+
+  Table:  product_applications (product_id, crop_id, application_rate_min,
+          application_rate_max, application_rate_unit, application_method,
+          application_timing, notes)
+
+  Status: 35 of the 41 seeded products have these rows; there is NO form field
+          for them yet. They currently come only from StoreCatalogSeeder.
+          The product detail page loads them but does not render them.
+
+  Impact: LOW. The crop -> product suggestion filter in the new-crop-batch
+  modal has three signals and works without them:
+     1. direct product_applications.crop_id link
+     2. crop name keyword match against the product name
+     3. category fallback when the crop declares no keywords
+  Signals 2 and 3 cover the current catalog, so suggestions still work.
+
+  To add: needs a repeatable crop row editor plus request validation and a
+  controller sync step. Not built yet — flag before relying on it.
+
+
+================================================================================
+10. WORKED EXAMPLE — copy this pattern
+================================================================================
+
+--- FERTILIZER ---
+name                  Urea Fertilizer (46-0-0)
+brand                 Philphos
+sku                   OKR-UREA-46-50
+category_id           3            (Nitrogen Fertilizer)
+product_type          Fertilizer
+recommended_season    both
+description           Prilled nitrogen fertilizer for basal application...
+package_size          50
+package_unit          kg
+packaging_type        Sack
+price                 2150.00
+price_unit            per sack
+stock_quantity        120
+stock_unit            sacks
+reorder_threshold     20
+status                active
+images                3 files, best shot first
+                      -> displays as "Urea Fertilizer (46-0-0) - 50 kg"
+
+Fertilizer Analysis:
+  nitrogen 46, phosphorus 0, potassium 0, Prilled,
+  25-50 kg/ha, Broadcasting at planting, Basal and early vegetative growth
+
+--- PESTICIDE ---
+name                  Decis 2.5 EC
+brand                 BASF
+sku                   OKR-PROT-DECIS-250
+category_id           12           (Insecticide)
+product_type          Insecticide
+recommended_season    both
+description           Emulsifiable concentrate insecticide...
+package_size          250
+package_unit          mL
+packaging_type        Bottle
+price                 360.00
+price_unit            per bottle
+stock_quantity        40
+stock_unit            bottles
+reorder_threshold     10
+status                active
+images                2 files
+
+Registration & Batch:
+  Registered, Fertilizer and Pesticide Authority, <reg no>,
+  LOT-2026-014, BATCH-0142, 2026-01-15, 2028-01-15
+
+--- SEEDS ---
+name                  RAMGO F1 Tomato Seeds
+brand                 RAMGO
+sku                   OKR-SEED-TOMATO-500
+category_id           9            (Vegetable Seeds)
+product_type          Seeds
+recommended_season    both
+description           Hybrid F1 tomato seed, high yield...
+package_size          500
+package_unit          g
+packaging_type        Packet
+price                 1900.00
+price_unit            per pack
+stock_quantity        25
+stock_unit            packs
+reorder_threshold     5
+status                active
+images                2 files
+
+
+================================================================================
+11. DATA ENTRY CHECKLIST
+================================================================================
+[ ] name is PLAIN (no measure inside)
+[ ] sku is unique and follows OKR-<GROUP>-<ITEM>-<SIZE>
+[ ] category_id is the specific sub-category, not the group
+[ ] product_type taken from the controlled list
+[ ] package_size + package_unit both set (or both left blank)
+[ ] price_unit and stock_unit agree with packaging_type
+[ ] stock_quantity is a whole number
+[ ] fertilizer section filled IF fertilizer
+[ ] registration section filled IF pesticide / regulated seed
+[ ] at least one image uploaded, best one first
+[ ] expiration_date is on or after manufacturing_date
+[ ] fertilizer_rate_max is >= fertilizer_rate_min
+
+
+================================================================================
+12. BULK IMPORT (CSV / EXCEL)
+================================================================================
+
+Storefront -> "Import from File". The importer is a two-phase screen: it reads and
+validates every row first, shows an editable review table, and only writes when
+the merchant confirms. Nothing is saved on the first click.
+
+LIMITS
+  formats          .csv, .xls, .xlsx  (ODS and JSON are rejected)
+  file size        5 MB maximum
+  rows             500 products per file; split a bigger list and import in parts
+  images           not importable, by design; add photos per product afterwards
+  session          a staged upload stays reviewable for 120 minutes
+
+REQUIRED COLUMNS (same 8 the manual form needs)
+  name, sku, price, stock_quantity, reorder_threshold, recommended_season,
+  status, plus a category given as EITHER category OR category_id.
+
+COLUMN NAMES ARE MATCHED LOOSELY
+  Headings are compared after lowercasing and stripping spaces, punctuation and
+  underscores, so "Product Name", "product_name" and "Name" all map to name.
+  Accepted spellings live in App\Support\ProductFields::HEADER_ALIASES.
+  Common ones:
+    name            Product Name, Title, Item, Item Name
+    sku             SKU, Product Code, Item Code, Code, Barcode
+    category        Category, Category Name, Sub-category, Group
+    price           Price, Selling Price, Unit Price, SRP, Cost
+    stock_quantity  Stock Quantity, Stock, Qty, On Hand, Inventory, Available
+    reorder_threshold  Reorder, Min Stock, Minimum Stock, Alert Level
+    status          Status, State, Availability
+  A heading that names an image (Photo, Image URL, Picture) is accepted and
+  skipped with a note, so an image column does not silently vanish.
+  Any other unrecognised heading is reported as "ignored" after the read.
+
+CONVENIENCE COLUMNS
+  NPK              A single "NPK" heading such as 14-14-14 is split into the
+                   nitrogen, phosphorus and potassium columns. 14/14/14 and
+                   14,14,14 are read the same way.
+  package_unit     KG, Kg, kgs all become "kg".
+
+VALUES THE IMPORTER CLEANS UP FOR YOU
+  P 2,150.00 / 2150 / 2 150      -> 2150
+  "Out of Stock" / outofstock    -> out_of_stock
+  "Urea - 50 kg" / "Urea (50kg)" -> name "Urea", package_size 50, unit kg
+                                   (a size stated in its own column wins)
+  2026-01-15, 15/01/2026, and Excel date cells  -> 2026-01-15
+  category "Fertilizers"         -> the first active sub-category of that group
+
+CATEGORY RULES
+  category_id wins over category when both are present.
+  A group name is accepted and lands on its first active sub-category, matching
+  what the manual form would have produced.
+  An unknown name is flagged and the message lists the categories that exist.
+
+REVIEW SCREEN
+  Every supported column is editable, not just the ones that failed. Optional
+  fertilizer and registration groups collapse by default and open themselves
+  when the file used them; collapsed values are still saved.
+  The category is edited by name so the server re-resolves it, which is what
+  makes a wrong category fixable.
+  "Re-check Table" re-validates the edited cells. "Discard Import" saves nothing.
+  Rows that still fail are never written, ticked or not, and the merchant is
+  told how many were left out.
+
+OPTIONAL AI ASSIST
+  Only appears when a Groq key is configured. Reviews at most 40 flagged rows
+  per click, and only rewrites cells that failed. Its output is re-validated by
+  the same rules, so it can never wave a broken row through. Suggestions are
+  shown in the table with a warning banner: they are a suggestion, not a fact.
+  The model is told to keep an existing NPK grade in the name, so "Urea
+  Fertilizer (46-0-0)" survives while "50 kg" does not.
+
+DOWNLOADABLE TEMPLATES
+  CSV and formatted XLSX, both pre-filled with two example rows. The XLSX has a
+  second "How to fill this file" tab with the rules and the full category list.
+
+WHERE THE RULES LIVE
+  App\Support\ProductFields         columns, aliases, rules, messages
+  App\Services\ProductImportService reading, normalising, validating, commit
+  App\Http\Controllers\ProductImportController  the two-phase screen
+  App\Services\ProductRowAiFixer    optional AI assist
+  tests/Feature/ProductImportTest.php
+
+================================================================================
+END OF PRODUCT DATA REFERENCE
+================================================================================

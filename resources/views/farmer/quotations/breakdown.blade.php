@@ -214,7 +214,7 @@
                   <div style="font-weight: 600; color: #1a2b1e;">{{ $item->product_name }}</div>
                   @if($item->product)
                     <div style="font-size: 13px; color: #94a3b8; font-family: 'SF Mono', ui-monospace, monospace;">SKU: {{ $item->product->sku }}</div>
-                    <div style="font-size: 13px; color: #94a3b8; text-transform: capitalize;">{{ $item->product->category?->name ?? '' }}</div>
+                    <div style="font-size: 13px; color: #94a3b8; text-transform: capitalize;">{{ $item->product->category_display_name }}</div>
                   @endif
                 </td>
                 <td data-label="Store" style="font-size: 15px; color: #6b7c6e;">

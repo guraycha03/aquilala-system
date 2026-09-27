@@ -115,19 +115,20 @@
   $season = $product->recommended_season ?? '';
   $seasonClass = $season === 'wet' ? 'season-wet' : ($season === 'dry' ? 'season-dry' : 'season-all');
   $seasonLabel = $season === 'wet' ? 'Wet Season' : ($season === 'dry' ? 'Dry Season' : 'All Seasons');
+  $displayName = $product->display_name;
 @endphp
 
 <div {{ $attributes->merge(['class' => 'product-card']) }}>
   @if($href)
-    <a href="{{ $href }}" class="product-card-link" aria-label="View {{ $product->name }}"></a>
+    <a href="{{ $href }}" class="product-card-link" aria-label="View {{ $displayName }}"></a>
   @endif
 
   <div class="product-image-container" style="height: {{ $imageHeight }};">
-    <span class="category-chip">{{ $product->category->name ?? $product->category ?? 'Uncategorized' }}</span>
+    <span class="category-chip">{{ $product->category_display_name }}</span>
     @if($product->mainImage && !empty($product->mainImage->file_path))
-      <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->name }}" class="product-card-img" loading="lazy">
+      <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $displayName }}" class="product-card-img" loading="lazy">
     @elseif($product->images && $product->images->first())
-      <img src="{{ asset('storage/' . $product->images->first()->file_path) }}" alt="{{ $product->name }}" class="product-card-img" loading="lazy">
+      <img src="{{ asset('storage/' . $product->images->first()->file_path) }}" alt="{{ $displayName }}" class="product-card-img" loading="lazy">
     @else
       <svg viewBox="0 0 24 24" width="44" height="44" stroke="#cbd5e1" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
@@ -140,7 +141,7 @@
       <span class="sku-code">SKU: {{ $product->sku }}</span>
     @endif
 
-    <h3 class="product-title">{{ $product->name }}</h3>
+    <h3 class="product-title">{{ $displayName }}</h3>
 
     <div class="badge-group">
       <span class="season-badge {{ $seasonClass }}">

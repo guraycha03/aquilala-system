@@ -184,7 +184,7 @@
                   <tbody>
                     @foreach($seasonFormulas as $formula)
                       <tr>
-                        <td class="product">{{ $formula->product->name ?? 'Unknown Product' }}</td>
+                        <td class="product">{{ $formula->product->display_name ?? 'Unknown Product' }}</td>
                         <td class="rate">
                           <span class="rate-pill">
                             <b>{{ number_format((float) $formula->rate_per_hectare, 2) }}</b>

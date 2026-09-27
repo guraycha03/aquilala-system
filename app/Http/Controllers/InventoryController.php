@@ -63,13 +63,15 @@ class InventoryController extends Controller
         $products = $query->get();
 
         // Full dataset for metrics, chart, and modal
-        $allProducts = Product::where('user_id', $userId)->get();
+        $allProducts = Product::with('category')->where('user_id', $userId)->get();
 
-        // Distinct category names for the filter dropdown
+        // Distinct category names for the filter dropdown. Must use
+        // category_display_name: the legacy `category` column shadows the
+        // relation, so pluck('category') yields plain strings and the
+        // following ->pluck('name') reduced every entry to null.
         $categories = $allProducts
-            ->pluck('category')
+            ->map(fn ($p) => $p->category_display_name)
             ->filter()
-            ->pluck('name')
             ->unique()
             ->sort()
             ->values()

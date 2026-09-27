@@ -284,8 +284,8 @@ span.flatpickr-weekday {
                         @forelse($seedProducts as $product)
                             <div class="ncb-select-option" data-pid="{{ $product['id'] }}" data-name="{{ mb_strtolower($product['name']) }}" data-catslug="{{ $product['category_slug'] }}" data-cropids="{{ implode(',', $product['crop_ids']) }}"
                                  :class="{ 'selected': selProd === '{{ $product['id'] }}' }"
-                                 @click="selProd = '{{ $product['id'] }}'; label = '{{ addslashes($product['name']) }}'; open = false; window.pickProduct({{ $product['id'] }})">
-                                {{ $product['name'] }}
+                                 @click="selProd = '{{ $product['id'] }}'; label = '{{ addslashes($product['display_name']) }}'; open = false; window.pickProduct({{ $product['id'] }})">
+                                {{ $product['display_name'] }}
                             </div>
                         @empty
                             <div class="ncb-select-option" style="color: #94a3b8; cursor: default;">No seed/planting products available in the stores yet.</div>

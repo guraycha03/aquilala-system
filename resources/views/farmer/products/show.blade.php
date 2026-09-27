@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', $product->name)
+@section('title', $product->display_name)
 
 @section('content')
   @include('partials.admin-tabs', [
@@ -13,11 +13,11 @@
   ])
 <x-breadcrumb :items="[
   ['label' => 'Browse Products', 'url' => route('farmer.products.browse')],
-  ['label' => $product->name],
+  ['label' => $product->display_name],
 ]"/>
 
 <div class="header-panel" style="margin-bottom: 24px;">
-    <h1 style="font-size: 24px; font-weight: 700; color: #1e2922;">{{ $product->name }}</h1>
+    <h1 style="font-size: 24px; font-weight: 700; color: #1e2922;">{{ $product->display_name }}</h1>
     <p class="keep-sub" style="color: #606d64; font-size: 14px;">Supplied by <strong>{{ $product->storeOwner?->name ?? 'Unknown Merchant' }}</strong></p>
 </div>
 
@@ -114,6 +114,98 @@
         .related-card { padding: 12px; }
         .product-image-panel { min-height: 220px; }
         .product-detail-container { padding: 16px; }
+    }
+
+    /* ── Product image gallery ─────────────────────────────────── */
+    .gallery { display: flex; flex-direction: column; gap: 10px; }
+    .gallery-main {
+        position: relative;
+        background: #f8fafc;
+        border: 1px solid #e8edf2;
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: zoom-in;
+    }
+    .gallery-main img {
+        width: 100%;
+        max-height: 380px;
+        object-fit: contain;
+        display: block;
+    }
+    .gallery-empty {
+        min-height: 240px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .gallery-thumbs {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+        gap: 8px;
+    }
+    .gallery-thumb {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #f8fafc;
+        cursor: pointer;
+        padding: 0;
+        transition: border-color 0.2s, transform 0.2s;
+    }
+    .gallery-thumb:hover { transform: translateY(-2px); border-color: #94a3b8; }
+    .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .gallery-thumb.is-active { border-color: #166534; }
+    .gallery-thumb.is-active::after {
+        content: ''; position: absolute; inset: 0;
+        box-shadow: inset 0 0 0 2px rgba(22, 101, 52, 0.25);
+    }
+    .gallery-count {
+        position: absolute; bottom: 8px; right: 8px;
+        font-size: 11px; font-weight: 700;
+        background: rgba(15, 23, 42, 0.72); color: #fff;
+        padding: 3px 8px; border-radius: 6px;
+    }
+    .gallery-expand {
+        position: absolute; top: 8px; right: 8px;
+        width: 28px; height: 28px;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(15, 23, 42, 0.6); color: #fff;
+        border: none; border-radius: 6px; cursor: pointer;
+    }
+    .gallery-expand:hover { background: rgba(15, 23, 42, 0.85); }
+    .gallery-expand svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Lightbox */
+    .gallery-lightbox {
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(15, 23, 42, 0.9);
+        display: flex; align-items: center; justify-content: center;
+        padding: 32px;
+    }
+    .gallery-lightbox[hidden] { display: none; }
+    .gallery-lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
+    .gallery-lightbox-close,
+    .gallery-lightbox-prev,
+    .gallery-lightbox-next {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff; border: none; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 50%;
+        transition: background 0.2s;
+    }
+    .gallery-lightbox-close:hover,
+    .gallery-lightbox-prev:hover,
+    .gallery-lightbox-next:hover { background: rgba(255, 255, 255, 0.3); }
+    .gallery-lightbox svg { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .gallery-lightbox-close { top: 20px; right: 20px; width: 40px; height: 40px; }
+    .gallery-lightbox-prev { left: 20px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; }
+    .gallery-lightbox-next { right: 20px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; }
+    .gallery-lightbox-close svg { width: 20px; height: 20px; }
+    .gallery-lightbox-prev svg, .gallery-lightbox-next svg { width: 24px; height: 24px; }
+    .gallery-lightbox-caption {
+        position: absolute; bottom: 20px; left: 0; right: 0;
+        text-align: center; color: #e2e8f0; font-size: 13px;
     }
 
     /* ── Ratings & Reviews ─────────────────────────────────── */
@@ -253,19 +345,64 @@
 <div class="product-detail-container">
     <!-- HERO: Image (left) + Main Details (right) -->
     <div class="detail-hero">
-        <!-- LEFT: Product Image -->
-        <div class="product-image-panel">
-            @php
-                $detailImage = $product->mainImage ?: $product->images->first();
-            @endphp
-            @if($detailImage && !empty($detailImage->file_path))
-                <img src="{{ asset('storage/' . $detailImage->file_path) }}"
-                     alt="{{ $product->name }}"
-                     onerror="this.closest('.product-image-panel').innerHTML = '<div style=&quot;text-align:center;&quot;><svg viewBox=&quot;0 0 24 24&quot; width=&quot;48&quot; height=&quot;48&quot; stroke=&quot;#cbd5e1&quot; fill=&quot;none&quot; stroke-width=&quot;1.5&quot;><rect x=&quot;3&quot; y=&quot;3&quot; width=&quot;18&quot; height=&quot;18&quot; rx=&quot;2&quot;/><circle cx=&quot;8.5&quot; cy=&quot;8.5&quot; r=&quot;1.5&quot;/><path d=&quot;M21 15l-5-5L5 21&quot;/></svg><p style=&quot;margin-top:8px;font-size:12px;&quot;>Product Image</p></div>';">
-            @else
-                <div style="text-align: center;">
-                    <svg viewBox="0 0 24 24" width="48" height="48" stroke="#cbd5e1" fill="none" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                    <p style="margin-top: 8px; font-size: 12px;">Product Image</p>
+        <!-- LEFT: Product Image Gallery -->
+        @php
+            $gallery = $product->gallery;
+            $gallerySources = $gallery->map(fn ($image) => asset('storage/' . $image->file_path))->values()->all();
+        @endphp
+        <div class="gallery" data-gallery data-gallery-sources="{{ \Illuminate\Support\Js::from($gallerySources) }}" data-gallery-name="{{ $product->display_name }}">
+            <div class="gallery-main" data-gallery-main>
+                @if($gallery->isNotEmpty())
+                    <img src="{{ asset('storage/' . $gallery->first()->file_path) }}"
+                         alt="{{ $product->display_name }}"
+                         data-gallery-image
+                         data-gallery-index="0">
+                    @if($gallery->count() > 1)
+                        <span class="gallery-count" data-gallery-counter>1 / {{ $gallery->count() }}</span>
+                        <button type="button" class="gallery-expand" data-gallery-zoom aria-label="View larger image">
+                            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                        </button>
+                    @endif
+                @else
+                    <div class="gallery-empty">
+                        <div style="text-align: center;">
+                            <svg viewBox="0 0 24 24" width="48" height="48" stroke="#cbd5e1" fill="none" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                            <p style="margin-top: 8px; font-size: 12px;">Product Image</p>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            @if($gallery->count() > 1)
+                <div class="gallery-thumbs" role="tablist" aria-label="Product images">
+                    @foreach($gallery as $index => $image)
+                        <button type="button"
+                                class="gallery-thumb {{ $index === 0 ? 'is-active' : '' }}"
+                                role="tab"
+                                aria-selected="{{ $index === 0 ? 'true' : 'false' }}"
+                                data-gallery-thumb
+                                data-gallery-index="{{ $index }}">
+                            <img src="{{ asset('storage/' . $image->file_path) }}" alt="{{ $product->display_name }} — image {{ $index + 1 }}" loading="lazy">
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+
+            @if($gallery->isNotEmpty())
+                <div class="gallery-lightbox" data-gallery-lightbox hidden role="dialog" aria-modal="true" aria-label="Product image viewer">
+                    <button type="button" class="gallery-lightbox-close" data-gallery-close aria-label="Close viewer">
+                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                    @if($gallery->count() > 1)
+                        <button type="button" class="gallery-lightbox-prev" data-gallery-prev aria-label="Previous image">
+                            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <button type="button" class="gallery-lightbox-next" data-gallery-next aria-label="Next image">
+                            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                        </button>
+                    @endif
+                    <img src="" alt="" data-gallery-lightbox-image>
+                    <div class="gallery-lightbox-caption" data-gallery-lightbox-caption></div>
                 </div>
             @endif
         </div>
@@ -312,7 +449,7 @@
             <div class="main-info-list">
                 <div class="info-row">
                     <span class="info-label">Category</span>
-                    <span class="info-value">{{ $product->category?->name ?? $product->getOriginal('category') ?? 'Uncategorized' }}</span>
+                    <span class="info-value">{{ $product->category_display_name }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Brand</span>
@@ -649,12 +786,12 @@
 <!-- Recommended Products -->
 @if($relatedProducts->count() > 0)
 <div style="margin-top: 32px;">
-    <h2 style="font-size: 16px; font-weight: 700; color: #1e2922; margin-bottom: 16px;">Recommended Products in {{ $product->category?->name ?? 'this Category' }}</h2>
+        <h2 style="font-size: 16px; font-weight: 700; color: #1e2922; margin-bottom: 16px;">Recommended Products in {{ $product->category_display_name }}</h2>
     <div class="recommended-grid">
         @foreach($relatedProducts as $related)
         <a href="{{ route(auth()->user()->role === 'store_owner' ? 'store.products.show' : 'farmer.products.show', $related->id) }}" style="text-decoration: none; color: inherit;">
             <div class="related-card">
-                <h4>{{ $related->name }}</h4>
+                <h4>{{ $related->display_name }}</h4>
                 <div class="related-price">₱{{ number_format($related->price, 2) }}</div>
                 <div style="font-size: 12px; color: #87a992; margin-top: 4px;">
                     <span class="badge {{ $related->is_low_stock ? 'badge-red' : 'badge-green' }}" style="font-size: 10px;">
@@ -751,6 +888,106 @@
       el.after(toggle);
     }
   });
+
+  /* ── Product image gallery ── */
+  var gallery = document.querySelector('[data-gallery]');
+  if (gallery) {
+    var mainImage = gallery.querySelector('[data-gallery-image]');
+    var counter = gallery.querySelector('[data-gallery-counter]');
+    var thumbs = Array.prototype.slice.call(gallery.querySelectorAll('[data-gallery-thumb]'));
+    var lightbox = gallery.querySelector('[data-gallery-lightbox]');
+    var lightboxImage = gallery.querySelector('[data-gallery-lightbox-image]');
+    var lightboxCaption = gallery.querySelector('[data-gallery-lightbox-caption]');
+    var productName = gallery.dataset.galleryName || '';
+
+    var sources = [];
+    try {
+      sources = JSON.parse(gallery.dataset.gallerySources || '[]');
+    } catch (e) {
+      sources = [];
+    }
+
+    var total = sources.length;
+    var current = 0;
+
+    function show(index) {
+      if (!mainImage || total === 0) return;
+      current = ((index % total) + total) % total;
+      mainImage.src = sources[current];
+
+      if (counter) counter.textContent = (current + 1) + ' / ' + total;
+
+      thumbs.forEach(function(thumb, i) {
+        var active = i === current;
+        thumb.classList.toggle('is-active', active);
+        thumb.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+    }
+
+    thumbs.forEach(function(thumb, i) {
+      thumb.addEventListener('click', function() { show(i); });
+    });
+
+    if (mainImage) {
+      mainImage.addEventListener('click', function() {
+        if (lightbox) lightbox.hidden = false;
+      });
+    }
+
+    var zoomBtn = gallery.querySelector('[data-gallery-zoom]');
+    if (zoomBtn) {
+      zoomBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (lightbox) lightbox.hidden = false;
+      });
+    }
+
+    if (lightbox && lightboxImage) {
+      function paintLightbox() {
+        lightboxImage.src = sources[current] || '';
+        lightboxImage.alt = productName + ' — image ' + (current + 1);
+        if (lightboxCaption) {
+          lightboxCaption.textContent = (current + 1) + ' of ' + total;
+        }
+      }
+
+      function closeLightbox() { lightbox.hidden = true; }
+
+      paintLightbox();
+
+      var closeBtn = gallery.querySelector('[data-gallery-close]');
+      if (closeBtn) closeBtn.addEventListener('click', closeLightbox);
+
+      var prevBtn = gallery.querySelector('[data-gallery-prev]');
+      if (prevBtn) {
+        prevBtn.addEventListener('click', function() { show(current - 1); paintLightbox(); });
+      }
+
+      var nextBtn = gallery.querySelector('[data-gallery-next]');
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function() { show(current + 1); paintLightbox(); });
+      }
+
+      lightbox.addEventListener('click', function(e) {
+        if (e.target === lightbox) closeLightbox();
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (lightbox.hidden) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') { show(current - 1); paintLightbox(); }
+        if (e.key === 'ArrowRight') { show(current + 1); paintLightbox(); }
+      });
+    }
+
+    // Arrow-key navigation on the thumbnail row.
+    gallery.addEventListener('keydown', function(e) {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (document.activeElement && !document.activeElement.classList.contains('gallery-thumb')) return;
+      e.preventDefault();
+      show(e.key === 'ArrowLeft' ? current - 1 : current + 1);
+    });
+  }
 })();
 </script>
 @endsection

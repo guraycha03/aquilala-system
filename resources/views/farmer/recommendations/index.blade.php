@@ -700,9 +700,9 @@
         <a href="{{ route('farmer.products.show', $product->id) }}" class="sr-product-card" data-category="{{ $product->category_display_name }}">
           <div class="sr-product-img">
             @if($product->mainImage && !empty($product->mainImage->file_path))
-              <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->name }}" loading="lazy">
+              <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
             @elseif($product->images && $product->images->first())
-              <img src="{{ asset('storage/' . $product->images->first()->file_path) }}" alt="{{ $product->name }}" loading="lazy">
+              <img src="{{ asset('storage/' . $product->images->first()->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
             @else
               <svg viewBox="0 0 24 24">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -710,7 +710,7 @@
                 <polyline points="21 15 16 10 5 21"/>
               </svg>
             @endif
-            <span class="sr-category-tag">{{ $product->category?->name ?? $product->getOriginal('category') ?? 'Uncategorized' }}</span>
+            <span class="sr-category-tag">{{ $product->category_display_name }}</span>
             <span class="sr-season-badge {{ $seasonClass }}">
               @if($season === 'wet')
                 <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
@@ -724,7 +724,7 @@
           </div>
 
           <div class="sr-product-body">
-            <h3>{{ $product->name }}</h3>
+            <h3>{{ $product->display_name }}</h3>
             @if($product->storeOwner)
               <div class="sr-product-store">
                 <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l1-5h16l1 5"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/></svg>

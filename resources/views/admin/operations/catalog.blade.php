@@ -176,7 +176,7 @@
                 <div class="rev-body">
                   <div class="rev-top">
                     <b>{{ $review->farmer?->name ?? 'Unknown Farmer' }}</b>
-                    <span class="rev-product">{{ $review->product?->name ?? 'Unknown Product' }}</span>
+                    <span class="rev-product">{{ $review->product?->display_name ?? 'Unknown Product' }}</span>
                     <span class="rev-stars">{{ str_repeat('★', $review->rating) }}<span style="color:#e2e8f0;">{{ str_repeat('★', 5 - $review->rating) }}</span></span>
                   </div>
                   @if($review->comment)

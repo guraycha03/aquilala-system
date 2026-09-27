@@ -125,11 +125,11 @@
       <label for="product_id" class="input-label">Product</label>
       <select name="product_id" id="product_id" class="input-field" required>
         <option value="">— Select product from your catalog —</option>
-        @foreach($products->groupBy(fn($p) => $p->category->name ?? 'General') as $categoryName => $categoryProducts)
+        @foreach($products->groupBy(fn($p) => $p->category_display_name) as $categoryName => $categoryProducts)
           <optgroup label="{{ $categoryName }}">
             @foreach($categoryProducts as $product)
               <option value="{{ $product->id }}" @selected(old('product_id') == $product->id)>
-                {{ $product->name }} — ₱{{ number_format($product->price ?? 0, 2) }}{{ $product->price_unit ? ' / ' . $product->price_unit : '' }}
+                {{ $product->display_name }} — ₱{{ number_format($product->price ?? 0, 2) }}{{ $product->price_unit ? ' / ' . $product->price_unit : '' }}
               </option>
             @endforeach
           </optgroup>

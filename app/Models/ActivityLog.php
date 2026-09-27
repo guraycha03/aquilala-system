@@ -37,6 +37,7 @@ class ActivityLog extends Model
     const TYPE_PRODUCT_CREATED   = 'product.created';
     const TYPE_PRODUCT_UPDATED   = 'product.updated';
     const TYPE_PRODUCT_DELETED   = 'product.deleted';
+    const TYPE_PRODUCT_IMPORTED  = 'product.imported';
     const TYPE_REVIEW_CREATED    = 'review.created';
     const TYPE_REVIEW_DELETED    = 'review.deleted';
     const TYPE_REVIEW_APPROVED   = 'review.approved';

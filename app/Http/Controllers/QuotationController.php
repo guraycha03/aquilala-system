@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DecisionFormula;
+use App\Models\FarmerCrop;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
@@ -10,6 +11,7 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\CostQuotationEngine;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -356,9 +358,12 @@ PROMPT;
 
         $cropType = ucwords(strtolower(trim($validated['crop_type'])));
 
-        $products = Product::select('products.id', 'products.name', 'products.sku', 'products.price', 'products.price_unit', 'products.stock_quantity', 'products.stock_unit', 'products.brand', 'products.status')
+        $products = Product::select('products.id', 'products.name', 'products.sku', 'products.price', 'products.price_unit', 'products.stock_quantity', 'products.stock_unit', 'products.brand', 'products.status', 'products.category_id', 'products.package_size', 'products.package_unit')
             ->join('decision_formulas', 'decision_formulas.product_id', '=', 'products.id')
-            ->whereRaw('LOWER(decision_formulas.crop_type) = ?', [$cropType])
+            // Both sides must be lowercased: relying on MySQL's case-insensitive
+            // collation makes the match silently fail on any case-sensitive
+            // engine (sqlite in tests, Postgres in production-like setups).
+            ->whereRaw('LOWER(decision_formulas.crop_type) = ?', [strtolower($cropType)])
             ->where('decision_formulas.season', $validated['season'])
             ->where('products.status', 'active')
             ->with('category:id,name')
@@ -366,14 +371,14 @@ PROMPT;
             ->get()
             ->map(fn ($p) => [
                 'id'            => $p->id,
-                'name'          => $p->name,
+                'name'          => $p->display_name,
                 'sku'           => $p->sku,
                 'price'         => $p->price,
                 'price_unit'    => $p->price_unit,
                 'stock_quantity'=> $p->stock_quantity,
                 'stock_unit'    => $p->stock_unit,
                 'brand'         => $p->brand,
-                'category'      => $p->category->name ?? null,
+                'category'      => $p->category_display_name,
                 'in_stock'      => $p->stock_quantity > 0,
             ]);
 
@@ -841,29 +846,21 @@ FORMATTING RULES:
     // ────────────────────────────────────────────────────────────────
 
     /**
-     * Admin view: product & crop demand analytics, de-identified.
+     * Aggregate product & crop demand across every estimate.
+     * De-identified: products/crops only, no store or farmer identity.
+     *
+     * @return array{quotations: Collection, product: Collection, crop: Collection}
      */
-    public function adminIndex()
+    private function aggregateDemand(): array
     {
-        // Full dataset for metrics, product demand, crop demand
-        $allQuotations = Quotation::with(['items.product.category'])
+        $quotations = Quotation::with(['items.product.category'])
             ->latest()
             ->get();
 
-        // Global metrics (expired is derived from valid_until, not the stored status)
-        $metrics = [
-            'total'      => $allQuotations->count(),
-            'computed'   => $allQuotations->filter(fn ($q) => !$q->is_expired && $q->status === Quotation::STATUS_COMPUTED)->count(),
-            'viewed'     => $allQuotations->filter(fn ($q) => !$q->is_expired && $q->status === Quotation::STATUS_VIEWED)->count(),
-            'expired'    => $allQuotations->filter(fn ($q) => $q->is_expired)->count(),
-            'totalValue' => $allQuotations->sum('estimated_total_cost'),
-        ];
-
-        // ─── Aggregate demand — product/crop focus only, no store or farmer identity ───
         $productDemand = [];
         $cropDemand = [];
 
-        foreach ($allQuotations as $q) {
+        foreach ($quotations as $q) {
             $crop = $q->crop_type ?: 'Unspecified';
             if (!isset($cropDemand[$crop])) {
                 $cropDemand[$crop] = [
@@ -874,7 +871,7 @@ FORMATTING RULES:
                 ];
             }
             $cropDemand[$crop]['count'] += 1;
-            $cropDemand[$crop]['total_area'] += (float) $q->land_area;
+            $cropDemand[$crop]['total_area']  += (float) $q->land_area;
             $cropDemand[$crop]['total_value'] += (float) $q->estimated_total_cost;
 
             foreach ($q->items as $item) {
@@ -886,6 +883,7 @@ FORMATTING RULES:
                 if (!isset($productDemand[$pid])) {
                     $productDemand[$pid] = [
                         'name'            => $item->product->name,
+                        'display_name'    => $item->product->display_name,
                         'category'        => $item->product->category_display_name,
                         'unit'            => $item->product->stock_unit ?? $item->product->package_unit ?? 'units',
                         'quotation_ids'   => [],
@@ -904,7 +902,9 @@ FORMATTING RULES:
             }
         }
 
-        $productDemand = collect($productDemand)
+        // Ranked most-quoted first. The summary page slices the top 5 for its
+        // chart; this full list backs the dedicated "All Products" page.
+        $product = collect($productDemand)
             ->map(function ($p) {
                 $p['quotation_count'] = count($p['quotation_ids']);
                 unset($p['quotation_ids']);
@@ -912,16 +912,124 @@ FORMATTING RULES:
                 return $p;
             })
             ->sortByDesc('quotation_count')
-            ->take(8)
-            ->values()
-            ->toArray();
+            ->values();
 
-        $cropDemand = collect($cropDemand)
+        $crop = collect($cropDemand)
             ->sortByDesc('count')
-            ->values()
-            ->toArray();
+            ->values();
 
-        return view('admin.quotations.index', compact('metrics', 'productDemand', 'cropDemand'));
+        return compact('quotations', 'product', 'crop');
+    }
+
+    /**
+     * Crops farmers have actually planned or planted, rolled up from their own
+     * crop batches. This is the supply side to crop *demand*, which is measured
+     * from the estimates stores requested. De-identified to the crop level —
+     * only a distinct farmer count is kept, never an identity.
+     */
+    private function aggregatePlanting(): Collection
+    {
+        return FarmerCrop::with('crop')
+            ->get()
+            ->groupBy(fn ($batch) => $batch->crop?->name ?: 'Unspecified')
+            ->map(function ($batches, $crop) {
+                return [
+                    'crop'        => $crop,
+                    'batches'     => $batches->count(),
+                    // Still in the ground: prepared, sown, growing or ripening.
+                    'active'      => $batches->whereNotIn('growth_stage', ['harvested', 'failed'])->count(),
+                    'harvested'   => $batches->where('growth_stage', 'harvested')->count(),
+                    'farmers'     => $batches->pluck('user_id')->unique()->count(),
+                    'total_area'  => (float) $batches->sum('land_area'),
+                ];
+            })
+            ->sortByDesc('total_area')
+            ->values();
+    }
+
+    /**
+     * Join demand and planting into one ranked crop list so the table can show
+     * every crop once, with both sides of the story side by side.
+     */
+    private function mergeCropViews(Collection $crop, Collection $planting): Collection
+    {
+        return $crop->pluck('crop')
+            ->union($planting->pluck('crop'))
+            ->filter()
+            ->unique()
+            ->map(function ($name) use ($crop, $planting) {
+                $q = $crop->firstWhere('crop', $name);
+                $p = $planting->firstWhere('crop', $name);
+
+                return [
+                    'crop'         => $name,
+                    'estimates'    => (int) ($q['count'] ?? 0),
+                    'quoted_area'  => (float) ($q['total_area'] ?? 0),
+                    'quoted_value' => (float) ($q['total_value'] ?? 0),
+                    'batches'      => (int) ($p['batches'] ?? 0),
+                    'active'       => (int) ($p['active'] ?? 0),
+                    'farmers'      => (int) ($p['farmers'] ?? 0),
+                    'planted_area' => (float) ($p['total_area'] ?? 0),
+                ];
+            })
+            ->sortByDesc('estimates')
+            ->sortByDesc('planted_area')
+            ->values();
+    }
+
+    /**
+     * Admin view: product & crop demand analytics, de-identified.
+     */
+    public function adminIndex()
+    {
+        ['quotations' => $allQuotations, 'product' => $allProducts, 'crop' => $cropDemand] = $this->aggregateDemand();
+
+        // Global metrics (expired is derived from valid_until, not the stored status)
+        $metrics = [
+            'total'      => $allQuotations->count(),
+            'computed'   => $allQuotations->filter(fn ($q) => !$q->is_expired && $q->status === Quotation::STATUS_COMPUTED)->count(),
+            'viewed'     => $allQuotations->filter(fn ($q) => !$q->is_expired && $q->status === Quotation::STATUS_VIEWED)->count(),
+            'expired'    => $allQuotations->filter(fn ($q) => $q->is_expired)->count(),
+            'totalValue' => $allQuotations->sum('estimated_total_cost'),
+        ];
+
+        // Both charts plot only the top 5; the table underneath carries the rest.
+        $productTotal = $allProducts->count();
+        $productDemand = $allProducts->take(5)->toArray();
+
+        $planting = $this->aggregatePlanting();
+        $cropRows = $this->mergeCropViews($cropDemand, $planting);
+
+        return view('admin.quotations.index', [
+            'metrics'       => $metrics,
+            'productDemand' => $productDemand,
+            'productTotal'  => $productTotal,
+            'cropRows'      => $cropRows->toArray(),
+            'cropTotal'     => $cropRows->count(),
+            'plantingTotal' => $planting->sum('batches'),
+        ]);
+    }
+
+    /**
+     * Admin view: the complete ranked product demand list behind the
+     * "Show all products" link on the Demand Trends page. The graph still only
+     * plots the top 5 — everything below it is the table.
+     */
+    public function adminProducts()
+    {
+        ['product' => $allProducts] = $this->aggregateDemand();
+
+        $products = $allProducts->toArray();
+        $topProducts = $allProducts->take(5)->toArray();
+
+        $summary = [
+            'total'      => count($products),
+            'estimates'  => array_sum(array_column($products, 'quotation_count')),
+            'totalQty'   => array_sum(array_column($products, 'total_qty')),
+            'totalValue' => array_sum(array_column($products, 'total_value')),
+        ];
+
+        return view('admin.quotations.products', compact('products', 'topProducts', 'summary'));
     }
 
     // ────────────────────────────────────────────────────────────────

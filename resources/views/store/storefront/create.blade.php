@@ -298,7 +298,8 @@
 
                 <div class="form-group full-width">
                     <label for="name">Product Name <span class="required-star">*</span></label>
-                    <input type="text" class="form-control" id="name" name="name" value="{{ old('name') }}" placeholder="e.g. Premium Urea Fertilizer (46-0-0)" required>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ old('name') }}" placeholder="e.g. Urea Fertilizer (46-0-0)" maxlength="255" required>
+                    <span class="hint">Just the product name — leave out the weight or volume, that goes in the size field below.</span>
                 </div>
 
                 <div class="form-group">
@@ -333,6 +334,11 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="product_type">Product Type</label>
+                    <input type="text" class="form-control" id="product_type" name="product_type" value="{{ old('product_type') }}" placeholder="e.g. Premium NPK Compound">
+                </div>
+
+                <div class="form-group">
                     <label for="recommended_season">Recommended Season <span class="required-star">*</span></label>
                     <select class="form-control" id="recommended_season" name="recommended_season" required>
                         <option value="wet" {{ old('recommended_season') == 'wet' ? 'selected' : '' }}>Wet Season</option>
@@ -354,7 +360,36 @@
                         <line x1="5" y1="6.5" x2="18" y2="6.5"></line>
                         <line x1="5" y1="9.5" x2="18" y2="9.5"></line>
                     </svg>
-                    Pricing & Inventory
+                    Packaging & Pricing
+                </div>
+
+                <div class="form-group">
+                    <label for="package_size">Size / Measure</label>
+                    <input type="number" class="form-control" id="package_size" name="package_size" value="{{ old('package_size') }}" placeholder="e.g. 50" step="0.01" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="package_unit">Unit</label>
+                    <input type="text" class="form-control" id="package_unit" name="package_unit" value="{{ old('package_unit') }}" placeholder="e.g. kg, mL, L" list="package_units" maxlength="50">
+                    <datalist id="package_units">
+                        @foreach(\App\Models\Product::sizeUnitSuggestions() as $unit)
+                            <option value="{{ $unit }}"></option>
+                        @endforeach
+                    </datalist>
+                </div>
+
+                <div class="form-group">
+                    <label for="packaging_type">Packaging Type</label>
+                    <select class="form-control" id="packaging_type" name="packaging_type">
+                        <option value="">Select packaging type</option>
+                        <option value="sack" {{ old('packaging_type') == 'sack' ? 'selected' : '' }}>Sack</option>
+                        <option value="bottle" {{ old('packaging_type') == 'bottle' ? 'selected' : '' }}>Bottle</option>
+                        <option value="box" {{ old('packaging_type') == 'box' ? 'selected' : '' }}>Box</option>
+                        <option value="drum" {{ old('packaging_type') == 'drum' ? 'selected' : '' }}>Drum</option>
+                        <option value="can" {{ old('packaging_type') == 'can' ? 'selected' : '' }}>Can</option>
+                        <option value="bag" {{ old('packaging_type') == 'bag' ? 'selected' : '' }}>Bag</option>
+                        <option value="other" {{ old('packaging_type') == 'other' ? 'selected' : '' }}>Other</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -365,46 +400,63 @@
                     </div>
                 </div>
 
+                <div class="form-group full-width">
+                    <label for="price_unit">Price Unit Description</label>
+                    <input type="text" class="form-control" id="price_unit" name="price_unit" value="{{ old('price_unit') }}" placeholder="e.g. Per Sack, Per Kg, Per Liter">
+                </div>
+
+                <x-product-name-preview
+                    :name="old('name')"
+                    :size="old('package_size')"
+                    :unit="old('package_unit')"
+                />
+
+                <!-- SECTION 3: INVENTORY & STATUS -->
+                <div class="section-header">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                    Inventory & Status
+                </div>
+
                 <div class="form-group">
                     <label for="stock_quantity">Stock Quantity <span class="required-star">*</span></label>
                     <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" value="{{ old('stock_quantity', 0) }}" placeholder="0" min="0" required>
                 </div>
 
                 <div class="form-group">
+                    <label for="stock_unit">Stock Unit Label</label>
+                    <input type="text" class="form-control" id="stock_unit" name="stock_unit" value="{{ old('stock_unit') }}" placeholder="e.g. bags, pieces, liters" list="stock_units" maxlength="50">
+                    <datalist id="stock_units">
+                        @foreach(['pieces', 'pcs', 'sacks', 'bags', 'packs', 'packets', 'sachets', 'bottles', 'cans', 'boxes', 'kits', 'units', 'liters', 'rolls', 'sets'] as $unit)
+                            <option value="{{ $unit }}"></option>
+                        @endforeach
+                    </datalist>
+                </div>
+
+                <div class="form-group">
                     <label for="reorder_threshold">Reorder Threshold <span class="required-star">*</span></label>
                     <input type="number" class="form-control" id="reorder_threshold" name="reorder_threshold" value="{{ old('reorder_threshold', 10) }}" placeholder="10" min="0" required>
+                    <span class="hint">Triggers low-stock warnings when inventory drops below this number.</span>
                 </div>
 
                 <div class="form-group">
                     <label for="status">Catalog Status <span class="required-star">*</span></label>
                     <select class="form-control" id="status" name="status" required>
-                        <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="active" {{ old('status', 'active') == 'active' ? 'selected' : '' }}>Active</option>
                         <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        <option value="out_of_stock" {{ old('status') == 'out_of_stock' ? 'selected' : '' }}>Out of Stock</option>
+                        <option value="discontinued" {{ old('status') == 'discontinued' ? 'selected' : '' }}>Discontinued</option>
                     </select>
                 </div>
 
-                <!-- SECTION 3: MEDIA ATTACHMENTS -->
+                <x-product-spec-sections />
+
+                <!-- SECTION 4: PRODUCT PHOTOS -->
                 <div class="section-header">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                    Product Image <span style="font-weight: 400; font-size: 13px; color: #64748b;">(Optional)</span>
+                    Product Photos <span style="font-weight: 400; font-size: 13px; color: #64748b;">(Optional)</span>
                 </div>
 
-                <div class="form-group full-width">
-                    <label for="main_image">Main Display Photo</label>
-                    <div class="image-management-wrapper">
-                        <div class="current-image-card">
-                            <img id="image_preview" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='110' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'><rect x='3' y='3' width='18' height='18' rx='2' ry='2'/><circle cx='8.5' cy='8.5' r='1.5'/><polyline points='21 15 16 10 5 21'/></svg>" alt="Preview" class="img-preview">
-                            <span class="hint" id="preview_label">No Image Selected</span>
-                        </div>
-
-                        <label class="file-dropzone" for="main_image">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                            <div style="font-size: 14px; font-weight: 600; color: #334155;" id="filename_display">Click to upload product image</div>
-                            <div class="hint" style="margin-top: 4px;">PNG, JPG, WebP or GIF up to 5MB</div>
-                            <input type="file" id="main_image" name="main_image" accept="image/jpeg,image/png,image/webp,image/gif" style="display: none;" onchange="handleImagePreview(this)">
-                        </label>
-                    </div>
-                </div>
+                <x-product-image-picker id="product_images" />
             </div>
 
             <!-- Form Buttons -->
@@ -418,24 +470,5 @@
         </form>
     </div>
 </div>
-
-<script>
-    function handleImagePreview(input) {
-        const file = input.files[0];
-        const preview = document.getElementById('image_preview');
-        const label = document.getElementById('preview_label');
-        const nameDisplay = document.getElementById('filename_display');
-
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                label.innerText = 'New Image';
-                nameDisplay.innerText = file.name;
-            }
-            reader.readAsDataURL(file);
-        }
-    }
-</script>
 
 @endsection

@@ -163,16 +163,127 @@ class ProductController extends Controller
     }
 
     /**
+     * Whether any of the given keys holds a real value.
+     *
+     * `!empty()` is wrong for these blocks: it treats "0" as missing, so a
+     * 0-20-0 fertilizer (nitrogen 0) would never create its detail row, and
+     * it ignores a product that only supplies an application rate or only a
+     * registration number.
+     */
+    /**
+     * Resolve the label stored in the legacy `products.category` text column.
+     *
+     * Shared with the spreadsheet importer via the model so every writer agrees
+     * on what that column means.
+     */
+    private function legacyCategoryLabel(Category $category): string
+    {
+        return Product::legacyCategoryLabel($category);
+    }
+
+    private function hasAnyValue(array $data, array $keys): bool
+    {
+        foreach ($keys as $key) {
+            if (! array_key_exists($key, $data)) {
+                continue;
+            }
+
+            $value = $data[$key];
+
+            if ($value !== null && $value !== '' && $value !== []) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether the incoming payload actually manages a spec block at all.
+     *
+     * This separates "the user opened the form and blanked every field" (a
+     * deliberate clear) from "this request never carried the block" (leave the
+     * existing row untouched).
+     */
+    private function wasSubmitted(array $data, array $keys): bool
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $data)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Create/update/clear a one-to-one spec row from a submitted form block.
+     *
+     * `updateOrCreate` alone silently leaves stale data behind when the user
+     * clears every field on an edit, so an all-blank submission deletes the row.
+     */
+    private function syncSpecDetails(
+        Product $product,
+        string $relation,
+        array $validated,
+        array $keys,
+        array $attributes
+    ): void {
+        if (! $this->wasSubmitted($validated, $keys)) {
+            return;
+        }
+
+        if (! $this->hasAnyValue($validated, $keys)) {
+            $product->{$relation}()->delete();
+
+            return;
+        }
+
+        $product->{$relation}()->updateOrCreate(
+            ['product_id' => $product->id],
+            $attributes
+        );
+    }
+
+    private const FERTILIZER_FIELDS = [
+        'nitrogen_percentage',
+        'phosphorus_percentage',
+        'potassium_percentage',
+        'form_type',
+        'fertilizer_rate_min',
+        'fertilizer_rate_max',
+        'fertilizer_rate_unit',
+        'fertilizer_method',
+        'fertilizer_timing',
+    ];
+
+    private const REGISTRATION_FIELDS = [
+        'registration_status',
+        'registration_authority',
+        'registration_number',
+        'lot_number',
+        'batch_number',
+        'manufacturing_date',
+        'expiration_date',
+    ];
+
+    /**
      * Store a newly created product in the database.
      */
     public function store(StoreProductRequest $request)
     {
         $validated = $request->validated();
 
-        DB::transaction(function () use ($validated, $request) {
+        // `products.category` is a legacy denormalised text column that is NOT
+        // NULL, while the forms only submit `category_id`. Keep it in sync so
+        // the insert satisfies strict mode and legacy readers still see a label.
+        $category = Category::with('parent')->findOrFail($validated['category_id']);
+
+        DB::transaction(function () use ($validated, $request, $category) {
             $product = Product::create([
                 'user_id'            => Auth::id(),
                 'category_id'        => $validated['category_id'],
+                'category'           => $this->legacyCategoryLabel($category),
                 'name'               => $validated['name'],
                 'brand'              => $validated['brand'] ?? null,
                 'sku'                => $validated['sku'],
@@ -190,22 +301,11 @@ class ProductController extends Controller
                 'status'             => $validated['status'],
             ]);
 
-            // Handle main image upload
-            if ($request->hasFile('main_image')) {
-                $file = $request->file('main_image');
-                $path = $file->store('products/' . $product->id, 'public');
-
-                $product->images()->create([
-                    'image_type'        => 'main',
-                    'file_path'         => $path,
-                    'original_filename' => $file->getClientOriginalName(),
-                    'mime_type'         => $file->getMimeType(),
-                    'file_size'         => $file->getSize(),
-                ]);
-            }
+            // Handle image uploads — the first one becomes the main image.
+            $this->storeProductImages($product, $request->file('images', []));
 
             // Fertilizer Details
-            if (!empty($validated['nitrogen_percentage']) || !empty($validated['phosphorus_percentage']) || !empty($validated['potassium_percentage'])) {
+            if ($this->hasAnyValue($validated, self::FERTILIZER_FIELDS)) {
                 $product->fertilizerDetail()->create([
                     'nitrogen_percentage'   => $validated['nitrogen_percentage'] ?? null,
                     'phosphorus_percentage' => $validated['phosphorus_percentage'] ?? null,
@@ -220,7 +320,7 @@ class ProductController extends Controller
             }
 
             // Registration Details
-            if (!empty($validated['registration_status']) || !empty($validated['lot_number'])) {
+            if ($this->hasAnyValue($validated, self::REGISTRATION_FIELDS)) {
                 $product->registration()->create([
                     'registration_status'    => $validated['registration_status'] ?? null,
                     'registration_authority' => $validated['registration_authority'] ?? null,
@@ -264,10 +364,12 @@ class ProductController extends Controller
         }
 
         $validated = $request->validated();
+        $category = Category::with('parent')->findOrFail($validated['category_id']);
 
-        DB::transaction(function () use ($validated, $request, $product) {
+        DB::transaction(function () use ($validated, $request, $product, $category) {
             $product->update([
                 'category_id'        => $validated['category_id'],
+                'category'           => $this->legacyCategoryLabel($category),
                 'name'               => $validated['name'],
                 'brand'              => $validated['brand'] ?? null,
                 'sku'                => $validated['sku'],
@@ -285,59 +387,45 @@ class ProductController extends Controller
                 'status'             => $validated['status'],
             ]);
 
-            // Handle main image replacement
-            if ($request->hasFile('main_image')) {
-                $oldMain = $product->mainImage;
-                if ($oldMain) {
-                    Storage::disk('public')->delete($oldMain->file_path);
-                    $oldMain->delete();
-                }
+            // Append any newly uploaded images; existing ones are left alone
+            // and managed individually from the edit form.
+            $this->storeProductImages($product, $request->file('images', []));
 
-                $file = $request->file('main_image');
-                $path = $file->store('products/' . $product->id, 'public');
+            // Fertilizer Details: create, update, or clear when blanked.
+            $this->syncSpecDetails(
+                $product,
+                'fertilizerDetail',
+                $validated,
+                self::FERTILIZER_FIELDS,
+                [
+                    'nitrogen_percentage'   => $validated['nitrogen_percentage'] ?? null,
+                    'phosphorus_percentage' => $validated['phosphorus_percentage'] ?? null,
+                    'potassium_percentage'  => $validated['potassium_percentage'] ?? null,
+                    'form_type'             => $validated['form_type'] ?? null,
+                    'application_rate_min'  => $validated['fertilizer_rate_min'] ?? null,
+                    'application_rate_max'  => $validated['fertilizer_rate_max'] ?? null,
+                    'application_rate_unit' => $validated['fertilizer_rate_unit'] ?? null,
+                    'application_method'    => $validated['fertilizer_method'] ?? null,
+                    'application_timing'    => $validated['fertilizer_timing'] ?? null,
+                ]
+            );
 
-                $product->images()->create([
-                    'image_type'        => 'main',
-                    'file_path'         => $path,
-                    'original_filename' => $file->getClientOriginalName(),
-                    'mime_type'         => $file->getMimeType(),
-                    'file_size'         => $file->getSize(),
-                ]);
-            }
-
-            // Fertilizer Details update/create
-            if (!empty($validated['nitrogen_percentage']) || !empty($validated['phosphorus_percentage']) || !empty($validated['potassium_percentage'])) {
-                $product->fertilizerDetail()->updateOrCreate(
-                    ['product_id' => $product->id],
-                    [
-                        'nitrogen_percentage'   => $validated['nitrogen_percentage'] ?? null,
-                        'phosphorus_percentage' => $validated['phosphorus_percentage'] ?? null,
-                        'potassium_percentage'  => $validated['potassium_percentage'] ?? null,
-                        'form_type'             => $validated['form_type'] ?? null,
-                        'application_rate_min'  => $validated['fertilizer_rate_min'] ?? null,
-                        'application_rate_max'  => $validated['fertilizer_rate_max'] ?? null,
-                        'application_rate_unit' => $validated['fertilizer_rate_unit'] ?? null,
-                        'application_method'    => $validated['fertilizer_method'] ?? null,
-                        'application_timing'    => $validated['fertilizer_timing'] ?? null,
-                    ]
-                );
-            }
-
-            // Registration Details update/create
-            if (!empty($validated['registration_status']) || !empty($validated['lot_number'])) {
-                $product->registration()->updateOrCreate(
-                    ['product_id' => $product->id],
-                    [
-                        'registration_status'    => $validated['registration_status'] ?? null,
-                        'registration_authority' => $validated['registration_authority'] ?? null,
-                        'registration_number'    => $validated['registration_number'] ?? null,
-                        'lot_number'             => $validated['lot_number'] ?? null,
-                        'batch_number'           => $validated['batch_number'] ?? null,
-                        'manufacturing_date'     => $validated['manufacturing_date'] ?? null,
-                        'expiration_date'        => $validated['expiration_date'] ?? null,
-                    ]
-                );
-            }
+            // Registration Details: create, update, or clear when blanked.
+            $this->syncSpecDetails(
+                $product,
+                'registration',
+                $validated,
+                self::REGISTRATION_FIELDS,
+                [
+                    'registration_status'    => $validated['registration_status'] ?? null,
+                    'registration_authority' => $validated['registration_authority'] ?? null,
+                    'registration_number'    => $validated['registration_number'] ?? null,
+                    'lot_number'             => $validated['lot_number'] ?? null,
+                    'batch_number'           => $validated['batch_number'] ?? null,
+                    'manufacturing_date'     => $validated['manufacturing_date'] ?? null,
+                    'expiration_date'        => $validated['expiration_date'] ?? null,
+                ]
+            );
         });
 
         return redirect()
@@ -376,7 +464,7 @@ class ProductController extends Controller
     public function browse()
     {
         $products = Product::active()
-            ->with(['category', 'storeOwner', 'mainImage', 'approvedReviews'])
+            ->with(['category', 'storeOwner', 'mainImage', 'images', 'approvedReviews'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -424,20 +512,80 @@ class ProductController extends Controller
     }
 
     /**
-     * Delete a single product image.
+     * Persist uploaded product images. Zero uploads is a no-op; the first
+     * image is promoted to `main` only when the product has none yet, so
+     * appending to an existing gallery never steals the main slot.
+     *
+     * @param  array<int, \Illuminate\Http\UploadedFile>  $files
      */
-    public function deleteImage($imageId)
+    private function storeProductImages(Product $product, array $files): void
     {
-        $image = ProductImage::findOrFail($imageId);
-        $product = $image->product;
+        $promoteFirstToMain = ! $product->mainImage()->exists();
+        $isFirst = true;
 
-        if ($product->user_id !== Auth::id()) {
-            abort(403);
+        foreach ($files as $file) {
+            if (! $file) {
+                continue;
+            }
+
+            $path = $file->store('products/' . $product->id, 'public');
+
+            $product->images()->create([
+                'image_type'        => ($isFirst && $promoteFirstToMain) ? 'main' : 'gallery',
+                'file_path'         => $path,
+                'original_filename' => $file->getClientOriginalName(),
+                'mime_type'         => $file->getMimeType(),
+                'file_size'         => $file->getSize(),
+            ]);
+
+            $isFirst = false;
         }
+    }
 
-        Storage::disk('public')->delete($image->file_path);
-        $image->delete();
+    /**
+     * Promote one of the product's images to be the main/cover image.
+     */
+    public function updateMainImage(Product $product, ProductImage $image)
+    {
+        $this->authorizeProductOwner($product);
+
+        abort_unless($image->product_id === $product->id, 404);
+
+        DB::transaction(function () use ($product, $image) {
+            $product->images()->where('image_type', 'main')->update(['image_type' => 'gallery']);
+            $image->update(['image_type' => 'main']);
+        });
+
+        return back()->with('success', 'Main image updated.');
+    }
+
+    /**
+     * Delete a single product image, promoting another to main if needed.
+     */
+    public function destroyImage(Product $product, ProductImage $image)
+    {
+        $this->authorizeProductOwner($product);
+
+        abort_unless($image->product_id === $product->id, 404);
+
+        DB::transaction(function () use ($product, $image) {
+            $wasMain = $image->image_type === 'main';
+
+            Storage::disk('public')->delete($image->file_path);
+            $image->delete();
+
+            if ($wasMain && ! $product->mainImage()->exists()) {
+                $product->images()->orderBy('id')->first()?->update(['image_type' => 'main']);
+            }
+        });
 
         return back()->with('success', 'Image removed successfully.');
+    }
+
+    private function authorizeProductOwner(Product $product): void
+    {
+        if ($product->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
     }
 }

@@ -186,7 +186,10 @@ class FarmerCropController extends Controller
 
         $seedProducts = $seedProducts->map(fn ($p) => [
             'id' => $p->id,
+            // 'name' stays measure-free: the modal matches crop keywords
+            // against it, so it must not gain a trailing "— 50 kg".
             'name' => $p->name,
+            'display_name' => $p->display_name,
             'category_slug' => $p->getRelation('category')?->slug ?? '',
             'crop_ids' => $p->applications
                 ->pluck('crop_id')

@@ -218,7 +218,7 @@
       @endphp
       <x-product-card :product="$product" href="{{ route('farmer.products.show', $product->id) }}"
          data-category="{{ $group }}"
-         data-name="{{ strtolower($product->name) }}">
+         data-name="{{ strtolower($product->name . ' ' . ($product->size_label ?? '')) }}">
         <x-slot name="body">
           <div class="card-rank-row">
             @if($index < 3)

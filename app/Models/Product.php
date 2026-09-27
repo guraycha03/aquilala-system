@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Category;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
+    /**
+     * Upper bound on how many images one product may hold, across both the
+     * create and update forms. Enforced server side in the form requests and
+     * mirrored by the image picker so the UI never offers slots the backend
+     * will reject.
+     */
+    public const MAX_IMAGES = 10;
+
     protected $fillable = [
         'user_id',
         'category_id',
@@ -41,6 +50,41 @@ class Product extends Model
             'reorder_threshold' => 'integer',
             'views_count' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // `stock_level` predates `stock_quantity` and is no longer written by
+        // the forms, which left every row at 0 while the real value lived in
+        // `stock_quantity`. Mirror it on each save so the two can never drift
+        // apart and raw queries, exports and reports stay correct.
+        static::saving(function (self $product) {
+            if ($product->stock_quantity !== null) {
+                $product->stock_level = (int) $product->stock_quantity;
+            }
+        });
+    }
+
+    /**
+     * The label stored in the legacy `products.category` text column.
+     *
+     * That column has always held the TOP-LEVEL group name ("Fertilizer",
+     * "Seeds", "Crop Protection") while `category_id` points at the specific
+     * sub-category, so it resolves to the parent and falls back to the
+     * category's own name for top-level rows. Writing the leaf name instead
+     * would make new rows inconsistent with the existing catalog.
+     */
+    public static function legacyCategoryLabel(?Category $category): string
+    {
+        if (! $category) {
+            return 'Uncategorized';
+        }
+
+        if (! $category->relationLoaded('parent')) {
+            $category->loadMissing('parent');
+        }
+
+        return $category->parent?->name ?? $category->name;
     }
 
     public function storeOwner(): BelongsTo
@@ -139,6 +183,110 @@ class Product extends Model
     public function getIsLowStockAttribute(): bool
     {
         return $this->stock_quantity <= $this->reorder_threshold;
+    }
+
+    /**
+     * Canonical casing for the units merchants type into `package_unit`.
+     * Anything unrecognised is passed through as the merchant wrote it.
+     *
+     * Public so the spreadsheet importer normalises units the same way the
+     * manual form and the live name preview do.
+     */
+    public static function normalizeUnit(?string $unit): ?string
+    {
+        $unit = $unit === null ? '' : trim($unit);
+
+        if ($unit === '') {
+            return null;
+        }
+
+        return match (strtolower($unit)) {
+            'kg', 'kgs', 'kilogram', 'kilograms' => 'kg',
+            'g', 'gram', 'grams'                 => 'g',
+            'ml'                                 => 'mL',
+            'l', 'ltr', 'liter', 'liters', 'litre', 'litres' => 'L',
+            'piece', 'pieces'                    => 'piece',
+            'pcs'                                => 'pcs',
+            default                              => $unit,
+        };
+    }
+
+    /**
+     * Suggested values for the measure unit field. Free text is still allowed
+     * — this only powers the datalist so merchants pick the usual casing.
+     *
+     * @return array<int, string>
+     */
+    public static function sizeUnitSuggestions(): array
+    {
+        return ['kg', 'g', 'mL', 'L', 'piece', 'pcs', 'pack', 'packet', 'sachet', 'bag', 'sack', 'box', 'bottle', 'can', 'roll', 'm'];
+    }
+
+    /**
+     * The measure part of a product, formatted for display — e.g. "50 kg",
+     * "500 mL", "1 L". Null when the product has no size on record.
+     */
+    public function getSizeLabelAttribute(): ?string
+    {
+        $size = $this->package_size;
+
+        if ($size === null || $size === '') {
+            return null;
+        }
+
+        $number = rtrim(rtrim(number_format((float) $size, 2, '.', ''), '0'), '.');
+        $number = $number === '' ? '0' : $number;
+
+        $unit = self::normalizeUnit($this->package_unit);
+
+        return $unit === null ? $number : $number . ' ' . $unit;
+    }
+
+    /**
+     * Full product name with the measure appended, for places that want to
+     * read like the product label — catalog cards, detail headers, tables.
+     * Plain `name` stays measure-free for search, filters and compact lists.
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        $name = trim((string) $this->name);
+        $size = $this->size_label;
+
+        if ($size === null) {
+            return $name;
+        }
+
+        // Merchants sometimes still type the measure into the name. Drop that
+        // trailing copy so the label reads "Urea 50 kg" rather than
+        // "Urea 50 kg — 50 kg".
+        $stripped = preg_replace(
+            '/\s*[\x{2014}\x{2013}\-]\s*' . preg_quote($size, '/') . '\s*$/u',
+            '',
+            $name
+        );
+
+        if (is_string($stripped) && $stripped !== '') {
+            $name = trim($stripped);
+        }
+
+        return $name === '' ? $size : $name . ' — ' . $size;
+    }
+
+    /**
+     * Every product image with the main one first, then the rest by upload
+     * order. Powers the gallery on the detail page and the image manager on
+     * the edit form. Falls back to a query when `images` was not eager
+     * loaded, so callers stay correct at the cost of one extra query.
+     *
+     * @return \Illuminate\Support\Collection<int, ProductImage>
+     */
+    public function getGalleryAttribute()
+    {
+        $images = $this->relationLoaded('images') ? $this->images : $this->images()->get();
+
+        return $images
+            ->sortBy(fn (ProductImage $image) => [$image->image_type === 'main' ? 0 : 1, $image->id])
+            ->values();
     }
 
     private function reviewSource()

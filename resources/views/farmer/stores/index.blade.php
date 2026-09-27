@@ -259,7 +259,7 @@
                   <span class="product-pill">
                     ₱{{ number_format($product->price, 0) }}
                     <span style="color: #d1d9d3;">·</span>
-                    {{ Str::limit($product->name, 18) }}
+                    {{ Str::limit($product->display_name, 26) }}
                   </span>
                 @endforeach
                 @if($store->products_count > 4)

@@ -169,7 +169,7 @@ class CostQuotationEngine
             $items[] = [
                 'product_id'          => $product->id,
                 'product_name'        => $product->name,
-                'category'            => $product->category?->name ?? 'General',
+                'category'            => $product->category_display_name,
                 'price_at_generation' => $priceAtGeneration,
                 'base_quantity'       => $baseQuantity,
                 'adjusted_quantity'   => $adjustedQuantity,
@@ -364,7 +364,7 @@ class CostQuotationEngine
      */
     private function getFallbackRate(string $cropType, Product $product): float
     {
-        $categoryName = strtolower($product->category?->name ?? '');
+        $categoryName = strtolower($product->category_display_name);
         $productName  = strtolower($product->name);
 
         // Rice-specific fallbacks
@@ -404,7 +404,7 @@ class CostQuotationEngine
     private function isFertilizer(Product $product): bool
     {
         $name = strtolower($product->name);
-        $cat  = strtolower($product->category?->name ?? '');
+        $cat  = strtolower($product->category_display_name);
 
         return str_contains($name, 'urea')
             || str_contains($name, 'complete')
@@ -422,7 +422,7 @@ class CostQuotationEngine
     private function isFungicide(Product $product): bool
     {
         $name = strtolower($product->name);
-        $cat  = strtolower($product->category?->name ?? '');
+        $cat  = strtolower($product->category_display_name);
 
         return str_contains($name, 'fungicide')
             || str_contains($name, 'pesticide')
@@ -438,7 +438,7 @@ class CostQuotationEngine
     private function isIrrigation(Product $product): bool
     {
         $name = strtolower($product->name);
-        $cat  = strtolower($product->category?->name ?? '');
+        $cat  = strtolower($product->category_display_name);
 
         return str_contains($name, 'irrigation')
             || str_contains($name, 'water fee')

@@ -140,7 +140,7 @@ CRITICAL RESPONSE & FORMATTING RULES:
             return [];
         }
 
-        $query = Product::active()->with(['category', 'storeOwner', 'mainImage']);
+        $query = Product::active()->with(['category', 'storeOwner', 'images']);
 
         if (auth()->user()?->role === 'store_owner') {
             $query->where('user_id', auth()->id());
@@ -216,23 +216,24 @@ CRITICAL RESPONSE & FORMATTING RULES:
 
     private function buildSuggestion(Product $p): array
     {
-        $package = ($p->package_size !== null ? rtrim(rtrim(number_format((float) $p->package_size, 2, '.', ''), '0'), '.') : '')
-            . ($p->package_unit ? ' ' . $p->package_unit : '');
+        $gallery = $p->gallery;
 
         return [
             'id' => $p->id,
             'name' => $p->name,
+            'display_name' => $p->display_name,
             'brand' => $p->brand,
-            'category' => $p->category?->name ?? '',
+                'category' => $p->category_display_name,
             'price' => number_format((float) $p->price, 2),
             'price_unit' => $p->price_unit ?? 'each',
-            'package' => trim($package),
+            'package' => $p->size_label ?? '',
             'stock' => $p->status === 'out_of_stock' ? 'Out of Stock' : $p->stock_status,
             'store' => $p->storeOwner?->name ?? '',
             'description' => mb_strimwidth((string) $p->description, 0, 400, '…'),
-            'image' => $p->mainImage?->file_path
-                ? asset('storage/' . $p->mainImage->file_path)
+            'image' => $gallery->isNotEmpty()
+                ? asset('storage/' . $gallery->first()->file_path)
                 : asset('images/product.png'),
+            'images' => $gallery->map(fn ($img) => asset('storage/' . $img->file_path))->values(),
             'url' => auth()->user()?->role === 'store_owner'
                 ? route('store.inventory.index')
                 : route('farmer.products.show', $p->id),

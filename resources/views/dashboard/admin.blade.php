@@ -218,7 +218,7 @@
 
     <!-- 2. KPI CARDS -->
     <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:22px;">
-      <x-kpi-card title="Total IA Members" value="214" trendLabel="Official IA registry" accent="#16a34a" link="{{ route('admin.users.index') }}">
+      <x-kpi-card title="Total IA Members" value="214" trendLabel="Official farmer registry" accent="#16a34a" link="{{ route('admin.users.index') }}">
         <x-slot:icon><img src="{{ asset('images/farmer.png') }}" alt="Farmer" width="26" height="26" style="object-fit:contain;"></x-slot:icon>
       </x-kpi-card>
       <x-kpi-card title="Partner Stores" value="{{ $storeOwnersCount }}" trendLabel="Local supply stores" accent="#d97706" link="{{ route('admin.stores.index') }}">

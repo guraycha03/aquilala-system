@@ -453,26 +453,26 @@
           $stockBarStyle = 'width:' . $pct . '%;background:' . $barColor . ';';
         @endphp
         <tr data-name="{{ strtolower($product->name) }} {{ strtolower($product->sku) }}" data-status="{{ $dataStatus }}"
-          data-category="{{ strtolower($product->category->name ?? $product->category ?? 'General') }}"
+          data-category="{{ strtolower($product->category_display_name) }}"
           data-qty="{{ (float) $qty }}"
           data-thresh="{{ (float) $thresh }}"
-          data-search="{{ strtolower(($product->name ?? '') . ' ' . ($product->sku ?? '') . ' ' . ($product->category->name ?? $product->category ?? 'General')) }}">
+          data-search="{{ strtolower(($product->name ?? '') . ' ' . ($product->size_label ?? '') . ' ' . ($product->sku ?? '') . ' ' . $product->category_display_name) }}">
           <td>
             <div class="prod-cell">
               <div class="prod-thumb">
                 @if($product->mainImage && !empty($product->mainImage->file_path))
-                  <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->name }}" loading="lazy">
+                  <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
                 @else
                   <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                 @endif
               </div>
               <div>
-                <div class="prod-name">{{ $product->name }}</div>
+                <div class="prod-name">{{ $product->display_name }}</div>
                 <div class="prod-sku">{{ $product->sku }}</div>
               </div>
             </div>
           </td>
-          <td><span class="cat-pill">{{ $product->category->name ?? $product->category ?? 'General' }}</span></td>
+          <td><span class="cat-pill">{{ $product->category_display_name }}</span></td>
           <td>
             <strong>{{ $qty }}</strong> {{ $product->stock_unit ?? 'pieces' }}
           </td>
@@ -485,7 +485,7 @@
           </td>
           <td>
             <div class="row-actions" style="justify-content:flex-end;">
-              <button class="btn-icon stock-update" onclick="openEdit({{ $product->id }}, '{{ addslashes($product->name) }}', {{ $qty }}, {{ $thresh }})" title="Update stock levels">
+              <button class="btn-icon stock-update" onclick="openEdit({{ $product->id }}, '{{ addslashes($product->display_name) }}', {{ $qty }}, {{ $thresh }})" title="Update stock levels">
                 Update Stock
               </button>
               <a href="{{ route('store.products.edit', $product->id) }}" class="btn-icon product-edit" title="Edit product">

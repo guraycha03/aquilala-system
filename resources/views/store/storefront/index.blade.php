@@ -52,6 +52,33 @@
         transform: translateY(-1px);
     }
 
+    .btn-ghost {
+        background-color: #ffffff;
+        color: #14532d;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #cbd5c1;
+        transition: all 0.2s ease;
+    }
+
+    .btn-ghost:hover {
+        background-color: #f7faf5;
+        border-color: #14532d;
+    }
+
+    .page-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
     /* Alerts */
     .alert-success {
         background: #f0fdf4;
@@ -474,10 +501,16 @@
         <h1 class="page-title">Retail Product Catalog</h1>
         <p class="page-subtitle">Manage items displayed in the public marketplace browse view for association farmers.</p>
     </div>
-    <a href="{{ route('store.products.create') }}" class="btn-primary">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        Add Product Profile
-    </a>
+    <div class="page-actions">
+        <a href="{{ route('store.products.import') }}" class="btn-ghost">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>
+            Import from File
+        </a>
+        <a href="{{ route('store.products.create') }}" class="btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add Product Profile
+        </a>
+    </div>
 </div>
 
 <!-- Success Message -->
@@ -558,8 +591,8 @@
     @if(isset($products) && $products->count() > 0)
     <div class="product-grid">
         @foreach($products as $product)
-        <x-product-card :product="$product" :actions="true" data-search="{{ strtolower(trim(($product->name ?? '') . ' ' . ($product->sku ?? '') . ' ' . ($product->category->name ?? $product->category ?? '') . ' ' . (($product->recommended_season ?? '') === 'wet' ? 'wet season' : (($product->recommended_season ?? '') === 'dry' ? 'dry season' : 'all seasons')) . ' ' . ((int) ($product->stock_quantity ?? 0) <= 0 ? 'out of stock' : ((int) ($product->stock_quantity ?? 0) <= (int) ($product->reorder_threshold ?? 5) ? 'low stock' : 'in stock')) . ' ' . number_format($product->price, 2, '.', ''))) }}"
-           data-cat="{{ strtolower(trim($product->category->name ?? 'uncategorized')) }}"
+        <x-product-card :product="$product" :actions="true" data-search="{{ strtolower(trim(($product->name ?? '') . ' ' . ($product->size_label ?? '') . ' ' . ($product->sku ?? '') . ' ' . $product->category_display_name . ' ' . (($product->recommended_season ?? '') === 'wet' ? 'wet season' : (($product->recommended_season ?? '') === 'dry' ? 'dry season' : 'all seasons')) . ' ' . ((int) ($product->stock_quantity ?? 0) <= 0 ? 'out of stock' : ((int) ($product->stock_quantity ?? 0) <= (int) ($product->reorder_threshold ?? 5) ? 'low stock' : 'in stock')) . ' ' . number_format($product->price, 2, '.', ''))) }}"
+           data-cat="{{ strtolower(trim($product->category_display_name)) }}"
            data-season="{{ in_array($product->recommended_season ?? 'all', ['wet', 'dry'], true) ? $product->recommended_season : 'all' }}"
            data-stock="{{ (int) ($product->stock_quantity ?? 0) <= 0 ? 'out' : ((int) ($product->stock_quantity ?? 0) <= (int) ($product->reorder_threshold ?? 5) ? 'low' : 'in') }}" />
         @endforeach
@@ -570,7 +603,7 @@
             <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
         </svg>
         <h3>No Products Listed Yet</h3>
-        <p>Your product catalog is currently empty. Click "Add Product Profile" above to create your first item.</p>
+        <p>Your product catalog is currently empty. Click "Add Product Profile" above to create your first item, or "Import from File" to bring in a whole list from a CSV or Excel sheet.</p>
     </div>
     @endif
 
@@ -592,8 +625,8 @@
     <div class="product-grid">
         @foreach($products as $product)
         <x-product-card :product="$product" href="{{ route('farmer.products.show', $product->id) }}"
-           data-search="{{ strtolower(trim(($product->name ?? '') . ' ' . ($product->sku ?? '') . ' ' . ($product->category->name ?? $product->category ?? '') . ' ' . (($product->recommended_season ?? '') === 'wet' ? 'wet season' : (($product->recommended_season ?? '') === 'dry' ? 'dry season' : 'all seasons')) . ' ' . ((int) ($product->stock_quantity ?? 0) <= 0 ? 'out of stock' : ((int) ($product->stock_quantity ?? 0) <= (int) ($product->reorder_threshold ?? 5) ? 'low stock' : 'in stock')) . ' ' . number_format($product->price, 2, '.', ''))) }}"
-           data-cat="{{ strtolower(trim($product->category->name ?? 'uncategorized')) }}"
+           data-search="{{ strtolower(trim(($product->name ?? '') . ' ' . ($product->size_label ?? '') . ' ' . ($product->sku ?? '') . ' ' . $product->category_display_name . ' ' . (($product->recommended_season ?? '') === 'wet' ? 'wet season' : (($product->recommended_season ?? '') === 'dry' ? 'dry season' : 'all seasons')) . ' ' . ((int) ($product->stock_quantity ?? 0) <= 0 ? 'out of stock' : ((int) ($product->stock_quantity ?? 0) <= (int) ($product->reorder_threshold ?? 5) ? 'low stock' : 'in stock')) . ' ' . number_format($product->price, 2, '.', ''))) }}"
+           data-cat="{{ strtolower(trim($product->category_display_name)) }}"
            data-season="{{ in_array($product->recommended_season ?? 'all', ['wet', 'dry'], true) ? $product->recommended_season : 'all' }}"
            data-stock="{{ (int) ($product->stock_quantity ?? 0) <= 0 ? 'out' : ((int) ($product->stock_quantity ?? 0) <= (int) ($product->reorder_threshold ?? 5) ? 'low' : 'in') }}">
           <x-slot name="footer"><span class="units-count" style="color: #16a34a; font-weight: 600;">In Stock</span></x-slot>

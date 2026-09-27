@@ -172,7 +172,7 @@ class StoreCatalogSeeder extends Seeder
             // ══════════════════════════════════════════════════════
             [
                 'sku' => 'UREA-46-50',
-                'name' => 'Urea Fertilizer (46-0-0) — 50 kg',
+                'name' => 'Urea Fertilizer (46-0-0)',
                 'brand' => 'Atlas',
                 'cat_slug' => 'nitrogen-fertilizer',
                 'category' => 'Fertilizer',
@@ -207,7 +207,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'COMP-141414-50',
-                'name' => 'Complete Fertilizer (14-14-14) — 50 kg',
+                'name' => 'Complete Fertilizer (14-14-14)',
                 'brand' => 'Atlas',
                 'cat_slug' => 'complete-fertilizer',
                 'category' => 'Fertilizer',
@@ -245,7 +245,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'AMS-2100-50',
-                'name' => 'Ammonium Sulfate (21-0-0) — 50 kg',
+                'name' => 'Ammonium Sulfate (21-0-0)',
                 'brand' => 'Philphos',
                 'cat_slug' => 'nitrogen-fertilizer',
                 'category' => 'Fertilizer',
@@ -281,7 +281,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'MOP-0060-50',
-                'name' => 'Muriate of Potash (0-0-60) — 50 kg',
+                'name' => 'Muriate of Potash (0-0-60)',
                 'brand' => 'Atlas',
                 'cat_slug' => 'micronutrient-fertilizer',
                 'category' => 'Fertilizer',
@@ -317,7 +317,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'NPK-16200-50',
-                'name' => 'NPK Fertilizer (16-20-0) — 50 kg',
+                'name' => 'NPK Fertilizer (16-20-0)',
                 'brand' => 'Philphos',
                 'cat_slug' => 'complete-fertilizer',
                 'category' => 'Fertilizer',
@@ -353,7 +353,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SUPERPHOS-00200-50',
-                'name' => 'Superphosphate (0-20-0) — 50 kg',
+                'name' => 'Superphosphate (0-20-0)',
                 'brand' => 'Philphos',
                 'cat_slug' => 'complete-fertilizer',
                 'category' => 'Fertilizer',
@@ -388,7 +388,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'MICRO-ZNSULF-1',
-                'name' => 'Zinc Sulfate Micronutrient (33% Zn) — 1 kg',
+                'name' => 'Zinc Sulfate Micronutrient (33% Zn)',
                 'brand' => 'Agri-Cool',
                 'cat_slug' => 'micronutrient-fertilizer',
                 'category' => 'Fertilizer',
@@ -414,7 +414,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'FOL-GROMORE-1',
-                'name' => 'Foliar Fertilizer Grow More (14-40-13) — 1 kg',
+                'name' => 'Foliar Fertilizer Grow More (14-40-13)',
                 'brand' => 'Grow More',
                 'cat_slug' => 'micronutrient-fertilizer',
                 'category' => 'Fertilizer',
@@ -443,7 +443,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'ORG-VERMICAST-25',
-                'name' => 'Vermicast Organic Fertilizer — 25 kg',
+                'name' => 'Vermicast Organic Fertilizer',
                 'brand' => 'VermiGrow',
                 'cat_slug' => 'organic-fertilizer',
                 'category' => 'Fertilizer',
@@ -471,7 +471,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'ORG-SUPERHUMUS-25',
-                'name' => 'Super Humus Organic Fertilizer — 25 kg',
+                'name' => 'Super Humus Organic Fertilizer',
                 'brand' => 'Superhumus',
                 'cat_slug' => 'organic-fertilizer',
                 'category' => 'Fertilizer',
@@ -502,7 +502,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'ORG-BION-500',
-                'name' => 'Bio-N Nitrogen Biofertilizer — 500 mL',
+                'name' => 'Bio-N Nitrogen Biofertilizer',
                 'brand' => 'BIOTECH',
                 'cat_slug' => 'organic-fertilizer',
                 'category' => 'Fertilizer',
@@ -529,7 +529,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SOIL-LIME-25',
-                'name' => 'Agricultural Lime (Calcium Carbonate) — 25 kg',
+                'name' => 'Agricultural Lime (Calcium Carbonate)',
                 'brand' => 'Agri-Lime',
                 'cat_slug' => 'soil-amendments',
                 'category' => 'Soil Amendments',
@@ -562,7 +562,7 @@ class StoreCatalogSeeder extends Seeder
             // ══════════════════════════════════════════════════════
             [
                 'sku' => 'SEED-RC222-25',
-                'name' => 'NSIC Rc222 Rice Seeds — 25 kg',
+                'name' => 'NSIC Rc222 Rice Seeds',
                 'brand' => 'PhilRice',
                 'cat_slug' => 'rice-seeds',
                 'category' => 'Seeds',
@@ -587,7 +587,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SEED-RC216-25',
-                'name' => 'NSIC Rc216 Rice Seeds — 25 kg',
+                'name' => 'NSIC Rc216 Rice Seeds',
                 'brand' => 'PhilRice',
                 'cat_slug' => 'rice-seeds',
                 'category' => 'Seeds',
@@ -612,7 +612,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SEED-RC302-25',
-                'name' => 'NSIC Rc302 (Submarino) Rice Seeds — 25 kg',
+                'name' => 'NSIC Rc302 (Submarino) Rice Seeds',
                 'brand' => 'PhilRice',
                 'cat_slug' => 'rice-seeds',
                 'category' => 'Seeds',
@@ -637,7 +637,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SEED-CORNNK-20',
-                'name' => 'NK 8828 Hybrid Corn Seeds — 20 kg',
+                'name' => 'NK 8828 Hybrid Corn Seeds',
                 'brand' => 'Syngenta',
                 'cat_slug' => 'corn-seeds',
                 'category' => 'Seeds',
@@ -662,7 +662,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SEED-SWEETCORN-1',
-                'name' => 'Aelah Sweet Corn Seeds — 1 kg',
+                'name' => 'Aelah Sweet Corn Seeds',
                 'brand' => 'Syngenta',
                 'cat_slug' => 'corn-seeds',
                 'category' => 'Seeds',
@@ -689,7 +689,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SEED-TOMATO-500',
-                'name' => 'RAMGO F1 Tomato Seeds — 500 g',
+                'name' => 'RAMGO F1 Tomato Seeds',
                 'brand' => 'RAMGO',
                 'cat_slug' => 'vegetable-seeds',
                 'category' => 'Seeds',
@@ -714,7 +714,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SEED-EGGPLANT-250',
-                'name' => 'RAMGO F1 Eggplant Seeds — 250 g',
+                'name' => 'RAMGO F1 Eggplant Seeds',
                 'brand' => 'RAMGO',
                 'cat_slug' => 'vegetable-seeds',
                 'category' => 'Seeds',
@@ -739,7 +739,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SEED-AMPALAYA-200',
-                'name' => 'F1 Ampalaya Seeds — 200 g',
+                'name' => 'F1 Ampalaya Seeds',
                 'brand' => 'East-West Seed',
                 'cat_slug' => 'vegetable-seeds',
                 'category' => 'Seeds',
@@ -764,7 +764,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SEED-PECHAY-100',
-                'name' => 'Pechay (Bok Choy) Seeds — 100 g',
+                'name' => 'Pechay (Bok Choy) Seeds',
                 'brand' => 'East-West Seed',
                 'cat_slug' => 'vegetable-seeds',
                 'category' => 'Seeds',
@@ -791,7 +791,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SEED-SITAW-500',
-                'name' => 'Sitaw (String Beans) Seeds — 500 g',
+                'name' => 'Sitaw (String Beans) Seeds',
                 'brand' => 'East-West Seed',
                 'cat_slug' => 'vegetable-seeds',
                 'category' => 'Seeds',
@@ -816,7 +816,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SDLG-CALAMANSI',
-                'name' => 'Calamansi Seedlings (Budded) — per piece',
+                'name' => 'Calamansi Seedlings (Budded)',
                 'brand' => 'Local Nursery',
                 'cat_slug' => 'fruit-seedlings',
                 'category' => 'Seeds',
@@ -842,7 +842,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SDLG-BANANA',
-                'name' => 'Lakatan Banana Tissue-Cultured Plantlets — per piece',
+                'name' => 'Lakatan Banana Tissue-Cultured Plantlets',
                 'brand' => 'Dole',
                 'cat_slug' => 'fruit-seedlings',
                 'category' => 'Seeds',
@@ -869,7 +869,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'SDLG-CACAO',
-                'name' => 'Cacao Grafted Seedlings — per piece',
+                'name' => 'Cacao Grafted Seedlings',
                 'brand' => 'DTI Agri Nursery',
                 'cat_slug' => 'fruit-seedlings',
                 'category' => 'Seeds',
@@ -898,7 +898,7 @@ class StoreCatalogSeeder extends Seeder
             // ══════════════════════════════════════════════════════
             [
                 'sku' => 'PROT-KARATE-1L',
-                'name' => 'Karate Lambda-Cyhalothrin — 1 L',
+                'name' => 'Karate Lambda-Cyhalothrin',
                 'brand' => 'Syngenta',
                 'cat_slug' => 'insecticide',
                 'category' => 'Crop Protection',
@@ -928,7 +928,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'PROT-CONFIDOR-200',
-                'name' => 'Confidor Imidacloprid — 200 mL',
+                'name' => 'Confidor Imidacloprid',
                 'brand' => 'Bayer',
                 'cat_slug' => 'insecticide',
                 'category' => 'Crop Protection',
@@ -956,7 +956,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'PROT-DECIS-250',
-                'name' => 'Decis 2.5 EC — 250 mL',
+                'name' => 'Decis 2.5 EC',
                 'brand' => 'Bayer',
                 'cat_slug' => 'insecticide',
                 'category' => 'Crop Protection',
@@ -983,7 +983,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'PROT-SELECTRON-1L',
-                'name' => 'Selecron Profenofos — 1 L',
+                'name' => 'Selecron Profenofos',
                 'brand' => 'Syngenta',
                 'cat_slug' => 'insecticide',
                 'category' => 'Crop Protection',
@@ -1010,7 +1010,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'PROT-BEAM-500',
-                'name' => 'Beam Tricyclazole — 500 g',
+                'name' => 'Beam Tricyclazole',
                 'brand' => 'FMC',
                 'cat_slug' => 'fungicide',
                 'category' => 'Crop Protection',
@@ -1036,7 +1036,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'PROT-SAAF-250',
-                'name' => 'Saaf Carbendazim + Mancozeb — 250 g',
+                'name' => 'Saaf Carbendazim + Mancozeb',
                 'brand' => 'Indofil',
                 'cat_slug' => 'fungicide',
                 'category' => 'Crop Protection',
@@ -1064,7 +1064,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'PROT-ROUNDUP-1L',
-                'name' => 'Roundup Glyphosate — 1 L',
+                'name' => 'Roundup Glyphosate',
                 'brand' => 'Bayer',
                 'cat_slug' => 'herbicide',
                 'category' => 'Crop Protection',
@@ -1091,7 +1091,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'PROT-STOMP-1L',
-                'name' => 'Stomp Pendimethalin — 1 L',
+                'name' => 'Stomp Pendimethalin',
                 'brand' => 'BASF',
                 'cat_slug' => 'herbicide',
                 'category' => 'Crop Protection',
@@ -1117,7 +1117,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'PROT-RELTE-500',
-                'name' => 'Relte Molluscicide (Niclosamide) — 500 g',
+                'name' => 'Relte Molluscicide (Niclosamide)',
                 'brand' => 'Bayer',
                 'cat_slug' => 'insecticide',
                 'category' => 'Crop Protection',
@@ -1146,7 +1146,7 @@ class StoreCatalogSeeder extends Seeder
             // ══════════════════════════════════════════════════════
             [
                 'sku' => 'TOOL-KNAP16',
-                'name' => 'Manual Knapsack Sprayer — 16 L',
+                'name' => 'Manual Knapsack Sprayer',
                 'brand' => 'Fieldking',
                 'cat_slug' => 'farm-tools',
                 'category' => 'Farm Tools',
@@ -1172,7 +1172,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'TOOL-BOLO14',
-                'name' => 'Stainless Steel Bolo Knife — 14 in',
+                'name' => 'Stainless Steel Bolo Knife (14 in)',
                 'brand' => 'Mora',
                 'cat_slug' => 'farm-tools',
                 'category' => 'Farm Tools',
@@ -1194,7 +1194,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'IRR-PIPE2-3M',
-                'name' => 'HDPE Irrigation Pipe (2 in) — 3 m',
+                'name' => 'HDPE Irrigation Pipe (2 in)',
                 'brand' => 'TurboFlux',
                 'cat_slug' => 'irrigation',
                 'category' => 'Irrigation',
@@ -1217,7 +1217,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'IRR-DRIP100',
-                'name' => 'Drip Irrigation Kit — 100 m',
+                'name' => 'Drip Irrigation Kit',
                 'brand' => 'RainFit',
                 'cat_slug' => 'irrigation',
                 'category' => 'Irrigation',
@@ -1245,7 +1245,7 @@ class StoreCatalogSeeder extends Seeder
             // ══════════════════════════════════════════════════════
             [
                 'sku' => 'FEED-LAYER-25',
-                'name' => 'Chicken Layer Mash — 25 kg',
+                'name' => 'Chicken Layer Mash',
                 'brand' => 'B-Meg',
                 'cat_slug' => 'animal-feed',
                 'category' => 'Animal Feed',
@@ -1265,7 +1265,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'FEED-PIGSG-25',
-                'name' => 'Pig Starter/Grower Feed — 25 kg',
+                'name' => 'Pig Starter/Grower Feed',
                 'brand' => 'B-Meg',
                 'cat_slug' => 'animal-feed',
                 'category' => 'Animal Feed',
@@ -1285,7 +1285,7 @@ class StoreCatalogSeeder extends Seeder
             ],
             [
                 'sku' => 'POST-PPSACK25',
-                'name' => 'PP Rice Grain Sack (25 kg) — 25 pcs',
+                'name' => 'PP Rice Grain Sack (25 kg)',
                 'brand' => 'SackMaster',
                 'cat_slug' => 'post-harvest-and-storage',
                 'category' => 'Post-Harvest and Storage',

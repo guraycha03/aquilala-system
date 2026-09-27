@@ -270,6 +270,47 @@
         background: #f8fafc; 
         color: #0f172a;
     }
+
+    /* Existing image gallery manager */
+    .existing-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+        margin-bottom: 6px;
+    }
+    .existing-gallery-item {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #f8fafc;
+    }
+    .existing-gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .existing-gallery-tag {
+        position: absolute; top: 6px; left: 6px;
+        font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+        background: #166534; color: #ffffff;
+        padding: 3px 7px; border-radius: 5px;
+    }
+    .existing-gallery-actions {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        display: flex; gap: 4px; justify-content: center;
+        padding: 6px;
+        background: linear-gradient(to top, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0));
+    }
+    .gallery-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        border: none; border-radius: 6px; cursor: pointer;
+        font-size: 11px; font-weight: 700; font-family: inherit;
+        padding: 5px 8px;
+        transition: all 0.2s;
+    }
+    .gallery-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .gallery-btn-main { background: #ffffff; color: #166534; flex: 1; }
+    .gallery-btn-main:hover { background: #dcfce7; }
+    .gallery-btn-delete { background: #ffffff; color: #e11d48; }
+    .gallery-btn-delete:hover { background: #ffe4e6; color: #be123c; }
 </style>
 
 <x-breadcrumb :items="[
@@ -321,7 +362,8 @@
 
                 <div class="form-group full-width">
                     <label for="name">Product Name <span class="required-star">*</span></label>
-                    <input type="text" class="form-control" id="name" name="name" value="{{ old('name', $product->name) }}" placeholder="e.g. Premium Urea Fertilizer (46-0-0)" required>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ old('name', $product->name) }}" placeholder="e.g. Urea Fertilizer (46-0-0)" maxlength="255" required>
+                    <span class="hint">Just the product name — leave out the weight or volume, that goes in the size field below.</span>
                 </div>
 
                 <div class="form-group">
@@ -388,13 +430,18 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="package_size">Package Size</label>
+                    <label for="package_size">Size / Measure</label>
                     <input type="number" class="form-control" id="package_size" name="package_size" value="{{ old('package_size', $product->package_size) }}" placeholder="e.g. 50" step="0.01" min="0">
                 </div>
 
                 <div class="form-group">
-                    <label for="package_unit">Package Unit</label>
-                    <input type="text" class="form-control" id="package_unit" name="package_unit" value="{{ old('package_unit', $product->package_unit) }}" placeholder="e.g. kg, L, bag">
+                    <label for="package_unit">Unit</label>
+                    <input type="text" class="form-control" id="package_unit" name="package_unit" value="{{ old('package_unit', $product->package_unit) }}" placeholder="e.g. kg, L, bag" list="package_units" maxlength="50">
+                    <datalist id="package_units">
+                        @foreach(\App\Models\Product::sizeUnitSuggestions() as $unit)
+                            <option value="{{ $unit }}"></option>
+                        @endforeach
+                    </datalist>
                 </div>
 
                 <div class="form-group">
@@ -424,6 +471,12 @@
                     <input type="text" class="form-control" id="price_unit" name="price_unit" value="{{ old('price_unit', $product->price_unit) }}" placeholder="e.g. Per Sack, Per Kg, Per Liter">
                 </div>
 
+                <x-product-name-preview
+                    :name="old('name', $product->name)"
+                    :size="old('package_size', $product->package_size)"
+                    :unit="old('package_unit', $product->package_unit)"
+                />
+
                 <!-- SECTION 3: INVENTORY & STATUS -->
                 <div class="section-header">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
@@ -437,7 +490,12 @@
 
                 <div class="form-group">
                     <label for="stock_unit">Stock Unit Label</label>
-                    <input type="text" class="form-control" id="stock_unit" name="stock_unit" value="{{ old('stock_unit', $product->stock_unit) }}" placeholder="e.g. bags, pieces, liters">
+                    <input type="text" class="form-control" id="stock_unit" name="stock_unit" value="{{ old('stock_unit', $product->stock_unit) }}" placeholder="e.g. bags, pieces, liters" list="stock_units" maxlength="50">
+                    <datalist id="stock_units">
+                        @foreach(['pieces', 'pcs', 'sacks', 'bags', 'packs', 'packets', 'sachets', 'bottles', 'cans', 'boxes', 'kits', 'units', 'liters', 'rolls', 'sets'] as $unit)
+                            <option value="{{ $unit }}"></option>
+                        @endforeach
+                    </datalist>
                 </div>
 
                 <div class="form-group">
@@ -456,36 +514,69 @@
                     </select>
                 </div>
 
-                <!-- SECTION 4: MEDIA ATTACHMENTS -->
+                <x-product-spec-sections
+                    :fertilizer="$product->fertilizerDetail"
+                    :registration="$product->registration"
+                />
+
+                <!-- SECTION 4: PRODUCT PHOTOS -->
                 <div class="section-header">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                    Product Image <span style="font-weight: 400; font-size: 13px; color: #64748b;">(Optional)</span>
+                    Product Photos <span style="font-weight: 400; font-size: 13px; color: #64748b;">(Optional)</span>
                 </div>
 
-                <div class="form-group full-width">
-                    <label for="main_image">Main Display Photo</label>
-                    <div class="image-management-wrapper">
-                        <!-- Image Preview Box -->
-                        <div class="current-image-card">
-                            @php
-                                $existingImg = $product->image_path ?? $product->main_image;
-                            @endphp
-                            <img id="image_preview" 
-                                 src="{{ !empty($existingImg) ? asset('storage/' . $existingImg) : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' }}" 
-                                 alt="Preview" 
-                                 class="img-preview">
-                            <span class="hint" id="preview_label">{{ !empty($existingImg) ? 'Current Image' : 'No Image' }}</span>
+                @php
+                    $existingImages = $product->gallery;
+                    $slotsLeft = max(0, \App\Models\Product::MAX_IMAGES - $existingImages->count());
+                @endphp
+
+                @if($existingImages->isNotEmpty())
+                    <div class="form-group full-width">
+                        <label>Uploaded Images <span class="hint" style="display: inline; font-weight: 400;">({{ $existingImages->count() }})</span></label>
+                        <div class="existing-gallery">
+                            @foreach($existingImages as $image)
+                                <div class="existing-gallery-item">
+                                    <img src="{{ asset('storage/' . $image->file_path) }}" alt="{{ $product->name }}" loading="lazy">
+                                    @if($image->image_type === 'main')
+                                        <span class="existing-gallery-tag">MAIN</span>
+                                    @endif
+                                    <div class="existing-gallery-actions">
+                                        @if($image->image_type !== 'main')
+                                            <form method="POST" action="{{ route('store.products.images.main', [$product->id, $image->id]) }}" style="margin:0;">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="gallery-btn gallery-btn-main" title="Use as cover photo">Set main</button>
+                                            </form>
+                                        @endif
+                                        <form method="POST" action="{{ route('store.products.images.destroy', [$product->id, $image->id]) }}" style="margin:0;"
+                                              data-aqui-confirm="Remove this image from the product?" data-aqui-danger data-aqui-confirm-label="Remove">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="gallery-btn gallery-btn-delete" title="Remove image">
+                                                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
-
-                        <!-- Dropzone -->
-                        <label class="file-dropzone" for="main_image">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                            <div style="font-size: 14px; font-weight: 600; color: #334155;" id="filename_display">Click to upload or replace image</div>
-                            <div class="hint" style="margin-top: 4px;">PNG, JPG, WebP or GIF up to 5MB</div>
-                            <input type="file" id="main_image" name="main_image" accept="image/jpeg,image/png,image/webp,image/gif" style="display: none;" onchange="handleImagePreview(this)">
-                        </label>
+                        <span class="hint">The cover photo is what catalog cards show. Removing the cover promotes the next image automatically.</span>
                     </div>
-                </div>
+                @endif
+
+                @if($slotsLeft > 0)
+                    <x-product-image-picker
+                        id="product_images"
+                        :max="$slotsLeft"
+                        label="Add More Images"
+                        :hint="'PNG, JPG, WebP or GIF up to 5MB each · ' . $slotsLeft . ' slot' . ($slotsLeft === 1 ? '' : 's') . ' left'"
+                    />
+                @else
+                    <p class="hint">
+                        This product has reached the {{ \App\Models\Product::MAX_IMAGES }}-image limit.
+                        Remove an image above to add another.
+                    </p>
+                @endif
             </div>
 
             <!-- Form Buttons -->
@@ -499,24 +590,5 @@
         </form>
     </div>
 </div>
-
-<script>
-    function handleImagePreview(input) {
-        const file = input.files[0];
-        const preview = document.getElementById('image_preview');
-        const label = document.getElementById('preview_label');
-        const nameDisplay = document.getElementById('filename_display');
-
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                label.innerText = 'New Selected Image';
-                nameDisplay.innerText = file.name;
-            }
-            reader.readAsDataURL(file);
-        }
-    }
-</script>
 
 @endsection

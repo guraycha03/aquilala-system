@@ -404,7 +404,7 @@ $unit = $farmerCrop->land_area_unit === 'ha' ? 'ha' : $farmerCrop->land_area_uni
             </div>
             <div class="detail-item">
                 <div class="detail-label">Seed / Product Used</div>
-                <div class="detail-value">{{ $farmerCrop->product?->name ?? '—' }}</div>
+                <div class="detail-value">{{ $farmerCrop->product?->display_name ?? '—' }}</div>
             </div>
             <div class="detail-item">
                 <div class="detail-label">Growth Stage</div>

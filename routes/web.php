@@ -18,6 +18,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PasswordSetupController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductImportController;
 use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\StoreDirectoryController;
@@ -284,10 +285,23 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // Product management routes
         Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+
+        // Bulk import from CSV / Excel. Declared before /products/{product} so
+        // the literal path is not captured as a product id.
+        Route::get('/products/import', [ProductImportController::class, 'create'])->name('products.import');
+        Route::post('/products/import/preview', [ProductImportController::class, 'preview'])->name('products.import.preview');
+        Route::post('/products/import/revalidate', [ProductImportController::class, 'revalidate'])->name('products.import.revalidate');
+        Route::post('/products/import/ai-fix', [ProductImportController::class, 'aiFix'])->name('products.import.ai-fix');
+        Route::post('/products/import/confirm', [ProductImportController::class, 'confirm'])->name('products.import.confirm');
+        Route::post('/products/import/cancel', [ProductImportController::class, 'cancel'])->name('products.import.cancel');
+        Route::get('/products/import-template/{format}', [ProductImportController::class, 'template'])->name('products.import.template');
+
         Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
         Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+        Route::patch('/products/{product}/images/{image}', [ProductController::class, 'updateMainImage'])->name('products.images.main');
+        Route::delete('/products/{product}/images/{image}', [ProductController::class, 'destroyImage'])->name('products.images.destroy');
     });
 
     /*
@@ -361,6 +375,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::post('/reviews/{review}/approve', [AdminReviewController::class, 'approve'])->name('reviews.approve');
         Route::post('/reviews/{review}/disapprove', [AdminReviewController::class, 'disapprove'])->name('reviews.disapprove');
         Route::get('/quotations', [QuotationController::class, 'adminIndex'])->name('quotations.index');
+        Route::get('/quotations/products', [QuotationController::class, 'adminProducts'])->name('quotations.products');
         Route::get('/activity', [QuotationController::class, 'adminActivity'])->name('activity.index');
         Route::get('/analytics', function () {
             // Grouped under the new "Analytics" category — the Demand Trends tab

@@ -692,7 +692,7 @@
                   <div class="mx-prods">
                     @foreach($flattened->take(3) as $formula)
                       <div class="mx-prod">
-                        <b>{{ $formula->product->name ?? 'Unknown Product' }}</b>
+                        <b>{{ $formula->product->display_name ?? 'Unknown Product' }}</b>
                         <span class="r">{{ number_format((float) $formula->rate_per_hectare, 2) }} {{ $formula->unit }}/ha</span>
                       </div>
                     @endforeach

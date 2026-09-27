@@ -200,7 +200,7 @@
                 </div>
                 <div class="rv-product">
                   <svg viewBox="0 0 24 24" width="12" height="12" stroke="#94a3b8" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                  <a href="{{ route('farmer.products.show', $review->product_id) }}" target="_blank">{{ $review->product?->name ?? 'Deleted product' }}</a>
+                  <a href="{{ route('farmer.products.show', $review->product_id) }}" target="_blank">{{ $review->product?->display_name ?? 'Deleted product' }}</a>
                   <span class="rv-store">· {{ $storeName }}</span>
                 </div>
                 <div class="rv-comment {{ $review->comment ? '' : 'blank' }}">

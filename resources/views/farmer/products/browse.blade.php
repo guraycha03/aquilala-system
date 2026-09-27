@@ -425,11 +425,11 @@
 <div class="product-grid" id="productGrid">
   @forelse($products as $product)
     <x-product-card :product="$product" href="{{ route('farmer.products.show', $product->id) }}"
-       data-name="{{ strtolower($product->name) }}"
+       data-name="{{ strtolower($product->name . ' ' . ($product->size_label ?? '')) }}"
        data-description="{{ strtolower($product->description ?? '') }}"
        data-brand="{{ strtolower($product->brand ?? '') }}"
        data-sku="{{ strtolower($product->sku ?? '') }}"
-       data-category="{{ strtolower($product->category?->name ?? $product->getOriginal('category') ?? '') }}"
+       data-category="{{ strtolower($product->category_display_name) }}"
        data-season="{{ $product->recommended_season ?? '' }}">
       <x-slot name="body">
         <div class="card-rating">
