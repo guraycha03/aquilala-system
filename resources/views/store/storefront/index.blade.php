@@ -318,13 +318,6 @@
         letter-spacing: 0.03em;
     }
 
-    .sku-code {
-        font-size: 11px; 
-        color: #94a3b8; 
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-weight: 500;
-    }
-
     .product-title {
         font-size: 16px; 
         color: #0f172a; 
@@ -405,12 +398,6 @@
         font-weight: 800; 
         color: #0f172a; 
         letter-spacing: -0.01em;
-    }
-
-    .units-count {
-        font-size: 12px; 
-        color: #64748b; 
-        font-weight: 500;
     }
 
     /* Actions */
@@ -629,7 +616,6 @@
            data-cat="{{ strtolower(trim($product->category_display_name)) }}"
            data-season="{{ in_array($product->recommended_season ?? 'all', ['wet', 'dry'], true) ? $product->recommended_season : 'all' }}"
            data-stock="{{ (int) ($product->stock_quantity ?? 0) <= 0 ? 'out' : ((int) ($product->stock_quantity ?? 0) <= (int) ($product->reorder_threshold ?? 5) ? 'low' : 'in') }}">
-          <x-slot name="footer"><span class="units-count" style="color: #16a34a; font-weight: 600;">In Stock</span></x-slot>
         </x-product-card>
         @endforeach
     </div>

@@ -122,7 +122,7 @@
   .prod-carousel-wrap { position: relative; }
   .prod-carousel { display: flex; gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; padding: 2px 2px 10px; }
   .prod-carousel .product-card { flex: 0 0 230px; scroll-snap-align: start; }
-  .prod-carousel .product-title { font-size: 14px; margin-top: 8px; }
+  .prod-carousel .product-title { font-size: 13.5px; margin: 0 0 6px; }
   .prod-carousel::-webkit-scrollbar { height: 8px; }
   .prod-carousel::-webkit-scrollbar-track { background: transparent; }
   .prod-carousel::-webkit-scrollbar-thumb { background: #dbe5df; border-radius: 8px; }

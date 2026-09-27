@@ -173,9 +173,13 @@ class Product extends Model
 
     public function scopeTopRated($query)
     {
-        return $query->withCount('approvedReviews')
+        // whereHas rather than having('approved_reviews_count', '>', 0): the
+        // HAVING form relies on a sub-select alias, which MySQL accepts but
+        // SQLite rejects outright ("HAVING clause on a non-aggregate query").
+        // Both mean "at least one approved review".
+        return $query->whereHas('approvedReviews')
+            ->withCount('approvedReviews')
             ->withAvg('approvedReviews as avg_rating', 'rating')
-            ->having('approved_reviews_count', '>', 0)
             ->orderByDesc('avg_rating')
             ->orderByDesc('approved_reviews_count');
     }

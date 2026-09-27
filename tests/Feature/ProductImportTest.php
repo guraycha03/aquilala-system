@@ -679,18 +679,24 @@ class ProductImportTest extends TestCase
 
         $html = $this->actingAs($this->store)->get(route('store.products.import'))->getContent();
 
-        $head = substr($html, strpos($html, '<thead>'), strpos($html, '</thead>') - strpos($html, '<thead>'));
-        $firstRow = substr($html, strpos($html, '<tbody>'), strpos($html, '</tr>') - strpos($html, '<tbody>'));
+        // Only the review table, not the upload-phase column reference table.
+        $start = strpos($html, 'id="reviewTable"');
+        $this->assertNotFalse($start, 'the review table must be rendered');
+
+        $headStart = strpos($html, '<thead>', $start);
+        $head = substr($html, $headStart, strpos($html, '</thead>', $headStart) - $headStart);
+
+        $bodyStart = strpos($html, '<tbody>', $start);
+        $body = substr($html, $bodyStart, strpos($html, '</tr>', $bodyStart) - $bodyStart);
+
+        // Count the cells, not the <thead>/<tbody> tags, which also start "<th".
+        $headerCells = preg_match_all('/<th[\s>]/', $head);
+        $bodyCells = preg_match_all('/<td[\s>]/', $body);
 
         // The body skips category_id, so a header left behind for it shifts every
         // other label one column right of the input it describes.
-        $this->assertSame(
-            substr_count($head, '<th'),
-            substr_count($firstRow, '<td'),
-            'the review table header and body must render the same number of columns'
-        );
-
-        $this->assertStringNotContainsString('>Category ID<', $head);
+        $this->assertGreaterThan(0, $bodyCells);
+        $this->assertSame($headerCells, $bodyCells, 'header and body must render the same number of columns');
     }
 
     public function test_skipped_rows_stay_readable(): void
@@ -704,8 +710,12 @@ class ProductImportTest extends TestCase
         // with a readable surface rather than faded out with opacity.
         $this->assertStringContainsString('Unknown category', $html);
         $this->assertStringContainsString('skip-tag', $html);
-        $this->assertStringNotContainsString('opacity: .45', $html);
-        $this->assertStringNotContainsString('opacity: 0.45', $html);
+
+        // Scoped to the rule itself: the shared layout uses opacity elsewhere.
+        $ruleStart = strpos($html, 'table.review tbody tr.is-off {');
+        $this->assertNotFalse($ruleStart, 'the skipped-row rule must exist');
+        $rule = substr($html, $ruleStart, strpos($html, '}', $ruleStart) - $ruleStart);
+        $this->assertStringNotContainsString('opacity', $rule);
     }
 
     public function test_review_buttons_post_the_visible_cells_to_each_endpoint(): void    {

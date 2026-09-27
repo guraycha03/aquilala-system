@@ -18,11 +18,7 @@ class ProductReviewController extends Controller
     {
         $products = Product::active()
             ->with(['category.parent', 'storeOwner', 'mainImage', 'approvedReviews.farmer'])
-            ->withCount('approvedReviews')
-            ->withAvg('approvedReviews as avg_rating', 'rating')
-            ->having('approved_reviews_count', '>', 0)
-            ->orderByDesc('avg_rating')
-            ->orderByDesc('approved_reviews_count')
+            ->topRated()
             ->get();
 
         $totalReviews = ProductReview::approved()->count();

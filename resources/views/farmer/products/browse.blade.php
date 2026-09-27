@@ -449,9 +449,6 @@
           @if($product->brand)
             <span class="meta-tag">Brand: {{ $product->brand }}</span>
           @endif
-          @if($product->sku)
-            <span class="meta-tag">Code: {{ $product->sku }}</span>
-          @endif
         </div>
       </x-slot>
       <x-slot name="footer">
