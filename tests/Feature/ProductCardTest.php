@@ -98,12 +98,63 @@ class ProductCardTest extends TestCase
     {
         $html = $this->actingAs($this->farmer)->get(route('farmer.products.browse'))->getContent();
 
-        // Name with its measure, price, category and stock status.
+        // Name with its measure, price, category and the season icon.
         $this->assertStringContainsString('Urea Fertilizer', $html);
         $this->assertStringContainsString('50 kg', $html);
         $this->assertStringContainsString('1,250.50', $html);
         $this->assertStringContainsString('Fertilizer', $html);
-        $this->assertStringContainsString('In Stock', $html);
+        $this->assertStringContainsString('pc-season', $html);
+    }
+
+    public function test_no_catalog_surface_shows_stock_brand_or_stock_badges(): void
+    {
+        // Give the product a brand and make stock look scarce, so any leak of
+        // that data onto the card is detectable.
+        $this->product->update(['brand' => 'Philphos', 'stock_quantity' => 1]);
+
+        $surfaces = [
+            'store catalog'  => fn () => $this->actingAs($this->store)->get(route('store.storefront.index')),
+            'farmer browse'  => fn () => $this->actingAs($this->farmer)->get(route('farmer.products.browse')),
+            'farmer reviews' => fn () => $this->actingAs($this->farmer)->get(route('farmer.reviews.index')),
+            'owner dashboard' => fn () => $this->actingAs($this->store)->get(route('store.dashboard')),
+        ];
+
+        foreach ($surfaces as $label => $visit) {
+            $html = $visit()->assertOk()->getContent();
+
+            $this->assertStringNotContainsString('Philphos', $html, "the brand must not appear on the {$label} card");
+            $this->assertStringNotContainsString('Low Stock', $html, "the stock badge must not appear on the {$label} card");
+            $this->assertStringNotContainsString('In Stock', $html, "the stock badge must not appear on the {$label} card");
+            $this->assertStringNotContainsString('left', $html, "remaining stock must not appear on the {$label} card");
+            $this->assertStringNotContainsString('stock-badge', $html, "the stock badge markup must be gone from the {$label} card");
+        }
+    }
+
+    public function test_an_unrated_product_shows_five_empty_stars(): void
+    {
+        $html = $this->actingAs($this->farmer)->get(route('farmer.products.browse'))->getContent();
+
+        // No reviews exist, so nothing may be filled.
+        $this->assertSame(5, substr_count($html, 'pc-star-empty'));
+        $this->assertSame(0, substr_count($html, 'pc-star-filled'));
+        $this->assertStringContainsString('Not yet rated', $html);
+    }
+
+    public function test_a_rated_product_fills_its_stars(): void
+    {
+        $review = $this->product->reviews()->create([
+            'farmer_id' => $this->farmer->id,
+            'rating'    => 4,
+            'status'    => 'approved',
+        ]);
+
+        $this->assertNotNull($review);
+
+        $html = $this->actingAs($this->farmer)->get(route('farmer.products.browse'))->getContent();
+
+        $this->assertSame(4, substr_count($html, 'pc-star-filled'));
+        $this->assertSame(1, substr_count($html, 'pc-star-empty'));
+        $this->assertStringContainsString('Rated 4.0 out of 5', $html);
     }
 
     public function test_the_card_is_responsive_and_clamped(): void

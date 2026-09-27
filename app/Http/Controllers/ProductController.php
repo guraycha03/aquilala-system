@@ -109,7 +109,9 @@ class ProductController extends Controller
     public function storefront()
     {
         $products = Product::where('user_id', Auth::id())
-            ->with(['category', 'mainImage', 'images'])
+            // The catalog card renders star ratings, which are accessors over
+            // this relation. Eager load it or every card costs its own query.
+            ->with(['category', 'mainImage', 'images', 'approvedReviews'])
             ->latest()
             ->get();
 

@@ -9,9 +9,11 @@
 <style>
   /* ── Shared product card (catalog style) ─────────────────────────── */
   /* Used by the store storefront, farmer browse, farmer reviews and the
-     store-owner dashboard, so every role gets the same compact card.
-     Sized down at phone widths: the grid is already 2 columns there, which
-     leaves each card roughly 170px wide. */
+     store-owner dashboard, so every role gets the same card.
+     Deliberately minimal: name, price, rating, season. Stock level, quantity
+     and brand all live on the product detail page — a shopper scanning a
+     catalog does not decide on those, and each extra line made the card
+     taller than its neighbours in the two-column phone grid. */
   .product-card {
     position: relative;
     background: #ffffff;
@@ -50,7 +52,7 @@
   }
   .product-card:hover .product-card-img { transform: scale(1.03); }
   .product-details {
-    padding: 12px 13px;
+    padding: 11px 13px 12px;
     flex-grow: 1;
     display: flex; flex-direction: column;
     min-width: 0;
@@ -60,48 +62,49 @@
     font-size: 10px; color: #0f766e; background: rgba(204, 251, 241, 0.92);
     padding: 3px 8px; border-radius: 6px;
     text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em;
-    max-width: calc(100% - 20px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: calc(100% - 62px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
   }
 
+  /* Season is the only badge left, and it is just the icon in the corner. */
+  .pc-season {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 7px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  }
+  .pc-season svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .pc-season.season-wet { background: rgba(224, 242, 254, 0.94); color: #0369a1; }
+  .pc-season.season-dry { background: rgba(255, 237, 213, 0.94); color: #c2410c; }
+  .pc-season.season-all { background: rgba(240, 253, 244, 0.94); color: #166534; }
+
   /* Two lines maximum: a long product name is the main reason a card in a
      two-column phone grid grew taller than the rest of the row. */
   .product-title {
-    font-size: 14.5px; color: #0f172a; font-weight: 700; margin: 0 0 8px;
+    font-size: 14.5px; color: #0f172a; font-weight: 700; margin: 0 0 6px;
     line-height: 1.35;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     overflow: hidden;
     overflow-wrap: break-word;
   }
-  .badge-group {
-    display: flex; align-items: center; gap: 6px;
-    margin-bottom: 8px; flex-wrap: wrap;
-  }
-  .season-badge {
-    display: inline-flex; align-items: center; gap: 3px;
-    font-size: 10px; font-weight: 700; line-height: 1;
-    white-space: nowrap; flex-shrink: 0;
-    padding: 3px 7px; border-radius: 6px;
-  }
-  .season-badge svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .season-badge.season-wet { background: #e0f2fe; color: #0369a1; }
-  .season-badge.season-dry { background: #ffedd5; color: #c2410c; }
-  .season-badge.season-all { background: #f0fdf4; color: #166534; }
-  .stock-badge {
-    display: inline-flex; align-items: center; gap: 3px;
-    padding: 3px 7px; border-radius: 6px;
-    font-size: 10px; font-weight: 600;
-    white-space: nowrap; flex-shrink: 0;
-  }
-  .stock-badge svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .stock-badge.stock-low { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
-  .stock-badge.stock-ok { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
-  .pc-body { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; min-width: 0; }
+
+  /* Unrated products still show five grey stars, so the row of cards keeps a
+     consistent shape and an unrated product does not look broken. */
+  .pc-rating { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; min-width: 0; }
+  .pc-stars { display: inline-flex; gap: 1px; flex-shrink: 0; }
+  .pc-stars svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+  .pc-stars .pc-star-empty { fill: #dbe3e0; }
+  .pc-stars .pc-star-filled { fill: #f59e0b; }
+  .pc-rating-text { font-size: 11.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pc-rating-text b { color: #334155; font-weight: 700; }
+
+  .pc-body { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; min-width: 0; }
 
   /* No divider above the price: without a body slot it would just draw a line
      through empty space. The footer is pushed down by the title instead. */
-  .card-footer { margin-top: auto; padding-top: 8px; background: transparent; display: block; }
+  .card-footer { margin-top: auto; padding-top: 4px; background: transparent; display: block; }
   .price-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
   .price-tag {
     font-size: 16px; font-weight: 700; color: #0f172a;
@@ -126,44 +129,48 @@
   /* ── Phone ───────────────────────────────────────────────────────── */
   @media (max-width: 640px) {
     .product-image-container { height: calc(var(--img-h, 190px) * .7); }
-    .product-details { padding: 10px 11px; }
-    .product-title { font-size: 13.5px; margin-bottom: 6px; }
-    .category-chip { font-size: 9px; padding: 2px 7px; top: 8px; left: 8px; }
-    .badge-group { gap: 5px; margin-bottom: 6px; }
-    .season-badge, .stock-badge { font-size: 9.5px; padding: 2px 6px; }
-    .season-badge svg, .stock-badge svg { width: 11px; height: 11px; }
-    .pc-body { gap: 5px; margin-bottom: 6px; }
-    .card-footer { padding-top: 6px; }
+    .product-details { padding: 9px 11px 10px; }
+    .product-title { font-size: 13.5px; margin-bottom: 5px; }
+    .category-chip { font-size: 9px; padding: 2px 7px; top: 8px; left: 8px; max-width: calc(100% - 54px); }
+    .pc-season { top: 8px; right: 8px; width: 23px; height: 23px; }
+    .pc-season svg { width: 13px; height: 13px; }
+    .pc-rating { gap: 4px; margin-bottom: 5px; }
+    .pc-stars svg { width: 11px; height: 11px; }
+    .pc-rating-text { font-size: 11px; }
+    .pc-body { gap: 5px; margin-bottom: 5px; }
+    .card-footer { padding-top: 2px; }
     .price-row { gap: 6px; margin-bottom: 6px; }
     .price-tag { font-size: 15px; }
     .btn-action { padding: 6px 8px; font-size: 12px; }
     .action-group { gap: 5px; }
   }
 
-  /* Very narrow phones: the icon alone still reads, the word does not. */
+  /* Very narrow phones: the whole card shrinks another step. */
   @media (max-width: 400px) {
     .product-image-container { height: calc(var(--img-h, 190px) * .58); }
     .product-title { font-size: 12.5px; }
     .price-tag { font-size: 14px; }
-    .season-label { display: none; }
+    .pc-stars svg { width: 10px; height: 10px; }
     .btn-action svg { width: 12px; height: 12px; }
   }
 </style>
 @endonce
 
 @php
-  $qty = (int) ($product->stock_quantity ?? 0);
-  $threshold = (int) ($product->reorder_threshold ?? 5);
-  $lowStock = $qty <= $threshold;
   $season = $product->recommended_season ?? '';
   $seasonClass = $season === 'wet' ? 'season-wet' : ($season === 'dry' ? 'season-dry' : 'season-all');
-  $seasonLabel = $season === 'wet' ? 'Wet' : ($season === 'dry' ? 'Dry' : 'All');
+  $seasonLabel = $season === 'wet' ? 'Wet season' : ($season === 'dry' ? 'Dry season' : 'All seasons');
   $displayName = $product->display_name;
+
+  // Accessors over the approvedReviews relation, so any surface that renders
+  // the card can show stars without knowing where the number came from.
+  $rating = $product->average_rating;
+  $ratingCount = (int) $product->review_count;
+  $filledStars = $rating === null ? 0 : (int) round($rating);
 @endphp
 
-{{-- The SKU is deliberately not on the card. It is a warehouse identifier,
-     not something a shopper scans a catalog for, and it cost a whole line on
-     a phone-sized card. It stays on the product detail page. --}}
+{{-- Stock level, remaining quantity and brand are intentionally absent: they
+     are stock-control data, and they belong on the product detail page. --}}
 <div {{ $attributes->merge(['class' => 'product-card']) }}>
   @if($href)
     <a href="{{ $href }}" class="product-card-link" aria-label="View {{ $displayName }}"></a>
@@ -171,6 +178,17 @@
 
   <div class="product-image-container" style="--img-h: {{ $imageHeight }};">
     <span class="category-chip">{{ $product->category_display_name }}</span>
+
+    <span class="pc-season {{ $seasonClass }}" title="{{ $seasonLabel }}" aria-label="{{ $seasonLabel }}">
+      @if($season === 'wet')
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>
+      @elseif($season === 'dry')
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+      @else
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+      @endif
+    </span>
+
     @if($product->mainImage && !empty($product->mainImage->file_path))
       <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $displayName }}" class="product-card-img" loading="lazy">
     @elseif($product->images && $product->images->first())
@@ -185,27 +203,15 @@
   <div class="product-details">
     <h3 class="product-title" title="{{ $displayName }}">{{ $displayName }}</h3>
 
-    <div class="badge-group">
-      <span class="season-badge {{ $seasonClass }}">
-        @if($season === 'wet')
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>
-        @elseif($season === 'dry')
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-        @else
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-        @endif
-        <span class="season-label">{{ $seasonLabel }}</span>
+    <div class="pc-rating">
+      <span class="pc-stars" role="img" aria-label="{{ $rating === null ? 'Not yet rated' : 'Rated ' . $rating . ' out of 5' }}">
+        @for($i = 1; $i <= 5; $i++)
+          <svg class="{{ $i <= $filledStars ? 'pc-star-filled' : 'pc-star-empty' }}" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        @endfor
       </span>
-
-      <span class="stock-badge {{ $lowStock ? 'stock-low' : 'stock-ok' }}">
-        @if($lowStock)
-          <svg viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-          <span class="season-label">Low</span>
-        @else
-          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          <span class="season-label">In Stock</span>
-        @endif
-      </span>
+      @if($rating !== null)
+        <span class="pc-rating-text"><b>{{ number_format($rating, 1) }}</b> ({{ $ratingCount }})</span>
+      @endif
     </div>
 
     @if(isset($body))

@@ -275,15 +275,6 @@
   .season-dry { background: #ffedd5; color: #c2410c; }
   .season-all { background: #f0fdf4; color: #166534; }
 
-  .card-rating { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
-  .card-rating .stars { display: inline-flex; gap: 2px; }
-  .card-rating .stars svg { width: 13px; height: 13px; fill: currentColor; stroke: none; }
-  .card-rating .stars .star-empty { fill: #e2e8f0; }
-  .card-rating .stars .star-filled { fill: #f59e0b; }
-  .card-rating .r-avg { font-size: 13px; font-weight: 800; color: #143d23; }
-  .card-rating .r-count { font-size: 11px; color: #94a3b8; }
-  .card-rating .r-none { font-size: 11px; color: #cbd5e1; }
-
   .product-title {
     font-size: 16px;
     font-weight: 700;
@@ -297,21 +288,6 @@
     line-height: 1.5;
     margin-bottom: 14px;
   }
-  .meta-tags {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .meta-tag {
-    font-size: 11px;
-    color: #64748b;
-    background: #f8fafc;
-    border: 1px solid #f1f5f9;
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-weight: 500;
-  }
-
   .card-footer {
     padding: 14px 20px;
     background: #f8fafc;
@@ -324,13 +300,6 @@
     font-size: 18px;
     font-weight: 800;
     color: #143d23;
-  }
-  .stock-status {
-    font-size: 12px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 5px;
   }
   .stock-in { color: #16a34a; }
   .stock-low { color: #dc2626; }
@@ -430,34 +399,7 @@
        data-brand="{{ strtolower($product->brand ?? '') }}"
        data-sku="{{ strtolower($product->sku ?? '') }}"
        data-category="{{ strtolower($product->category_display_name) }}"
-       data-season="{{ $product->recommended_season ?? '' }}">
-      <x-slot name="body">
-        <div class="card-rating">
-          @if($product->review_count > 0)
-            <span class="stars">
-              @for($i = 1; $i <= 5; $i++)
-                <svg class="{{ $i <= (int) round($product->average_rating) ? 'star-filled' : 'star-empty' }}" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              @endfor
-            </span>
-            <span class="r-avg">{{ number_format($product->average_rating, 1) }}</span>
-            <span class="r-count">({{ $product->review_count }})</span>
-          @else
-            <span class="r-none">No reviews yet</span>
-          @endif
-        </div>
-        <div class="meta-tags">
-          @if($product->brand)
-            <span class="meta-tag">Brand: {{ $product->brand }}</span>
-          @endif
-        </div>
-      </x-slot>
-      <x-slot name="footer">
-        <span class="stock-status {{ $product->is_low_stock ? 'stock-low' : 'stock-in' }}">
-          <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block;"></span>
-          {{ $product->stock_quantity }} {{ $product->stock_unit ?? 'pieces' }} left
-        </span>
-      </x-slot>
-    </x-product-card>
+       data-season="{{ $product->recommended_season ?? '' }}" />
   @empty
     <div class="empty-state" id="emptyStateServer">
       <div class="empty-icon">

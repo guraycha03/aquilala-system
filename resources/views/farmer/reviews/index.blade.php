@@ -64,13 +64,6 @@
   .results-info { font-size: 13px; color: #94a3b8; margin-bottom: 16px; }
   .results-info strong { color: #475569; font-weight: 700; }
 
-  /* Star rating renderer */
-  .stars { display: inline-flex; align-items: center; gap: 2px; }
-  .stars svg { width: 16px; height: 16px; fill: currentColor; stroke: none; }
-  .stars .star-empty { fill: #e2e8f0; }
-  .stars .star-filled { fill: #f59e0b; }
-  .stars.sm svg { width: 13px; height: 13px; }
-
   /* Product grid */
   .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   @media (max-width: 1200px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -116,9 +109,6 @@
     max-width: 55%;
     margin-left: 6px;
   }
-  .rating-block { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-  .rating-num { font-size: 18px; font-weight: 800; color: #143d23; }
-  .rating-count { font-size: 11px; color: #64748b; white-space: nowrap; }
   .product-title { font-size: 13.5px; font-weight: 700; color: #143d23; margin-bottom: 4px; line-height: 1.35; }
   .store-name { font-size: 11.5px; color: #64748b; display: flex; align-items: center; gap: 5px; }
   .store-name svg { width: 12px; height: 12px; stroke: #94a3b8; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
@@ -159,8 +149,6 @@
     .card-body { padding: 14px; }
     .card-footer { padding: 12px 14px; }
     .product-title { font-size: 13px; }
-    .rating-num { font-size: 18px; }
-    .rating-count { font-size: 11px; }
   }
 </style>
 
@@ -231,16 +219,6 @@
             @endif
           </div>
 
-          <div class="rating-block">
-            <span class="rating-num">{{ number_format($product->avg_rating, 1) }}</span>
-            <span class="stars">
-              @for($i = 1; $i <= 5; $i++)
-                <svg class="{{ $i <= (int) round($product->avg_rating) ? 'star-filled' : 'star-empty' }}" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              @endfor
-            </span>
-            <span class="rating-count">{{ number_format($product->avg_rating, 1) }} ({{ $product->reviews_count }} {{ $product->reviews_count === 1 ? 'review' : 'reviews' }})</span>
-          </div>
-
           <div class="store-name">
             <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
             {{ $product->storeOwner?->name ?? 'Unknown Merchant' }}
@@ -278,16 +256,6 @@
   const filterEmpty = document.getElementById('filterEmpty');
   const filterEmptyCategory = document.getElementById('filterEmptyCategory');
   let activeCategory = '';
-
-  // Render star row for a rating out of 5
-  function starRow(rating) {
-    let out = '<span class="stars sm">';
-    for (let i = 1; i <= 5; i++) {
-      const cls = i <= Math.round(rating) ? 'star-filled' : 'star-empty';
-      out += '<svg class="' + cls + '" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
-    }
-    return out + '</span>';
-  }
 
   function applyFilters() {
     let visible = 0;
