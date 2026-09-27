@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
 
 class ProductCardTest extends TestCase
@@ -106,27 +107,49 @@ class ProductCardTest extends TestCase
         $this->assertStringContainsString('pc-season', $html);
     }
 
-    public function test_no_catalog_surface_shows_stock_brand_or_stock_badges(): void
+    public function test_the_card_never_shows_stock_brand_or_sku(): void
     {
-        // Give the product a brand and make stock look scarce, so any leak of
-        // that data onto the card is detectable.
+        // Stock, remaining quantity and brand are stock-control data. They
+        // belong on the product detail page, so give the card a product where
+        // leaking any of them would be obvious.
+        $this->product->update([
+            'brand'          => 'Philphos',
+            'stock_quantity' => 1,
+        ]);
+
+        // Assert on the component itself rather than a whole page: the store
+        // dashboard legitimately has its own "Low Stock" panel, which is not
+        // part of the card and would produce a false failure here.
+        $html = Blade::render('<x-product-card :product="$product" />', [
+            'product' => $this->product->fresh(),
+        ]);
+
+        $this->assertStringNotContainsString('Philphos', $html, 'the brand must not appear on the card');
+        $this->assertStringNotContainsString('In Stock', $html, 'the stock badge must not appear on the card');
+        $this->assertStringNotContainsString('Low Stock', $html, 'the stock badge must not appear on the card');
+        $this->assertStringNotContainsString('left', $html, 'remaining stock must not appear on the card');
+        $this->assertStringNotContainsString('stock-badge', $html, 'the stock badge markup must be gone');
+        $this->assertStringNotContainsString('stock_unit', $html, 'the stock unit must not appear on the card');
+        $this->assertStringNotContainsString('Urea-001', $html, 'the SKU must not appear on the card');
+    }
+
+    public function test_no_catalog_page_still_renders_the_old_card_chrome(): void
+    {
         $this->product->update(['brand' => 'Philphos', 'stock_quantity' => 1]);
 
         $surfaces = [
-            'store catalog'  => fn () => $this->actingAs($this->store)->get(route('store.storefront.index')),
-            'farmer browse'  => fn () => $this->actingAs($this->farmer)->get(route('farmer.products.browse')),
-            'farmer reviews' => fn () => $this->actingAs($this->farmer)->get(route('farmer.reviews.index')),
+            'store catalog'   => fn () => $this->actingAs($this->store)->get(route('store.storefront.index')),
+            'farmer browse'   => fn () => $this->actingAs($this->farmer)->get(route('farmer.products.browse')),
+            'farmer reviews'  => fn () => $this->actingAs($this->farmer)->get(route('farmer.reviews.index')),
             'owner dashboard' => fn () => $this->actingAs($this->store)->get(route('store.dashboard')),
         ];
 
         foreach ($surfaces as $label => $visit) {
             $html = $visit()->assertOk()->getContent();
 
-            $this->assertStringNotContainsString('Philphos', $html, "the brand must not appear on the {$label} card");
-            $this->assertStringNotContainsString('Low Stock', $html, "the stock badge must not appear on the {$label} card");
-            $this->assertStringNotContainsString('In Stock', $html, "the stock badge must not appear on the {$label} card");
-            $this->assertStringNotContainsString('left', $html, "remaining stock must not appear on the {$label} card");
-            $this->assertStringNotContainsString('stock-badge', $html, "the stock badge markup must be gone from the {$label} card");
+            $this->assertStringNotContainsString('Urea-001', $html, "the SKU must not appear on the {$label} card");
+            $this->assertStringNotContainsString('stock-badge', $html, "the stock badge must be gone from the {$label} card");
+            $this->assertStringNotContainsString('stock-status', $html, "the stock line must be gone from the {$label} card");
         }
     }
 
@@ -134,26 +157,28 @@ class ProductCardTest extends TestCase
     {
         $html = $this->actingAs($this->farmer)->get(route('farmer.products.browse'))->getContent();
 
-        // No reviews exist, so nothing may be filled.
-        $this->assertSame(5, substr_count($html, 'pc-star-empty'));
-        $this->assertSame(0, substr_count($html, 'pc-star-filled'));
+        // No reviews exist, so nothing may be filled. Counting the class
+        // attribute rather than the bare name keeps the component's own
+        // stylesheet from inflating the totals.
+        $this->assertSame(5, substr_count($html, 'class="pc-star-empty"'));
+        $this->assertSame(0, substr_count($html, 'class="pc-star-filled"'));
         $this->assertStringContainsString('Not yet rated', $html);
     }
 
     public function test_a_rated_product_fills_its_stars(): void
     {
         $review = $this->product->reviews()->create([
-            'farmer_id' => $this->farmer->id,
-            'rating'    => 4,
-            'status'    => 'approved',
+            'user_id' => $this->farmer->id,
+            'rating'  => 4,
+            'status'  => 'approved',
         ]);
 
         $this->assertNotNull($review);
 
         $html = $this->actingAs($this->farmer)->get(route('farmer.products.browse'))->getContent();
 
-        $this->assertSame(4, substr_count($html, 'pc-star-filled'));
-        $this->assertSame(1, substr_count($html, 'pc-star-empty'));
+        $this->assertSame(4, substr_count($html, 'class="pc-star-filled"'));
+        $this->assertSame(1, substr_count($html, 'class="pc-star-empty"'));
         $this->assertStringContainsString('Rated 4.0 out of 5', $html);
     }
 
