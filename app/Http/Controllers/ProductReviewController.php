@@ -21,27 +21,33 @@ class ProductReviewController extends Controller
             ->topRated()
             ->get();
 
+        Product::markSavedState($products, Auth::user());
+
         $totalReviews = ProductReview::approved()->count();
 
-        $group = function (Product $product): string {
-            $cat = $product->getRelation('category');
-            if ($cat) {
-                return $cat->parent_id ? ($cat->parent->name ?? $cat->name) : $cat->name;
-            }
-            return $product->getOriginal('category') ?? 'General Supply';
-        };
+        // Facet data for the shared <x-catalog-filters> bar, built the same way
+        // as the other catalog pages (see ProductController::filterFacets).
+        $facets = [
+            'categories' => $products
+                ->flatMap(function (Product $product) {
+                    $cat = $product->getRelation('category');
+                    $names = [$product->category_display_name];
+                    if ($cat instanceof Category && $cat->parent_id && $cat->relationLoaded('parent') && $cat->parent) {
+                        $names[] = (string) $cat->parent->name;
+                    }
+                    return $names;
+                })
+                ->map(fn ($name) => trim((string) $name))
+                ->filter()
+                ->reject(fn ($name) => $name === 'Uncategorized')
+                ->unique()
+                ->sort()
+                ->values(),
+            'priceMin' => round((float) ($products->min('price') ?? 0), 2),
+            'priceMax' => round((float) ($products->max('price') ?? 0), 2),
+        ];
 
-        $categoryNames = collect()
-            ->concat(Category::active()->parents()->pluck('name'))
-            ->concat($products->map($group))
-            ->map(fn ($name) => trim((string) $name))
-            ->filter()
-            ->unique()
-            ->values()
-            ->sort()
-            ->values();
-
-        return view('farmer.reviews.index', compact('products', 'totalReviews', 'categoryNames'));
+        return view('farmer.reviews.index', compact('products', 'totalReviews') + $facets);
     }
 
     /**

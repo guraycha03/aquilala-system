@@ -38,6 +38,9 @@ class AccountActivationController extends Controller
         } elseif ($state['state'] === 'already_active' && isset($state['user'])) {
             return redirect()->route('login')
                 ->with('info', 'That account is already active. You can sign in.');
+        } elseif ($state['state'] === 'disabled') {
+            return redirect()->route('login')
+                ->with('error', 'That account has been disabled. Please contact an administrator.');
         } elseif (($candidate = $request->session()->get('activation_email'))) {
             $email = $candidate;
             $user = $this->findPendingAccount($candidate);

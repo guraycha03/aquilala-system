@@ -142,7 +142,10 @@
     }
     .resend-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
     .resend-btn:hover { background: #dfe9ff; border-color: rgba(59, 107, 181, 0.45); }
-    .resend-btn:disabled { opacity: 0.6; cursor: wait; }
+      .resend-btn:disabled { opacity: 0.6; cursor: wait; }
+      /* Bulk-imported accounts still holding their temporary password. */
+      .resend-btn.needs-setup { background: #fff7ed; border-color: rgba(217, 119, 6, 0.4); color: #b45309; }
+      .resend-btn.needs-setup:hover { background: #ffedd5; border-color: rgba(217, 119, 6, 0.55); }
 
     /* Custom overlay scrollbar moved to shared layout (.app-scrollbar) */
 
@@ -326,8 +329,8 @@
                         \App\Models\User::STATUS_DISABLED => 'disabled',
                         default                             => 'active',
                     };
-                    // Invited (active) accounts that have not set a permanent
-                    // password yet — they signed in with the emailed temp one.
+                    // Bulk-imported (active) accounts that still carry a
+                    // temporary password — they can be re-sent a setup email.
                     $needsPasswordSetup = $accountState === 'active' && $u->mustChangePassword();
                     $location = trim(implode(', ', array_filter([$u->barangay, $u->city])));
                     $contact = $u->phone ?? ($u->contact_number ?? ($location ?: '—'));
@@ -375,11 +378,12 @@
                       <span class="user-joined">{{ $u->created_at ? $u->created_at->format('M d, Y') : '—' }}</span>
                     </td>
                     <td>
-                      @if($accountState === 'pending')
+                      @if($accountState === 'pending' || $needsPasswordSetup)
                         <form class="resend-form" method="POST" action="{{ route('admin.users.resend', $u) }}"
                               data-user-name="{{ $u->name }}" data-user-email="{{ $u->email }}">
                           @csrf
-                          <button type="submit" class="resend-btn" title="Resend activation email">
+                          <button type="submit" class="resend-btn{{ $needsPasswordSetup ? ' needs-setup' : '' }}"
+                                  title="{{ $needsPasswordSetup ? 'Resend password-setup email' : 'Resend activation code' }}">
                             <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                             Resend
                           </button>
@@ -565,7 +569,12 @@
             '<svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>' +
             'Pending account — awaiting email verification and password setup. ' +
             'A new activation code can be sent from the Users list.</div>'
-          : '';
+          : (p.must_change_password
+          ? '<div class="form-alert info" style="margin-bottom:14px;">' +
+            '<svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>' +
+            'Imported account — still using the temporary password it was created with. ' +
+            'A fresh password-setup email can be sent from the Users list.</div>'
+          : '');
         var body = hero + setupNote +
           '<div class="profile-grid">' +
           item('Role', p.role) +
@@ -606,7 +615,7 @@
         if (e.key === 'Escape' && profileOverlay.classList.contains('open')) closeProfile();
       });
 
-      // ── Resend activation email for pending accounts ──
+      // ── Resend invitation (OTP code, or temp password for imports) ──
       function bindResendButtons() {
         document.querySelectorAll('.resend-form').forEach(function (form) {
           form.addEventListener('submit', function (e) {
@@ -614,15 +623,22 @@
             var btn = form.querySelector('.resend-btn');
             var userName = form.getAttribute('data-user-name') || 'this user';
             var userEmail = form.getAttribute('data-user-email') || '';
+            // Imported accounts get a fresh temporary password, not an OTP code.
+            var isSetup = btn.classList.contains('needs-setup');
+            var what = isSetup
+              ? 'A new temporary password and set-password link will be sent to '
+              : 'A new activation code will be sent to ';
+            var voidNote = isSetup
+              ? 'The previous temporary password and link become void.'
+              : 'Any previously sent code becomes void.';
             var step = (typeof askConfirm === 'function')
               ? askConfirm({
-                  title: 'Resend activation code?',
-                  message: 'A new activation code will be sent to ' + userName +
-                    ' (' + userEmail + '). Any previously sent code becomes void.',
-                  confirmLabel: 'Resend Code'
+                  title: isSetup ? 'Resend password-setup email?' : 'Resend activation code?',
+                  message: what + userName + ' (' + userEmail + '). ' + voidNote,
+                  confirmLabel: isSetup ? 'Resend Email' : 'Resend Code'
                 })
               : Promise.resolve(window.confirm(
-                  'A new activation code will be sent to ' + userName + ' (' + userEmail + ').\n\nAny previously sent code becomes void.'
+                  what + userName + ' (' + userEmail + ').\n\n' + voidNote
                 ));
 
             step.then(function (ok) {
@@ -639,7 +655,9 @@
               })
               .then(function (response) { return response.json().then(function (d) { return { ok: response.ok, data: d }; }); })
               .then(function (result) {
-                showToast(result.data.message || (result.ok ? 'Activation code resent.' : 'Could not resend activation code.'));
+                showToast(result.data.message || (result.ok
+                  ? (isSetup ? 'Password-setup email resent.' : 'Activation code resent.')
+                  : 'Could not resend the invitation.'));
                 btn.disabled = false;
                 btn.textContent = 'Resend';
               })

@@ -5,8 +5,8 @@
 @section('content')
   @include('partials.admin-tabs', [
     'tabs' => [
-      ['key' => 'notifications', 'label' => 'Notifications', 'url' => route('farmer.notifications.index')],
-      ['key' => 'activity',      'label' => 'Activity Log',  'url' => route('farmer.activity.index')],
+      ['key' => 'settings', 'label' => 'Settings',    'url' => route('farmer.settings.index')],
+      ['key' => 'activity', 'label' => 'Activity Log', 'url' => route('farmer.activity.index')],
     ],
     'activeTab' => 'activity',
   ])

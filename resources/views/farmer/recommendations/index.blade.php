@@ -248,40 +248,6 @@
     margin: 4px 0 0 0;
   }
 
-  /* ── Category Filter Chips ── */
-  .sr-cat-filter {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-  }
-  .sr-cat-filter-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    white-space: nowrap;
-  }
-  .sr-cat-chip {
-    appearance: none; -webkit-appearance: none; border: none; font-family: inherit;
-    padding: 8px 15px; border-radius: 20px; cursor: pointer;
-    background: #f3f5f4; border: 1px solid #e4e8e6; color: #475569;
-    font-size: 12.5px; font-weight: 600;
-    display: inline-flex; align-items: center; gap: 6px;
-    transition: all 0.18s ease;
-  }
-  .sr-cat-chip:hover { border-color: #a7d4b0; color: #166534; background: #f0fdf4; }
-  .sr-cat-chip.active { background: #143d23; border-color: #143d23; color: #ffffff; box-shadow: 0 3px 10px rgba(20,61,35,0.25); }
-  .sr-cat-chip .sr-cat-chip-count {
-    font-size: 10.5px; font-weight: 700; background: rgba(0,0,0,0.07);
-    border-radius: 10px; padding: 1px 7px; line-height: 1.4;
-  }
-  .sr-cat-chip.active .sr-cat-chip-count { background: rgba(255,255,255,0.18); }
-
-  .sr-product-card.is-filtered { display: none; }
-
   /* ── Product Grid ── */
   .sr-product-grid {
     display: grid;
@@ -674,30 +640,30 @@
       </a>
     </div>
 
-    @if($categories->isNotEmpty())
-      <div class="sr-cat-filter" id="srCatFilter">
-        <span class="sr-cat-filter-label">Browse by Category</span>
-        <button type="button" class="sr-cat-chip active" data-category="">All
-          <span class="sr-cat-chip-count">{{ $products->count() }}</span>
-        </button>
-        @foreach($categories as $cat)
-          <button type="button" class="sr-cat-chip" data-category="{{ $cat->name }}">
-            {{ $cat->name }}
-            <span class="sr-cat-chip-count">{{ $cat->count }}</span>
-          </button>
-        @endforeach
-      </div>
-    @endif
+    {{-- Shared catalog filter bar: search, category, season, availability, price
+         range and sorting, identical on every catalog surface. Reads and writes
+         ?search=/?season=/?category=/?min=/?max=/?sort= so a filtered list can be
+         linked. The cards below carry the same data-cf-* facets the shared
+         <x-product-card> emits, so the bar filters them the same way. --}}
+    <x-catalog-filters
+      uid="recommendations"
+      target="#srProductGrid"
+      :categories="$categories"
+      :price-min="$priceMin"
+      :price-max="$priceMax"
+      search-placeholder="Search recommended supplies, SKU, brand..."
+      noun="recommendations" />
 
-    <div class="sr-product-grid">
+    <div class="sr-product-grid" id="srProductGrid">
       @forelse($products as $product)
         @php
           $season = $product->recommended_season ?? 'both';
           $seasonClass = 'sr-season-' . $season;
           $seasonLabel = $season === 'wet' ? 'Wet' : ($season === 'dry' ? 'Dry' : 'All');
           $stockClass = $product->is_low_stock ? 'sr-stock-low' : 'sr-stock-in';
+          $facets = new Illuminate\View\ComponentAttributeBag($product->catalogFacets());
         @endphp
-        <a href="{{ route('farmer.products.show', $product->id) }}" class="sr-product-card" data-category="{{ $product->category_display_name }}">
+        <a href="{{ route('farmer.products.show', $product->id) }}" class="sr-product-card" {{ $facets }}>
           <div class="sr-product-img">
             @if($product->mainImage && !empty($product->mainImage->file_path))
               <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
@@ -755,7 +721,7 @@
           </details>
         </a>
       @empty
-        <div class="sr-empty">
+        <div class="sr-empty" data-cf-no-products>
           <svg viewBox="0 0 24 24" width="64" height="64" stroke="#d1d5db" fill="none" stroke-width="1.5" style="display: block; margin: 0 auto 16px;">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
@@ -765,6 +731,16 @@
       @endforelse
     </div>
 
+    {{-- Shown when filters are applied and nothing matches. The filter engine
+         toggles this via [data-cf-no-results]. --}}
+    <div class="sr-empty" data-cf-no-results style="display: none;">
+      <svg viewBox="0 0 24 24" width="64" height="64" stroke="#d1d5db" fill="none" stroke-width="1.5" style="display: block; margin: 0 auto 16px;">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <h3>No Matches</h3>
+      <p>No recommendations match your current filters. Try widening the price range or clearing a filter.</p>
+    </div>
+
   </div>
 </div>
 
@@ -772,26 +748,5 @@
 <a href="{{ route('farmer.ai-chat.index') }}" class="sr-ai-fab" title="Chat with AI">
   <img src="{{ asset('images/ai-avatar.png') }}" alt="AI Assistant" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
 </a>
-
-<script>
-  (function () {
-    var filter = document.getElementById('srCatFilter');
-    if (!filter) return;
-    var chips = filter.querySelectorAll('.sr-cat-chip');
-    var cards = document.querySelectorAll('.sr-product-card');
-
-    chips.forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        chips.forEach(function (c) { c.classList.remove('active'); });
-        chip.classList.add('active');
-        var target = chip.getAttribute('data-category');
-        cards.forEach(function (card) {
-          var cardCat = card.getAttribute('data-category') || '';
-          card.classList.toggle('is-filtered', target !== '' && cardCat !== target);
-        });
-      });
-    });
-  })();
-</script>
 
 @endsection

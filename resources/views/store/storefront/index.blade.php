@@ -347,37 +347,9 @@
         flex-wrap: nowrap;
     }
 
-    .season-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 11px; 
-        font-weight: 700; 
-        line-height: 1;
-        white-space: nowrap;
-        flex-shrink: 0;
-        padding: 5px 10px;
-        border-radius: 6px;
-    }
-    .season-badge.season-wet { background: #e0f2fe; color: #0369a1; }
-    .season-badge.season-dry { background: #ffedd5; color: #c2410c; }
-    .season-badge.season-all { background: #f0fdf4; color: #166534; }
-
-    .stock-badge { 
-        display: inline-flex; 
-        align-items: center; 
-        gap: 4px; 
-        padding: 3px 8px; 
-        border-radius: 6px; 
-        font-size: 11px; 
-        font-weight: 600; 
-        white-space: nowrap;
-        flex-shrink: 0;
-        margin-left: auto;
-    }
-
-    .stock-low { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
-    .stock-ok { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+    /* The season and stock badges used to live here. The shared product card
+       now draws the season itself (as an icon) and stock belongs on the
+       product detail page, so only the layout wrapper is left. */
 
     /* Footer / Pricing Section */
     .card-footer {

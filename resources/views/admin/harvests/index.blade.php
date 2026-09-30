@@ -109,10 +109,25 @@
 
   .yield-cell { font-variant-numeric: tabular-nums; }
   .yield-tons { font-size: 11.5px; color: #94a3b8; font-weight: 600; }
+
+  .btn-export {
+    appearance: none; -webkit-appearance: none; height: 42px; padding: 0 20px;
+    font-size: 13px; font-weight: 700; border-radius: 10px; border: none;
+    background: #1e293b; color: #ffffff; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 12px rgba(30, 41, 59, 0.25);
+    transition: all 0.2s ease;
+  }
+  .btn-export:hover { background: #0f172a; transform: translateY(-1px); }
+  .btn-export svg { width: 18px; height: 18px; }
 </style>
 
-<div class="header-panel" style="margin-bottom: 10px;">
-  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Harvest Performance</h1>
+<div class="header-panel" style="margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0;">Harvest Performance</h1>
+  <button id="exportBtn" class="btn-export" title="Export filtered data as CSV">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export CSV
+  </button>
 </div>
 
 <!-- System-wide metrics -->
@@ -163,6 +178,8 @@
         ['key' => 'farmer', 'label' => 'All Farmers', 'options' => collect($farmerOptions)->map(fn($n) => [strtolower($n), $n])->all()],
         ['key' => 'crop', 'label' => 'All Crops', 'options' => $allReports->pluck('crop_type')->filter()->unique()->sort()->values()->map(fn($c) => [strtolower($c), $c])->all()],
         ['key' => 'season', 'label' => 'All Seasons', 'options' => [['wet', 'Wet Season'], ['dry', 'Dry Season']]],
+        ['key' => 'year', 'label' => 'All Years', 'options' => $yearOptions ?? []],
+        ['key' => 'month', 'label' => 'All Months', 'options' => $monthOptions ?? []],
     ]"
     :sorts="[
         ['key' => 'date', 'dir' => -1, 'type' => 'date', 'label' => 'Harvested (newest)'],
@@ -250,4 +267,54 @@
       </div>
     </div>
 </div>
+
+<div id="harvestToast" style="position:fixed;bottom:24px;left:50%;transform:translate(-50%,16px);background:#143d23;color:#eaf7e3;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(20,61,35,0.28);opacity:0;pointer-events:none;transition:all .25s ease;z-index:9999;"></div>
+
+<script>
+  (function () {
+    var toast = document.getElementById('harvestToast');
+    var toastTimer = null;
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.style.opacity = '1';
+      toast.style.transform = 'translate(-50%, 0)';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, 16px)';
+      }, 2600);
+    }
+
+    var rows = Array.prototype.slice.call(document.querySelectorAll('#adminHarvestsTable tbody tr'));
+
+    document.getElementById('exportBtn').addEventListener('click', function () {
+      var shown = rows.filter(function (r) { return r.style.display !== 'none'; });
+      if (shown.length === 0) { showToast('No records to export.'); return; }
+
+      var headers = ['Farmer', 'Crop', 'Season', 'Area (ha)', 'Yield (MT)', 'Expenses (₱)', 'Harvested'];
+      var lines = [headers.join(',')];
+
+      shown.forEach(function (row) {
+        var cells = row.querySelectorAll('td');
+        var csv = [];
+        for (var i = 0; i < cells.length; i++) {
+          var text = cells[i].innerText.trim().replace(/"/g, '""');
+          csv.push('"' + text + '"');
+        }
+        lines.push(csv.join(','));
+      });
+
+      var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      var now = new Date();
+      var timestamp = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+      a.download = 'harvest-reports-' + timestamp + '.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Exported ' + shown.length + ' records to CSV');
+    });
+  })();
+</script>
 @endsection

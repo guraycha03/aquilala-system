@@ -127,7 +127,10 @@ class ProductCardTest extends TestCase
         $this->assertStringNotContainsString('Philphos', $html, 'the brand must not appear on the card');
         $this->assertStringNotContainsString('In Stock', $html, 'the stock badge must not appear on the card');
         $this->assertStringNotContainsString('Low Stock', $html, 'the stock badge must not appear on the card');
-        $this->assertStringNotContainsString('left', $html, 'remaining stock must not appear on the card');
+        // Target the rendered copy, not the bare word "left": the component's
+        // own stylesheet positions the category chip with `left: 10px`, so a
+        // naive substring check always matched the CSS and never the markup.
+        $this->assertStringNotContainsString('left in stock', $html, 'remaining stock must not appear on the card');
         $this->assertStringNotContainsString('stock-badge', $html, 'the stock badge markup must be gone');
         $this->assertStringNotContainsString('stock_unit', $html, 'the stock unit must not appear on the card');
         $this->assertStringNotContainsString('Urea-001', $html, 'the SKU must not appear on the card');
@@ -153,19 +156,20 @@ class ProductCardTest extends TestCase
         }
     }
 
-    public function test_an_unrated_product_shows_five_empty_stars(): void
+    public function test_an_unrated_product_shows_zero_with_a_grey_star(): void
     {
         $html = $this->actingAs($this->farmer)->get(route('farmer.products.browse'))->getContent();
 
-        // No reviews exist, so nothing may be filled. Counting the class
-        // attribute rather than the bare name keeps the component's own
-        // stylesheet from inflating the totals.
-        $this->assertSame(5, substr_count($html, 'class="pc-star-empty"'));
-        $this->assertSame(0, substr_count($html, 'class="pc-star-filled"'));
+        // The rating is the official Lucide star (the <i data-lucide="star">
+        // placeholder that createIcons swaps for the glyph) plus the number.
+        // The string only appears in the card markup, so a plain count is exact.
+        $this->assertSame(1, substr_count($html, 'data-lucide="star"'));
+        $this->assertStringContainsString('class="pc-rating is-unrated"', $html);
         $this->assertStringContainsString('Not yet rated', $html);
+        $this->assertStringContainsString('<b>0.0</b>', $html);
     }
 
-    public function test_a_rated_product_fills_its_stars(): void
+    public function test_a_rated_product_shows_one_yellow_star_with_the_score(): void
     {
         $review = $this->product->reviews()->create([
             'user_id' => $this->farmer->id,
@@ -177,9 +181,38 @@ class ProductCardTest extends TestCase
 
         $html = $this->actingAs($this->farmer)->get(route('farmer.products.browse'))->getContent();
 
-        $this->assertSame(4, substr_count($html, 'class="pc-star-filled"'));
-        $this->assertSame(1, substr_count($html, 'class="pc-star-empty"'));
+        // Exactly one star, amber by default, with the score beside it. The
+        // "is-unrated" marker also appears in the stylesheet, so assert on the
+        // rendered class attribute, not the bare token.
+        $this->assertSame(1, substr_count($html, 'data-lucide="star"'));
+        $this->assertStringContainsString('class="pc-rating"', $html);
+        $this->assertStringNotContainsString('class="pc-rating is-unrated"', $html);
         $this->assertStringContainsString('Rated 4.0 out of 5', $html);
+        $this->assertStringContainsString('<b>4.0</b>', $html);
+    }
+
+    public function test_the_card_uses_official_lucide_icons_instead_of_inline_svg(): void
+    {
+        $card = function (string $season, bool $actions = true) {
+            return Blade::render('<x-product-card :product="$product" :actions="$actions" />', [
+                'product' => tap(clone $this->product)->forceFill(['recommended_season' => $season]),
+                'actions' => $actions,
+            ]);
+        };
+
+        // Every icon on the card goes through <i data-lucide="..."> so the
+        // official open-source glyphs render, not hand-rolled polygons.
+        $html = $card('wet');
+        $this->assertStringContainsString('data-lucide="star"', $html);
+        $this->assertStringContainsString('data-lucide="pencil"', $html);
+        $this->assertStringContainsString('data-lucide="trash-2"', $html);
+        $this->assertStringContainsString('data-lucide="umbrella"', $html);
+        $this->assertStringContainsString('data-lucide="image"', $html);
+        $this->assertStringContainsString('data-lucide="sun"', $card('dry'));
+        $this->assertStringContainsString('data-lucide="refresh-cw"', $card('all'));
+
+        // And no hand-drawn <svg> icons are left on the card.
+        $this->assertStringNotContainsString('<svg', $html);
     }
 
     public function test_the_card_is_responsive_and_clamped(): void
@@ -188,6 +221,11 @@ class ProductCardTest extends TestCase
 
         // A long name is the main cause of a tall card, so it is clamped.
         $this->assertStringContainsString('-webkit-line-clamp: 2', $html);
+
+        // The clamp must reserve its own two lines (2.7em = 2 x 1.35 line-height)
+        // even for a short name, otherwise the rating row below drifts down on
+        // cards with long names and up on cards with short ones.
+        $this->assertStringContainsString('min-height: 2.7em', $html);
 
         // Two phone breakpoints shrink the image, the name and the price.
         $this->assertStringContainsString('@media (max-width: 640px)', $html);

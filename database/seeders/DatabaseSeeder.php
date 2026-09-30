@@ -54,6 +54,7 @@ class DatabaseSeeder extends Seeder
             CropSeeder::class,
             StoreCatalogSeeder::class,
             ProductReviewSeeder::class,
+            PopulateDemoDataSeeder::class,
             // Last, so every seeded account gets a known .env password and
             // is marked verified/active for dev testing.
             EnsureTestAccessSeeder::class,

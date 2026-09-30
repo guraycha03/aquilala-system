@@ -11,12 +11,14 @@ class ChatHistory extends Model
         'user_id',
         'title',
         'messages',
+        'ai_context',
     ];
 
     protected function casts(): array
     {
         return [
             'messages' => 'array',
+            'ai_context' => 'array',
         ];
     }
 

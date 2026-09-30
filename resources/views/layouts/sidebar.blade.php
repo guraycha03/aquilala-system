@@ -244,23 +244,6 @@
     }
     .desktop-notif:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(16, 24, 40, 0.14); }
     .desktop-notif svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .notif-dropdown {
-      position: absolute; top: 48px; right: 0; width: 300px; max-width: calc(100vw - 40px);
-      background: #ffffff; border: 1px solid #eef1f4; border-radius: 14px;
-      box-shadow: 0 12px 32px rgba(16, 24, 40, 0.12);
-      opacity: 0; visibility: hidden; transform: translateY(-6px);
-      transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-      overflow: hidden;
-    }
-    .notif-dropdown.open { opacity: 1; visibility: visible; transform: translateY(0); }
-    .notif-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
-    .notif-head b { font-size: 13px; color: #0f172a; }
-    .notif-head a { font-size: 12px; font-weight: 700; color: #15803d; text-decoration: none; }
-    .notif-body { padding: 14px 16px; }
-    .notif-empty { text-align: center; padding: 18px 8px; }
-    .notif-empty svg { width: 30px; height: 30px; stroke: #cbd5e1; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-    .notif-empty p { font-size: 13px; color: #94a3b8; margin: 8px 0 0 0; }
-
     .desktop-notif { position: relative; }
     .notif-badge {
       position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px;
@@ -268,24 +251,6 @@
       font-size: 10px; font-weight: 800; line-height: 18px; text-align: center;
       display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
     }
-    .notif-body { padding: 8px 10px 10px; max-height: 320px; overflow-y: auto; scrollbar-width: thin; }
-    .notif-item { padding: 10px 12px; border-radius: 10px; }
-    .notif-item + .notif-item { border-top: 1px solid #f1f5f9; border-radius: 0; }
-    .notif-item:hover { background: #f8fafc; }
-    .notif-item-stars { display: inline-flex; align-items: center; gap: 2px; margin-bottom: 4px; }
-    .notif-item-stars svg { width: 12px; height: 12px; fill: #f59e0b; }
-    .notif-item-stars svg.empty { fill: #e2e8f0; }
-    .notif-item-text { font-size: 12px; color: #334155; line-height: 1.45; font-weight: 500; }
-    .notif-item-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; font-size: 11px; color: #94a3b8; flex-wrap: wrap; }
-    .notif-item-meta a { color: #15803d; font-weight: 700; text-decoration: none; }
-    .notif-item-meta a:hover { text-decoration: underline; }
-    .notif-item-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: capitalize; }
-    .notif-foot { padding: 10px 12px 2px; border-top: 1px solid #f1f5f9; }
-    .notif-foot button {
-      width: 100%; border: none; background: #f0fdf4; color: #15803d; font-size: 12px; font-weight: 700;
-      padding: 9px; border-radius: 9px; cursor: pointer; font-family: inherit; transition: background 0.15s ease;
-    }
-    .notif-foot button:hover { background: #dcfce7; }
 
     /* Sub-page pill tab bar (partials/admin-tabs).
        Floats at the very top of the screen, mirrored to the notification bell
@@ -661,13 +626,17 @@
 @endphp
 <body data-sidebar-theme="{{ $stActive }}">
 
-  @if(auth()->check() && auth()->user()->role === 'store_owner')
   @php
-    $storeNotifQuery = \App\Models\ActivityLog::forUser(auth()->id())->reviewNotifications();
-    $storeUnreadCount = $storeNotifQuery->unread()->count();
-    $storeUnreadList  = $storeNotifQuery->unread()->latest()->limit(5)->get();
+    $notifBellUrl = null;
+    $notifUnreadCount = 0;
+    if (auth()->check() && auth()->user()->role === 'store_owner') {
+        $notifBellUrl = route('store.notifications.index');
+        $notifUnreadCount = \App\Models\ActivityLog::forUser(auth()->id())->reviewNotifications()->unread()->count();
+    } elseif (auth()->check() && auth()->user()->role === 'farmer') {
+        $notifBellUrl = route('farmer.notifications.index');
+        $notifUnreadCount = \App\Models\ActivityLog::forUser(auth()->id())->farmerNotifications()->unread()->count();
+    }
   @endphp
-  @endif
 
   <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
 
@@ -765,12 +734,6 @@
                 </ul>
               </li>
             @endforeach
-            <li>
-              <a href="{{ route('farmer.settings.index') }}" class="{{ request()->routeIs('farmer.settings.index') ? 'active' : '' }}">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                Settings
-              </a>
-            </li>
           @else
           <li>
             <a href="{{ route('dashboard.farmer') }}" class="{{ request()->routeIs('dashboard.farmer') || request()->routeIs('farmer.dashboard') ? 'active' : '' }}">
@@ -839,19 +802,7 @@
             </a>
           </li>
           <li>
-            <a href="{{ route('farmer.notifications.index') }}" class="{{ request()->routeIs('farmer.notifications.index') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              Notifications
-            </a>
-          </li>
-          <li>
-            <a href="{{ route('farmer.activity.index') }}" class="{{ request()->routeIs('farmer.activity.index') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Activity Log
-            </a>
-          </li>
-          <li>
-            <a href="{{ route('farmer.settings.index') }}" class="{{ request()->routeIs('farmer.settings.index') ? 'active' : '' }}">
+            <a href="{{ route('farmer.settings.index') }}" class="{{ request()->routeIs('farmer.settings.index', 'farmer.activity.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               Settings
             </a>
@@ -872,7 +823,7 @@
                 <button type="button" class="nav-dropdown-btn" aria-expanded="{{ $isStoreOpen ? 'true' : 'false' }}">
                   <span class="nav-dropdown-title">
                     {!! $section['icon'] !!}
-                    <span>{{ $section['label'] }}@if($si === 'notifications' && ($storeUnreadCount ?? 0) > 0)<span class="nav-count" id="storeNavBadge">{{ $storeUnreadCount }}</span>@endif</span>
+                    <span>{{ $section['label'] }}</span>
                   </span>
                   <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
                 </button>
@@ -887,12 +838,6 @@
                 </ul>
               </li>
             @endforeach
-            <li>
-              <a href="{{ route('store.settings.index') }}" class="{{ request()->routeIs('store.settings.index') ? 'active' : '' }}">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                Settings
-              </a>
-            </li>
           @else
             <li>
               <a href="{{ route('store.dashboard') }}" class="{{ request()->routeIs('store.dashboard') ? 'active' : '' }}">
@@ -931,22 +876,7 @@
             </a>
           </li>
           <li>
-            <a href="{{ route('store.notifications.index') }}" class="{{ request()->is('store/notifications*') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              Notifications
-              @if(($storeUnreadCount ?? 0) > 0)
-                <span class="nav-count" id="storeNavBadge">{{ $storeUnreadCount }}</span>
-              @endif
-            </a>
-          </li>
-          <li>
-            <a href="{{ route('store.activity.index') }}" class="{{ request()->routeIs('store.activity.index') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Activity Log
-            </a>
-          </li>
-          <li>
-            <a href="{{ route('store.settings.index') }}" class="{{ request()->routeIs('store.settings.index') ? 'active' : '' }}">
+            <a href="{{ route('store.settings.index') }}" class="{{ request()->routeIs('store.settings.index', 'store.activity.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               Settings
             </a>
@@ -978,7 +908,7 @@
             @endforeach
           @else
           <li>
-            <a href="{{ route('dashboard.admin') }}" class="{{ request()->routeIs('dashboard.admin') || request()->routeIs('admin.activity.index') ? 'active' : '' }}">
+            <a href="{{ route('dashboard.admin') }}" class="{{ request()->routeIs('dashboard.admin') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
               Dashboard
             </a>
@@ -1006,7 +936,7 @@
           </li>
           @yield('sidebar-tabs-nav')
           <li>
-            <a href="{{ route('admin.settings.index') }}" class="{{ request()->is('admin/settings*') || request()->routeIs('admin.audit.index') ? 'active' : '' }}">
+            <a href="{{ route('admin.settings.index') }}" class="{{ request()->is('admin/settings*') || request()->routeIs('admin.audit.index') || request()->routeIs('admin.activity.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               Settings
             </a>
@@ -1054,76 +984,31 @@
     @yield('content')
   </main>
 
-  @if(auth()->user()->role !== 'farmer')
+  @if($notifBellUrl)
   <div class="desktop-notif-wrap">
-    <button class="desktop-notif" id="desktopNotifBtn" aria-label="Notifications" title="Notifications">
+    <a class="desktop-notif" id="desktopNotifBtn" href="{{ $notifBellUrl }}" aria-label="Notifications" title="Notifications">
       <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      @if(auth()->user()->role === 'store_owner' && ($storeUnreadCount ?? 0) > 0)
-        <span class="notif-badge" id="desktopNotifBadge">{{ $storeUnreadCount }}</span>
+      @if($notifUnreadCount > 0)
+        <span class="notif-badge" id="desktopNotifBadge">{{ $notifUnreadCount }}</span>
       @endif
-    </button>
-    <div class="notif-dropdown" id="notifDropdown">
-      <div class="notif-head">
-        <b>Notifications</b>
-        @if(auth()->user()->role === 'store_owner')
-          <a href="{{ route('store.notifications.index') }}">View all</a>
-        @elseif(auth()->user()->role === 'farmer')
-          <a href="{{ route('farmer.notifications.index') }}">View all</a>
-        @endif
-      </div>
-      <div class="notif-body">
-        @if(auth()->user()->role === 'store_owner')
-          @if(($storeUnreadList ?? collect())->isNotEmpty())
-            @foreach($storeUnreadList as $n)
-              @php
-                $nMeta = $n->metadata ?? [];
-                $nRating = (int) ($nMeta['rating'] ?? 0);
-                $nStatus = $nMeta['status'] ?? '';
-                $nPill = match ($nStatus) {
-                  'approved' => ['#eef3ef', '#63856c'],
-                  'rejected' => ['#f6ecec', '#a86464'],
-                  'deleted'  => ['#f1f5f9', '#64748b'],
-                  default    => ['#f6f0e6', '#a57f43'],
-                };
-              @endphp
-              <div class="notif-item">
-                <div class="notif-item-stars">
-                  @for($i = 1; $i <= 5; $i++)
-                    <svg viewBox="0 0 24 24" class="{{ $i <= $nRating ? '' : 'empty' }}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  @endfor
-                </div>
-                <div class="notif-item-text">{{ $n->description }}</div>
-                <div class="notif-item-meta">
-                  <span class="notif-item-pill" style="background:{{ $nPill[0] }};color:{{ $nPill[1] }};">{{ ucfirst($nStatus ?: 'new') }}</span>
-                  <span>{{ optional($n->created_at)->diffForHumans() }}</span>
-                  @if(($nMeta['product_id'] ?? null))
-                    <a href="{{ route('store.products.show', $nMeta['product_id']) }}">View</a>
-                  @endif
-                </div>
-              </div>
-            @endforeach
-            <form method="POST" action="{{ route('store.notifications.read-all') }}" class="notif-foot">
-              @csrf
-              <button type="submit">Mark all as read</button>
-            </form>
-          @else
-            <div class="notif-empty">
-              <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              <p>No new notifications</p>
-            </div>
-          @endif
-        @else
-          <div class="notif-empty">
-            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            <p>No new notifications</p>
-          </div>
-        @endif
-      </div>
-    </div>
+    </a>
   </div>
   @endif
 
   <script>
+    // Render every <i data-lucide="..."> into its official Lucide SVG.
+    // This has to live in the layout, not in a single page: components such
+    // as the product card are shared by the storefront, the farmer marketplace
+    // and the dashboards, and an icon with no init pass stays an empty <i>.
+    // Re-running is safe — Lucide only swaps the placeholder for the glyph.
+    function renderLucideIcons() {
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+      }
+    }
+    renderLucideIcons();
+    document.addEventListener('DOMContentLoaded', renderLucideIcons);
+
     // Apply dynamic styles from data-inline-style (keeps Blade interpolation out of style="" attributes)
     function applyDataInlineStyles() {
       document.querySelectorAll('[data-inline-style]').forEach(function (el) {
@@ -1286,26 +1171,11 @@ updateLiveTime();
       });
     });
 
-    // Desktop notification bell toggle
+    // Desktop notification bell — hide on scroll down, show on scroll up (desktop only)
     document.addEventListener('DOMContentLoaded', function () {
-      var btn = document.getElementById('desktopNotifBtn');
-      var dropdown = document.getElementById('notifDropdown');
       var wrap = document.querySelector('.desktop-notif-wrap');
-      if (!btn || !dropdown || !wrap) return;
-      btn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        dropdown.classList.toggle('open');
-      });
-      document.addEventListener('click', function (e) {
-        if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
-          dropdown.classList.remove('open');
-        }
-      });
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') dropdown.classList.remove('open');
-      });
+      if (!wrap) return;
 
-      // Hide on scroll down, show on scroll up (desktop only)
       var lastY = window.scrollY;
       var tabsBar = document.querySelector('.aqua-tabs');
       window.addEventListener('scroll', function () {
@@ -1313,7 +1183,6 @@ updateLiveTime();
         if (window.innerWidth > 768) {
           if (y > lastY && y > 80) {
             wrap.classList.add('hidden');
-            dropdown.classList.remove('open');
             if (tabsBar) tabsBar.classList.add('hidden');
           } else if (y < lastY || y <= 80) {
             wrap.classList.remove('hidden');

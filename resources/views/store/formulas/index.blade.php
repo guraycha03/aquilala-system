@@ -167,7 +167,7 @@
 
 <div class="header-panel" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
   <div>
-    <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">DSS Recommendation Rule Setup</h1>
+    <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Recommendation Rule Setup</h1>
     <p style="color: #606d64; font-size: 14px; margin: 0;">
       Define standard per-hectare application rates that drive the cost quotation engine's recommended input quantities.
     </p>

@@ -99,7 +99,7 @@ class CostQuotationEngine
         // ─── 2. Determine what products to include ─────────────────
         // If specific products selected, use those; otherwise fetch all
         // matching products available in the store owner's catalog.
-        $products = $this->resolveProducts($cropType, $season, $storeOwner->id, $selectedIds);
+        $products = $this->resolveProducts($cropType, $season, $storeOwner?->id, $selectedIds);
 
         // ─── 3. Look up DecisionFormula records for base rates ─────
         $formulas = DecisionFormula::whereCrop($cropType)
@@ -313,7 +313,17 @@ class CostQuotationEngine
      * Otherwise, fetch all active products that have DecisionFormula records
      * matching the crop_type + season, or fallback to category-based matching.
      */
-    private function resolveProducts(string $cropType, string $season, int $storeId, array $selectedIds): \Illuminate\Support\Collection
+    /**
+     * Products to price for this crop and season.
+     *
+     * The catalog is searched across every store on purpose: a farmer asking
+     * for an estimate is quoted the products Aquilala actually carries, and
+     * $storeId is not needed to find them. It stays in the signature for the
+     * store-owner path, which is why it is nullable - a farmer-initiated
+     * request has no store owner, and reading an id off a null user used to
+     * throw before a single product was looked at.
+     */
+    private function resolveProducts(string $cropType, string $season, ?int $storeId, array $selectedIds): \Illuminate\Support\Collection
     {
         $query = Product::active()->with('category');
 

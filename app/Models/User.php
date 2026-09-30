@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -33,6 +34,7 @@ class User extends Authenticatable
         'role',
         'status',
         'password',
+        'email_verified_at',
         'phone_verified_at',
         'store_name',
         'address',
@@ -78,18 +80,13 @@ class User extends Authenticatable
     }
 
     /**
-     * Whether the member has set their own password yet. A NULL password
-     * means the account was created by an admin but the member has not
-     * activated it / chosen a password through the emailed link.
-     */
-    public function hasSetPassword(): bool
-    {
-        return ! empty($this->password);
-    }
-
-    /**
-     * Whether the account is required to set a password before anything else
-     * (admin-created accounts arrive with a temporary password and this flag).
+     * Whether the account is required to set a password before anything else.
+     *
+     * Only the CSV/OCR bulk-import path creates these: imported accounts are
+     * active but arrive with a temporary password, so they are forced through
+     * the change-password screen until the member replaces it. Accounts
+     * created one at a time from the Users page go through the OTP activation
+     * flow instead and never set this flag.
      */
     public function mustChangePassword(): bool
     {
@@ -111,11 +108,6 @@ class User extends Authenticatable
         return $this->status === self::STATUS_DISABLED;
     }
 
-    public function isActivated(): bool
-    {
-        return $this->status === self::STATUS_ACTIVE;
-    }
-
     public function activations(): HasMany
     {
         return $this->hasMany(UserActivation::class);
@@ -129,6 +121,11 @@ class User extends Authenticatable
     public function products(): HasMany
     {
         return $this->hasMany(Product::class, 'user_id');
+    }
+
+    public function savedProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'saved_products')->withTimestamps();
     }
 
     public function farmerCrops(): HasMany

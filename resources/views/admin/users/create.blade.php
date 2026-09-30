@@ -100,7 +100,8 @@
 
     <div class="header-row">
       <h1>Register New User</h1>
-      <p>An activation link will be emailed so the user can confirm their email address and set their own password.</p>
+      <p>The account is created as <b>pending</b> and a 6&#8209;digit activation code is emailed. The user signs in with
+         their email, enters that code, and sets their own password.</p>
     </div>
 
     <div class="form-card">

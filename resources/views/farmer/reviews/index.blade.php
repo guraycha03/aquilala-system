@@ -41,29 +41,6 @@
   .stat-chip .stat-label { font-size: 12px; color: #64748b; font-weight: 600; }
   .stat-chip svg { width: 20px; height: 20px; stroke: #16a34a; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-  /* Category filter chips */
-  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-  .filter-chip {
-    padding: 8px 16px;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    background: #ffffff;
-    font-size: 13px;
-    font-weight: 600;
-    color: #475569;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    user-select: none;
-  }
-  .filter-chip:hover { border-color: #143d23; color: #143d23; }
-  .filter-chip.selected { background: #143d23; border-color: #143d23; color: #ffffff; }
-
-  .results-info { font-size: 13px; color: #94a3b8; margin-bottom: 16px; }
-  .results-info strong { color: #475569; font-weight: 700; }
-
   /* Product grid */
   .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   @media (max-width: 1200px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
@@ -87,7 +64,7 @@
     box-shadow: 0 10px 20px -5px rgba(20, 61, 35, 0.08);
     border-color: #cbd5e1;
   }
-  .product-card.hidden { display: none; }
+  /* The shared filter bar hides filtered-out cards itself, via .cf-hidden. */
   .card-body { padding: 16px; }
   .card-rank-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .rank-badge {
@@ -176,122 +153,73 @@
   </div>
 </div>
 
-<div class="filter-row" id="categoryFilters">
-  <button type="button" class="filter-chip selected" data-category="">All Categories</button>
-  @foreach($categoryNames as $catName)
-    <button type="button" class="filter-chip" data-category="{{ $catName }}">{{ $catName }}</button>
-  @endforeach
+{{-- Shared catalog filter bar: search, category, season, availability, price
+     range and sorting, identical on every catalog surface. Reads and writes
+     ?search=/?season=/?category=/?min=/?max=/?sort= so a filtered list can be
+     linked. --}}
+<x-catalog-filters
+  uid="reviews"
+  target="#productGrid"
+  :categories="$categories"
+  :price-min="$priceMin"
+  :price-max="$priceMax"
+  search-placeholder="Search rated supplies, SKU, brand..."
+  noun="rated supplies" />
+
+<div class="product-grid" id="productGrid">
+  @forelse($products as $index => $product)
+    <x-product-card :product="$product" href="{{ route('farmer.products.show', $product->id) }}">
+      <x-slot name="body">
+        <div class="card-rank-row">
+          @if($index < 3)
+            <span class="rank-badge">
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Top {{ $index + 1 }}
+            </span>
+          @else
+            <span class="rank-badge" style="background: #475569;">#{{ $index + 1 }} Most Rated</span>
+          @endif
+        </div>
+
+        <div class="store-name">
+          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          {{ $product->storeOwner?->name ?? 'Unknown Merchant' }}
+        </div>
+      </x-slot>
+
+      <x-slot name="footer">
+        <span class="review-link">
+          See Reviews
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </span>
+      </x-slot>
+    </x-product-card>
+  @empty
+    <div class="empty-state" data-cf-no-products>
+      <div class="empty-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <h3>No Reviews Yet</h3>
+      <p>No farmer reviews have been submitted yet. Browse the supplies catalog and be the first to share your experience with a product.</p>
+      <a href="{{ route('farmer.products.browse') }}" class="btn-primary">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Browse Supplies
+      </a>
+    </div>
+  @endforelse
 </div>
 
-<div id="resultsInfo" class="results-info"></div>
-
-@if($products->count() === 0)
-  <div class="empty-state">
-    <div class="empty-icon">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    </div>
-    <h3>No Reviews Yet</h3>
-    <p>No farmer reviews have been submitted yet. Browse the supplies catalog and be the first to share your experience with a product.</p>
-    <a href="{{ route('farmer.products.browse') }}" class="btn-primary">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      Browse Supplies
-    </a>
+{{-- Shown when filters are applied and nothing matches. The filter engine
+     toggles this via [data-cf-no-results]. --}}
+<div class="empty-state" id="filterEmpty" data-cf-no-results style="display: none;">
+  <div class="empty-icon">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
   </div>
-@else
-  <div class="product-grid" id="productGrid">
-    @foreach($products as $index => $product)
-      @php
-        $cat = $product->getRelation('category');
-        $group = $cat ? ($cat->parent_id ? ($cat->parent->name ?? $cat->name) : $cat->name) : ($product->getOriginal('category') ?? 'General Supply');
-      @endphp
-      <x-product-card :product="$product" href="{{ route('farmer.products.show', $product->id) }}"
-         data-category="{{ $group }}"
-         data-name="{{ strtolower($product->name . ' ' . ($product->size_label ?? '')) }}">
-        <x-slot name="body">
-          <div class="card-rank-row">
-            @if($index < 3)
-              <span class="rank-badge">
-                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                Top {{ $index + 1 }}
-              </span>
-            @else
-              <span class="rank-badge" style="background: #475569;">#{{ $index + 1 }} Most Rated</span>
-            @endif
-          </div>
-
-          <div class="store-name">
-            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            {{ $product->storeOwner?->name ?? 'Unknown Merchant' }}
-          </div>
-        </x-slot>
-
-        <x-slot name="footer">
-          <span class="review-link">
-            See Reviews
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </span>
-        </x-slot>
-      </x-product-card>
-    @endforeach
-  </div>
-
-  <div id="filterEmpty" class="empty-state" style="display: none;">
-    <div class="empty-icon">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    </div>
-    <h3>No Rated Supplies Yet</h3>
-    <p>No rated supplies in the <strong id="filterEmptyCategory" style="color: #143d23;">category</strong> yet. Browse the supplies catalog and be the first to share your experience.</p>
-    <a href="{{ route('farmer.products.browse') }}" class="btn-primary">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      Browse Supplies
-    </a>
-  </div>
-@endif
-
-<script>
-(function() {
-  const chips = document.querySelectorAll('#categoryFilters .filter-chip');
-  const cards = document.querySelectorAll('#productGrid .product-card');
-  const resultsInfo = document.getElementById('resultsInfo');
-  const filterEmpty = document.getElementById('filterEmpty');
-  const filterEmptyCategory = document.getElementById('filterEmptyCategory');
-  let activeCategory = '';
-
-  function applyFilters() {
-    let visible = 0;
-    cards.forEach(function(card) {
-      const matches = !activeCategory || card.dataset.category === activeCategory;
-      card.classList.toggle('hidden', !matches);
-      if (matches) visible++;
-    });
-
-    const showEmpty = activeCategory && visible === 0;
-
-    if (filterEmpty) {
-      filterEmpty.style.display = showEmpty ? 'block' : 'none';
-      if (showEmpty && filterEmptyCategory) {
-        filterEmptyCategory.textContent = '\u201C' + activeCategory + '\u201D';
-      }
-    }
-
-    if (activeCategory && cards.length > 0 && visible > 0) {
-      resultsInfo.style.display = 'block';
-      resultsInfo.innerHTML = 'Showing <strong>' + visible + '</strong> of ' + cards.length + ' rated supplies';
-    } else {
-      resultsInfo.style.display = 'none';
-    }
-  }
-
-  chips.forEach(function(chip) {
-    chip.addEventListener('click', function() {
-      chips.forEach(function(c) { c.classList.remove('selected'); });
-      chip.classList.add('selected');
-      activeCategory = chip.dataset.category;
-      applyFilters();
-    });
-  });
-
-  applyFilters();
-})();
-</script>
+  <h3>No Rated Supplies Yet</h3>
+  <p>No rated supplies match your current filters. Try widening the price range or clearing a filter.</p>
+  <a href="{{ route('farmer.products.browse') }}" class="btn-primary">
+    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Browse Supplies
+  </a>
+</div>
 @endsection

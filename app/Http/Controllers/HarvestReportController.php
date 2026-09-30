@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\SettingsHelper;
 use App\Models\Crop;
 use App\Models\HarvestReport;
 use App\Services\ActivityLogger;
-use App\Helpers\SettingsHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class HarvestReportController extends Controller
@@ -21,9 +22,9 @@ class HarvestReportController extends Controller
         $query = HarvestReport::with('farmer')
             ->where('user_id', Auth::id());
 
-        [$reports, $stats, $allReports] = $this->applyFiltersAndStats($query, $request);
+        [$reports, $stats, $allReports, $yearOptions, $monthOptions] = $this->applyFiltersAndStats($query, $request);
 
-        return view('farmer.harvests.index', compact('reports', 'stats', 'allReports'));
+        return view('farmer.harvests.index', compact('reports', 'stats', 'allReports', 'yearOptions', 'monthOptions'));
     }
 
     /**
@@ -43,7 +44,7 @@ class HarvestReportController extends Controller
     {
         $query = HarvestReport::with('farmer');
 
-        [$reports, $stats, $allReports] = $this->applyFiltersAndStats($query, $request);
+        [$reports, $stats, $allReports, $yearOptions, $monthOptions] = $this->applyFiltersAndStats($query, $request);
 
         $farmerOptions = $allReports->pluck('farmer.name')
             ->filter()
@@ -51,7 +52,7 @@ class HarvestReportController extends Controller
             ->sort()
             ->values();
 
-        return view('admin.harvests.index', compact('reports', 'stats', 'allReports', 'farmerOptions'));
+        return view('admin.harvests.index', compact('reports', 'stats', 'allReports', 'farmerOptions', 'yearOptions', 'monthOptions'));
     }
 
     /**
@@ -60,9 +61,11 @@ class HarvestReportController extends Controller
     protected function applyFiltersAndStats($query, Request $request): array
     {
         $search = trim((string) $request->query('q', ''));
-        $crop   = trim((string) $request->query('crop', ''));
+        $crop = trim((string) $request->query('crop', ''));
         $season = trim((string) $request->query('season', ''));
         $farmer = trim((string) $request->query('farmer', ''));
+        $year = trim((string) $request->query('year', ''));
+        $month = trim((string) $request->query('month', ''));
 
         if ($search !== '') {
             $query->where('crop_type', 'like', "%{$search}%");
@@ -76,6 +79,12 @@ class HarvestReportController extends Controller
         if ($farmer !== '') {
             $query->whereHas('farmer', fn ($q) => $q->where('name', $farmer));
         }
+        if ($year !== '' && $year !== 'all') {
+            $query->whereYear('harvest_date', $year);
+        }
+        if ($month !== '' && $month !== 'all') {
+            $query->whereMonth('harvest_date', $month);
+        }
 
         // Summary figures reflect the user's full dataset (before filters),
         // mirroring how the quotations/activity pages compute their stats.
@@ -86,16 +95,35 @@ class HarvestReportController extends Controller
 
         $stats = [
             'reports' => $allReports->count(),
-            'yield'   => SettingsHelper::formatYield((float) $allReports->sum('actual_yield_metric_tons')),
+            'yield' => SettingsHelper::formatYield((float) $allReports->sum('actual_yield_metric_tons')),
             'yield_atoms' => $allReports->sum('actual_yield_metric_tons'),
             'expenses' => (float) $allReports->sum('actual_total_expenses'),
             'area' => (float) $allReports->sum('land_area'),
             'farmers' => $allReports->pluck('user_id')->unique()->count(),
         ];
 
+        // Get unique years and months for filter dropdowns
+        $yearOptions = $allReports->pluck('harvest_date')
+            ->filter()
+            ->map(fn ($d) => $d->year)
+            ->unique()
+            ->sortDesc()
+            ->values()
+            ->map(fn ($y) => [(string) $y, (string) $y])
+            ->all();
+
+        $monthOptions = $allReports->pluck('harvest_date')
+            ->filter()
+            ->map(fn ($d) => $d->month)
+            ->unique()
+            ->sort()
+            ->values()
+            ->map(fn ($m) => [(string) $m, Carbon::createFromDate(2000, $m, 1)->format('F')])
+            ->all();
+
         $reports = $query->orderByDesc('harvest_date')->get();
 
-        return [$reports, $stats, $allReports];
+        return [$reports, $stats, $allReports, $yearOptions, $monthOptions];
     }
 
     /**
@@ -104,12 +132,12 @@ class HarvestReportController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'crop_type'                => ['required', 'string', 'max:100'],
-            'season'                   => ['required', 'in:wet,dry'],
-            'land_area'                => ['required', 'numeric', 'min:0.01', 'max:999.99'],
+            'crop_type' => ['required', 'string', 'max:100'],
+            'season' => ['required', 'in:wet,dry'],
+            'land_area' => ['required', 'numeric', 'min:0.01', 'max:999.99'],
             'actual_yield_metric_tons' => ['required', 'numeric', 'min:0', 'max:999999.99'],
-            'actual_total_expenses'    => ['required', 'numeric', 'min:0', 'max:999999999.99'],
-            'harvest_date'             => ['required', 'date', 'before_or_equal:today'],
+            'actual_total_expenses' => ['required', 'numeric', 'min:0', 'max:999999999.99'],
+            'harvest_date' => ['required', 'date', 'before_or_equal:today'],
         ]);
 
         $validated['user_id'] = Auth::id();

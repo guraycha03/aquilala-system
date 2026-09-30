@@ -563,8 +563,9 @@
           <h2 class="panel-title">Upload a member file</h2>
           <p class="panel-desc">
             The first row must be a header with column names. Only new accounts are created — rows whose email or
-            phone already exists are flagged and skipped. Imported accounts start as <b>pending verification</b> and we
-            can email each activation link afterwards from the Users page.
+            phone already exists are flagged and skipped. Each imported account is emailed a <b>temporary password</b>
+            and a set-password link, and must replace that password on first sign-in. If the email does not arrive, you
+            can re-send it from the Users page.
           </p>
 
           <form method="POST" action="{{ route('admin.users.import.preview') }}" enctype="multipart/form-data" id="importForm">
@@ -752,8 +753,8 @@
           <div class="import-panel" style="max-width:none;">
             <h2 class="panel-title">Preview imported members</h2>
             <p class="panel-desc">
-              File: <b>{{ $import['filename'] }}</b>. Rows with issues are skipped on import — the ready ones are inserted
-              as pending-verification accounts.
+              File: <b>{{ $import['filename'] }}</b>. Rows with issues are skipped on import — the ready ones are
+              inserted as active accounts that must set their own password from the email we send.
             </p>
 
             <div class="pill-row">

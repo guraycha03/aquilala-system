@@ -2,8 +2,7 @@
 
 ngrok http 8000
 
-
-
+opencode -s ses_f149a6cd0ffeYCxBdsMS1qJ14B
 
 
 PLAN

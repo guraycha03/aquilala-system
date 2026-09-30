@@ -89,7 +89,10 @@ class FarmerQuotationShowTest extends TestCase
         return $quotation;
     }
 
-    public function test_farmer_quotation_show_page_loads_with_calculation_and_process(): void
+    public function test_farmer_quotation_show_page_loads_with_summary_and_items(): void
+    // Note: the Sep 2026 redesign moved the line-by-line math and the
+    // "Quotation Process" timeline off this page. The overview now links to
+    // farmer.quotations.breakdown, so the rate/area assertions live there.
     {
         $farmer = $this->makeFarmer();
         $quotation = $this->makeQuotation($farmer);
@@ -99,15 +102,18 @@ class FarmerQuotationShowTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('Quotation Process')
-            ->assertSee('Generated')
-            ->assertSee('Shared as Demand Intel')
-            ->assertSee('Viewed by Store')
-            ->assertSee('Expires')
-            ->assertSee('Cost Breakdown')
-            ->assertSee('Premium Urea')
+            ->assertSee('QT-2026-TEST')
+            ->assertSee('AI Farm Advisor')
+            ->assertSee('Your Plan at a Glance')
+            ->assertSee('Supply Stores')
+            ->assertSee('Full Itemized Breakdown')
+            ->assertSee('Estimated Total Cost')
+            ->assertSee('Valid until')
             ->assertSee('₱321.00')
-            ->assertSee('AI Overview');
+            // The overview page links out to the itemized page rather than
+            // repeating every line, so it must not render the product names.
+            ->assertDontSee('Premium Urea')
+            ->assertSee(route('farmer.quotations.breakdown', $quotation));
     }
 
     public function test_ai_overview_returns_fallback_smart_response_when_no_api_key(): void
@@ -126,7 +132,9 @@ class FarmerQuotationShowTest extends TestCase
             ->assertOk()
             ->assertJsonPath('source', 'fallback')
             ->assertJsonPath('metrics.crop', 'Rice')
-            ->assertJsonPath('metrics.land_area', 1.5)
+            ->assertJsonPath('metrics.farm_area', 1.5)
+            ->assertJsonPath('metrics.total', 321)
+            ->assertJsonPath('metrics.item_count', 2)
             ->assertJsonStructure(['overview']);
     }
 
@@ -196,11 +204,15 @@ class FarmerQuotationShowTest extends TestCase
             'subtotal'            => 1200,
         ]);
 
+        // The rate × area math lives on the dedicated itemized breakdown page;
+        // the overview page links to it instead of repeating it.
+        // 3 bag/ha × 2.00 ha — the multiplication sign is an HTML entity
+        // in the markup, so compare unescaped.
         $this->actingAs($farmer)
-            ->get(route('farmer.quotations.show', $quotation))
+            ->get(route('farmer.quotations.breakdown', $quotation))
             ->assertOk()
             ->assertSee('3 bag/ha')
-            ->assertSee('× 2.00 ha');
+            ->assertSee('&times; 2.00 ha', false);
     }
 
     public function test_fallback_overview_is_built_from_quotation_items(): void

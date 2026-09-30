@@ -1205,6 +1205,10 @@
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
     const chatHistory = [];
+    // Structured conversation state from the server (last intent, crop, product
+    // ids, season, area). Sent with every turn so "how much is it?" resolves
+    // to the right product without replaying the whole transcript.
+    let aiContext = null;
     let isSending = false;
 
     function scrollToBottom() {
@@ -1392,7 +1396,7 @@
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ messages: chatHistory }),
+                body: JSON.stringify({ messages: chatHistory, context: aiContext }),
             });
 
             const data = await resp.json();
@@ -1401,8 +1405,13 @@
             if (resp.ok && data.reply) {
                 chatHistory.push({ role: 'assistant', content: data.reply });
                 addMessage('assistant', data.reply);
+                // Product cards are built by the server from database rows, so
+                // the carousel and the prose can never disagree about a price.
                 if (data.suggestions && data.suggestions.length) {
                     renderSuggestions(data.suggestions);
+                }
+                if (data.context) {
+                    aiContext = data.context;
                 }
                 persistCurrentConversation();
             } else {
@@ -1557,7 +1566,7 @@
         fetch('{{ route("store.ai-chat.history.save") }}', {
             method: 'POST',
             headers: csrfHeader(),
-            body: JSON.stringify({ id: currentHistoryId, messages: chatHistory }),
+            body: JSON.stringify({ id: currentHistoryId, messages: chatHistory, context: aiContext }),
         })
             .then(function (r) { return r.json(); })
             .then(function (d) {
@@ -1595,6 +1604,7 @@
         }
         closeDeleteModal();
         chatHistory.length = 0;
+        aiContext = null;
         currentHistoryId = null;
         activeChatHasMessages = false;
         chatMessages.innerHTML = '';
@@ -1649,6 +1659,7 @@
                 if (d && d.messages) {
                     chatHistory.length = 0;
                     d.messages.forEach(function (m) { chatHistory.push(m); });
+                    aiContext = d.context || null;
                     currentHistoryId = Number(id);
                     activeChatHasMessages = true;
                     loadHistoryMessages(d.messages);

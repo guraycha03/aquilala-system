@@ -3,6 +3,13 @@
 @section('title', 'Settings')
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'settings', 'label' => 'Settings',    'url' => route('store.settings.index')],
+      ['key' => 'activity', 'label' => 'Activity Log', 'url' => route('store.activity.index')],
+    ],
+    'activeTab' => 'settings',
+  ])
   <div style="max-width: 860px;">
     <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 22px;">
       <div>

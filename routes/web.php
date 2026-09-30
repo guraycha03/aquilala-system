@@ -12,6 +12,7 @@ use App\Http\Controllers\CropsDirectoryController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\FarmerCropController;
 use App\Http\Controllers\FarmerDashboardController;
+use App\Http\Controllers\FarmerNotificationController;
 use App\Http\Controllers\FormulaController;
 use App\Http\Controllers\HarvestReportController;
 use App\Http\Controllers\InventoryController;
@@ -145,6 +146,12 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         return response()->json(['ok' => true, 'style' => $style]);
     })->name('settings.tabs-style');
 
+    // Save / unsave a product for later — every signed-in role may keep their
+    // own list. There is no saved-products page yet; the toggle just syncs the
+    // bookmark state shown on the product cards.
+    Route::post('/products/{product}/save', [ProductController::class, 'toggleSave'])
+        ->name('products.save');
+
     // Centralized Dashboard Redirector
     Route::get('/dashboard', function () {
         $role = Auth::user()->role;
@@ -226,9 +233,9 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::delete('/harvests/{harvestReport}', [HarvestReportController::class, 'destroy'])->name('harvests.destroy');
 
         // Notifications
-        Route::get('/notifications', function () {
-            return view('farmer.notifications.index');
-        })->name('notifications.index');
+        Route::get('/notifications', [FarmerNotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/read-all', [FarmerNotificationController::class, 'markAllRead'])->name('notifications.read-all');
+        Route::post('/notifications/{activityLog}/read', [FarmerNotificationController::class, 'markRead'])->name('notifications.read');
 
         // Settings (UI preferences)
         Route::get('/settings', function () {

@@ -91,6 +91,16 @@ class ActivityLog extends Model
         ]);
     }
 
+    public function scopeFarmerNotifications($query)
+    {
+        return $query->whereIn('type', [
+            self::TYPE_QUOTATION_CREATED,
+            self::TYPE_QUOTATION_DELETED,
+            self::TYPE_REVIEW_CREATED,
+            self::TYPE_REVIEW_DELETED,
+        ]);
+    }
+
     // ── Accessors ─────────────────────────────────────────────────
     public function getIconAttribute(): string
     {

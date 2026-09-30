@@ -124,13 +124,37 @@
         border: 1px solid #e8edf2;
         border-radius: 12px;
         overflow: hidden;
+    }
+    .gallery-track {
+        position: relative;
+        display: flex;
+        align-items: center;
+        min-height: 240px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         cursor: zoom-in;
     }
-    .gallery-main img {
+    .gallery-track::-webkit-scrollbar { display: none; }
+    .gallery-track:focus-visible { outline: 2px solid #166534; outline-offset: -2px; }
+    .gallery-track.is-scrollable { cursor: grab; }
+    .gallery-track.is-scrollable.is-dragging {
+        cursor: grabbing;
+        scroll-snap-type: none;
+    }
+    .gallery-slide {
+        flex: 0 0 100%;
         width: 100%;
         max-height: 380px;
         object-fit: contain;
         display: block;
+        scroll-snap-align: center;
+        user-select: none;
+        -webkit-user-drag: none;
+        pointer-events: none;
     }
     .gallery-empty {
         min-height: 240px;
@@ -174,6 +198,23 @@
     }
     .gallery-expand:hover { background: rgba(15, 23, 42, 0.85); }
     .gallery-expand svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .gallery-nav {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        z-index: 2;
+        width: 34px; height: 34px;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(15, 23, 42, 0.55); color: #fff;
+        border: none; border-radius: 50%; cursor: pointer;
+        opacity: 0; transition: opacity 0.2s, background 0.2s;
+    }
+    .gallery-nav-prev { left: 10px; }
+    .gallery-nav-next { right: 10px; }
+    .gallery-main:hover .gallery-nav,
+    .gallery-nav:focus-visible { opacity: 1; }
+    .gallery-nav:hover:not(:disabled) { background: rgba(15, 23, 42, 0.82); }
+    .gallery-nav:disabled { opacity: 0 !important; cursor: default; }
+    .gallery-nav svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    @media (hover: none) { .gallery-nav { opacity: 1; } }
 
     /* Lightbox */
     .gallery-lightbox {
@@ -350,17 +391,29 @@
             $gallery = $product->gallery;
             $gallerySources = $gallery->map(fn ($image) => asset('storage/' . $image->file_path))->values()->all();
         @endphp
-        <div class="gallery" data-gallery data-gallery-sources="{{ \Illuminate\Support\Js::from($gallerySources) }}" data-gallery-name="{{ $product->display_name }}">
+        <div class="gallery" data-gallery data-gallery-sources="{{ json_encode($gallerySources) }}" data-gallery-name="{{ $product->display_name }}">
             <div class="gallery-main" data-gallery-main>
                 @if($gallery->isNotEmpty())
-                    <img src="{{ asset('storage/' . $gallery->first()->file_path) }}"
-                         alt="{{ $product->display_name }}"
-                         data-gallery-image
-                         data-gallery-index="0">
+                    <div class="gallery-track" data-gallery-track tabindex="0" role="group" aria-label="Product images — scroll left and right to browse">
+                        @foreach($gallery as $index => $image)
+                            <img class="gallery-slide"
+                                 src="{{ asset('storage/' . $image->file_path) }}"
+                                 alt="{{ $product->display_name }}{{ $gallery->count() > 1 ? ' — image ' . ($index + 1) : '' }}"
+                                 data-gallery-image
+                                 data-gallery-index="{{ $index }}"
+                                 draggable="false">
+                        @endforeach
+                    </div>
                     @if($gallery->count() > 1)
                         <span class="gallery-count" data-gallery-counter>1 / {{ $gallery->count() }}</span>
                         <button type="button" class="gallery-expand" data-gallery-zoom aria-label="View larger image">
                             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                        </button>
+                        <button type="button" class="gallery-nav gallery-nav-prev" data-gallery-step="-1" aria-label="Previous image">
+                            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <button type="button" class="gallery-nav gallery-nav-next" data-gallery-step="1" aria-label="Next image">
+                            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                     @endif
                 @else
@@ -401,7 +454,7 @@
                             <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                     @endif
-                    <img src="" alt="" data-gallery-lightbox-image>
+                    <img alt="" data-gallery-lightbox-image>
                     <div class="gallery-lightbox-caption" data-gallery-lightbox-caption></div>
                 </div>
             @endif
@@ -892,9 +945,10 @@
   /* ── Product image gallery ── */
   var gallery = document.querySelector('[data-gallery]');
   if (gallery) {
-    var mainImage = gallery.querySelector('[data-gallery-image]');
+    var track = gallery.querySelector('[data-gallery-track]');
     var counter = gallery.querySelector('[data-gallery-counter]');
     var thumbs = Array.prototype.slice.call(gallery.querySelectorAll('[data-gallery-thumb]'));
+    var slides = Array.prototype.slice.call(gallery.querySelectorAll('[data-gallery-image]'));
     var lightbox = gallery.querySelector('[data-gallery-lightbox]');
     var lightboxImage = gallery.querySelector('[data-gallery-lightbox-image]');
     var lightboxCaption = gallery.querySelector('[data-gallery-lightbox-caption]');
@@ -906,14 +960,44 @@
     } catch (e) {
       sources = [];
     }
+    // Fall back to the rendered slides if the data attribute was mangled, so the
+    // gallery keeps working even when the JSON payload cannot be read.
+    if (!Array.isArray(sources) || sources.length !== slides.length) {
+      sources = slides.map(function(slide) { return slide.getAttribute('src') || ''; });
+    }
 
-    var total = sources.length;
+    var total = slides.length;
     var current = 0;
+    var prevStep = gallery.querySelector('[data-gallery-step="-1"]');
+    var nextStep = gallery.querySelector('[data-gallery-step="1"]');
 
-    function show(index) {
-      if (!mainImage || total === 0) return;
+    if (track && total > 1) track.classList.add('is-scrollable');
+
+    function sourceAt(index) {
+      return sources[index] || '';
+    }
+
+    function paintLightbox() {
+      if (!lightboxImage) return;
+      lightboxImage.src = sourceAt(current);
+      lightboxImage.alt = productName + ' — image ' + (current + 1) + ' of ' + total;
+      if (lightboxCaption) lightboxCaption.textContent = (current + 1) + ' of ' + total;
+    }
+
+    function openLightbox() {
+      if (!lightbox) return;
+      paintLightbox();
+      lightbox.hidden = false;
+    }
+
+    function closeLightbox() {
+      if (!lightbox) return;
+      lightbox.hidden = true;
+    }
+
+    function paint(index) {
+      if (total === 0) return;
       current = ((index % total) + total) % total;
-      mainImage.src = sources[current];
 
       if (counter) counter.textContent = (current + 1) + ' / ' + total;
 
@@ -922,37 +1006,122 @@
         thumb.classList.toggle('is-active', active);
         thumb.setAttribute('aria-selected', active ? 'true' : 'false');
       });
+
+      if (prevStep) prevStep.disabled = current === 0;
+      if (nextStep) nextStep.disabled = current === total - 1;
     }
 
-    thumbs.forEach(function(thumb, i) {
-      thumb.addEventListener('click', function() { show(i); });
-    });
-
-    if (mainImage) {
-      mainImage.addEventListener('click', function() {
-        if (lightbox) lightbox.hidden = false;
+    // Scroll the big image track so the requested slide is snapped into view.
+    function slideTo(index) {
+      var slide = slides[index];
+      if (!track || !slide) return;
+      track.scrollTo({
+        left: slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2,
+        behavior: 'smooth'
       });
     }
 
-    var zoomBtn = gallery.querySelector('[data-gallery-zoom]');
-    if (zoomBtn) {
-      zoomBtn.addEventListener('click', function(e) {
+    function go(index, moveTrack) {
+      if (total === 0) return;
+      paint(index);
+      if (moveTrack !== false) slideTo(current);
+    }
+
+    // Keep the counter + active thumbnail in sync while the track is scrolled
+    // (mouse wheel, trackpad, drag, touch swipe or native scrollbar).
+    var scrollFrame = null;
+    if (track) {
+      track.addEventListener('scroll', function() {
+        if (scrollFrame) return;
+        scrollFrame = requestAnimationFrame(function() {
+          scrollFrame = null;
+          var mid = track.scrollLeft + track.clientWidth / 2;
+          var nearest = 0;
+          var nearestDistance = Infinity;
+          slides.forEach(function(slide, i) {
+            var distance = Math.abs((slide.offsetLeft + slide.offsetWidth / 2) - mid);
+            if (distance < nearestDistance) { nearestDistance = distance; nearest = i; }
+          });
+          if (nearest !== current) paint(nearest);
+        });
+      }, { passive: true });
+    }
+
+    thumbs.forEach(function(thumb, i) {
+      thumb.addEventListener('click', function() { go(i); });
+    });
+
+    [prevStep, nextStep].forEach(function(btn) {
+      if (!btn) return;
+      btn.addEventListener('click', function(e) {
         e.stopPropagation();
-        if (lightbox) lightbox.hidden = false;
+        var step = parseInt(btn.dataset.galleryStep, 10) || 0;
+        go(current + step);
+      });
+    });
+
+    var zoomBtn = gallery.querySelector('[data-gallery-zoom]');
+    if (zoomBtn) zoomBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openLightbox();
+    });
+
+    if (track) {
+      var dragPointer = null;
+      var dragStartX = 0;
+      var dragStartScroll = 0;
+      var dragged = false;
+
+      track.addEventListener('pointerdown', function(e) {
+        if (e.pointerType === 'touch' || e.button !== 0) return;
+        dragged = false;
+        dragPointer = e.pointerId;
+        dragStartX = e.clientX;
+        dragStartScroll = track.scrollLeft;
+        if (track.setPointerCapture) {
+          try { track.setPointerCapture(e.pointerId); } catch (err) {}
+        }
+      });
+
+      track.addEventListener('pointermove', function(e) {
+        if (dragPointer === null || e.pointerId !== dragPointer) return;
+        var delta = e.clientX - dragStartX;
+        if (!dragged && Math.abs(delta) > 4) {
+          dragged = true;
+          track.classList.add('is-dragging');
+        }
+        if (!dragged) return;
+        track.scrollLeft = dragStartScroll - delta;
+        if (e.cancelable) e.preventDefault();
+      });
+
+      function endDrag(e) {
+        if (dragPointer === null || e.pointerId !== dragPointer) return;
+        dragPointer = null;
+        track.classList.remove('is-dragging');
+        if (track.releasePointerCapture) {
+          try { track.releasePointerCapture(e.pointerId); } catch (err) {}
+        }
+      }
+
+      track.addEventListener('pointerup', endDrag);
+      track.addEventListener('pointercancel', endDrag);
+
+      // A plain click zooms; the click that ends a drag must not.
+      track.addEventListener('click', function(e) {
+        if (dragged) { dragged = false; return; }
+        if (e.target.closest('[data-gallery-zoom], .gallery-nav')) return;
+        openLightbox();
+      });
+
+      track.addEventListener('keydown', function(e) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        e.preventDefault();
+        go(current + (e.key === 'ArrowLeft' ? -1 : 1));
       });
     }
 
     if (lightbox && lightboxImage) {
-      function paintLightbox() {
-        lightboxImage.src = sources[current] || '';
-        lightboxImage.alt = productName + ' — image ' + (current + 1);
-        if (lightboxCaption) {
-          lightboxCaption.textContent = (current + 1) + ' of ' + total;
-        }
-      }
-
-      function closeLightbox() { lightbox.hidden = true; }
-
       paintLightbox();
 
       var closeBtn = gallery.querySelector('[data-gallery-close]');
@@ -960,33 +1129,61 @@
 
       var prevBtn = gallery.querySelector('[data-gallery-prev]');
       if (prevBtn) {
-        prevBtn.addEventListener('click', function() { show(current - 1); paintLightbox(); });
+        prevBtn.addEventListener('click', function() { go(current - 1, false); paintLightbox(); });
       }
 
       var nextBtn = gallery.querySelector('[data-gallery-next]');
       if (nextBtn) {
-        nextBtn.addEventListener('click', function() { show(current + 1); paintLightbox(); });
+        nextBtn.addEventListener('click', function() { go(current + 1, false); paintLightbox(); });
       }
 
+      // Swipe left/right through the images while the viewer is open.
+      var swipePointer = null;
+      var swipeStartX = 0;
+      var swiped = false;
+
       lightbox.addEventListener('click', function(e) {
+        if (swiped) { swiped = false; return; }
         if (e.target === lightbox) closeLightbox();
       });
 
+      lightbox.addEventListener('pointerdown', function(e) {
+        if (e.target.closest('button')) return;
+        swipePointer = e.pointerId;
+        swipeStartX = e.clientX;
+      });
+
+      lightbox.addEventListener('pointerup', function(e) {
+        if (swipePointer === null || e.pointerId !== swipePointer) return;
+        var delta = e.clientX - swipeStartX;
+        swipePointer = null;
+        if (Math.abs(delta) > 50) {
+          swiped = true;
+          go(current + (delta < 0 ? 1 : -1), false);
+          paintLightbox();
+        }
+      });
+
+      lightbox.addEventListener('pointercancel', function() { swipePointer = null; });
+
       document.addEventListener('keydown', function(e) {
         if (lightbox.hidden) return;
-        if (e.key === 'Escape') closeLightbox();
-        if (e.key === 'ArrowLeft') { show(current - 1); paintLightbox(); }
-        if (e.key === 'ArrowRight') { show(current + 1); paintLightbox(); }
+        if (e.key === 'Escape') { closeLightbox(); return; }
+        if (e.key === 'ArrowLeft') { go(current - 1, false); paintLightbox(); }
+        if (e.key === 'ArrowRight') { go(current + 1, false); paintLightbox(); }
       });
     }
 
     // Arrow-key navigation on the thumbnail row.
     gallery.addEventListener('keydown', function(e) {
+      if (lightbox && !lightbox.hidden) return;
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-      if (document.activeElement && !document.activeElement.classList.contains('gallery-thumb')) return;
+      if (!document.activeElement || !document.activeElement.classList.contains('gallery-thumb')) return;
       e.preventDefault();
-      show(e.key === 'ArrowLeft' ? current - 1 : current + 1);
+      go(current + (e.key === 'ArrowLeft' ? -1 : 1));
     });
+
+    paint(0);
   }
 })();
 </script>

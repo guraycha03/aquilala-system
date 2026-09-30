@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Models\Category;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -140,6 +142,27 @@ class Product extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(ProductReview::class);
+    }
+
+    public function savedByUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'saved_products')->withTimestamps();
+    }
+
+    /**
+     * Tag a batch of products with a transient `saved` flag so the shared card
+     * can draw its bookmark without a query per card. One lookup for the whole
+     * batch regardless of how large the catalog page is.
+     */
+    public static function markSavedState(
+        EloquentCollection $products,
+        ?User $user,
+    ): void {
+        $savedIds = $user?->savedProducts()->pluck('saved_products.product_id')->all() ?? [];
+
+        foreach ($products as $product) {
+            $product->saved = in_array((int) $product->getKey(), $savedIds, true);
+        }
     }
 
     /**
@@ -373,5 +396,69 @@ class Product extends Model
         }
         return 'Approximately ' . $coverage['min'] . '–' . $coverage['max'] . ' ' . $coverage['unit'] . ' per ' .
             $this->package_size . ' ' . ($this->package_unit ?? 'piece') . ' package';
+    }
+
+    /**
+     * The facets the shared <x-catalog-filters> bar filters and sorts on,
+     * keyed by the data-cf-* attribute the engine reads.
+     *
+     * Every catalog surface renders its cards from this one method, including
+     * the two that use bespoke markup, so a facet can never be defined twice
+     * and drift apart between pages.
+     *
+     * @return array<string, float|int|string>
+     */
+    public function catalogFacets(): array
+    {
+        $category = trim((string) $this->category_display_name);
+
+        // `products.category` is a legacy text column that shadows the
+        // `category()` relation on attribute access, so the relation has to be
+        // read explicitly rather than through the property.
+        $leaf = $this->relationLoaded('category') ? $this->getRelation('category') : null;
+        $leaf = $leaf instanceof Category ? $leaf : null;
+
+        // The taxonomy is two levels deep, so a product belongs to both its
+        // leaf category and its top-level group. Filtering on either works.
+        $group = ($leaf && $leaf->parent_id && $leaf->relationLoaded('parent') && $leaf->parent)
+            ? (string) $leaf->parent->name
+            : $category;
+
+        $season = in_array($this->recommended_season, ['wet', 'dry'], true)
+            ? $this->recommended_season
+            : 'both';
+
+        $quantity = (int) ($this->stock_quantity ?? 0);
+        $stock = $quantity <= 0
+            ? 'out'
+            : ($quantity <= (int) ($this->reorder_threshold ?? 5) ? 'low' : 'in');
+
+        // Season and stock are spelled out in the haystack so a search for
+        // "wet season" or "out of stock" finds the product, not just a title.
+        $seasonWord = $season === 'wet' ? 'wet season' : ($season === 'dry' ? 'dry season' : 'all seasons year round');
+        $stockWord = $stock === 'out' ? 'out of stock' : ($stock === 'low' ? 'low stock' : 'in stock');
+
+        return [
+            'data-cf-search' => mb_strtolower(trim(implode(' ', array_filter([
+                $this->display_name,
+                $this->name,
+                $this->brand,
+                $this->sku,
+                $category,
+                $group,
+                $seasonWord,
+                $stockWord,
+                $this->description,
+            ])))),
+            'data-cf-name' => mb_strtolower($this->display_name),
+            'data-cf-category' => mb_strtolower($category),
+            'data-cf-group' => mb_strtolower($group),
+            'data-cf-season' => $season,
+            'data-cf-stock' => $stock,
+            'data-cf-price' => (float) $this->price,
+            'data-cf-rating' => (float) ($this->average_rating ?? 0),
+            'data-cf-reviews' => (int) $this->review_count,
+            'data-cf-date' => optional($this->created_at)->getTimestamp() ?? 0,
+        ];
     }
 }

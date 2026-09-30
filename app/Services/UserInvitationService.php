@@ -78,11 +78,16 @@ class UserInvitationService
     }
 
     /**
-     * Create a user account (random temporary password) and email a single-use
-     * "Set Your Password" link plus the temporary password itself.
+     * Create a pending account and email a single-use activation code plus the
+     * entry link that opens the code entry screen.
+     *
+     * The account is created as STATUS_PENDING with an unusable placeholder
+     * password, so it cannot be signed into until the member verifies the 6
+     * digit code and chooses their own password (see AccountActivationController).
+     * The placeholder is a real bcrypt hash rather than NULL so no code path
+     * can ever treat the account as password-less.
      *
      * @throws DuplicateAccountException
-     * @throws MailDeliveryException
      */
     public static function invite(array $data, array &$delivery = []): User
     {
@@ -115,14 +120,14 @@ return User::create([
                 'email' => $email,
                 'phone' => $phone,
                 'role' => $data['role'],
-                'status' => User::STATUS_ACTIVE,
-                // Temporary password until the member sets a permanent one
-                // (either via the emailed link or on first sign-in).
+                'status' => User::STATUS_PENDING,
+                // Unusable placeholder: the account cannot be signed into until
+                // the member verifies the emailed code and picks a password.
+                // A real bcrypt hash (never NULL) so nothing can treat the
+                // account as password-less.
                 'password' => Hash::make(Str::random(64)),
-                // Email is considered verified when the password is actually
-                // set — the emailed link / temporary password prove ownership.
+                // Set once the emailed 6-digit code is verified.
                 'email_verified_at' => null,
-                'must_change_password' => true,
             ] + array_filter([
                     'barangay' => $data['barangay'] ?? null,
                     'city' => $data['city'] ?? null,
@@ -145,13 +150,13 @@ return User::create([
         $delivery = ['sent' => false, 'error' => null];
 
         try {
-            self::issueSetPassword($user);
+            self::issueActivation($user);
             $delivery['sent'] = true;
         } catch (MailDeliveryException $e) {
-            // The account is created and the temporary password is stored even
-            // when the email cannot be delivered. A transient mail outage must
-            // not fail the invitation — the admin re-issues the code with the
-            // "Resend Invitation" action from the Users list.
+            // The pending account and its entry token exist even when the email
+            // cannot be delivered. A transient mail outage must not fail the
+            // invitation — the admin re-issues the code with the "Resend
+            // Invitation" action from the Users list.
             $delivery['error'] = $e->getMessage();
 
             Log::warning('Invitation created but activation email could not be sent.', [
@@ -197,11 +202,15 @@ return User::create([
     }
 
     /**
-     * (Re)issue the password-setup invitation for an admin-created account:
+     * (Re)issue the password-setup invitation for a bulk-imported account:
      * rolls a fresh temporary password, stores it hashed, attaches a
      * single-use password-reset token, and emails both the "Set Your Password"
      * link and the temporary password. Every resend voids the previous temp
      * password and token.
+     *
+     * This is the CSV/OCR import path only. Accounts created one at a time from
+     * the Users page are pending and use issueActivation() instead, so they
+     * never carry a temporary password.
      *
      * @throws InvalidActivationTokenException
      * @throws MailDeliveryException
@@ -209,7 +218,7 @@ return User::create([
     public static function issueSetPassword(User $user): void
     {
         if (! $user->isActive()) {
-            throw new InvalidActivationTokenException('Only invited (active) accounts can receive a password-setup email.');
+            throw new InvalidActivationTokenException('Only imported (active) accounts can receive a password-setup email.');
         }
 
         if (! $user->mustChangePassword()) {
@@ -264,9 +273,14 @@ return User::create([
 
         $user = $activation->user;
 
-        // Friendliest message wins: if the account is live, say so,
-        // regardless of the token's own consumed/expired status.
-        if ($user && ! $user->isPending()) {
+        // Friendliest message wins: if the account is no longer pending, say
+        // so regardless of the token's own consumed/expired status. A disabled
+        // account gets its own state so the page never claims it is active.
+        if ($user && $user->isDisabled()) {
+            return ['state' => 'disabled', 'user' => $user];
+        }
+
+        if ($user && $user->isActive()) {
             return ['state' => 'already_active', 'user' => $user];
         }
 

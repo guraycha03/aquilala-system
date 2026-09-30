@@ -55,7 +55,7 @@ class AdminUserController extends Controller
                     'land_ownership' => $u->land_ownership,
                     'years_farming' => $u->years_farming,
                     'assoc_member_no' => $u->assoc_member_no,
-                    'password_set' => $u->hasSetPassword(),
+                    'must_change_password' => $u->mustChangePassword(),
                     'joined' => $u->created_at?->format('M d, Y'),
                     'products' => $u->products_count,
                 ],
@@ -146,8 +146,8 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Admin pre-registers a user account and emails the password-setup
-     * invitation (single-use link + temporary password).
+     * Admin pre-registers a user account and emails a single-use 6-digit
+     * activation code plus the entry link (AccountActivationController).
      */
     public function store(Request $request): JsonResponse|RedirectResponse
     {
@@ -185,8 +185,8 @@ class AdminUserController extends Controller
         }
 
         $message = $delivery && empty($delivery['sent'])
-            ? "{$user->name}'s account was created, but the invitation email could not be sent — {$delivery['error']} To deliver invitations, verify a sender domain at resend.com and set MAIL_FROM_ADDRESS in .env, then click Resend Invitation in the Users list."
-            : "Account created for {$user->email}. An invitation with the password-setup link and the temporary password was sent to their inbox.";
+            ? "{$user->name}'s account was created, but the activation email could not be sent — {$delivery['error']} To deliver invitations, verify a sender domain at resend.com and set MAIL_FROM_ADDRESS in .env, then click Resend Invitation in the Users list."
+            : "Account created for {$user->email}. They can now sign in, enter the 6-digit activation code we emailed them, and set their own password.";
 
         if ($request->expectsJson()) {
             return response()->json(['message' => $message], 201);
@@ -198,7 +198,10 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Show the approvals page: farmers still awaiting account activation.
+     * Show the approvals page: accounts awaiting activation.
+     *
+     * Includes self-registered farmers and any admin-created account still in
+     * the pending state.
      */
     public function approvals()
     {
@@ -264,9 +267,11 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Re-issue an invitation for an account that has not finished setting up:
-     * pending accounts get a legacy activation code, invited active accounts
-     * get a fresh password-setup email.
+     * Re-issue an invitation for an account that has not finished setting up.
+     *
+     * Pending accounts get a fresh 6-digit activation code. Bulk-imported
+     * accounts (active but still holding their temporary password) get a fresh
+     * temporary password and set-password link instead.
      */
     public function resend(Request $request, User $user): JsonResponse|RedirectResponse
     {

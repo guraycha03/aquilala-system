@@ -3,6 +3,13 @@
 @section('title', 'My Activity')
 
 @section('content')
+  @include('partials.admin-tabs', [
+    'tabs' => [
+      ['key' => 'settings', 'label' => 'Settings',    'url' => route('store.settings.index')],
+      ['key' => 'activity', 'label' => 'Activity Log', 'url' => route('store.activity.index')],
+    ],
+    'activeTab' => 'activity',
+  ])
 <!-- Load AlpineJS -->
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
@@ -320,8 +327,6 @@
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
   }
-
-  #notifBellBtn { display: none; }
 
   /* Empty State View */
   .empty-state {

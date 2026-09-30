@@ -47,6 +47,9 @@ class ProductController extends Controller
         // ─── Top performers (Most Viewed / Most Quoted / Top Rated) ─────
         $products->load('approvedReviews');
 
+        // Saved-for-later state for the dashboard "My Products" carousel.
+        Product::markSavedState($products, $user);
+
         // ─── Rating & review metrics for this store ───────────────────
         $ratedProducts = $products->filter(fn ($p) => $p->average_rating !== null);
         $averageRating = $ratedProducts->isNotEmpty()
@@ -111,18 +114,15 @@ class ProductController extends Controller
         $products = Product::where('user_id', Auth::id())
             // The catalog card renders star ratings, which are accessors over
             // this relation. Eager load it or every card costs its own query.
-            ->with(['category', 'mainImage', 'images', 'approvedReviews'])
+            ->with(['category.parent', 'mainImage', 'images', 'approvedReviews'])
             ->latest()
             ->get();
 
-        $categories = $products
-            ->pluck('category.name')
-            ->filter()
-            ->unique()
-            ->sort()
-            ->values();
+        Product::markSavedState($products, Auth::user());
 
-        return view('store.storefront.index', compact('products', 'categories'));
+        $facets = $this->filterFacets($products);
+
+        return view('store.storefront.index', compact('products') + $facets);
     }
 
     /**
@@ -131,7 +131,10 @@ class ProductController extends Controller
     public function recommendations()
     {
         $products = Product::active()
-            ->with(['category', 'mainImage', 'images', 'storeOwner'])
+            // approvedReviews backs the rating/review facets the shared filter
+            // bar sorts on, so it has to be eager loaded rather than resolved
+            // once per card.
+            ->with(['category.parent', 'mainImage', 'images', 'storeOwner', 'approvedReviews'])
             ->latest()
             ->get();
 
@@ -139,18 +142,9 @@ class ProductController extends Controller
             ->whereNotNull('store_name')
             ->count();
 
-        // Product categories present among the recommended products, with counts.
-        $categories = $products
-            ->filter(fn ($p) => $p->category_display_name !== 'Uncategorized')
-            ->groupBy(fn ($p) => $p->category_display_name)
-            ->sortKeys()
-            ->map(fn ($group) => (object) [
-                'name'  => $group->first()->category_display_name,
-                'count' => $group->count(),
-            ])
-            ->values();
+        $facets = $this->filterFacets($products);
 
-        return view('farmer.recommendations.index', compact('products', 'storeCount', 'categories'));
+        return view('farmer.recommendations.index', compact('products', 'storeCount') + $facets);
     }
 
     /**
@@ -461,16 +455,60 @@ class ProductController extends Controller
     }
 
     /**
+     * Build the facet data the shared <x-catalog-filters> bar needs from an
+     * already-loaded product collection: the category options to offer, and
+     * the price bounds to seed the range inputs.
+     *
+     * The taxonomy is two levels deep, so both the leaf category and its
+     * top-level group are offered. A card is tagged with both (see
+     * resources/views/components/product-card.blade.php), so picking a parent
+     * group returns everything filed underneath it.
+     *
+     * @param  \Illuminate\Support\Collection<int, Product>  $products
+     * @return array{categories: \Illuminate\Support\Collection, priceMin: float, priceMax: float}
+     */
+    protected function filterFacets($products)
+    {
+        $categories = $products
+            ->flatMap(function (Product $product) {
+                $leaf = $product->relationLoaded('category') ? $product->getRelation('category') : null;
+                $names = [$product->category_display_name];
+
+                if ($leaf instanceof Category && $leaf->parent_id && $leaf->relationLoaded('parent') && $leaf->parent) {
+                    $names[] = (string) $leaf->parent->name;
+                }
+
+                return $names;
+            })
+            ->map(fn ($name) => trim((string) $name))
+            ->filter()
+            ->reject(fn ($name) => $name === 'Uncategorized')
+            ->unique()
+            ->sort()
+            ->values();
+
+        return [
+            'categories' => $categories,
+            'priceMin' => round((float) ($products->min('price') ?? 0), 2),
+            'priceMax' => round((float) ($products->max('price') ?? 0), 2),
+        ];
+    }
+
+    /**
      * Display all active products for farmers to browse.
      */
     public function browse()
     {
         $products = Product::active()
-            ->with(['category', 'storeOwner', 'mainImage', 'images', 'approvedReviews'])
+            // category.parent is what lets a card report its top-level group,
+            // which the shared filter bar matches on.
+            ->with(['category.parent', 'storeOwner', 'mainImage', 'images', 'approvedReviews'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('farmer.products.browse', compact('products'));
+        Product::markSavedState($products, Auth::user());
+
+        return view('farmer.products.browse', compact('products') + $this->filterFacets($products));
     }
 
     /**
@@ -582,6 +620,30 @@ class ProductController extends Controller
         });
 
         return back()->with('success', 'Image removed successfully.');
+    }
+
+    /**
+     * Toggle whether the signed-in user has saved this product for later.
+     */
+    public function toggleSave(Product $product)
+    {
+        $user = Auth::user();
+
+        abort_unless($user, 401);
+
+        // Only products a shopper could actually open on their own (active
+        // listings) can be saved; a store owner may still save their own draft.
+        abort_unless($product->status === 'active' || $product->user_id === $user->id, 404);
+
+        if ($user->savedProducts()->whereKey($product->id)->exists()) {
+            $user->savedProducts()->detach($product);
+            $saved = false;
+        } else {
+            $user->savedProducts()->attach($product);
+            $saved = true;
+        }
+
+        return response()->json(['saved' => $saved]);
     }
 
     private function authorizeProductOwner(Product $product): void
