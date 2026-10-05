@@ -9,7 +9,8 @@
 |
 | Priority used by FarmerCropController::buildYieldEstimatorData():
 |   1. Product variety maturity  (rice_varieties.maturity_days, most specific)
-|   2. Bulan catalog maturity    (config/bulan_crops.php -> maturity_days)
+|   2. Crop library maturity     (config/crop_library.php -> maturity_days;
+|      a selected variety's maturity_days overrides this inside the form)
 |   3. This fallback table       (umbrella groups & anything unlisted)
 |
 | Values are typical days from planting to first harvest, based on local
@@ -22,8 +23,8 @@ return [
     'fallback_maturity_days' => [
         'vegetables' => 60,
         'root crops' => 120,
-        'legumes'    => 90,
-        'other'      => 150,
+        'legumes' => 90,
+        'other' => 150,
     ],
 
     // Optional extra overrides for any crop name not covered elsewhere.

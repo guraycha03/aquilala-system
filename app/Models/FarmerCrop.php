@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Services\ActivityLogger;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -10,6 +13,8 @@ class FarmerCrop extends Model
     protected $fillable = [
         'user_id',
         'crop_id',
+        'variety',
+        'variety_key',
         'product_id',
         'batch_name',
         'land_area',
@@ -87,7 +92,7 @@ class FarmerCrop extends Model
             $data['quotation_id'] = null;
             $report = HarvestReport::create($data);
             $this->update(['harvest_report_id' => $report->id]);
-            \App\Services\ActivityLogger::harvestReportCreated($report);
+            ActivityLogger::harvestReportCreated($report);
         }
 
         return $report;
@@ -128,17 +133,23 @@ class FarmerCrop extends Model
 
     public function getDaysUntilHarvestAttribute(): ?int
     {
-        if (!$this->expected_harvest_date) return null;
+        if (! $this->expected_harvest_date) {
+            return null;
+        }
         $days = (int) now()->diffInDays($this->expected_harvest_date, false);
+
         return $days < 0 ? 0 : $days;
     }
 
     public function getProgressPercentAttribute(): int
     {
-        if (!$this->expected_harvest_date || !$this->planting_date) return 0;
+        if (! $this->expected_harvest_date || ! $this->planting_date) {
+            return 0;
+        }
         $total = $this->planting_date->diffInDays($this->expected_harvest_date);
         $elapsed = $this->planting_date->diffInDays(now());
         $pct = (int) round(($elapsed / max($total, 1)) * 100);
+
         return min(max($pct, 0), 100);
     }
 
@@ -156,17 +167,17 @@ class FarmerCrop extends Model
     public static function uniqueBatchName(int $userId, int $cropId, string $cropName, $plantingDate, ?int $exceptId = null): string
     {
         $slug = strtoupper(preg_replace('/[^a-zA-Z0-9]+/', '', (string) $cropName));
-        $date = $plantingDate instanceof \Carbon\CarbonInterface
+        $date = $plantingDate instanceof CarbonInterface
             ? $plantingDate->format('dmy')
-            : \Carbon\Carbon::parse($plantingDate)->format('dmy');
+            : Carbon::parse($plantingDate)->format('dmy');
 
         $fieldNum = static::where('user_id', $userId)
-                ->where('crop_id', $cropId)
-                ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
-                ->count() + 1;
+            ->where('crop_id', $cropId)
+            ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+            ->count() + 1;
 
         do {
-            $name = $slug . '-FIELD' . $fieldNum . '-' . $date;
+            $name = $slug.'-FIELD'.$fieldNum.'-'.$date;
             $exists = static::where('user_id', $userId)
                 ->where('batch_name', $name)
                 ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))

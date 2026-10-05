@@ -13,7 +13,7 @@ use App\Models\DecisionFormula;
  * asks something that is not a product lookup or a calculation.
  *
  * "Approved" is not a vibe here. Every figure below is already in the
- * application — the Bulan crop catalogue in config/bulan_crops.php and the
+ * application — the Sorsogon crop library in config/crop_library.php and the
  * Bicol climate calendar in SeasonHelper — which means the numbers have an
  * owner who put them there. Anything not in one of those two places is not
  * knowledge this assistant has, and it says so rather than improvising.
@@ -21,15 +21,15 @@ use App\Models\DecisionFormula;
 class FarmingKnowledgeService
 {
     /**
-     * Crops with a curated entry in the Bulan catalogue, keyed by lowercase
-     * name. These are the crops the assistant can say something substantive
-     * about without a product lookup.
+     * Crops with a curated entry in the Sorsogon crop library, keyed by
+     * lowercase name. These are the crops the assistant can say something
+     * substantive about without a product lookup.
      *
      * @return array<string, array<string, mixed>>
      */
     public function catalog(): array
     {
-        $crops = config('bulan_crops.crops', []);
+        $crops = app(CropLibraryService::class)->all();
 
         return collect($crops)
             ->filter(fn ($crop) => is_array($crop) && ! empty($crop['name']))
@@ -76,7 +76,7 @@ class FarmingKnowledgeService
         $catalog = $this->catalog();
         $key = $this->key($name);
 
-        return $catalog[$key] ?? null;
+        return $catalog[$key] ?? app(CropLibraryService::class)->forName($name);
     }
 
     /**
@@ -93,14 +93,14 @@ class FarmingKnowledgeService
         }
 
         return [
-            'crop'                 => $crop['name'],
-            'group'                => $crop['category'] ?? null,
-            'local_name'           => $crop['description'] ?? null,
+            'crop' => $crop['name'],
+            'group' => $crop['category'] ?? null,
+            'local_name' => $crop['description'] ?? null,
             'typical_yield_per_ha' => isset($crop['default_yield_per_ha'])
-                ? $crop['default_yield_per_ha'] . ' ' . ($crop['yield_unit'] ?? 'kg')
+                ? $crop['default_yield_per_ha'].' '.($crop['yield_unit'] ?? 'kg')
                 : null,
-            'maturity_days'        => $crop['maturity_days'] ?? null,
-            'seasons'              => array_map(
+            'maturity_days' => $crop['maturity_days'] ?? null,
+            'seasons' => array_map(
                 fn ($season) => $season === 'wet' ? 'wet season' : 'dry season',
                 (array) ($crop['seasons'] ?? [])
             ),
@@ -117,12 +117,12 @@ class FarmingKnowledgeService
         $climate = SeasonHelper::getClimateInfo();
 
         return [
-            'season'          => $climate['season'],
-            'label'           => $climate['label'],
-            'months'          => $climate['months'],
-            'sub_season'      => $climate['sub_season'],
+            'season' => $climate['season'],
+            'label' => $climate['label'],
+            'months' => $climate['months'],
+            'sub_season' => $climate['sub_season'],
             'typical_weather' => $climate['typical_weather'],
-            'recommendation'  => $climate['recommendation'],
+            'recommendation' => $climate['recommendation'],
         ];
     }
 
@@ -135,7 +135,7 @@ class FarmingKnowledgeService
     public function generalGuidance(): array
     {
         return [
-            'The ' . config('bulan_crops.source', 'Bulan, Sorsogon') . ' crop catalogue is the only crop reference this assistant uses.',
+            'The '.app(CropLibraryService::class)->source().' crop library is the only crop reference this assistant uses.',
             'Application rates, planting distances and dosages come from Aquilala decision formulas, which are keyed to a crop and a season.',
             'Prices and stock always come from the live catalog, so anything quoted here can change without notice.',
         ];

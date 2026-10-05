@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Exceptions\Onboarding\MailDeliveryException;
 use App\Exceptions\OcrException;
+use App\Exceptions\Onboarding\MailDeliveryException;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\OcrMemberExtractor;
@@ -14,6 +14,7 @@ use finfo;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -160,7 +161,9 @@ class AdminUserImportController extends Controller
         abort_unless(auth()->user()?->role === 'admin', 403);
 
         $request->validate([
-            'file' => ['required', 'file', 'max:5120'],
+            // Phone-camera scans are often several MB; give OCR twice the
+            // headroom of the structured-file importer.
+            'file' => ['required', 'file', 'max:10240'],
         ]);
 
         $file = $request->file('file');
@@ -181,19 +184,24 @@ class AdminUserImportController extends Controller
         $ocr = app(OcrService::class);
 
         if (! $ocr->isAvailable()) {
-            Log::warning('OCR skipped: Tesseract is not available.', [
+            Log::warning('OCR skipped: Tesseract or its language data is not available.', [
                 'configured_path' => $ocr->binaryPath(),
+                'tessdata_path' => $ocr->tessdataPath(),
             ]);
 
             return back()
-                ->with('error', 'OCR scanning is not available on this server — Tesseract could not be found. You can still import using the CSV / Excel / JSON option below.')
+                ->with('error', 'OCR scanning is not available on this server — Tesseract or its language data could not be found. You can still import using the CSV / Excel / JSON option below.')
                 ->withInput();
         }
 
         try {
             $text = $ocr->extractText($file->getRealPath());
         } catch (OcrException $e) {
-            Log::error('OCR extraction failed.', ['error' => $e->getMessage()]);
+            Log::error('OCR extraction failed.', [
+                'file' => $file->getClientOriginalName(),
+                'tessdata_path' => $ocr->tessdataPath(),
+                'error' => $e->getMessage(),
+            ]);
 
             return back()
                 ->with('error', 'Unable to process this document with OCR. Please check the image quality or use the Excel/CSV import option instead.')
@@ -447,7 +455,7 @@ class AdminUserImportController extends Controller
         return compact('inserted', 'skipped', 'createdUsers');
     }
 
-    private function isValidOcrImage(\Illuminate\Http\UploadedFile $file): bool
+    private function isValidOcrImage(UploadedFile $file): bool
     {
         $path = $file->getRealPath();
 

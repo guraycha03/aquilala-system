@@ -9,20 +9,20 @@ class CropSeeder extends Seeder
 {
     public function run(): void
     {
-        // Widened, reusable crop catalog for Bulan, Sorsogon (config/bulan_crops.php).
+        // Sorsogon crop library (config/crop_library.php) — one entry per crop.
         // Existing umbrella entries are preserved below so previously logged batches stay valid.
         $umbrellaCrops = [
             ['name' => 'Vegetables', 'category' => 'Vegetable', 'description' => 'Leafy vegetables, fruiting vegetables, and root crops'],
             ['name' => 'Root Crops', 'category' => 'Root Crop', 'description' => 'Cassava, sweet potato, taro, and other root crops'],
             ['name' => 'Legumes', 'category' => 'Legume', 'description' => 'Beans, mungbean, peanut, and other legumes'],
-            ['name' => 'Other', 'category' => 'Other', 'description' => 'Other crops not listed in the Bulan catalog'],
+            ['name' => 'Other', 'category' => 'Other', 'description' => 'Other crops not listed in the crop library'],
         ];
 
         foreach ($umbrellaCrops as $crop) {
             Crop::updateOrCreate(['name' => $crop['name']], $crop);
         }
 
-        foreach (config('bulan_crops.crops') as $crop) {
+        foreach (config('crop_library.crops', []) as $crop) {
             $data = [
                 'name' => $crop['name'],
                 'category' => $crop['category'],

@@ -28,7 +28,7 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-'slack' => [
+    'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
@@ -72,10 +72,21 @@ return [
     | Leave TESSERACT_PATH empty to resolve the `tesseract` command from the
     | system PATH (common on Linux/macOS).
     |
+    | Tesseract also needs language data (*.traineddata). When
+    | TESSDATA_PREFIX is empty the application looks in storage/app/tessdata
+    | and then next to the executable. Set it explicitly to point at any
+    | other tessdata directory.
+    |
+    | TESSERACT_PSM optionally forces a Tesseract page-segmentation mode
+    | (e.g. 6 = one uniform text block). Leave empty for auto-detection,
+    | with a psm 6 retry as fallback.
+    |
     */
     'ocr' => [
         'tesseract_path' => env('TESSERACT_PATH', ''),
         'tesseract_lang' => env('TESSERACT_LANG', 'eng'),
+        'tessdata_path' => env('TESSDATA_PREFIX', ''),
+        'tesseract_psm' => env('TESSERACT_PSM', ''),
     ],
 
 ];

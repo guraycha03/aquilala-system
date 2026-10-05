@@ -449,7 +449,7 @@
     transition: max-height 0.3s cubic-bezier(0.4,0,0.2,1);
   }
   .cd-card.expanded .cd-card-info {
-    max-height: 320px;
+    max-height: 560px;
   }
   .cd-card-info-inner {
     padding: 0 16px 16px;
@@ -491,6 +491,22 @@
   .cd-info-desc .cd-info-value {
     font-size: 12px;
     line-height: 1.5;
+  }
+
+  .cd-varieties {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .cd-variety-chip {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #15803d;
+    background: #ecfdf5;
+    border: 1px solid #bbf7d0;
+    padding: 3px 9px;
+    border-radius: 20px;
   }
 
   /* ── Empty state ── */
@@ -635,7 +651,8 @@
         @endphp
         <div class="cd-card"
              data-category="{{ $category }}"
-             data-name="{{ strtolower($crop['name']) }}">
+             data-name="{{ strtolower($crop['name']) }}"
+             data-search="{{ $crop['search'] ?? strtolower($crop['name']) }}">
           <div class="cd-card-top">
             <div class="cd-card-icon" style="background:{{ $cropColor }}; border-color: rgba(0,0,0,0.12);">
               <img src="{{ asset($imgSrc) }}" alt="{{ $crop['name'] }}">
@@ -653,28 +670,46 @@
               <div class="cd-info-grid">
                 <div class="cd-info-item">
                   <div class="cd-info-label">Planting Method</div>
-                  <div class="cd-info-value">—</div>
+                  <div class="cd-info-value">{{ $crop['planting_method'] ?? '—' }}</div>
                 </div>
                 <div class="cd-info-item">
                   <div class="cd-info-label">Days to Harvest</div>
-                  <div class="cd-info-value">—</div>
+                  <div class="cd-info-value">{{ $crop['days_to_harvest'] ?? '—' }}</div>
                 </div>
                 <div class="cd-info-item">
                   <div class="cd-info-label">Best Season</div>
-                  <div class="cd-info-value">—</div>
+                  <div class="cd-info-value">{{ $crop['best_season'] ?? '—' }}</div>
+                </div>
+                <div class="cd-info-item">
+                  <div class="cd-info-label">Planting Window</div>
+                  <div class="cd-info-value">{{ $crop['planting_window'] ?? '—' }}</div>
                 </div>
                 <div class="cd-info-item">
                   <div class="cd-info-label">Soil Type</div>
-                  <div class="cd-info-value">—</div>
+                  <div class="cd-info-value">{{ $crop['soil_type'] ?? '—' }}</div>
                 </div>
                 <div class="cd-info-item">
                   <div class="cd-info-label">Water Needs</div>
-                  <div class="cd-info-value">—</div>
+                  <div class="cd-info-value">{{ $crop['water_needs'] ?? '—' }}</div>
+                </div>
+                <div class="cd-info-item">
+                  <div class="cd-info-label">Spacing</div>
+                  <div class="cd-info-value">{{ $crop['spacing'] ?? '—' }}</div>
                 </div>
               </div>
+              @if(!empty($crop['varieties']))
+                <div class="cd-info-desc">
+                  <div class="cd-info-label">Varieties grown in Sorsogon</div>
+                  <div class="cd-varieties">
+                    @foreach($crop['varieties'] as $variety)
+                      <span class="cd-variety-chip">{{ $variety }}</span>
+                    @endforeach
+                  </div>
+                </div>
+              @endif
               <div class="cd-info-desc">
                 <div class="cd-info-label">Description</div>
-                <div class="cd-info-value">—</div>
+                <div class="cd-info-value">{{ $crop['description'] ?? '—' }}</div>
               </div>
             </div>
           </div>
@@ -707,9 +742,9 @@
         var visible = 0;
 
         cropCards.forEach(function(card) {
-            var name = card.getAttribute('data-name');
+            var haystack = card.getAttribute('data-search') || card.getAttribute('data-name') || '';
             var category = card.getAttribute('data-category');
-            var matchesSearch = !query || name.indexOf(query) !== -1;
+            var matchesSearch = !query || haystack.indexOf(query) !== -1;
             var matchesCategory = activeCategory === 'all' || category === activeCategory;
             var show = matchesSearch && matchesCategory;
             card.style.display = show ? '' : 'none';

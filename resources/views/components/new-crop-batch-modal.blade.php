@@ -11,6 +11,8 @@
     'productCosts' => [],
     'cropProductSlugs' => [],
     'cropProductKeywords' => [],
+    'cropVarieties' => [],
+    'cropInfo' => [],
 ])
 
 <!-- Load AlpineJS -->
@@ -224,6 +226,9 @@ span.flatpickr-weekday {
     }
     .ncb-cost-card .ncb-cost-icon { flex-shrink: 0; color: #0284c7; margin-top: 2px; }
     .ncb-cost-card .ncb-cost-text { flex: 1; min-width: 0; }
+    .ncb-source-link { display: flex; align-items: center; gap: 6px; width: fit-content; max-width: 100%; margin-top: 8px; color: inherit; font-weight: 700; text-decoration: none; border-bottom: 1px dotted currentColor; }
+    .ncb-source-link:hover { text-decoration: underline; }
+    .ncb-source-link svg { flex-shrink: 0; }
 </style>
 
 <!-- ── NEW CROP BATCH MODAL ── -->
@@ -240,7 +245,7 @@ span.flatpickr-weekday {
             <div class="ncb-body">
                 <div class="ncb-section-label">Crop Information</div>
                 <div class="ncb-row">
-                    
+
                     <!-- Crop Type Select -->
                     <div class="ncb-group" x-data="{ open: false, value: '', label: 'Select a crop' }">
                         <label>Crop Type *</label>
@@ -266,6 +271,27 @@ span.flatpickr-weekday {
                         <input type="text" name="batch_name" id="batchName" placeholder="e.g. North Field A" autocomplete="off">
                         <span class="ncb-note" id="batchNameHint" style="margin-bottom: 0;">Auto-generated from Crop + Field + Planting Date, e.g. <b>TOMATO-FIELD1-160926</b>. You can edit it.</span>
                     </div>
+                </div>
+
+                <!-- Variety step (required; defaults to Local / General variety) -->
+                <div class="ncb-group" id="varietyGroup">
+                    <label>Variety *</label>
+                    <input type="hidden" name="variety" id="varietyValue" value="{{ \App\Services\CropLibraryService::GENERAL_VARIETY }}" required>
+                    <input type="hidden" name="variety_key" id="varietyKeyValue" value="{{ \App\Services\CropLibraryService::GENERAL_VARIETY_KEY }}">
+                    <div class="ncb-select-trigger placeholder" id="varietyTrigger" tabindex="0">
+                        <span id="varietyLabel">{{ \App\Services\CropLibraryService::GENERAL_VARIETY }}</span>
+                        <svg class="ncb-select-arrow" id="varietyArrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                    <div class="ncb-select-menu" id="varietyMenu" style="display: none;"></div>
+                    <span class="ncb-note" id="varietyNote">Choose a crop first. <b>{{ \App\Services\CropLibraryService::GENERAL_VARIETY }}</b> is preselected — keep it when you are using local or free-distributed planting material.</span>
+                </div>
+
+                <!-- Crop agronomy info panel (fills once a crop is picked) -->
+                <div class="ncb-cost-card" id="cropInfoCard" style="display: none; background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a;">
+                    <img class="ncb-cost-icon" src="{{ asset('images/information.png') }}" alt="info" width="16" height="16">
+                    <span class="ncb-cost-text" id="cropInfoText"></span>
                 </div>
 
                 <!-- Optional Field: Specific Product -->
@@ -474,9 +500,147 @@ span.flatpickr-weekday {
     var _PRODUCT_COSTS = @json($productCosts);
     var _CROP_PRODUCT_SLUGS = @json($cropProductSlugs);
     var _CROP_PRODUCT_KEYWORDS = @json($cropProductKeywords);
+    var _CROP_VARIETIES = @json($cropVarieties);
+    var _CROP_INFO = @json($cropInfo);
+    var _GENERAL_VARIETY = @json(\App\Services\CropLibraryService::GENERAL_VARIETY);
+    var _GENERAL_VARIETY_KEY = @json(\App\Services\CropLibraryService::GENERAL_VARIETY_KEY);
     var _PICKED_CROP = '';
     var _PICKED_PRODUCT = '';
+    var _PICKED_VARIETY_KEY = _GENERAL_VARIETY_KEY;
     var _harvestAuto = false;
+
+    /* ── Variety step: options come from the crop library per crop ── */
+    var _varietyMenu = document.getElementById('varietyMenu');
+    var _varietyTrigger = document.getElementById('varietyTrigger');
+    var _varietyValue = document.getElementById('varietyValue');
+    var _varietyKeyValue = document.getElementById('varietyKeyValue');
+    var _varietyLabel = document.getElementById('varietyLabel');
+    var _varietyNote = document.getElementById('varietyNote');
+    var _varietyArrow = document.getElementById('varietyArrow');
+    var _varietyOptions = [];
+
+    function closeVarietyMenu() {
+        if (!_varietyMenu) return;
+        _varietyMenu.style.display = 'none';
+        _varietyTrigger && _varietyTrigger.classList.remove('active');
+        _varietyArrow && _varietyArrow.classList.remove('rotate');
+    }
+
+    function selectVariety(opt) {
+        if (!opt) return;
+        _PICKED_VARIETY_KEY = opt.key;
+        if (_varietyValue) _varietyValue.value = opt.name;
+        if (_varietyKeyValue) _varietyKeyValue.value = opt.key;
+        if (_varietyLabel) {
+            _varietyLabel.textContent = opt.name;
+            _varietyTrigger.classList.toggle('placeholder', opt.key === _GENERAL_VARIETY_KEY);
+        }
+        if (_varietyNote) {
+            _varietyNote.textContent = opt.note || 'Preselected default — keep it when you are using local or free-distributed planting material.';
+        }
+        if (_varietyMenu) {
+            Array.prototype.forEach.call(_varietyMenu.querySelectorAll('.ncb-select-option'), function (el) {
+                el.classList.toggle('selected', el.getAttribute('data-key') === opt.key);
+            });
+        }
+        window.recalcYield && window.recalcYield();
+        window.recalcHarvest && window.recalcHarvest();
+        showCropInfo(_PICKED_CROP);
+    }
+
+    function fillVarietyOptions(cropId) {
+        if (!_varietyMenu) return;
+        _varietyOptions = _CROP_VARIETIES[cropId] || [{ key: _GENERAL_VARIETY_KEY, name: _GENERAL_VARIETY, note: null }];
+        _varietyMenu.innerHTML = '';
+        _varietyOptions.forEach(function (opt) {
+            var div = document.createElement('div');
+            div.className = 'ncb-select-option';
+            div.setAttribute('data-key', opt.key);
+            var name = document.createElement('span');
+            name.textContent = opt.name;
+            div.appendChild(name);
+            if (opt.note) {
+                var note = document.createElement('div');
+                note.style.cssText = 'font-size:11px;color:#94a3b8;line-height:1.4;margin-top:2px;';
+                note.textContent = opt.note;
+                div.appendChild(note);
+            }
+            div.addEventListener('click', function () {
+                selectVariety(opt);
+                closeVarietyMenu();
+            });
+            _varietyMenu.appendChild(div);
+        });
+        /* Always default to Local / General variety. */
+        selectVariety(_varietyOptions[0]);
+        _PICKED_VARIETY_KEY = _varietyOptions[0] ? _varietyOptions[0].key : _GENERAL_VARIETY_KEY;
+    }
+
+    if (_varietyTrigger) {
+        _varietyTrigger.addEventListener('click', function () {
+            var open = _varietyMenu.style.display !== 'block';
+            _varietyMenu.style.display = open ? 'block' : 'none';
+            _varietyTrigger.classList.toggle('active', open);
+            _varietyArrow.classList.toggle('rotate', open);
+        });
+        document.addEventListener('click', function (e) {
+            var group = document.getElementById('varietyGroup');
+            if (group && !group.contains(e.target)) closeVarietyMenu();
+        });
+    }
+
+    /* The picked variety, or null for the general default. */
+    function _pickedVariety() {
+        if (!_PICKED_CROP || !_PICKED_VARIETY_KEY || _PICKED_VARIETY_KEY === _GENERAL_VARIETY_KEY) return null;
+        var list = _CROP_VARIETIES[_PICKED_CROP] || [];
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].key === _PICKED_VARIETY_KEY) return list[i];
+        }
+        return null;
+    }
+
+    /* ── Crop agronomy info panel (breed-specific when a variety is picked) ── */
+    function _esc(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    /* Citation line: link icon + "Source: …", on its own line, opening the
+       official reference in a new tab. Text and URL are escaped. */
+    function _sourceLinkHtml(text, url) {
+        if (!text) return '';
+        var icon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><path d="M8 12h8"/></svg>';
+        if (!url) return '<span class="ncb-source-link">' + icon + 'Source: ' + _esc(text) + '</span>';
+        return '<a class="ncb-source-link" href="' + _esc(url) + '" target="_blank" rel="noopener noreferrer">' +
+            icon + 'Source: ' + _esc(text) + '</a>';
+    }
+    function showCropInfo(cropId) {
+        var card = document.getElementById('cropInfoCard');
+        var text = document.getElementById('cropInfoText');
+        if (!card || !text) return;
+        var info = _CROP_INFO[cropId];
+        if (!info) { card.style.display = 'none'; text.textContent = ''; return; }
+        var parts = [];
+
+        /* Breed-specific line: the picked variety's own maturity, yield and note. */
+        var variety = (String(cropId) === String(_PICKED_CROP)) ? _pickedVariety() : null;
+        if (variety && (variety.maturity_days || variety.yield_kg_ha)) {
+            var bits = [];
+            if (variety.maturity_days) bits.push(variety.maturity_days + ' days from planting to harvest');
+            if (variety.yield_kg_ha) bits.push('about ' + Number(variety.yield_kg_ha).toLocaleString() + ' kg/ha');
+            var line = variety.name + ' (' + info.name + '): ' + bits.join(', ');
+            if (variety.note) line += ' — ' + variety.note;
+            parts.push(line);
+        }
+
+        if (info.days_to_harvest) parts.push('Crop window: ' + info.days_to_harvest);
+        if (info.spacing) parts.push('Spacing: ' + info.spacing);
+        if (info.planting_window) parts.push('Planting: ' + info.planting_window);
+        if (info.yield_per_ha) parts.push('Typical yield: ' + Number(info.yield_per_ha).toLocaleString() + ' ' + (info.yield_unit || 'kg') + '/ha');
+        text.innerHTML = (parts.length ? _esc(parts.join('  ·  ')) : '') +
+            (info.source ? _sourceLinkHtml(info.source, info.source_url) : '');
+        card.style.display = 'flex';
+    }
 
     /* ── Auto batch name: {CROP}-FIELD{N}-{DDMMYY} (e.g. TOMATO-FIELD1-160926) ── */
     var _BATCH_COUNTS = @json(collect($crops)->reject(fn ($c) => ! $c->crop)->groupBy(fn ($c) => $c->crop->name)->map->count() ?? []);
@@ -526,8 +690,22 @@ span.flatpickr-weekday {
         }
 
         var mdays = parseFloat(crop.maturity_days) || 0;
+        var who = crop.name;
+        var basis = crop.harvest_days ? ' — typical window ' + crop.harvest_days : '';
+        var source = crop.source || 'Sorsogon crop library';
+
+        /* Product > Variety > Crop, same precedence as the yield estimate. */
+        var variety = _pickedVariety();
+        if (variety && variety.maturity_days) {
+            mdays = parseFloat(variety.maturity_days) || mdays;
+            who = variety.name + ' (' + crop.name + ')';
+            basis = ' — breed-specific maturity';
+        }
         if (_PICKED_PRODUCT && _PRODUCT_YIELDS[_PICKED_PRODUCT] && _PRODUCT_YIELDS[_PICKED_PRODUCT].maturity_days) {
-            mdays = parseFloat(_PRODUCT_YIELDS[_PICKED_PRODUCT].maturity_days) || 0;
+            var pv = _PRODUCT_YIELDS[_PICKED_PRODUCT];
+            mdays = parseFloat(pv.maturity_days) || 0;
+            who = pv.variety + ' ' + crop.name;
+            basis = ' — maturity of the selected seed product';
         }
 
         var plantEl = document.getElementById('plantingDate');
@@ -545,16 +723,18 @@ span.flatpickr-weekday {
         if (!el.value || _harvestAuto) {
             el.value = _harvestYmd(date);
             _harvestAuto = true;
-            hintEl.textContent = 'Auto-set: ' + crop.name + ' usually matures in about ' + mdays +
-                ' days → ' + suggested + '. Change it anytime.';
+            hintEl.innerHTML = _esc('Auto-set: ' + who + ' takes ' + mdays + ' days from planting to harvest' +
+                basis + ' → ' + suggested + '.') + _sourceLinkHtml(source, crop.source_url);
         } else {
-            hintEl.textContent = 'You set your own harvest date. We\'d suggest about ' + mdays +
-                ' days after planting → ' + suggested + '.';
+            hintEl.textContent = 'You set your own harvest date. ' + who + ' takes ' + mdays +
+                ' days from planting → suggested ' + suggested + '.';
         }
     };
 
     window.pickCrop = function (id) {
         _PICKED_CROP = String(id);
+        fillVarietyOptions(_PICKED_CROP);
+        showCropInfo(_PICKED_CROP);
         filterProducts();
         window.recalcYield();
         window.recalcHarvest();
@@ -628,13 +808,20 @@ span.flatpickr-weekday {
 
         var base = parseFloat(crop.default_yield_per_ha) || 0;
         var yieldUnit = crop.yield_unit || 'kg';
-        var srcName = crop.name;
+        var srcDesc = 'the typical Sorsogon yield for ' + crop.name;
+
+        /* Product > Variety > Crop */
+        var variety = _pickedVariety();
+        if (variety && variety.yield_kg_ha) {
+            base = parseFloat(variety.yield_kg_ha) || base;
+            srcDesc = 'the ' + variety.name + ' variety yield';
+        }
 
         if (_PICKED_PRODUCT && _PRODUCT_YIELDS[_PICKED_PRODUCT]) {
             var pv = _PRODUCT_YIELDS[_PICKED_PRODUCT];
             base = parseFloat(pv.default_yield_per_ha) || base;
             yieldUnit = pv.yield_unit || yieldUnit;
-            srcName = pv.variety + ' → ' + crop.name;
+            srcDesc = 'the ' + pv.variety + ' seed-product yield';
         }
 
         if (!base) {
@@ -667,8 +854,9 @@ span.flatpickr-weekday {
         unitEl.value = outUnit;
 
         var areaLabel = unit === 'ha' ? area + ' ha' : (unit === 'sq_m' ? area + ' m²' : area + ' ft²');
-        hintEl.textContent = 'Auto-estimated ~' + Number(est).toLocaleString() + ' ' + outUnit + ' using ' +
-            Number(base).toLocaleString() + ' ' + yieldUnit + '/ha for ' + srcName + ' × ' + areaLabel + '.';
+        hintEl.innerHTML = _esc('Auto-estimated ~' + Number(est).toLocaleString() + ' ' + outUnit + ' using ' +
+            srcDesc + ' of ' + Number(base).toLocaleString() + ' ' + yieldUnit + '/ha × ' + areaLabel + '.') +
+            _sourceLinkHtml(crop.source || 'Sorsogon crop library', crop.source_url);
     };
 
     /* ── Estimated cost auto-calculation ── */

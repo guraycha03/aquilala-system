@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FarmerCrop;
-use App\Models\Crop;
 use App\Models\Category;
+use App\Models\Crop;
+use App\Models\FarmerCrop;
 use App\Models\Product;
 use App\Models\RiceVariety;
 use App\Services\ActivityLogger;
+use App\Services\CropLibraryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class FarmerCropController extends Controller
 {
@@ -40,7 +42,7 @@ class FarmerCropController extends Controller
 
         $allCrops = Crop::orderBy('name')->get();
 
-        [$cropDefaults, $seedProducts, $productYields, $productCosts, $cropProductSlugs, $cropProductKeywords] = $this->buildYieldEstimatorData();
+        [$cropDefaults, $seedProducts, $productYields, $productCosts, $cropProductSlugs, $cropProductKeywords, $cropVarieties, $cropInfo] = $this->buildYieldEstimatorData();
 
         return view('farmer.crops.index', compact(
             'crops',
@@ -53,7 +55,9 @@ class FarmerCropController extends Controller
             'productYields',
             'productCosts',
             'cropProductSlugs',
-            'cropProductKeywords'
+            'cropProductKeywords',
+            'cropVarieties',
+            'cropInfo'
         ));
     }
 
@@ -79,49 +83,59 @@ class FarmerCropController extends Controller
 
     /**
      * Build the data used by the New Crop Batch modal:
-     *  - cropDefaults:  crop_id -> {name, default_yield_per_ha, yield_unit} from the Bulan catalog
+     *  - cropDefaults:  crop_id -> {name, default_yield_per_ha, yield_unit} from the Sorsogon crop library
      *  - seedProducts:  active store products under the Seeds & Planting Materials categories
      *  - productYields: product_id -> variety-derived yield when the product matches a registered rice variety
      *  - productCosts:  product_id -> {price, package, per-hectare rate} to auto-estimate the crop-batch cost
      *  - cropProductSlugs:   crop_id -> curated product-category slugs (category-level fallback)
      *  - cropProductKeywords: crop_id -> product-name keywords so only genuinely matching seeds show
+     *  - cropVarieties: crop_id -> variety options (Local / General variety first) for the variety step
+     *  - cropInfo:      crop_id -> agronomy block (days, spacing, planting window) for the info panel
      */
     protected function buildYieldEstimatorData(): array
     {
-        $catalog = collect(config('bulan_crops.crops', []));
+        $library = app(CropLibraryService::class);
         $normalize = fn (string $name) => strtolower(preg_replace('/[^a-z0-9]+/i', '', $name));
 
-        $entriesByNormalized = $catalog->keyBy(fn ($c) => $normalize($c['name']));
-
         // Dedicated fallback maturity guide (config/crop_maturity.php) for
-        // umbrella groups or any crop without a catalog maturity entry.
+        // umbrella groups or any crop without a library maturity entry.
         $fallbackMaturity = collect(config('crop_maturity.fallback_maturity_days', []));
         $maturityOverrides = collect(config('crop_maturity.maturity_days_overrides', []));
 
         $cropDefaults = [];
         $cropProductSlugs = [];
         $cropProductKeywords = [];
+        $cropVarieties = [];
+        $cropInfo = [];
         foreach (Crop::all() as $crop) {
-            $entry = $entriesByNormalized[$normalize($crop->name)] ?? null;
+            $entry = $library->forName($crop->name);
             if (! $entry) {
                 $cropDefaults[$crop->id] = [
                     'name' => $crop->name,
                     'default_yield_per_ha' => 0,
-                    'yield_unit' => config('bulan_crops.defaults.yield_unit', 'kg'),
+                    'yield_unit' => config('crop_library.defaults.yield_unit', 'kg'),
                     'maturity_days' => (int) ($maturityOverrides[$normalize($crop->name)]
                         ?? $fallbackMaturity[$normalize($crop->name)]
                         ?? 0) ?: null,
+                    'harvest_days' => null,
+                    'source' => $library->source(),
+                    'source_url' => $library->defaultSourceUrl(),
                 ];
+                $cropVarieties[$crop->id] = $library->varietiesFor($crop->name);
+
                 continue;
             }
             $cropDefaults[$crop->id] = [
                 'name' => $crop->name,
                 'default_yield_per_ha' => (float) ($entry['default_yield_per_ha'] ?? 0),
-                'yield_unit' => $entry['yield_unit'] ?? config('bulan_crops.defaults.yield_unit', 'kg'),
+                'yield_unit' => $entry['yield_unit'] ?? config('crop_library.defaults.yield_unit', 'kg'),
                 'maturity_days' => (int) ($maturityOverrides[$normalize($crop->name)]
                     ?? $entry['maturity_days']
                     ?? $fallbackMaturity[$normalize($crop->name)]
                     ?? 0) ?: null,
+                'harvest_days' => $entry['harvest']['days'] ?? null,
+                'source' => $library->sourceForEntry($entry),
+                'source_url' => $library->sourceUrlForEntry($entry),
             ];
             $cropProductSlugs[$crop->id] = array_values(array_filter(
                 $entry['product_categories'] ?? []
@@ -130,6 +144,8 @@ class FarmerCropController extends Controller
                 fn ($kw) => strtolower(trim($kw)),
                 $entry['product_keywords'] ?? []
             )));
+            $cropVarieties[$crop->id] = $library->varietiesFor($crop->name);
+            $cropInfo[$crop->id] = $library->infoFor($crop->name);
         }
 
         $seedCategoryIds = Category::whereIn('slug', [
@@ -174,7 +190,7 @@ class FarmerCropController extends Controller
                     'package_size' => (float) ($product->package_size ?? 1),
                     'package_unit' => strtolower($product->package_unit ?? 'piece'),
                     'package_label' => $product->packaging_type
-                        ?? trim(($product->package_size ?? 1) . ' ' . ($product->package_unit ?? 'piece') . ' package'),
+                        ?? trim(($product->package_size ?? 1).' '.($product->package_unit ?? 'piece').' package'),
                     'rate_min' => (float) $app->application_rate_min,
                     'rate_max' => (float) ($app->application_rate_max
                         ?? $app->application_rate_min
@@ -201,7 +217,7 @@ class FarmerCropController extends Controller
                 ->all(),
         ])->values()->all();
 
-        return [$cropDefaults, $seedProducts, $productYields, $productCosts, $cropProductSlugs, $cropProductKeywords];
+        return [$cropDefaults, $seedProducts, $productYields, $productCosts, $cropProductSlugs, $cropProductKeywords, $cropVarieties, $cropInfo];
     }
 
     protected function matchVarietyForProduct(string $productName, $varieties, callable $normalize): ?object
@@ -240,8 +256,12 @@ class FarmerCropController extends Controller
 
     public function store(Request $request)
     {
+        $library = app(CropLibraryService::class);
+        $cropName = Crop::find($request->input('crop_id'))?->name;
+
         $validated = $request->validate([
             'crop_id' => 'required|exists:crops,id',
+            'variety' => ['required', 'string', 'max:100', Rule::in($library->varietyNamesFor($cropName))],
             'product_id' => 'nullable|exists:products,id',
             'batch_name' => 'nullable|string|max:100',
             'land_area' => 'required|numeric|min:0.01|max:9999',
@@ -255,6 +275,12 @@ class FarmerCropController extends Controller
             'notes' => 'nullable|string|max:1000',
         ]);
 
+        // The variety key is derived server-side from the library so the stored
+        // key always matches the stored variety name, whatever the client sent.
+        $validated['variety_key'] = collect($library->varietiesFor($cropName))
+            ->firstWhere('name', $validated['variety'])['key']
+            ?? CropLibraryService::GENERAL_VARIETY_KEY;
+
         $user = Auth::user();
         $totalArea = (float) ($user->default_land_area ?? 0);
         if ($totalArea > 0) {
@@ -264,7 +290,7 @@ class FarmerCropController extends Controller
             $remaining = $totalArea - $usedArea;
             if ((float) $validated['land_area'] > $remaining) {
                 return back()->withErrors([
-                    'land_area' => 'Exceeds available land. Only ' . number_format($remaining, 2) . ' ' . ($user->default_land_area_unit ?? 'ha') . ' remaining.'
+                    'land_area' => 'Exceeds available land. Only '.number_format($remaining, 2).' '.($user->default_land_area_unit ?? 'ha').' remaining.',
                 ])->withInput();
             }
         }
@@ -286,7 +312,7 @@ class FarmerCropController extends Controller
 
         ActivityLogger::cropPlanted($farmerCrop);
 
-        if (!$user->default_land_area) {
+        if (! $user->default_land_area) {
             $user->update([
                 'default_land_area' => $validated['land_area'],
                 'default_land_area_unit' => $validated['land_area_unit'],
@@ -322,7 +348,7 @@ class FarmerCropController extends Controller
             ActivityLogger::cropHarvested($farmerCrop);
         } else {
             $change = collect($validated)->except(['growth_stage'])->filter()->implode(', ');
-            ActivityLogger::cropUpdated($farmerCrop, $change ?: 'growth_stage → ' . $validated['growth_stage']);
+            ActivityLogger::cropUpdated($farmerCrop, $change ?: 'growth_stage → '.$validated['growth_stage']);
         }
 
         return back()->with('success', 'Crop batch updated successfully!');

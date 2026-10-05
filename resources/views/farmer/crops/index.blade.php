@@ -692,6 +692,8 @@
     :product-costs="$productCosts"
     :crop-product-slugs="$cropProductSlugs"
     :crop-product-keywords="$cropProductKeywords"
+    :crop-varieties="$cropVarieties"
+    :crop-info="$cropInfo"
 />
 
 </div>

@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\DecisionFormula;
 use App\Models\FarmerCrop;
 use App\Models\Product;
 use App\Models\Quotation;
-use App\Models\QuotationItem;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\CostQuotationEngine;
+use App\Services\CropLibraryService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -36,8 +38,8 @@ class QuotationController extends Controller
         $allQuotes = Quotation::where('user_id', Auth::id())->get();
 
         $totalQuotes = $allQuotes->count();
-        $computedCount = $allQuotes->filter(fn ($q) => !$q->is_expired && $q->status === 'computed')->count();
-        $viewedCount = $allQuotes->filter(fn ($q) => !$q->is_expired && $q->status === 'viewed')->count();
+        $computedCount = $allQuotes->filter(fn ($q) => ! $q->is_expired && $q->status === 'computed')->count();
+        $viewedCount = $allQuotes->filter(fn ($q) => ! $q->is_expired && $q->status === 'viewed')->count();
         $totalValue = $allQuotes->sum('estimated_total_cost');
 
         return view('farmer.quotations.index', compact(
@@ -79,12 +81,12 @@ class QuotationController extends Controller
 
                 return [
                     'product_name' => $item->product_name,
-                    'store_name'   => $item->product?->storeOwner?->name,
-                    'price'        => (float) $item->price_at_generation,
-                    'quantity'     => (float) $item->calculated_quantity,
-                    'unit'         => $unit,
-                    'subtotal'     => (float) $item->subtotal,
-                    'share'        => $total > 0
+                    'store_name' => $item->product?->storeOwner?->name,
+                    'price' => (float) $item->price_at_generation,
+                    'quantity' => (float) $item->calculated_quantity,
+                    'unit' => $unit,
+                    'subtotal' => (float) $item->subtotal,
+                    'share' => $total > 0
                         ? round(((float) $item->subtotal / $total) * 100, 1)
                         : 0,
                 ];
@@ -157,32 +159,32 @@ class QuotationController extends Controller
 
         $items = $quotation->items
             ->map(fn ($item) => [
-                'name'     => $item->product_name,
-                'store'    => $item->product?->storeOwner?->name ?? null,
-                'price'    => (float) $item->price_at_generation,
+                'name' => $item->product_name,
+                'store' => $item->product?->storeOwner?->name ?? null,
+                'price' => (float) $item->price_at_generation,
                 'quantity' => (float) $item->calculated_quantity,
-                'unit'     => strtolower(trim($item->product?->stock_unit ?? 'unit')),
+                'unit' => strtolower(trim($item->product?->stock_unit ?? 'unit')),
                 'subtotal' => round((float) $item->subtotal, 2),
             ])
             ->map(fn ($i) => $i['unit'] === 'piece' ? array_merge($i, ['unit' => 'unit']) : $i)
             ->values();
 
-        $total     = (float) $quotation->estimated_total_cost;
-        $landArea  = (float) $quotation->land_area;
+        $total = (float) $quotation->estimated_total_cost;
+        $landArea = (float) $quotation->land_area;
         $perHectare = $landArea > 0 ? round($total / $landArea, 2) : $total;
 
         $context = [
-            'farm_area'    => $landArea,
-            'crop'         => $quotation->crop_type,
-            'season'       => $quotation->season,
-            'total'        => $total,
-            'per_hectare'  => $perHectare,
-            'item_count'   => $items->count(),
-            'generated'    => $quotation->created_at->format('F d, Y'),
-            'valid_until'  => $quotation->valid_until?->format('F d, Y'),
-            'items'        => $items,
-            'top_items'    => $items->sortByDesc('subtotal')->take(5)->values(),
-            'stores'       => $quotation->items
+            'farm_area' => $landArea,
+            'crop' => $quotation->crop_type,
+            'season' => $quotation->season,
+            'total' => $total,
+            'per_hectare' => $perHectare,
+            'item_count' => $items->count(),
+            'generated' => $quotation->created_at->format('F d, Y'),
+            'valid_until' => $quotation->valid_until?->format('F d, Y'),
+            'items' => $items,
+            'top_items' => $items->sortByDesc('subtotal')->take(5)->values(),
+            'stores' => $quotation->items
                 ->pluck('product.storeOwner.name')
                 ->filter()
                 ->unique()
@@ -193,11 +195,11 @@ class QuotationController extends Controller
 
         $apiKey = config('services.groq.key');
 
-        if (!$apiKey) {
+        if (! $apiKey) {
             return response()->json([
                 'overview' => $fallback,
-                'source'   => 'fallback',
-                'metrics'  => $context,
+                'source' => 'fallback',
+                'metrics' => $context,
             ]);
         }
 
@@ -226,24 +228,24 @@ PROMPT;
 
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $apiKey,
-                'Content-Type'  => 'application/json',
+                'Authorization' => 'Bearer '.$apiKey,
+                'Content-Type' => 'application/json',
             ])->withoutVerifying()->timeout(90)->post('https://api.groq.com/openai/v1/chat/completions', [
-                'model'            => 'openai/gpt-oss-20b',
-                'messages'         => [
+                'model' => 'openai/gpt-oss-20b',
+                'messages' => [
                     ['role' => 'system', 'content' => $system],
                     ['role' => 'user', 'content' => json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)],
                 ],
-                'temperature'     => 0.4,
-                'max_tokens'      => 4096,
-                'reasoning_effort'=> 'low',
+                'temperature' => 0.4,
+                'max_tokens' => 4096,
+                'reasoning_effort' => 'low',
             ]);
 
             if ($response->failed()) {
                 return response()->json([
                     'overview' => $fallback,
-                    'source'   => 'fallback',
-                    'metrics'  => $context,
+                    'source' => 'fallback',
+                    'metrics' => $context,
                 ]);
             }
 
@@ -251,14 +253,14 @@ PROMPT;
 
             return response()->json([
                 'overview' => $overview !== '' ? $overview : $fallback,
-                'source'   => $overview !== '' ? 'ai' : 'fallback',
-                'metrics'  => $context,
+                'source' => $overview !== '' ? 'ai' : 'fallback',
+                'metrics' => $context,
             ]);
         } catch (\Throwable $e) {
             return response()->json([
                 'overview' => $fallback,
-                'source'   => 'fallback',
-                'metrics'  => $context,
+                'source' => 'fallback',
+                'metrics' => $context,
             ]);
         }
     }
@@ -269,32 +271,32 @@ PROMPT;
      */
     private function buildFarmerSmartFallback(Quotation $quotation, array $context): string
     {
-        $total      = (float) $quotation->estimated_total_cost;
-        $landArea   = (float) $quotation->land_area;
+        $total = (float) $quotation->estimated_total_cost;
+        $landArea = (float) $quotation->land_area;
         $perHectare = $landArea > 0 ? round($total / $landArea, 2) : $total;
 
-        $items    = $context['items'];
-        $count    = $items->count();
-        $names    = $items->pluck('name')->filter()->values();
-        $subject  = $count === 0
+        $items = $context['items'];
+        $count = $items->count();
+        $names = $items->pluck('name')->filter()->values();
+        $subject = $count === 0
             ? 'this plan'
             : ($count === 1
-                ? '**' . $names->first() . '**'
-                : '**' . $names->implode('**, **') . '**');
+                ? '**'.$names->first().'**'
+                : '**'.$names->implode('**, **').'**');
 
-        $lines = '### AI Takeaway' . "\n"
-            . 'Your **' . $quotation->crop_type . '** ' . ucfirst($quotation->season) . '-season plan for **'
-            . $landArea . ' ha** comes to **₱' . number_format($total, 2)
-            . '** — about **₱' . number_format($perHectare, 2) . ' per hectare** — for ' . $subject . '.' . "\n\n"
-            . '### What It Means For Your Farm' . "\n";
+        $lines = '### AI Takeaway'."\n"
+            .'Your **'.$quotation->crop_type.'** '.ucfirst($quotation->season).'-season plan for **'
+            .$landArea.' ha** comes to **₱'.number_format($total, 2)
+            .'** — about **₱'.number_format($perHectare, 2).' per hectare** — for '.$subject.'.'."\n\n"
+            .'### What It Means For Your Farm'."\n";
 
         if ($count === 0) {
-            $lines .= '- No products matched the formulas for this crop and season, so the total may be incomplete.' . "\n";
+            $lines .= '- No products matched the formulas for this crop and season, so the total may be incomplete.'."\n";
         } else {
-            $lines .= '- You selected ' . $subject . ' to cover your input needs for ' . $landArea . ' ha.' . "\n";
-            $lines .= '- The **₱' . number_format($perHectare, 2) . '/ha** budget already includes everything the formulas recommend for this crop and season.' . "\n";
+            $lines .= '- You selected '.$subject.' to cover your input needs for '.$landArea.' ha.'."\n";
+            $lines .= '- The **₱'.number_format($perHectare, 2).'/ha** budget already includes everything the formulas recommend for this crop and season.'."\n";
             if ($context['valid_until']) {
-                $lines .= '- The quotation is valid until **' . $context['valid_until'] . '** — the prices are only locked until then.' . "\n";
+                $lines .= '- The quotation is valid until **'.$context['valid_until'].'** — the prices are only locked until then.'."\n";
             }
         }
 
@@ -302,13 +304,13 @@ PROMPT;
             ? implode(', ', $context['stores']->all())
             : 'the general catalog';
 
-        $lines .= "\n" . '### Practical Advice' . "\n"
-            . '- Confirm the listed prices and stock with **' . $storeText . '** before buying — prices can move after the quote expires.' . "\n"
-            . '- Check the quantities against your actual planting plan; whole bags/sacks are rounded up, so you may end up with extra.' . "\n"
-            . '- Ask about volume discounts or free delivery if you need more this season.' . "\n\n"
-            . '### Next Move' . "\n"
-            . 'Reach out to ' . ($context['stores']->isNotEmpty() ? 'the store' : 'the general catalog')
-            . ' to lock in the price before the quotation expires.';
+        $lines .= "\n".'### Practical Advice'."\n"
+            .'- Confirm the listed prices and stock with **'.$storeText.'** before buying — prices can move after the quote expires.'."\n"
+            .'- Check the quantities against your actual planting plan; whole bags/sacks are rounded up, so you may end up with extra.'."\n"
+            .'- Ask about volume discounts or free delivery if you need more this season.'."\n\n"
+            .'### Next Move'."\n"
+            .'Reach out to '.($context['stores']->isNotEmpty() ? 'the store' : 'the general catalog')
+            .' to lock in the price before the quotation expires.';
 
         return $lines;
     }
@@ -318,20 +320,9 @@ PROMPT;
      */
     public function farmerCreate()
     {
-        $predefinedCrops = [
-            'Rice', 'Corn', 'Wheat',
-            'Tomato', 'Eggplant', 'Okra', 'Sitaw (String Beans)', 'Patola (Sponge Gourd)',
-            'Ampalaya (Bitter Gourd)', 'Squash (Kalabasa)', 'Cabbage', 'Pechay (Bok Choy)',
-            'Lettuce', 'Carrots', 'Radish (Labanos)', 'Turnip', 'Beets',
-            'Onions', 'Garlic', 'Ginger', 'Chili (Siling Labuyo)', 'Bell Pepper',
-            'Cucumber', 'Sweet Potato (Camote)', 'Taro (Gabi)', 'Potato',
-            'Watermelon', 'Papaya', 'Mango', 'Banana', 'Pineapple',
-            'Avocado', 'Calamansi', 'Guyabano (Soursop)', 'Rambutan',
-            'Durian', 'Lanzones', 'Chico', 'Santol', 'Bayabas (Guava)',
-            'Mung Beans (Munggo)', 'Peanuts', 'Soybeans', 'Black-eyed Peas',
-            'Cassava (Kamoteng Kahoy)', 'Ube (Purple Yam)',
-            'Sugarcane', 'Coffee', 'Cacao', 'Coconut', 'Abaca', 'Tobacco',
-        ];
+        // Crop choices come from the Sorsogon crop library; formula crop types
+        // are merged so legacy/custom crops stay selectable.
+        $predefinedCrops = app(CropLibraryService::class)->names();
 
         $dbCrops = DecisionFormula::select('crop_type')
             ->distinct()
@@ -353,7 +344,7 @@ PROMPT;
     {
         $validated = $request->validate([
             'crop_type' => ['required', 'string', 'max:255'],
-            'season'    => ['required', 'in:wet,dry'],
+            'season' => ['required', 'in:wet,dry'],
         ]);
 
         $cropType = ucwords(strtolower(trim($validated['crop_type'])));
@@ -370,16 +361,16 @@ PROMPT;
             ->distinct()
             ->get()
             ->map(fn ($p) => [
-                'id'            => $p->id,
-                'name'          => $p->display_name,
-                'sku'           => $p->sku,
-                'price'         => $p->price,
-                'price_unit'    => $p->price_unit,
-                'stock_quantity'=> $p->stock_quantity,
-                'stock_unit'    => $p->stock_unit,
-                'brand'         => $p->brand,
-                'category'      => $p->category_display_name,
-                'in_stock'      => $p->stock_quantity > 0,
+                'id' => $p->id,
+                'name' => $p->display_name,
+                'sku' => $p->sku,
+                'price' => $p->price,
+                'price_unit' => $p->price_unit,
+                'stock_quantity' => $p->stock_quantity,
+                'stock_unit' => $p->stock_unit,
+                'brand' => $p->brand,
+                'category' => $p->category_display_name,
+                'in_stock' => $p->stock_quantity > 0,
             ]);
 
         return response()->json($products);
@@ -392,10 +383,10 @@ PROMPT;
     public function farmerStore(Request $request)
     {
         $validated = $request->validate([
-            'crop_type'          => ['required', 'string', 'max:255'],
-            'season'             => ['required', 'in:wet,dry'],
-            'land_area'          => ['required', 'numeric', 'min:0.01', 'max:999.99'],
-            'notes'              => ['nullable', 'string', 'max:2000'],
+            'crop_type' => ['required', 'string', 'max:255'],
+            'season' => ['required', 'in:wet,dry'],
+            'land_area' => ['required', 'numeric', 'min:0.01', 'max:999.99'],
+            'notes' => ['nullable', 'string', 'max:2000'],
             'selected_product_ids' => ['nullable', 'string'],
         ]);
 
@@ -403,7 +394,7 @@ PROMPT;
 
         // Parse selected product IDs
         $selectedProductIds = [];
-        if (!empty($validated['selected_product_ids'])) {
+        if (! empty($validated['selected_product_ids'])) {
             $decoded = json_decode($validated['selected_product_ids'], true);
             if (is_array($decoded) && count($decoded) > 0) {
                 $selectedProductIds = array_map('intval', $decoded);
@@ -413,31 +404,31 @@ PROMPT;
         }
 
         // Use CostQuotationEngine to auto-compute the full quotation
-        $engine = new CostQuotationEngine();
+        $engine = new CostQuotationEngine;
 
         try {
             $quotation = $engine->calculateAndSave([
-                'crop_type'         => $cropType,
-                'season'            => $validated['season'],
-                'land_area'         => $validated['land_area'],
-                'weather_context'   => 'normal',
-                'soil_type'         => 'clay_loam',
-                'selected_products' => !empty($selectedProductIds) ? $selectedProductIds : null,
-                'notes'             => $validated['notes'] ?? null,
+                'crop_type' => $cropType,
+                'season' => $validated['season'],
+                'land_area' => $validated['land_area'],
+                'weather_context' => 'normal',
+                'soil_type' => 'clay_loam',
+                'selected_products' => ! empty($selectedProductIds) ? $selectedProductIds : null,
+                'notes' => $validated['notes'] ?? null,
             ], Auth::user());
         } catch (\Exception $e) {
             // Fallback: create a basic quotation without items if engine fails
-            $quotation = DB::transaction(function () use ($validated, $cropType, $selectedProductIds) {
+            $quotation = DB::transaction(function () use ($validated, $cropType) {
                 $q = Quotation::create([
-                    'user_id'              => Auth::id(),
-                    'quotation_number'     => 'QT-' . date('Y') . '-' . strtoupper(Str::random(6)),
-                    'crop_type'            => $cropType,
-                    'season'               => $validated['season'],
-                    'land_area'            => $validated['land_area'],
+                    'user_id' => Auth::id(),
+                    'quotation_number' => 'QT-'.date('Y').'-'.strtoupper(Str::random(6)),
+                    'crop_type' => $cropType,
+                    'season' => $validated['season'],
+                    'land_area' => $validated['land_area'],
                     'estimated_total_cost' => 0,
-                    'status'               => Quotation::STATUS_COMPUTED,
-                    'valid_until'          => now()->addDays(14),
-                    'notes'                => $validated['notes'] ?? null,
+                    'status' => Quotation::STATUS_COMPUTED,
+                    'valid_until' => now()->addDays(14),
+                    'notes' => $validated['notes'] ?? null,
                 ]);
 
                 // Try to add items from DecisionFormula manually
@@ -455,11 +446,11 @@ PROMPT;
                             $subtotal = round($qty * $price, 2);
 
                             $q->items()->create([
-                                'product_id'          => $formula->product_id,
-                                'product_name'        => $formula->product->name,
+                                'product_id' => $formula->product_id,
+                                'product_name' => $formula->product->name,
                                 'price_at_generation' => $price,
                                 'calculated_quantity' => $qty,
-                                'subtotal'            => $subtotal,
+                                'subtotal' => $subtotal,
                             ]);
                             $totalCost += $subtotal;
                         }
@@ -490,25 +481,26 @@ PROMPT;
     {
         $search = request('q');
         $period = request('period', 'all');
-        $from   = request('from');
-        $to     = request('to');
-        $type   = request('type');
+        $from = request('from');
+        $to = request('to');
+        $type = request('type');
 
         $userId = Auth::id();
-        $today  = now()->endOfDay();
+        $today = now()->endOfDay();
 
         // ── Date range resolution ──
         // Custom From/To dates take priority over the period preset; otherwise the
         // preset period defines the range. Both are sanitised (no future, no swapped
         // order) so the query can never look into the future or return illogical data.
         $fromDate = null;
-        $toDate   = null;
+        $toDate = null;
 
         $parseDate = function ($value) {
-            if (!$value || strtotime($value) === false) {
+            if (! $value || strtotime($value) === false) {
                 return null;
             }
-            return \Illuminate\Support\Carbon::parse($value);
+
+            return Carbon::parse($value);
         };
 
         if ($from && ($parsedFrom = $parseDate($from)) && $parsedFrom->startOfDay()->lte($today)) {
@@ -530,32 +522,32 @@ PROMPT;
         if ($fromDate && $toDate && $fromDate->gt($toDate)) {
             [$fromDate, $toDate] = [$toDate, $fromDate];
             $from = $fromDate->toDateString();
-            $to   = $toDate->toDateString();
+            $to = $toDate->toDateString();
         }
 
         // ── Decide the effective start/end for the query ──
         $start = $fromDate;
-        $end   = $toDate;
+        $end = $toDate;
 
         // Period preset only applies when the user hasn't chosen custom dates.
-        if (in_array($period, ['today', '7days', '30days', 'month'], true) && !$from && !$to) {
+        if (in_array($period, ['today', '7days', '30days', 'month'], true) && ! $from && ! $to) {
             [$periodStart, $periodEnd] = match ($period) {
-                'today'   => [now()->startOfDay(), now()->endOfDay()],
-                '7days'   => [now()->subDays(6)->startOfDay(), now()->endOfDay()],
-                '30days'  => [now()->subDays(29)->startOfDay(), now()->endOfDay()],
-                'month'   => [now()->startOfMonth(), now()->endOfMonth()],
+                'today' => [now()->startOfDay(), now()->endOfDay()],
+                '7days' => [now()->subDays(6)->startOfDay(), now()->endOfDay()],
+                '30days' => [now()->subDays(29)->startOfDay(), now()->endOfDay()],
+                'month' => [now()->startOfMonth(), now()->endOfMonth()],
             };
             $start = $periodStart;
-            $end   = $periodEnd;
-            $from  = $periodStart->toDateString();
-            $to    = $periodEnd->toDateString();
-        } elseif ($period !== 'all' && !$from && !$to) {
+            $end = $periodEnd;
+            $from = $periodStart->toDateString();
+            $to = $periodEnd->toDateString();
+        } elseif ($period !== 'all' && ! $from && ! $to) {
             // Invalid preset — fall back to no period filter.
             $period = 'all';
         }
 
         // ── Build the filtered query ──
-        $query = \App\Models\ActivityLog::where('user_id', $userId);
+        $query = ActivityLog::where('user_id', $userId);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -579,13 +571,13 @@ PROMPT;
 
         // ── Aggregate stats from the farmer's FULL (unfiltered) history ──
         // So the summary cards reflect their real totals regardless of active filters.
-        $statsBase = \App\Models\ActivityLog::where('user_id', $userId);
+        $statsBase = ActivityLog::where('user_id', $userId);
         $totalQuotations = (clone $statsBase)->where('type', 'quotation.created')->count();
         $totalCrops = (clone $statsBase)->whereIn('type', ['crop.planted', 'crop.updated', 'crop.harvested', 'crop.deleted'])->count();
         $totalDeleted = (clone $statsBase)->where('type', 'quotation.deleted')->count();
         $totalLogins = (clone $statsBase)->where('type', 'auth.login')->count();
 
-        $uniqueTypes = \App\Models\ActivityLog::where('user_id', $userId)
+        $uniqueTypes = ActivityLog::where('user_id', $userId)
             ->select('type')
             ->distinct()
             ->pluck('type')
@@ -632,26 +624,25 @@ PROMPT;
             ->filter(fn ($item) => $item->product && $item->product->user_id === $storeUserId);
 
         // Demand metrics
-        $totalQuotations  = $allQuotations->count();
-        $uniqueFarmers    = $allQuotations->pluck('user_id')->filter()->unique()->count();
+        $totalQuotations = $allQuotations->count();
+        $uniqueFarmers = $allQuotations->pluck('user_id')->filter()->unique()->count();
 
         $recentQuotations = $allQuotations->where('created_at', '>=', now()->subDays(7))->count();
-        $priorQuotations  = $allQuotations->filter(fn ($q) =>
-            $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
+        $priorQuotations = $allQuotations->filter(fn ($q) => $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
         )->count();
         $weekTrend = $priorQuotations > 0
             ? (int) round(($recentQuotations - $priorQuotations) / $priorQuotations * 100)
             : ($recentQuotations > 0 ? 100 : 0);
 
-        $ownDemandValue     = $storeItems->sum('subtotal');
+        $ownDemandValue = $storeItems->sum('subtotal');
         $demandProductCount = $storeItems->pluck('product_id')->unique()->count();
 
         // Products from this store that appear in quotations
         $productDemand = $storeItems
             ->groupBy('product_name')
             ->map(fn ($items) => [
-                'count'       => $items->count(),
-                'total_qty'   => $items->sum('calculated_quantity'),
+                'count' => $items->count(),
+                'total_qty' => $items->sum('calculated_quantity'),
                 'total_value' => $items->sum('subtotal'),
             ])
             ->sortByDesc('count')
@@ -689,7 +680,7 @@ PROMPT;
     {
         // Verify this store's products are in the quotation
         $involvedStoreIds = $quotation->getInvolvedStoreIds();
-        if (!in_array(Auth::id(), $involvedStoreIds)) {
+        if (! in_array(Auth::id(), $involvedStoreIds)) {
             abort(403, 'You do not have access to this quotation.');
         }
 
@@ -698,15 +689,14 @@ PROMPT;
         // Mark as viewed by this store (first view only, records the timestamp)
         if ($quotation->status === Quotation::STATUS_COMPUTED) {
             $quotation->update([
-                'status'    => Quotation::STATUS_VIEWED,
+                'status' => Quotation::STATUS_VIEWED,
                 'viewed_at' => $quotation->viewed_at ?? now(),
             ]);
             ActivityLogger::quotationViewed($quotation);
         }
 
         // Get this store's items specifically
-        $storeItems = $quotation->items->filter(fn ($item) =>
-            $item->product && $item->product->user_id === Auth::id()
+        $storeItems = $quotation->items->filter(fn ($item) => $item->product && $item->product->user_id === Auth::id()
         );
 
         return view('store.quotations.show', compact('quotation', 'storeItems'));
@@ -720,7 +710,7 @@ PROMPT;
         abort_unless($request->user()?->role === 'store_owner', 403);
 
         $apiKey = config('services.groq.key');
-        if (!$apiKey) {
+        if (! $apiKey) {
             return response()->json(['error' => 'AI service is not configured yet.'], 500);
         }
 
@@ -736,16 +726,15 @@ PROMPT;
             ->filter(fn ($item) => $item->product && $item->product->user_id === $storeUserId);
 
         $recentQuotations = $quotations->where('created_at', '>=', now()->subDays(7))->count();
-        $priorQuotations  = $quotations->filter(fn ($q) =>
-            $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
+        $priorQuotations = $quotations->filter(fn ($q) => $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
         )->count();
 
         $topProducts = $storeItems
             ->groupBy('product_name')
             ->map(fn ($items) => [
-                'name'  => $items->first()->product_name,
+                'name' => $items->first()->product_name,
                 'count' => $items->count(),
-                'qty'   => round($items->sum('calculated_quantity'), 1),
+                'qty' => round($items->sum('calculated_quantity'), 1),
                 'value' => round($items->sum('subtotal'), 2),
             ])
             ->sortByDesc('count')
@@ -756,9 +745,9 @@ PROMPT;
         $topCrops = $quotations
             ->groupBy('crop_type')
             ->map(fn ($qs, $crop) => [
-                'crop'  => $crop,
+                'crop' => $crop,
                 'count' => $qs->count(),
-                'area'  => $qs->sum('land_area'),
+                'area' => $qs->sum('land_area'),
             ])
             ->sortByDesc('count')
             ->take(5)
@@ -766,15 +755,15 @@ PROMPT;
             ->toArray();
 
         $context = [
-            'store'               => Auth::user()->name,
-            'total_signals'       => $quotations->count(),
-            'unique_farmers'      => $quotations->pluck('user_id')->filter()->unique()->count(),
-            'this_week'           => $recentQuotations,
-            'last_week'           => $priorQuotations,
-            'own_products_value'  => round($storeItems->sum('subtotal'), 2),
+            'store' => Auth::user()->name,
+            'total_signals' => $quotations->count(),
+            'unique_farmers' => $quotations->pluck('user_id')->filter()->unique()->count(),
+            'this_week' => $recentQuotations,
+            'last_week' => $priorQuotations,
+            'own_products_value' => round($storeItems->sum('subtotal'), 2),
             'signals_total_value' => round($quotations->sum('estimated_total_cost'), 2),
-            'top_products'        => $topProducts,
-            'top_crops'           => $topCrops,
+            'top_products' => $topProducts,
+            'top_crops' => $topCrops,
         ];
 
         $system = 'You are a senior business analyst for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Farmers generate cost quotations and stores see them as "demand signals" - demand visibility, no action required. Write a COMPLETE demand intelligence report using ONLY the JSON telemetry provided. Report total_signals, this_week and last_week EXACTLY as given - this_week/last_week are the last 7 and previous 7 days respectively, distinct from total_signals. Never invent numbers.
@@ -804,17 +793,17 @@ FORMATTING RULES:
 
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $apiKey,
-                'Content-Type'  => 'application/json',
+                'Authorization' => 'Bearer '.$apiKey,
+                'Content-Type' => 'application/json',
             ])->withoutVerifying()->timeout(90)->post('https://api.groq.com/openai/v1/chat/completions', [
-                'model'       => 'openai/gpt-oss-20b',
-                'messages'    => [
+                'model' => 'openai/gpt-oss-20b',
+                'messages' => [
                     ['role' => 'system', 'content' => $system],
                     ['role' => 'user', 'content' => json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)],
                 ],
-                'temperature'     => 0.4,
-                'max_tokens'      => 8192,
-                'reasoning_effort'=> 'low',
+                'temperature' => 0.4,
+                'max_tokens' => 8192,
+                'reasoning_effort' => 'low',
             ]);
 
             if ($response->failed()) {
@@ -826,14 +815,14 @@ FORMATTING RULES:
             return response()->json([
                 'overview' => trim((string) $response->json('choices.0.message.content', '')),
                 'metrics' => [
-                    'total_signals'       => $quotations->count(),
-                    'unique_farmers'      => $quotations->pluck('user_id')->filter()->unique()->count(),
-                    'this_week'           => $recentQuotations,
-                    'last_week'           => $priorQuotations,
-                    'own_products_value'  => round($storeItems->sum('subtotal'), 2),
+                    'total_signals' => $quotations->count(),
+                    'unique_farmers' => $quotations->pluck('user_id')->filter()->unique()->count(),
+                    'this_week' => $recentQuotations,
+                    'last_week' => $priorQuotations,
+                    'own_products_value' => round($storeItems->sum('subtotal'), 2),
                     'signals_total_value' => round($quotations->sum('estimated_total_cost'), 2),
-                    'top_products'        => $topProducts,
-                    'top_crops'           => $topCrops,
+                    'top_products' => $topProducts,
+                    'top_crops' => $topCrops,
                 ],
             ]);
         } catch (\Throwable $e) {
@@ -862,41 +851,41 @@ FORMATTING RULES:
 
         foreach ($quotations as $q) {
             $crop = $q->crop_type ?: 'Unspecified';
-            if (!isset($cropDemand[$crop])) {
+            if (! isset($cropDemand[$crop])) {
                 $cropDemand[$crop] = [
-                    'crop'        => $crop,
-                    'count'       => 0,
-                    'total_area'  => 0.0,
+                    'crop' => $crop,
+                    'count' => 0,
+                    'total_area' => 0.0,
                     'total_value' => 0.0,
                 ];
             }
             $cropDemand[$crop]['count'] += 1;
-            $cropDemand[$crop]['total_area']  += (float) $q->land_area;
+            $cropDemand[$crop]['total_area'] += (float) $q->land_area;
             $cropDemand[$crop]['total_value'] += (float) $q->estimated_total_cost;
 
             foreach ($q->items as $item) {
-                if (!$item->product) {
+                if (! $item->product) {
                     continue;
                 }
 
                 $pid = $item->product_id;
-                if (!isset($productDemand[$pid])) {
+                if (! isset($productDemand[$pid])) {
                     $productDemand[$pid] = [
-                        'name'            => $item->product->name,
-                        'display_name'    => $item->product->display_name,
-                        'category'        => $item->product->category_display_name,
-                        'unit'            => $item->product->stock_unit ?? $item->product->package_unit ?? 'units',
-                        'quotation_ids'   => [],
-                        'total_qty'       => 0.0,
-                        'total_value'     => 0.0,
-                        'crops'           => [],
+                        'name' => $item->product->name,
+                        'display_name' => $item->product->display_name,
+                        'category' => $item->product->category_display_name,
+                        'unit' => $item->product->stock_unit ?? $item->product->package_unit ?? 'units',
+                        'quotation_ids' => [],
+                        'total_qty' => 0.0,
+                        'total_value' => 0.0,
+                        'crops' => [],
                     ];
                 }
 
                 $productDemand[$pid]['quotation_ids'][$q->id] = true;
-                $productDemand[$pid]['total_qty']   += (float) $item->calculated_quantity;
+                $productDemand[$pid]['total_qty'] += (float) $item->calculated_quantity;
                 $productDemand[$pid]['total_value'] += (float) $item->subtotal;
-                if ($crop && !in_array($crop, $productDemand[$pid]['crops'], true)) {
+                if ($crop && ! in_array($crop, $productDemand[$pid]['crops'], true)) {
                     $productDemand[$pid]['crops'][] = $crop;
                 }
             }
@@ -909,6 +898,7 @@ FORMATTING RULES:
                 $p['quotation_count'] = count($p['quotation_ids']);
                 unset($p['quotation_ids']);
                 $p['crops'] = collect($p['crops'])->filter()->join(', ');
+
                 return $p;
             })
             ->sortByDesc('quotation_count')
@@ -934,13 +924,13 @@ FORMATTING RULES:
             ->groupBy(fn ($batch) => $batch->crop?->name ?: 'Unspecified')
             ->map(function ($batches, $crop) {
                 return [
-                    'crop'        => $crop,
-                    'batches'     => $batches->count(),
+                    'crop' => $crop,
+                    'batches' => $batches->count(),
                     // Still in the ground: prepared, sown, growing or ripening.
-                    'active'      => $batches->whereNotIn('growth_stage', ['harvested', 'failed'])->count(),
-                    'harvested'   => $batches->where('growth_stage', 'harvested')->count(),
-                    'farmers'     => $batches->pluck('user_id')->unique()->count(),
-                    'total_area'  => (float) $batches->sum('land_area'),
+                    'active' => $batches->whereNotIn('growth_stage', ['harvested', 'failed'])->count(),
+                    'harvested' => $batches->where('growth_stage', 'harvested')->count(),
+                    'farmers' => $batches->pluck('user_id')->unique()->count(),
+                    'total_area' => (float) $batches->sum('land_area'),
                 ];
             })
             ->sortByDesc('total_area')
@@ -962,13 +952,13 @@ FORMATTING RULES:
                 $p = $planting->firstWhere('crop', $name);
 
                 return [
-                    'crop'         => $name,
-                    'estimates'    => (int) ($q['count'] ?? 0),
-                    'quoted_area'  => (float) ($q['total_area'] ?? 0),
+                    'crop' => $name,
+                    'estimates' => (int) ($q['count'] ?? 0),
+                    'quoted_area' => (float) ($q['total_area'] ?? 0),
                     'quoted_value' => (float) ($q['total_value'] ?? 0),
-                    'batches'      => (int) ($p['batches'] ?? 0),
-                    'active'       => (int) ($p['active'] ?? 0),
-                    'farmers'      => (int) ($p['farmers'] ?? 0),
+                    'batches' => (int) ($p['batches'] ?? 0),
+                    'active' => (int) ($p['active'] ?? 0),
+                    'farmers' => (int) ($p['farmers'] ?? 0),
                     'planted_area' => (float) ($p['total_area'] ?? 0),
                 ];
             })
@@ -986,10 +976,10 @@ FORMATTING RULES:
 
         // Global metrics (expired is derived from valid_until, not the stored status)
         $metrics = [
-            'total'      => $allQuotations->count(),
-            'computed'   => $allQuotations->filter(fn ($q) => !$q->is_expired && $q->status === Quotation::STATUS_COMPUTED)->count(),
-            'viewed'     => $allQuotations->filter(fn ($q) => !$q->is_expired && $q->status === Quotation::STATUS_VIEWED)->count(),
-            'expired'    => $allQuotations->filter(fn ($q) => $q->is_expired)->count(),
+            'total' => $allQuotations->count(),
+            'computed' => $allQuotations->filter(fn ($q) => ! $q->is_expired && $q->status === Quotation::STATUS_COMPUTED)->count(),
+            'viewed' => $allQuotations->filter(fn ($q) => ! $q->is_expired && $q->status === Quotation::STATUS_VIEWED)->count(),
+            'expired' => $allQuotations->filter(fn ($q) => $q->is_expired)->count(),
             'totalValue' => $allQuotations->sum('estimated_total_cost'),
         ];
 
@@ -1001,11 +991,11 @@ FORMATTING RULES:
         $cropRows = $this->mergeCropViews($cropDemand, $planting);
 
         return view('admin.quotations.index', [
-            'metrics'       => $metrics,
+            'metrics' => $metrics,
             'productDemand' => $productDemand,
-            'productTotal'  => $productTotal,
-            'cropRows'      => $cropRows->toArray(),
-            'cropTotal'     => $cropRows->count(),
+            'productTotal' => $productTotal,
+            'cropRows' => $cropRows->toArray(),
+            'cropTotal' => $cropRows->count(),
             'plantingTotal' => $planting->sum('batches'),
         ]);
     }
@@ -1023,9 +1013,9 @@ FORMATTING RULES:
         $topProducts = $allProducts->take(5)->toArray();
 
         $summary = [
-            'total'      => count($products),
-            'estimates'  => array_sum(array_column($products, 'quotation_count')),
-            'totalQty'   => array_sum(array_column($products, 'total_qty')),
+            'total' => count($products),
+            'estimates' => array_sum(array_column($products, 'quotation_count')),
+            'totalQty' => array_sum(array_column($products, 'total_qty')),
             'totalValue' => array_sum(array_column($products, 'total_value')),
         ];
 
@@ -1045,7 +1035,7 @@ FORMATTING RULES:
         $userFilter = request('user_id');
         $typeFilter = request('type');
 
-        $query = \App\Models\ActivityLog::with('user');
+        $query = ActivityLog::with('user');
 
         if ($userFilter) {
             $query->where('user_id', $userFilter);
@@ -1057,8 +1047,8 @@ FORMATTING RULES:
         $activities = $query->latest()->paginate(10)->withQueryString();
 
         // For the filter dropdown
-        $users = \App\Models\User::orderBy('name')->get();
-        $activityTypes = \App\Models\ActivityLog::select('type')->distinct()->pluck('type')->sort()->toArray();
+        $users = User::orderBy('name')->get();
+        $activityTypes = ActivityLog::select('type')->distinct()->pluck('type')->sort()->toArray();
 
         return view('admin.activity.index', compact('activities', 'users', 'activityTypes', 'userFilter', 'typeFilter'));
     }
