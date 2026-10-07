@@ -76,6 +76,8 @@ class AuthController extends Controller
         }
 
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+            $this->logFailedLogin($method, $credentials);
+
             return back()->withErrors([
                 // Deliberately anonymous: the login page never reveals whether
                 // an email/phone is registered or whether the password is wrong.
@@ -128,11 +130,39 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        // Record the sign-out while the user is still authenticated — after
+        // Auth::logout() there is nobody left to attribute the row to.
+        if ($user = Auth::user()) {
+            ActivityLogger::userLoggedOut($user);
+        }
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    /**
+     * Record a rejected sign-in against the account it targeted.
+     *
+     * Attempts against identifiers that match no account are skipped: the
+     * activity table requires a real user_id, and an unknown identifier tells
+     * the association nothing it can act on.
+     */
+    private function logFailedLogin(string $method, array $credentials): void
+    {
+        if ($method === 'phone') {
+            $user = User::where('phone', $credentials['phone'] ?? '')->first();
+            $via = 'phone number';
+        } else {
+            $user = User::where('email', strtolower(trim($credentials['email'] ?? '')))->first();
+            $via = 'email';
+        }
+
+        if ($user) {
+            ActivityLogger::userLoginFailed($user, $via);
+        }
     }
 
     /**

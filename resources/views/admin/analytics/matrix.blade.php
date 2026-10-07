@@ -184,12 +184,22 @@
                   <tbody>
                     @foreach($seasonFormulas as $formula)
                       <tr>
-                        <td class="product">{{ $formula->product->display_name ?? 'Unknown Product' }}</td>
+                        <td class="product">
+                          {{ $formula->product->display_name ?? 'Unknown Product' }}
+                          @if($formula->stage && $formula->stage !== 'standard')
+                            <span style="display:inline-block; margin-left:6px; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; vertical-align:middle;">{{ $formula->stageLabel() }}</span>
+                          @endif
+                        </td>
                         <td class="rate">
                           <span class="rate-pill">
                             <b>{{ number_format((float) $formula->rate_per_hectare, 2) }}</b>
                             <span>{{ $formula->unit }} / ha</span>
                           </span>
+                          @if($formula->min_rate_per_hectare !== null || $formula->max_rate_per_hectare !== null)
+                            <div style="font-size:11px; color:#94a3b8; margin-top:2px;">
+                              Bounds: {{ $formula->min_rate_per_hectare !== null ? number_format((float) $formula->min_rate_per_hectare, 2) : '—' }} – {{ $formula->max_rate_per_hectare !== null ? number_format((float) $formula->max_rate_per_hectare, 2) : '—' }}
+                            </div>
+                          @endif
                         </td>
                         <td class="notes">{{ $formula->notes ?: $noteFor($formula) }}</td>
                       </tr>

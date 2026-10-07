@@ -4,8 +4,14 @@
 
 @section('content')
   @php
-    $import = session('admin.user_import');
-    $error  = session('error');
+    $import  = session('admin.user_import');
+    $error   = session('error');
+    $success = session('success');
+
+    // Staged OCR review state — also read by the script at the bottom of the
+    // page, so they are computed here rather than inside the OCR branch.
+    $ocrCount    = is_array($import) ? count($import['rows'] ?? []) : 0;
+    $ocrApproved = array_map('strval', is_array($import) ? ($import['approved'] ?? []) : []);
   @endphp
 
   <style>
@@ -178,6 +184,11 @@
       stroke-width: 2; 
       flex-shrink: 0; 
     }
+    .import-alert.ok {
+      background: var(--primary-light);
+      border-color: var(--primary-border);
+      color: var(--primary);
+    }
 
     .import-panel {
       background: rgba(255, 255, 255, 0.95); 
@@ -336,6 +347,30 @@
       font-weight: 700;
     }
 
+    /* Which extraction path produced the rows below: AI field matching, or
+       the built-in rule parser when no AI key is configured. */
+    .ocr-mode {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .ocr-mode.ai {
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+    }
+    .ocr-mode.rules {
+      background: var(--slate-100);
+      color: var(--slate-700);
+      border: 1px solid var(--slate-200);
+    }
+
     .import-table-wrap { 
       overflow-x: auto; 
       border: 1px solid var(--slate-200); 
@@ -469,6 +504,71 @@
     .approve-check.disabled { opacity: 0.35; }
     .approve-check.disabled input { cursor: not-allowed; }
 
+    /* ── OCR review table: manual editing ───────────────────────────── */
+    .ocr-table-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .ocr-table-bar .bar-note {
+      font-size: 13px;
+      color: var(--slate-600);
+    }
+    .ocr-table-bar .bar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+    .ocr-table-bar .btn-users { padding: 7px 14px; font-size: 12.5px; }
+    .ocr-table-bar [hidden] { display: none !important; }
+
+    .ocr-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      align-items: center;
+    }
+    .ocr-actions .actions-note { flex: 1; min-width: 200px; }
+
+    /* A cell shows its read-only text until the wrap enters edit mode, then
+       the input replaces it. Both stay in the form so the values post. */
+    .cell-static { display: block; }
+    .cell-edit { display: none; }
+    .import-table-wrap.editing .cell-static { display: none; }
+    .import-table-wrap.editing .cell-edit { display: block; }
+
+    .import-table input.ocr-cell,
+    .import-table select.ocr-cell {
+      width: 100%;
+      min-width: 130px;
+      padding: 7px 9px;
+      border: 1px solid var(--slate-300);
+      border-radius: var(--radius-sm);
+      background: #ffffff;
+      color: var(--slate-800);
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .import-table input.ocr-cell:focus,
+    .import-table select.ocr-cell:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+    }
+    .import-table input.ocr-cell.member-no {
+      min-width: 90px;
+      margin-top: 6px;
+      font-size: 12px;
+      padding: 5px 8px;
+    }
+    .import-table .cell-edit .muted { margin-top: 4px; }
+    .import-table tbody tr.is-new { background: var(--primary-light); }
+
     .ocr-raw { 
       margin-bottom: 20px; 
       border: 1px solid var(--slate-200); 
@@ -547,13 +647,20 @@
 
       <div class="header-row">
         <h1>Import Members</h1>
-        <p>Bulk-create member accounts from CSV, Excel, or JSON files. Preview first, then confirm the import.</p>
+        <p>Bulk-create member accounts from {{ \App\Support\ImportFormats::label() }} files. Preview first, then confirm the import.</p>
       </div>
 
       @if($error)
         <div class="import-alert">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           {{ $error }}
+        </div>
+      @endif
+
+      @if($success)
+        <div class="import-alert ok">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          {{ $success }}
         </div>
       @endif
 
@@ -573,8 +680,8 @@
             <label class="drop-zone" for="fileInput" id="dropZone">
               <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               <p><strong>Drag &amp; drop</strong> a file here, or <strong>browse</strong></p>
-              <p class="dz-sub">Accepts .csv, .xls, .xlsx, .json — up to 5 MB</p>
-              <input type="file" name="file" id="fileInput" accept=".csv,.xls,.xlsx,.json">
+              <p class="dz-sub">Accepts {{ \App\Support\ImportFormats::accept() }} — up to 5 MB</p>
+              <input type="file" name="file" id="fileInput" accept="{{ \App\Support\ImportFormats::accept() }}">
               <div class="file-selected" id="fileSelected"></div>
             </label>
 
@@ -589,7 +696,7 @@
           <div class="import-bullets">
             <div class="bullet">
               <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              <div><b>Formats</b><br>Comma / semicolon / tab CSV, Excel workbooks, and JSON arrays.</div>
+              <div><b>Formats</b><br>{{ \App\Support\ImportFormats::label() }} — delimiters are auto-detected (comma, semicolon or tab).</div>
             </div>
             <div class="bullet">
               <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -648,10 +755,18 @@
         {{-- ── PHASE 2: Preview ── --}}
         @if(($import['source'] ?? 'file') === 'ocr')
           <div class="import-panel" style="max-width:none;">
-            <h2 class="panel-title">Review OCR results</h2>
+            <h2 class="panel-title">
+              Review OCR results
+              @if($import['ai_assisted'] ?? false)
+                <span class="ocr-mode ai">AI field matching</span>
+              @else
+                <span class="ocr-mode rules">Rule-based extraction</span>
+              @endif
+            </h2>
             <p class="panel-desc">
-              Scanned document: <b>{{ $import['filename'] }}</b>. The rows below are the member records OCR could
-              recognize from the document. <b>Nothing is imported automatically</b> — tick the box next to each record
+              Scanned document: <b>{{ $import['filename'] }}</b>. The rows below are the member records read from the
+              document{{ ($import['ai_assisted'] ?? false) ? ', matched to their columns by AI from the raw scan text' : ' by the built-in parser' }}.
+              <b>Nothing is imported automatically</b> — tick the box next to each record
               to approve it, then click the import button. Unchecked and flagged rows are skipped.
             </p>
 
@@ -676,78 +791,181 @@
               <pre>{{ $import['ocr_text'] }}</pre>
             </details>
 
-            <div class="import-table-wrap">
-              <table class="import-table">
-                <thead>
-                  <tr>
-                    <th>Approve</th>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @forelse($import['rows'] as $row)
-                    <tr class="{{ $row['issues'] ? 'row-error' : '' }}">
-                      <td>
-                        <label class="approve-check {{ $row['issues'] ? 'disabled' : '' }}">
-                          <input type="checkbox" name="approve[]" value="{{ $row['_row'] }}" data-ocr-row
-                                 form="ocrConfirmForm" {{ $row['issues'] ? 'disabled' : '' }}>
-                        </label>
-                      </td>
-                      <td class="row-num">{{ $row['_row'] }}</td>
-                      <td>
-                        {{ $row['data']['name'] ?? '—' }}
-                        @if(!empty($row['data']['assoc_member_no']))
-                          <div class="muted">Member {{ $row['data']['assoc_member_no'] }}</div>
-                        @endif
-                      </td>
-                      <td>{{ $row['data']['email'] ?? '—' }}</td>
-                      <td>{{ $row['data']['phone'] ?? '—' }}</td>
-                      <td>
-                        <span class="role-chip {{ ($row['data']['role'] ?? 'farmer') === 'store_owner' ? 'store' : '' }}">
-                          {{ ($row['data']['role'] ?? 'farmer') === 'store_owner' ? 'Store Owner' : 'Farmer' }}
-                        </span>
-                      </td>
-                      <td>
-                        <div class="status-stack">
-                          @if(empty($row['issues']))
-                            <span class="ok-chip"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Ready</span>
-                          @else
-                            @foreach($row['issues'] as $issue)
-                              <span class="err-chip"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>{{ $issue }}</span>
-                            @endforeach
-                          @endif
-                        </div>
-                      </td>
-                    </tr>
-                  @empty
-                    <tr><td colspan="7" style="text-align:center;padding:24px;color:#94a3b8;">No rows to show.</td></tr>
-                  @endforelse
-                </tbody>
-              </table>
-            </div>
+            {{-- Everything the table can change posts to one form: Import and
+                 Save & Re-check are the same form aimed at two endpoints, so
+                 the ticks travel with the cells either way. --}}
+            <form method="POST" action="{{ route('admin.users.import.ocr.confirm') }}" id="ocrReviewForm" novalidate
+                  onsubmit="var b = event.submitter; if (b && b.id === 'ocrImportBtn') { b.disabled = true; b.textContent = 'Importing…'; }">
+              @csrf
+              <input type="hidden" name="token" value="{{ $import['token'] }}">
 
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;align-items:center;">
-              <div style="flex:1;min-width:200px;">
-                <div class="muted">Tick the rows you want to add — unchecked and flagged rows are skipped.</div>
+              <div class="ocr-table-bar">
+                <span class="bar-note" id="ocrBarNote">
+                  {{ $ocrCount }} row{{ $ocrCount === 1 ? '' : 's' }} read from the scan — tick the ones you want to import.
+                </span>
+                <span class="bar-note" id="ocrBarEditNote" hidden>
+                  Fix the cells you need, then <b>Save &amp; Re-check</b>. Discard edits throws them away.
+                </span>
+                <div class="bar-actions">
+                  <button type="button" class="btn-users ghost" id="ocrEditBtn">
+                    <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit rows
+                  </button>
+                  <button type="button" class="btn-users ghost" id="ocrAddRowBtn" hidden>
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add row
+                  </button>
+                  <button type="button" class="btn-users danger" id="ocrCancelEditBtn" hidden>Discard edits</button>
+                  <button type="submit" class="btn-users" id="ocrSaveBtn"
+                          formaction="{{ route('admin.users.import.ocr.revalidate') }}" hidden>
+                    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    Save &amp; Re-check
+                  </button>
+                </div>
               </div>
-              <form method="POST" action="{{ route('admin.users.import.ocr.confirm') }}" id="ocrConfirmForm" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Importing…';">
-                @csrf
-                <input type="hidden" name="token" value="{{ $import['token'] }}">
+
+              <div class="import-table-wrap" id="ocrTableWrap">
+                <table class="import-table">
+                  <thead>
+                    <tr>
+                      <th>Approve</th>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ocrTableBody">
+                    @forelse($import['rows'] as $index => $row)
+                      <tr class="{{ $row['issues'] ? 'row-error' : '' }}">
+                        <td>
+                          <label class="approve-check {{ $row['issues'] ? 'disabled' : '' }}">
+                            <input type="checkbox" name="approve[]" value="{{ $row['_row'] }}" data-ocr-row
+                                   {{ $row['issues'] ? 'disabled' : '' }} @checked(in_array((string) $row['_row'], $ocrApproved, true))>
+                          </label>
+                          <input type="hidden" name="rows[{{ $index }}][__row]" value="{{ $row['_row'] }}" data-row-no="{{ $row['_row'] }}">
+                        </td>
+                        <td class="row-num">{{ $row['_row'] }}</td>
+                        <td>
+                          <div class="cell-static">
+                            {{ $row['data']['name'] ?? '—' }}
+                            @if(!empty($row['data']['assoc_member_no']))
+                              <div class="muted">Member {{ $row['data']['assoc_member_no'] }}</div>
+                            @endif
+                          </div>
+                          <div class="cell-edit">
+                            <input type="text" class="ocr-cell" data-ocr-cell
+                                   name="rows[{{ $index }}][name]" value="{{ $row['data']['name'] ?? '' }}"
+                                   placeholder="Full name" autocomplete="off">
+                            <input type="text" class="ocr-cell member-no" data-ocr-cell
+                                   name="rows[{{ $index }}][assoc_member_no]" value="{{ $row['data']['assoc_member_no'] ?? '' }}"
+                                   placeholder="Member #" autocomplete="off">
+                          </div>
+                        </td>
+                        <td>
+                          <div class="cell-static">{{ $row['data']['email'] ?? '—' }}</div>
+                          <div class="cell-edit">
+                            <input type="text" class="ocr-cell" data-ocr-cell
+                                   name="rows[{{ $index }}][email]" value="{{ $row['data']['email'] ?? '' }}"
+                                   placeholder="name@example.com" autocomplete="off">
+                          </div>
+                        </td>
+                        <td>
+                          <div class="cell-static">{{ $row['data']['phone'] ?? '—' }}</div>
+                          <div class="cell-edit">
+                            <input type="text" class="ocr-cell" data-ocr-cell
+                                   name="rows[{{ $index }}][phone]" value="{{ $row['data']['phone'] ?? '' }}"
+                                   placeholder="09XXXXXXXXX" autocomplete="off">
+                          </div>
+                        </td>
+                        <td>
+                          <div class="cell-static">
+                            <span class="role-chip {{ ($row['data']['role'] ?? 'farmer') === 'store_owner' ? 'store' : '' }}">
+                              {{ ($row['data']['role'] ?? 'farmer') === 'store_owner' ? 'Store Owner' : 'Farmer' }}
+                            </span>
+                          </div>
+                          <div class="cell-edit">
+                            <select class="ocr-cell" data-ocr-cell name="rows[{{ $index }}][role]">
+                              <option value="farmer" @selected(($row['data']['role'] ?? 'farmer') === 'farmer')>Farmer</option>
+                              <option value="store_owner" @selected(($row['data']['role'] ?? 'farmer') === 'store_owner')>Store Owner</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="status-stack">
+                            @if(empty($row['issues']))
+                              <span class="ok-chip"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Ready</span>
+                            @else
+                              @foreach($row['issues'] as $issue)
+                                <span class="err-chip"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>{{ $issue }}</span>
+                              @endforeach
+                            @endif
+                          </div>
+                        </td>
+                      </tr>
+                    @empty
+                      <tr><td colspan="7" style="text-align:center;padding:24px;color:#94a3b8;">No rows to show.</td></tr>
+                    @endforelse
+                  </tbody>
+                </table>
+              </div>
+
+              {{-- Row appended by "Add row"; the script fills in the row number
+                   and the field indexes before it joins the table. --}}
+              <template id="ocrNewRowTemplate">
+                <tr class="is-new">
+                  <td>
+                    <label class="approve-check">
+                      <input type="checkbox" name="approve[]" value="" data-ocr-row>
+                    </label>
+                    <input type="hidden" name="rows[__i__][__row]" value="" data-row-no="">
+                  </td>
+                  <td class="row-num" data-num-cell></td>
+                  <td>
+                    <div class="cell-edit">
+                      <input type="text" class="ocr-cell" data-ocr-cell name="rows[__i__][name]" placeholder="Full name" autocomplete="off">
+                      <input type="text" class="ocr-cell member-no" data-ocr-cell name="rows[__i__][assoc_member_no]" placeholder="Member #" autocomplete="off">
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-edit">
+                      <input type="text" class="ocr-cell" data-ocr-cell name="rows[__i__][email]" placeholder="name@example.com" autocomplete="off">
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-edit">
+                      <input type="text" class="ocr-cell" data-ocr-cell name="rows[__i__][phone]" placeholder="09XXXXXXXXX" autocomplete="off">
+                    </div>
+                  </td>
+                  <td>
+                    <div class="cell-edit">
+                      <select class="ocr-cell" data-ocr-cell name="rows[__i__][role]">
+                        <option value="farmer">Farmer</option>
+                        <option value="store_owner">Store Owner</option>
+                      </select>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack"><span class="muted">Not checked yet</span></div>
+                  </td>
+                </tr>
+              </template>
+
+              <div class="ocr-actions">
+                <div class="actions-note muted">Tick the rows you want to add — unchecked and flagged rows are skipped.</div>
                 <button type="submit" class="btn-users" id="ocrImportBtn" disabled>
                   <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                   Import Selected Members
                 </button>
-              </form>
-              <form method="POST" action="{{ route('admin.users.import.cancel') }}">
-                @csrf
-                <button type="submit" class="btn-users ghost">Start Over</button>
-              </form>
-            </div>
+                <button type="submit" class="btn-users ghost" form="ocrCancelForm">Start Over</button>
+              </div>
+            </form>
+
+            <form method="POST" action="{{ route('admin.users.import.cancel') }}" id="ocrCancelForm">
+              @csrf
+            </form>
           </div>
         @else
           <div class="import-panel" style="max-width:none;">
@@ -877,18 +1095,121 @@
       wireZone('dropZone', 'fileInput', 'previewBtn', 'fileSelected');
       wireZone('ocrDropZone', 'ocrFileInput', 'ocrPreviewBtn', 'ocrFileSelected');
 
-      var ocrRows = document.querySelectorAll('[data-ocr-row]');
-      if (ocrRows.length > 0) {
-        var ocrImportBtn = document.getElementById('ocrImportBtn');
+      // ---- OCR review table: ticks, edit mode, added rows ---------------
+      var ocrForm = document.getElementById('ocrReviewForm');
 
-        function refreshOcrButton() {
+      if (ocrForm) {
+        var ocrWrap = document.getElementById('ocrTableWrap');
+        var ocrBody = document.getElementById('ocrTableBody');
+        var ocrImportBtn = document.getElementById('ocrImportBtn');
+        var ocrEditBtn = document.getElementById('ocrEditBtn');
+        var ocrAddBtn = document.getElementById('ocrAddRowBtn');
+        var ocrCancelBtn = document.getElementById('ocrCancelEditBtn');
+        var ocrSaveBtn = document.getElementById('ocrSaveBtn');
+        var ocrBarNote = document.getElementById('ocrBarNote');
+        var ocrBarEditNote = document.getElementById('ocrBarEditNote');
+        var ocrTemplate = document.getElementById('ocrNewRowTemplate');
+        // Outer key for rows appended in edit mode; existing rows own 0..n-1.
+        var ocrNextIndex = {{ $ocrCount }};
+        var ocrEditing = false;
+        var ocrSnapshot = null;
+
+        var ocrCells = function () {
+          return Array.prototype.slice.call(ocrBody.querySelectorAll('[data-ocr-cell]'));
+        };
+
+        var ocrTicks = function () {
+          return Array.prototype.slice.call(ocrBody.querySelectorAll('[data-ocr-row]'));
+        };
+
+        function refreshOcrImportBtn() {
           if (!ocrImportBtn) return;
-          var anyChecked = Array.prototype.some.call(ocrRows, function (cb) { return cb.checked; });
-          ocrImportBtn.disabled = !anyChecked;
+          var anyChecked = ocrTicks().some(function (cb) { return cb.checked; });
+          // While editing, the only safe buttons are Save & Re-check and
+          // Discard — importing from here would ignore what was typed.
+          ocrImportBtn.disabled = ocrEditing || !anyChecked;
         }
 
-        ocrRows.forEach(function (cb) { cb.addEventListener('change', refreshOcrButton); });
-        refreshOcrButton();
+        function setOcrEditing(on) {
+          ocrEditing = on;
+          ocrWrap.classList.toggle('editing', on);
+          ocrEditBtn.hidden = on;
+          ocrAddBtn.hidden = !on;
+          ocrCancelBtn.hidden = !on;
+          ocrSaveBtn.hidden = !on;
+          ocrBarNote.hidden = on;
+          ocrBarEditNote.hidden = !on;
+
+          if (on) {
+            // Remember the table as it stands so Discard can put it back.
+            ocrSnapshot = {
+              values: ocrCells().map(function (el) { return el.value; }),
+              rows: ocrBody.rows.length
+            };
+            var first = ocrBody.querySelector('[data-ocr-cell]');
+            if (first) first.focus();
+          }
+
+          refreshOcrImportBtn();
+        }
+
+        function nextOcrRowNumber() {
+          var max = 0;
+          Array.prototype.forEach.call(ocrBody.querySelectorAll('[data-row-no]'), function (el) {
+            var n = parseInt(el.getAttribute('data-row-no'), 10);
+            if (n > max) max = n;
+          });
+          return max + 1;
+        }
+
+        ocrForm.addEventListener('change', function (event) {
+          if (event.target && event.target.hasAttribute && event.target.hasAttribute('data-ocr-row')) {
+            refreshOcrImportBtn();
+          }
+        });
+
+        ocrEditBtn.addEventListener('click', function () { setOcrEditing(true); });
+
+        ocrCancelBtn.addEventListener('click', function () {
+          if (ocrSnapshot) {
+            while (ocrBody.rows.length > ocrSnapshot.rows) {
+              ocrBody.deleteRow(ocrBody.rows.length - 1);
+            }
+            ocrCells().forEach(function (el, i) {
+              if (ocrSnapshot.values[i] !== undefined) el.value = ocrSnapshot.values[i];
+            });
+            ocrSnapshot = null;
+          }
+          setOcrEditing(false);
+        });
+
+        ocrAddBtn.addEventListener('click', function () {
+          if (!ocrTemplate) return;
+
+          var tr = ocrTemplate.content.firstElementChild.cloneNode(true);
+          var index = ocrNextIndex++;
+          var number = nextOcrRowNumber();
+
+          Array.prototype.forEach.call(tr.querySelectorAll('[name]'), function (el) {
+            el.name = el.name.replace('__i__', String(index));
+          });
+
+          var rowNo = tr.querySelector('[data-row-no]');
+          rowNo.value = String(number);
+          rowNo.setAttribute('data-row-no', String(number));
+          tr.querySelector('[data-num-cell]').textContent = number;
+          // The tick carries the provisional number too, so the server keeps
+          // the new row attached to it after the re-check.
+          tr.querySelector('[data-ocr-row]').value = String(number);
+
+          ocrBody.appendChild(tr);
+          refreshOcrImportBtn();
+
+          var added = tr.querySelector('[data-ocr-cell]');
+          if (added) added.focus();
+        });
+
+        refreshOcrImportBtn();
       }
     })();
   </script>

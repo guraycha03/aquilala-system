@@ -8,38 +8,11 @@
       ['key' => 'general',   'label' => 'General',              'url' => route('admin.settings.index')],
       ['key' => 'seasons',   'label' => 'Seasons',              'url' => route('admin.settings.seasons')],
       ['key' => 'interface', 'label' => 'Interface',            'url' => route('admin.settings.interface')],
+      ['key' => 'weather',   'label' => 'Weather Log',          'url' => route('admin.settings.weather')],
       ['key' => 'logs',      'label' => 'Audit Log',            'url' => route('admin.audit.index')],
     ],
     'activeTab' => 'logs',
   ])
-  @php
-    // SAMPLE placeholder data — replace with real audit-log model later.
-    $events = [
-        ['ts' => '2026-08-16 09:42:11', 'actor' => 'Charisse G. Guray', 'role' => 'Admin', 'type' => 'approve', 'cat' => 'approval', 'msg' => 'Approved store application — Rice Mill', 'module' => 'Store Approvals', 'ip' => '192.168.1.24'],
-        ['ts' => '2026-08-16 09:15:04', 'actor' => 'Juan Dela Cruz', 'role' => 'Farmer', 'type' => 'request', 'cat' => 'quotation', 'msg' => 'Generated quotation for 2.5 ha Rice', 'module' => 'Quotations', 'ip' => '192.168.1.108'],
-        ['ts' => '2026-08-16 08:58:47', 'actor' => 'Maria Santos', 'role' => 'Store Owner', 'type' => 'dispatch', 'cat' => 'quotation', 'msg' => 'Dispatched cost estimate #Q-1042', 'module' => 'Quotations', 'ip' => '192.168.1.91'],
-        ['ts' => '2026-08-15 17:30:55', 'actor' => 'Charisse G. Guray', 'role' => 'Admin', 'type' => 'formula', 'cat' => 'formula', 'msg' => 'Adjusted Urea rate override (Wet Season)', 'module' => 'Formula Overrides', 'ip' => '192.168.1.24'],
-        ['ts' => '2026-08-15 16:12:30', 'actor' => 'Pedro Ramos', 'role' => 'Store Owner', 'type' => 'login', 'cat' => 'auth', 'msg' => 'Signed in to the platform', 'module' => 'Authentication', 'ip' => '192.168.1.76'],
-        ['ts' => '2026-08-15 15:44:09', 'actor' => 'Liza Morales', 'role' => 'Farmer', 'type' => 'accept', 'cat' => 'quotation', 'msg' => 'Accepted quotation #Q-1039', 'module' => 'Quotations', 'ip' => '192.168.1.133'],
-        ['ts' => '2026-08-15 14:20:18', 'actor' => 'Charisse G. Guray', 'role' => 'Admin', 'type' => 'reject', 'cat' => 'approval', 'msg' => 'Rejected store application — Agro Traders', 'module' => 'Store Approvals', 'ip' => '192.168.1.24'],
-        ['ts' => '2026-08-15 13:05:42', 'actor' => 'Juan Dela Cruz', 'role' => 'Farmer', 'type' => 'logout', 'cat' => 'auth', 'msg' => 'Signed out of the platform', 'module' => 'Authentication', 'ip' => '192.168.1.108'],
-        ['ts' => '2026-08-15 11:38:27', 'actor' => 'Rosa Villanueva', 'role' => 'Store Owner', 'type' => 'update', 'cat' => 'update', 'msg' => 'Updated product — Palay Seeds price', 'module' => 'Storefront', 'ip' => '192.168.1.57'],
-        ['ts' => '2026-08-15 10:02:13', 'actor' => 'Admin System', 'role' => 'System', 'type' => 'maintain', 'cat' => 'system', 'msg' => 'Automated seasonal data refresh', 'module' => 'System', 'ip' => '127.0.0.1'],
-    ];
-
-    $typeMeta = [
-        'login'    => ['Signed In', '#4f6f8f', '#eef2f6'],
-        'logout'   => ['Signed Out', '#64748b', '#f1f5f9'],
-        'approve'  => ['Approved', '#63856c', '#eef3ef'],
-        'reject'   => ['Rejected', '#a86464', '#f6ecec'],
-        'request'  => ['Request', '#62829b', '#eef2f6'],
-        'dispatch' => ['Dispatched', '#a57f43', '#f6f0e6'],
-        'accept'   => ['Accepted', '#63856c', '#eef3ef'],
-        'formula'  => ['Override', '#86799f', '#f1eef6'],
-        'update'   => ['Updated', '#a57f43', '#f6f0e6'],
-        'maintain' => ['Maintenance', '#64748b', '#f1f5f9'],
-    ];
-  @endphp
 
   <style>
     .audit-page { position: relative; }
@@ -80,25 +53,33 @@
     .audit-kpi .ak-value { font-size: 24px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; }
     .audit-kpi .ak-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
 
+    .audit-filters {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 16px;
+    }
+    .audit-filters input[type="search"],
+    .audit-filters select {
+      background: #f6f8f7; border: 1px solid #e6ebe8; border-radius: 10px;
+      padding: 9px 12px; font-size: 13px; color: #334155; outline: none;
+    }
+    .audit-filters input[type="search"] { min-width: 220px; flex: 1; max-width: 340px; }
+    .audit-filters input[type="search"]:focus,
+    .audit-filters select:focus { border-color: #143d23; box-shadow: 0 0 0 2px #dcfce7; }
+    .audit-filters button,
+    .audit-filters a {
+      font-size: 13px; padding: 9px 14px; border-radius: 10px; text-decoration: none;
+      border: 1px solid #e6ebe8; background: #ffffff; color: #374151; cursor: pointer;
+    }
+    .audit-filters button { background: #143d23; border-color: #143d23; color: #ffffff; font-weight: 600; }
+    .audit-filters button:hover { background: #1b5230; }
+    .audit-filters a.clear { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+    .audit-filters a.clear:hover { background: #fee2e2; }
+
     .audit-panel {
       background: rgba(255,255,255,0.86); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
       border: 1px solid rgba(255,255,255,0.55); border-radius: 18px;
       box-shadow: 0 6px 28px rgba(0,0,0,0.05), 0 1px 4px rgba(0,0,0,0.03); overflow: hidden;
       position: relative;
-    }
-    .audit-toolbar {
-      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
-      padding: 16px 20px; border-bottom: 1px solid #eef1ef;
-    }
-    .audit-toolbar .search-box {
-      display: flex; align-items: center; gap: 8px; flex: 1; min-width: 200px; max-width: 340px;
-      background: #f6f8f7; border: 1px solid #e6ebe8; border-radius: 10px; padding: 8px 12px;
-    }
-    .audit-toolbar .search-box svg { width: 14px; height: 14px; stroke: #94a3b8; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .audit-toolbar .search-box input { border: none; background: transparent; outline: none; width: 100%; font-size: 13px; color: #334155; }
-    .audit-toolbar select {
-      background: #f6f8f7; border: 1px solid #e6ebe8; border-radius: 10px;
-      padding: 8px 12px; font-size: 13px; color: #334155; outline: none; cursor: pointer;
     }
 
     .audit-table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -137,16 +118,8 @@
     }
     .audit-footer .rows-info { font-size: 12px; color: #94a3b8; }
 
-    /* Custom overlay scrollbar moved to shared layout (.app-scrollbar) */
-    .pager { display: flex; gap: 6px; }
-    .pager button {
-      min-width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e6ebe8; background: #ffffff;
-      font-size: 13px; color: #475569; cursor: pointer; transition: all 0.15s ease;
-    }
-    .pager button:hover { background: #f6f8f7; }
-    .pager button.active { background: #143d23; border-color: #143d23; color: #ffffff; }
-
     .audit-empty { text-align: center; padding: 48px 20px; color: #94a3b8; }
+    .audit-empty h3 { margin: 0 0 6px; color: #64748b; font-size: 15px; }
 
     @media (max-width: 768px) {
       .audit-table th:nth-child(4), .audit-table td:nth-child(4),
@@ -159,7 +132,7 @@
       <div class="header-row">
         <div>
           <h1>System Audit Logs</h1>
-          <p>Immutable event log capturing authentication steps, approvals, formula overrides, and account modifications.</p>
+          <p>Every recorded action across the system — sign-ins, account changes, product CRUD, quotations and moderation — straight from the activity trail.</p>
         </div>
         <div class="header-actions">
           <button id="exportBtn" class="btn-audit ghost">
@@ -169,48 +142,59 @@
         </div>
       </div>
 
-      <!-- Summary KPIs -->
+      <!-- Summary KPIs (computed from activity_logs) -->
       <div class="audit-kpis">
         <div class="audit-kpi">
           <div class="ak-label">Total Events</div>
-          <div class="ak-value">1,284</div>
+          <div class="ak-value">{{ number_format($kpis['total']) }}</div>
           <div class="ak-sub">All-time records</div>
         </div>
         <div class="audit-kpi">
           <div class="ak-label">Today</div>
-          <div class="ak-value">42</div>
+          <div class="ak-value">{{ number_format($kpis['today']) }}</div>
           <div class="ak-sub">Events logged today</div>
         </div>
         <div class="audit-kpi">
           <div class="ak-label">Authentications</div>
-          <div class="ak-value">618</div>
+          <div class="ak-value">{{ number_format($kpis['authentications']) }}</div>
           <div class="ak-sub">Sign-ins &amp; sign-outs</div>
         </div>
         <div class="audit-kpi">
           <div class="ak-label">Modifications</div>
-          <div class="ak-value">97</div>
-          <div class="ak-sub">Approvals &amp; overrides</div>
+          <div class="ak-value">{{ number_format($kpis['changes']) }}</div>
+          <div class="ak-sub">Creates, updates &amp; deletes</div>
         </div>
       </div>
 
-      <x-table-toolbar
-          uid="audit"
-          work-table="auditTable"
-          per-page="10"
-          noun="records"
-          search-placeholder="Search actor, event, or module…"
-          :filters="[
-              ['key' => 'cat', 'label' => 'All event types', 'options' => [['auth', 'Authentications'], ['approval', 'Store Approvals'], ['quotation', 'Quotations'], ['formula', 'Formula Overrides'], ['update', 'Storefront Updates'], ['system', 'System']]],
-              ['key' => 'age', 'label' => 'All dates', 'options' => [['<=1', 'Today'], ['<=7', 'Last 7 days'], ['<=30', 'Last 30 days']]],
-          ]"
-          :sorts="[
-              ['key' => 'epoch', 'dir' => -1, 'type' => 'num', 'label' => 'Time (newest)'],
-              ['key' => 'epoch', 'dir' => 1, 'type' => 'num', 'label' => 'Time (oldest)'],
-              ['key' => 'actor', 'dir' => 1, 'type' => 'str', 'label' => 'Actor (A–Z)'],
-              ['key' => 'module', 'dir' => 1, 'type' => 'str', 'label' => 'Module (A–Z)'],
-              ['key' => 'cat', 'dir' => 1, 'type' => 'str', 'label' => 'Event type (A–Z)'],
-          ]"
-        />
+      <!-- Server-side filters (search, category, date range, user) -->
+      <form method="GET" class="audit-filters">
+        <input type="search" name="q" value="{{ $search }}" placeholder="Search description, event, or user…">
+        <select name="cat">
+          <option value="">All event types</option>
+          @foreach($categories as $key => $label)
+            <option value="{{ $key }}" {{ $category === $key ? 'selected' : '' }}>{{ $label }}</option>
+          @endforeach
+        </select>
+        <select name="period">
+          <option value="all" {{ $period === 'all' ? 'selected' : '' }}>All dates</option>
+          <option value="today" {{ $period === 'today' ? 'selected' : '' }}>Today</option>
+          <option value="7days" {{ $period === '7days' ? 'selected' : '' }}>Last 7 days</option>
+          <option value="30days" {{ $period === '30days' ? 'selected' : '' }}>Last 30 days</option>
+          <option value="month" {{ $period === 'month' ? 'selected' : '' }}>This month</option>
+        </select>
+        <select name="user_id">
+          <option value="">All users</option>
+          @foreach($users as $u)
+            <option value="{{ $u->id }}" {{ $userId == $u->id ? 'selected' : '' }}>
+              {{ $u->name }} ({{ ucfirst(str_replace('_', ' ', $u->role)) }})
+            </option>
+          @endforeach
+        </select>
+        <button type="submit">Apply</button>
+        @if($search !== '' || $category !== '' || $period !== 'all' || $userId !== '')
+          <a href="{{ route('admin.audit.index') }}" class="clear">Clear</a>
+        @endif
+      </form>
 
       <div class="audit-panel">
         <div class="app-scroll-wrap" style="--sb-bottom: 18px;">
@@ -226,39 +210,62 @@
               </tr>
             </thead>
             <tbody id="auditRows">
-              @foreach($events as $e)
+              @forelse($activities as $activity)
                 @php
-                  $meta = $typeMeta[$e['type']] ?? ['Event', '#64748b', '#f1f5f9'];
-                  $ageDays = \Illuminate\Support\Carbon::parse($e['ts'])->diffInDays(now(), false);
+                  $actor = $activity->actor ?? $activity->user;
+                  $actorName = $activity->actor_name;
+                  $role = $actor?->role ? ucfirst(str_replace('_', ' ', $actor->role)) : 'System';
+                  // Notification-style rows file themselves under the recipient;
+                  // show who actually acted when that differs from the recipient.
+                  $recipient = ($activity->actor && $activity->user && $activity->actor->id !== $activity->user->id)
+                      ? $activity->user?->name
+                      : null;
                 @endphp
-                <tr data-cat="{{ $e['cat'] }}"
-                    data-ts="{{ $e['ts'] }}"
-                    data-age="{{ number_format(max(0, $ageDays), 2) }}"
-                    data-epoch="{{ \Illuminate\Support\Carbon::parse($e['ts'])->getTimestamp() }}"
-                    data-actor="{{ strtolower($e['actor']) }}"
-                    data-module="{{ strtolower($e['module']) }}"
-                    data-search="{{ strtolower($e['actor'] . ' ' . $e['role'] . ' ' . $e['msg'] . ' ' . $e['module'] . ' ' . $meta[0]) }}">
-                  <td class="audit-ts">{{ $e['ts'] }}</td>
+                <tr data-cat="{{ $activity->category }}"
+                    data-ts="{{ $activity->created_at->format('Y-m-d H:i:s') }}"
+                    data-epoch="{{ $activity->created_at->getTimestamp() }}"
+                    data-actor="{{ strtolower($actorName) }}"
+                    data-module="{{ strtolower($activity->category_label) }}"
+                    data-search="{{ strtolower($actorName . ' ' . $role . ' ' . $activity->description . ' ' . $activity->category_label . ' ' . $activity->type) }}">
+                  <td class="audit-ts">{{ $activity->created_at->format('Y-m-d H:i:s') }}</td>
                   <td>
                     <div class="audit-actor">
                       <div class="audit-avatar">
                         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                       </div>
                       <div>
-                        <div style="font-weight: 600; color: #1e293b; white-space: nowrap;">{{ $e['actor'] }}</div>
-                        <div style="font-size: 11px; color: #94a3b8; margin-top: 1px;">{{ $e['role'] }}</div>
+                        <div style="font-weight: 600; color: #1e293b; white-space: nowrap;">{{ $actorName }}</div>
+                        <div style="font-size: 11px; color: #94a3b8; margin-top: 1px;">{{ $role }}</div>
                       </div>
                     </div>
                   </td>
                   <td>
                     <div class="audit-event">
-                      <span class="audit-badge has-tip" data-tip="{{ $e['msg'] }}" data-sub="{{ $e['module'] }} · {{ $e['ip'] }}" data-inline-style="background:{{ $meta[2] }};color:{{ $meta[1] }};">{{ $meta[0] }}</span>
+                      <span class="audit-badge has-tip"
+                            data-tip="{{ $activity->description }}"
+                            data-sub="{{ $activity->type }}{{ $recipient ? ' · for ' . $recipient : '' }}{{ $activity->ip_address ? ' · ' . $activity->ip_address : '' }}"
+                            style="background: {{ $activity->bg }}; color: {{ $activity->color }};">
+                        {{ ucwords(str_replace(['.', '_'], ' ', (string) $activity->type)) }}
+                      </span>
                     </div>
                   </td>
-                  <td class="audit-module">{{ $e['module'] }}</td>
-                  <td class="audit-ip">{{ $e['ip'] }}</td>
+                  <td class="audit-module">{{ $activity->category_label }}</td>
+                  <td class="audit-ip">{{ $activity->ip_address ?? '—' }}</td>
                 </tr>
-              @endforeach
+              @empty
+                <tr>
+                  <td colspan="5">
+                    <div class="audit-empty">
+                      <h3>No audit records</h3>
+                      <p>No activity matches the current filters.
+                        @if($search !== '' || $category !== '' || $period !== 'all' || $userId !== '')
+                          Try clearing the filters above.
+                        @endif
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              @endforelse
             </tbody>
           </table>
           </div>
@@ -268,6 +275,20 @@
             <div class="app-scrollbar-thumb"></div>
           </div>
         </div>
+
+        @if($activities->hasPages())
+          <div class="audit-footer">
+            <span class="rows-info">
+              Showing {{ number_format($activities->firstItem()) }}–{{ number_format($activities->lastItem()) }}
+              of {{ number_format($activities->total()) }} records
+            </span>
+            {{ $activities->withQueryString()->links('partials.pagination') }}
+          </div>
+        @elseif($activities->total() > 0)
+          <div class="audit-footer">
+            <span class="rows-info">Showing all {{ number_format($activities->total()) }} records</span>
+          </div>
+        @endif
       </div>
     </div>
   </div>
@@ -296,6 +317,7 @@
         var lines = ['Timestamp,Actor,Role,Event,Module,IP Address'];
         shown.forEach(function (row) {
           var cells = row.querySelectorAll('td');
+          if (cells.length < 5) { return; }
           var actor = cells[1].innerText.replace(/\n/g, ' ');
           var badge = cells[2].querySelector('.audit-badge');
           var event = badge ? badge.dataset.tip : cells[2].innerText.replace(/\n/g, ' ');
@@ -311,6 +333,7 @@
         a.download = 'audit-trail.csv';
         a.click();
         URL.revokeObjectURL(url);
+        showToast('Exported ' + (lines.length - 1) + ' record(s) from this page.');
       });
 
       // Event hover tooltip

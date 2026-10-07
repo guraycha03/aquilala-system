@@ -3,16 +3,23 @@
 @section('title', $product->display_name)
 
 @section('content')
+  {{-- store owners preview this page from their storefront, so the tabs and
+       breadcrumb must not link into the role:farmer routes (403 on click). --}}
+  @php
+    $isStoreOwner = auth()->user()->role === 'store_owner';
+    $browseUrl = $isStoreOwner ? route('store.storefront.index') : route('farmer.products.browse');
+    $tabs = [['key' => 'browse', 'label' => $isStoreOwner ? 'My Products' : 'Browse Products', 'url' => $browseUrl]];
+    if (! $isStoreOwner) {
+      $tabs[] = ['key' => 'reviews', 'label' => 'Top Rated Products', 'url' => route('farmer.reviews.index')];
+      $tabs[] = ['key' => 'stores', 'label' => 'Stores Directory', 'url' => route('farmer.stores.index')];
+    }
+  @endphp
   @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'browse',  'label' => 'Browse Products',    'url' => route('farmer.products.browse')],
-      ['key' => 'reviews', 'label' => 'Top Rated Products', 'url' => route('farmer.reviews.index')],
-      ['key' => 'stores',  'label' => 'Stores Directory',   'url' => route('farmer.stores.index')],
-    ],
+    'tabs' => $tabs,
     'activeTab' => 'browse',
   ])
 <x-breadcrumb :items="[
-  ['label' => 'Browse Products', 'url' => route('farmer.products.browse')],
+  ['label' => $isStoreOwner ? 'My Products' : 'Browse Products', 'url' => $browseUrl],
   ['label' => $product->display_name],
 ]"/>
 

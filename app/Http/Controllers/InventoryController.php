@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -116,7 +117,21 @@ class InventoryController extends Controller
             'reorder_threshold' => ['required', 'integer', 'min:0'],
         ]);
 
+        $before = $product->only(['stock_quantity', 'reorder_threshold']);
+
         $product->update($validated);
+
+        $changes = [];
+        foreach ($validated as $key => $new) {
+            if ((int) $before[$key] !== (int) $new) {
+                $label = $key === 'stock_quantity' ? 'stock' : 'reorder level';
+                $changes[] = "{$label}: {$before[$key]} → {$new}";
+            }
+        }
+
+        if ($changes !== []) {
+            ActivityLogger::productUpdated($product, implode(', ', $changes));
+        }
 
         return redirect()
             ->route('store.inventory.index')

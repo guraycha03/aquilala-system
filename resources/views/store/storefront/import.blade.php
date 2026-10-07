@@ -209,7 +209,7 @@
 
             <div class="panel">
                 <h2>1. Choose your file</h2>
-                <p class="sub">CSV, XLS or XLSX. Up to {{ number_format($maxRows) }} products per file, {{ intdiv($maxFileKb, 1024) }} MB maximum.</p>
+                <p class="sub">{{ \App\Support\ImportFormats::label() }}. Up to {{ number_format($maxRows) }} products per file, {{ intdiv($maxFileKb, 1024) }} MB maximum.</p>
 
                 <label class="dropzone" id="dropzone" for="importFile">
                     <span class="dz-icon">

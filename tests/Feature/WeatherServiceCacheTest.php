@@ -110,4 +110,62 @@ class WeatherServiceCacheTest extends TestCase
         $this->assertSame(31.0, $result['temperature']);
         $this->assertTrue($result['is_available']);
     }
+
+    public function test_a_failed_api_call_arms_a_cooldown_so_retries_stay_rate_limited(): void
+    {
+        $this->fakeApiFailure();
+        cache()->forget(WeatherService::CACHE_KEY);
+        cache()->forget(WeatherService::COOLDOWN_KEY);
+
+        WeatherService::getCurrentWeather();
+        WeatherService::getCurrentWeather();
+
+        Http::assertSentCount(1);
+        $this->assertTrue(cache()->has(WeatherService::COOLDOWN_KEY));
+    }
+
+    public function test_the_cooldown_still_serves_the_stale_snapshot(): void
+    {
+        $this->fakeApiFailure();
+        cache()->put(WeatherService::CACHE_KEY, $this->snapshot(20), WeatherService::CACHE_STALE_TTL);
+        cache()->put(WeatherService::COOLDOWN_KEY, true, WeatherService::FAILURE_COOLDOWN);
+
+        $result = WeatherService::getCurrentWeather();
+
+        Http::assertNothingSent();
+        $this->assertSame(28.5, $result['temperature']);
+        $this->assertTrue($result['stale'] ?? false);
+    }
+
+    public function test_a_successful_refresh_does_not_arm_a_cooldown(): void
+    {
+        $this->fakeApiSuccess();
+        cache()->forget(WeatherService::CACHE_KEY);
+        cache()->forget(WeatherService::COOLDOWN_KEY);
+
+        $result = WeatherService::getCurrentWeather();
+
+        $this->assertTrue($result['is_available']);
+        $this->assertFalse(cache()->has(WeatherService::COOLDOWN_KEY));
+    }
+
+    public function test_cached_weather_reads_the_cache_without_touching_the_api(): void
+    {
+        $this->fakeApiSuccess();
+        cache()->put(WeatherService::CACHE_KEY, $this->snapshot(), WeatherService::CACHE_STALE_TTL);
+
+        $result = WeatherService::cachedWeather();
+
+        $this->assertSame(28.5, $result['temperature']);
+        Http::assertNothingSent();
+    }
+
+    public function test_cached_weather_returns_null_when_there_is_no_usable_snapshot(): void
+    {
+        $this->fakeApiSuccess();
+        cache()->forget(WeatherService::CACHE_KEY);
+
+        $this->assertNull(WeatherService::cachedWeather());
+        Http::assertNothingSent();
+    }
 }

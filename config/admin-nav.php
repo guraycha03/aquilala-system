@@ -45,6 +45,8 @@ return [
         'items' => [
             ['label' => 'Demand Trends', 'routes' => ['admin.quotations.index']],
             ['label' => 'Harvest Performance', 'routes' => ['admin.harvests.index']],
+            ['label' => 'All Harvest Reports', 'routes' => ['admin.harvests.reports']],
+            ['label' => 'AI Harvest Insights', 'routes' => ['admin.harvests.ai']],
         ],
     ],
     'settings' => [
@@ -54,6 +56,7 @@ return [
             ['label' => 'General', 'routes' => ['admin.settings.index']],
             ['label' => 'Seasons', 'routes' => ['admin.settings.seasons']],
             ['label' => 'Interface', 'routes' => ['admin.settings.interface']],
+            ['label' => 'Weather Log', 'routes' => ['admin.settings.weather']],
             ['label' => 'Audit Log', 'routes' => ['admin.audit.index']],
             ['label' => 'Activity Log', 'routes' => ['admin.activity.index']],
         ],

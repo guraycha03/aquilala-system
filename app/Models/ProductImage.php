@@ -11,10 +11,28 @@ class ProductImage extends Model
         'product_id',
         'image_type',
         'file_path',
+        'thumb_path',
         'original_filename',
         'mime_type',
         'file_size',
     ];
+
+    /**
+     * Full-size image URL (detail pages, lightboxes).
+     */
+    public function getUrlAttribute(): string
+    {
+        return asset('storage/' . $this->file_path);
+    }
+
+    /**
+     * Thumbnail URL for cards/lists — falls back to the full image for rows
+     * stored before thumbnails existed, or uploads we deliberately left alone.
+     */
+    public function getThumbUrlAttribute(): string
+    {
+        return asset('storage/' . ($this->thumb_path ?: $this->file_path));
+    }
 
     public function product(): BelongsTo
     {

@@ -461,7 +461,7 @@
             <div class="prod-cell">
               <div class="prod-thumb">
                 @if($product->mainImage && !empty($product->mainImage->file_path))
-                  <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
+                  <img src="{{ $product->mainImage->thumb_url }}" alt="{{ $product->display_name }}" loading="lazy">
                 @else
                   <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                 @endif

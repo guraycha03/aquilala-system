@@ -6,6 +6,7 @@ use App\Exceptions\Onboarding\DuplicateAccountException;
 use App\Exceptions\Onboarding\InvalidActivationTokenException;
 use App\Exceptions\Onboarding\MailDeliveryException;
 use App\Mail\NewAccountCreatedMail;
+use App\Models\ActivityLog;
 use App\Models\EmailOtp;
 use App\Models\User;
 use App\Models\UserActivation;
@@ -44,7 +45,7 @@ class UserInvitationService
         $approvedBy = Auth::user();
         if ($approvedBy) {
             ActivityLogger::log(
-                'user.approved',
+                ActivityLog::TYPE_USER_APPROVED,
                 "Approved account for {$user->name} ({$user->role}) — activation code emailed",
                 $user,
                 ['email' => $user->email, 'phone' => $user->phone],
@@ -68,7 +69,7 @@ class UserInvitationService
         $rejectedBy = Auth::user();
         if ($rejectedBy) {
             ActivityLogger::log(
-                'user.rejected',
+                ActivityLog::TYPE_USER_REJECTED,
                 "Rejected account for {$name}",
                 null,
                 ['name' => $name],
@@ -168,7 +169,7 @@ return User::create([
         $invitedBy = Auth::user();
         if ($invitedBy) {
             ActivityLogger::log(
-                'user.invited',
+                ActivityLog::TYPE_USER_INVITED,
                 "Invited {$user->name} ({$user->role}) with phone {$user->phone}",
                 $user,
                 ['phone' => $user->phone, 'role' => $user->role],

@@ -447,7 +447,7 @@ class ProductFields
             'name.required' => 'The product name is required.',
             'name.max' => 'The product name cannot be longer than 255 characters.',
             'sku.required' => 'The SKU is required.',
-            'sku.unique' => 'This SKU is already in use by another product.',
+            'sku.unique' => 'This SKU is already in use by another product. If that product was archived, restore it from the Archive or choose a different SKU.',
             'category_id.required' => 'Please select a category.',
             'category_id.exists' => 'The selected category is invalid.',
             'price.required' => 'The product price is required.',

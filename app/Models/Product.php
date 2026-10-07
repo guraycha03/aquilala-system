@@ -9,9 +9,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
+    /**
+     * Products are archived, never hard-deleted, from the storefront: the
+     * row, its images and its spec records survive so the listing can be
+     * restored. The global scope hides trashed rows from every query except
+     * the store owner's Archive screen (Product::onlyTrashed()).
+     */
+    use SoftDeletes;
     /**
      * Upper bound on how many images one product may hold, across both the
      * create and update forms. Enforced server side in the form requests and

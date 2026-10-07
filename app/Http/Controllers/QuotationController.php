@@ -64,11 +64,9 @@ class QuotationController extends Controller
         $quotation->load(['items.product.storeOwner', 'farmer']);
 
         // Decision formulas for this crop + season drive the per-line
-        // calculation breakdown used by the itemized subpage.
-        $formulas = DecisionFormula::whereCrop($quotation->crop_type)
-            ->where('season', $quotation->season)
-            ->get()
-            ->keyBy('product_id');
+        // calculation breakdown used by the itemized subpage. Stage rows are
+        // merged per product so the unit and total season rate stay readable.
+        $formulas = $this->formulaTotalsFor($quotation);
 
         $total = (float) $quotation->estimated_total_cost;
 
@@ -113,12 +111,31 @@ class QuotationController extends Controller
 
         $quotation->load(['items.product.storeOwner', 'farmer']);
 
-        $formulas = DecisionFormula::whereCrop($quotation->crop_type)
-            ->where('season', $quotation->season)
-            ->get()
-            ->keyBy('product_id');
+        $formulas = $this->formulaTotalsFor($quotation);
 
         return view('farmer.quotations.breakdown', compact('quotation', 'formulas'));
+    }
+
+    /**
+     * This quotation's formulas merged per product: one entry per product
+     * carrying the unit plus the season rate summed across application stages
+     * (clamped to each stage's min/max bounds). The views read `unit` and
+     * `rate_per_hectare`, so stage rows never leak through as duplicates.
+     *
+     * @return \Illuminate\Support\Collection<int, object>
+     */
+    private function formulaTotalsFor(Quotation $quotation)
+    {
+        return DecisionFormula::whereCrop($quotation->crop_type)
+            ->where('season', $quotation->season)
+            ->get()
+            ->groupBy('product_id')
+            ->map(fn ($stages) => (object) [
+                'product_id'       => $stages->first()->product_id,
+                'unit'             => $stages->first()->unit,
+                'rate_per_hectare' => round((float) $stages->sum(fn ($f) => $f->effectiveRate()), 2),
+                'stages'           => $stages->values(),
+            ]);
     }
 
     /**
@@ -431,23 +448,28 @@ PROMPT;
                     'notes' => $validated['notes'] ?? null,
                 ]);
 
-                // Try to add items from DecisionFormula manually
+                // Try to add items from DecisionFormula manually. Grouped by
+                // product so a multi-stage rule lands as one item with the
+                // stages summed, not one item per stage.
                 $formulas = DecisionFormula::with('product')
                     ->whereCrop($cropType)
                     ->where('season', $validated['season'])
-                    ->get();
+                    ->get()
+                    ->groupBy('product_id');
 
                 if ($formulas->isNotEmpty()) {
                     $totalCost = 0;
-                    foreach ($formulas as $formula) {
-                        if ($formula->product && $formula->product->status === 'active') {
-                            $qty = round((float) $formula->rate_per_hectare * (float) $validated['land_area'], 2);
-                            $price = (float) $formula->product->price;
+                    foreach ($formulas as $stages) {
+                        $product = $stages->first()->product;
+                        if ($product && $product->status === 'active') {
+                            $rate = (float) $stages->sum(fn ($f) => $f->effectiveRate());
+                            $qty = round($rate * (float) $validated['land_area'], 2);
+                            $price = (float) $product->price;
                             $subtotal = round($qty * $price, 2);
 
                             $q->items()->create([
-                                'product_id' => $formula->product_id,
-                                'product_name' => $formula->product->name,
+                                'product_id' => $product->id,
+                                'product_name' => $product->name,
                                 'price_at_generation' => $price,
                                 'calculated_quantity' => $qty,
                                 'subtotal' => $subtotal,
@@ -572,10 +594,15 @@ PROMPT;
         // ── Aggregate stats from the farmer's FULL (unfiltered) history ──
         // So the summary cards reflect their real totals regardless of active filters.
         $statsBase = ActivityLog::where('user_id', $userId);
-        $totalQuotations = (clone $statsBase)->where('type', 'quotation.created')->count();
-        $totalCrops = (clone $statsBase)->whereIn('type', ['crop.planted', 'crop.updated', 'crop.harvested', 'crop.deleted'])->count();
-        $totalDeleted = (clone $statsBase)->where('type', 'quotation.deleted')->count();
-        $totalLogins = (clone $statsBase)->where('type', 'auth.login')->count();
+        $totalQuotations = (clone $statsBase)->where('type', ActivityLog::TYPE_QUOTATION_CREATED)->count();
+        $totalCrops = (clone $statsBase)->whereIn('type', [
+            ActivityLog::TYPE_CROP_PLANTED,
+            ActivityLog::TYPE_CROP_UPDATED,
+            ActivityLog::TYPE_CROP_HARVESTED,
+            ActivityLog::TYPE_CROP_DELETED,
+        ])->count();
+        $totalDeleted = (clone $statsBase)->where('type', ActivityLog::TYPE_QUOTATION_DELETED)->count();
+        $totalLogins = (clone $statsBase)->where('type', ActivityLog::TYPE_LOGIN)->count();
 
         $uniqueTypes = ActivityLog::where('user_id', $userId)
             ->select('type')
@@ -1035,10 +1062,15 @@ FORMATTING RULES:
         $userFilter = request('user_id');
         $typeFilter = request('type');
 
-        $query = ActivityLog::with('user');
+        $query = ActivityLog::with(['user', 'actor']);
 
         if ($userFilter) {
-            $query->where('user_id', $userFilter);
+            // Match either side of the row: the actor, or the recipient a
+            // notification-style row was filed under.
+            $query->where(function ($q) use ($userFilter) {
+                $q->where('user_id', $userFilter)
+                    ->orWhere('actor_id', $userFilter);
+            });
         }
         if ($typeFilter) {
             $query->where('type', $typeFilter);

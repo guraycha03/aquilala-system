@@ -7,6 +7,8 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
 
 class AdminUserImportTest extends TestCase
@@ -86,14 +88,22 @@ class AdminUserImportTest extends TestCase
         $this->assertNull(session('admin.user_import'));
     }
 
-    public function test_json_import_creates_accounts(): void
+    public function test_xlsx_import_creates_accounts(): void
     {
         $admin = $this->makeUser('admin');
-        $file = UploadedFile::fake()->createWithContent('members.json', json_encode([
-            'members' => [
-                ['first_name' => 'Ana', 'last_name' => 'Reyes', 'email' => 'ana.reyes@example.com', 'phone' => '09271234567', 'role' => 'store_owner', 'store_name' => 'Ana Agro Supply'],
-            ],
-        ]));
+
+        $spreadsheet = new Spreadsheet();
+        $spreadsheet->getActiveSheet()->fromArray([
+            ['First Name', 'Last Name', 'Email', 'Phone', 'Role', 'Store Name'],
+            ['Ana', 'Reyes', 'ana.reyes@example.com', '09271234567', 'store_owner', 'Ana Agro Supply'],
+        ]);
+
+        $temporary = tempnam(sys_get_temp_dir(), 'aquilala_test_') . '.xlsx';
+        (new Xlsx($spreadsheet))->save($temporary);
+        $spreadsheet->disconnectWorksheets();
+
+        $file = UploadedFile::fake()->createWithContent('members.xlsx', (string) file_get_contents($temporary));
+        @unlink($temporary);
 
         $this->actingAs($admin)
             ->post(route('admin.users.import.preview'), ['file' => $file])
@@ -110,6 +120,35 @@ class AdminUserImportTest extends TestCase
             'role' => 'store_owner',
             'store_name' => 'Ana Agro Supply',
         ]);
+    }
+
+    /**
+     * Only the formats in config/import-formats.php may reach the parser.
+     * Legacy .xls and developer-only .json are refused at the door.
+     */
+    public function test_unsupported_file_types_are_rejected(): void
+    {
+        $admin = $this->makeUser('admin');
+
+        $payloads = [
+            'members.json' => json_encode(['members' => [
+                ['first_name' => 'Ana', 'last_name' => 'Reyes', 'email' => 'ana.reyes@example.com'],
+            ]]),
+            'members.xls' => "First Name,Last Name,Email\nAna,Reyes,ana.reyes@example.com\n",
+        ];
+
+        foreach ($payloads as $filename => $content) {
+            $this->actingAs($admin)
+                ->post(route('admin.users.import.preview'), [
+                    'file' => UploadedFile::fake()->createWithContent($filename, $content),
+                ])
+                ->assertRedirect();
+
+            $this->assertStringContainsString('Unsupported file type', (string) session('error'), $filename);
+            $this->assertNull(session('admin.user_import'), $filename);
+        }
+
+        $this->assertDatabaseMissing('users', ['email' => 'ana.reyes@example.com']);
     }
 
     public function test_within_file_duplicate_email_is_flagged_and_skipped(): void

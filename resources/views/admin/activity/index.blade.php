@@ -130,14 +130,22 @@
           <div class="activity-desc">
             <span class="user-chip">
               <span class="chip-dot"></span>
-              {{ $activity->user?->name ?? 'Unknown' }}
+              {{ $activity->actor_name }}
             </span>
+            @if($activity->actor && $activity->user && $activity->actor->id !== $activity->user->id)
+              <span class="user-chip" style="background:#f1f5f9;border-color:#e2e8f0;color:#475569;" title="Notification recipient">
+                &rarr; {{ $activity->user->name }}
+              </span>
+            @endif
             &nbsp;{{ $activity->description }}
           </div>
           <div class="activity-meta">
             {{ $activity->created_at->diffForHumans() }} &middot;
             {{ $activity->created_at->format('M d, Y \a\t g:i A') }}
-            &middot; {{ $activity->type }}
+            &middot; {{ $activity->typeLabel }}
+            @if($activity->ip_address)
+              &middot; {{ $activity->ip_address }}
+            @endif
           </div>
         </div>
       </div>

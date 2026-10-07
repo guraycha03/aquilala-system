@@ -15,6 +15,14 @@
 */
 
 return [
+    'dashboard' => [
+        'label' => 'Dashboard',
+        'icon' => '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+        'items' => [
+            ['label' => 'Overview', 'routes' => ['store.dashboard']],
+            ['label' => 'Top Products', 'routes' => ['store.dashboard.performance']],
+        ],
+    ],
     'shop' => [
         'label' => 'My Store',
         'icon' => '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
@@ -22,6 +30,7 @@ return [
             ['label' => 'Storefront', 'routes' => ['store.storefront.index']],
             ['label' => 'Import Products', 'routes' => ['store.products.import', 'store.products.import.preview', 'store.products.import.revalidate', 'store.products.import.ai-fix', 'store.products.import.confirm', 'store.products.import.cancel', 'store.products.import.template']],
             ['label' => 'Inventory Management', 'routes' => ['store.inventory.index']],
+            ['label' => 'Archive', 'routes' => ['store.products.trash']],
             ['label' => 'Input Formulas', 'routes' => ['store.formulas.index', 'store.formulas.create', 'store.formulas.edit']],
         ],
     ],

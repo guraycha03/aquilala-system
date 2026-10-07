@@ -102,10 +102,12 @@ class CostQuotationEngine
         $products = $this->resolveProducts($cropType, $season, $storeOwner?->id, $selectedIds);
 
         // ─── 3. Look up DecisionFormula records for base rates ─────
+        // Grouped by product: one product can carry several stage rows
+        // (basal + topdress + …) whose rates add up to the season total.
         $formulas = DecisionFormula::whereCrop($cropType)
             ->where('season', $season)
             ->get()
-            ->keyBy('product_id');
+            ->groupBy('product_id');
 
         // ─── 4. Iterate and compute each line item ─────────────────
         $items         = [];
@@ -115,11 +117,31 @@ class CostQuotationEngine
         $contingencyFee   = 0.0;
 
         foreach ($products as $product) {
-            $formula = $formulas->get($product->id);
+            $stages = $formulas->get($product->id);
 
-            // Base quantity = formula rate_per_hectare * land_area, or fallback multiplier
-            $baseRate = $formula ? (float) $formula->rate_per_hectare : $this->getFallbackRate($cropType, $product);
+            // Base quantity = sum of every stage's effective rate (clamped to
+            // its min/max guardrails) × land_area, or the fallback multiplier.
+            $baseRate = $stages
+                ? (float) $stages->sum(fn (DecisionFormula $f) => $f->effectiveRate())
+                : $this->getFallbackRate($cropType, $product);
             $baseQuantity = round($baseRate * $landArea, 2);
+
+            // The stage schedule, quoted on the line so a farmer can see the
+            // rate is split across applications rather than one dumping.
+            $stageNote = null;
+            if ($stages && $stages->count() > 1) {
+                $parts = $stages
+                    ->map(fn (DecisionFormula $f) => rtrim(rtrim(number_format($f->effectiveRate(), 2), '0'), '.') . ' at ' . $f->stageLabel())
+                    ->implode(', ');
+                $stageNote = 'Split across stages: ' . $parts . ' per ha';
+            }
+
+            // A rate outside its guardrails still quotes the clamped value —
+            // say so, so the entry can be corrected at the source.
+            $clampNote = null;
+            if ($stages && $stages->contains(fn (DecisionFormula $f) => $f->rateNeedsClamp())) {
+                $clampNote = 'Rate adjusted to the configured safety bounds';
+            }
 
             // ── Soil Adjustments ──
             $adjustedQuantity = $baseQuantity;
@@ -155,7 +177,7 @@ class CostQuotationEngine
             }
 
             // ── Round up to whole units for discrete products ──
-            $unit = strtolower(trim($formula?->unit ?? $product->stock_unit ?? 'piece'));
+            $unit = strtolower(trim($stages?->first()->unit ?? $product->stock_unit ?? 'piece'));
             $discreteUnits = ['sack', 'sacks', 'bag', 'bags', 'piece', 'pieces', 'unit', 'units', 'carton', 'cartons', 'box', 'boxes', 'pack', 'packs', 'bottle', 'bottles', 'sachet', 'sachets', 'kit', 'kits', 'length', 'lengths', 'set', 'sets'];
 
             if (in_array($unit, $discreteUnits)) {
@@ -173,11 +195,13 @@ class CostQuotationEngine
                 'price_at_generation' => $priceAtGeneration,
                 'base_quantity'       => $baseQuantity,
                 'adjusted_quantity'   => $adjustedQuantity,
-                'unit'                => $formula?->unit ?? $product->stock_unit ?? 'piece',
+                'unit'                => $stages?->first()->unit ?? $product->stock_unit ?? 'piece',
                 'subtotal'            => $lineSubtotal,
                 'adjustments'         => array_filter([
                     $soilAdjustmentNote,
                     $weatherNote,
+                    $stageNote,
+                    $clampNote,
                 ]),
             ];
 
@@ -334,6 +358,8 @@ class CostQuotationEngine
             $formulaProductIds = DecisionFormula::whereCrop($cropType)
                 ->where('season', $season)
                 ->pluck('product_id')
+                ->unique()
+                ->values()
                 ->toArray();
 
             if (!empty($formulaProductIds)) {

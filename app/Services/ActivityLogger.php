@@ -16,25 +16,50 @@ class ActivityLogger
      * @param string $description Human-readable description
      * @param object|null $subject The model this activity is about
      * @param array $metadata    Extra data to store
-     * @param User|null $user    The user performing the action (defaults to Auth)
+     * @param User|null $user    The row owner — the actor for audit rows, the
+     *                           recipient for notification rows (defaults to Auth)
+     * @param User|null $actor   Who actually performed the action when it is
+     *                           not the row owner (e.g. an admin moderating a
+     *                           store owner's review). Defaults to Auth.
      */
     public static function log(
         string $type,
         string $description,
         $subject = null,
         array $metadata = [],
-        ?User $user = null
+        ?User $user = null,
+        ?User $actor = null
     ): ActivityLog {
         $user = $user ?? Auth::user();
 
+        if ($user === null) {
+            throw new \RuntimeException(
+                "ActivityLogger::log() could not resolve a user for type '{$type}'. Pass the $user argument explicitly."
+            );
+        }
+
         return ActivityLog::create([
             'user_id'      => $user->id,
+            'actor_id'     => $actor?->id ?? Auth::id(),
             'type'         => $type,
             'subject_type' => $subject ? get_class($subject) : null,
             'subject_id'   => $subject?->id,
             'description'  => $description,
             'metadata'     => $metadata,
+            'ip_address'   => self::currentIp(),
         ]);
+    }
+
+    /**
+     * Client address of the current request, or null in console/queue work.
+     */
+    private static function currentIp(): ?string
+    {
+        try {
+            return request()->ip();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     // ── Auth shortcuts ────────────────────────────────────────────
@@ -44,6 +69,38 @@ class ActivityLogger
         return self::log(
             ActivityLog::TYPE_LOGIN,
             "Signed in successfully via {$via}",
+            $user,
+            ['via' => $via],
+            $user,
+            $user
+        );
+    }
+
+    public static function userLoggedOut(User $user): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_LOGOUT,
+            'Signed out of the platform',
+            $user,
+            [],
+            $user,
+            $user
+        );
+    }
+
+    /**
+     * A sign-in attempt with a known account that did not succeed. Attempts
+     * against unknown identifiers are not recorded: the table keys every row
+     * to a real user, and unknown identifiers carry no security signal.
+     */
+    public static function userLoginFailed(User $user, string $via = 'email'): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_LOGIN_FAILED,
+            "Failed sign-in attempt via {$via} — invalid password",
+            $user,
+            ['via' => $via],
+            $user,
             $user
         );
     }
@@ -184,6 +241,37 @@ class ActivityLogger
 
     // ── Land shortcut ────────────────────────────────────────────
 
+    public static function weatherLogCreated($event): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_WEATHER_CREATED,
+            "Logged weather event \"{$event->title}\" ({$event->typeLabel()}, {$event->severityLabel()}) - {$event->dateRangeLabel()}",
+            $event,
+            [
+                'event_type' => $event->event_type,
+                'severity'   => $event->severity,
+                'title'      => $event->title,
+                'start_date' => $event->start_date->format('Y-m-d'),
+                'end_date'   => $event->end_date?->format('Y-m-d'),
+            ]
+        );
+    }
+
+    public static function weatherLogDeleted($event): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_WEATHER_DELETED,
+            "Removed weather log \"{$event->title}\" ({$event->dateRangeLabel()})",
+            $event,
+            [
+                'event_type' => $event->event_type,
+                'severity'   => $event->severity,
+                'start_date' => $event->start_date->format('Y-m-d'),
+                'end_date'   => $event->end_date?->format('Y-m-d'),
+            ]
+        );
+    }
+
     public static function landUpdated(float $oldArea, float $newArea, string $unit): ActivityLog
     {
         return self::log(
@@ -212,17 +300,106 @@ class ActivityLogger
             ActivityLog::TYPE_PRODUCT_UPDATED,
             "Updated product: {$product->name} — {$change}",
             $product,
-            ['product_name' => $product->name, 'change' => $change]
+            ['product_name' => $product->name, 'sku' => $product->sku, 'change' => $change]
         );
     }
 
+    /**
+     * Soft delete: the product is hidden from every storefront surface but
+     * stays in the database and can be restored from the Archive screen.
+     */
+    public static function productArchived($product): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_PRODUCT_DELETED,
+            "Archived product: {$product->name} (SKU: {$product->sku}) — hidden from the catalog, restorable",
+            $product,
+            [
+                'product_name' => $product->name,
+                'sku'          => $product->sku,
+                'action'       => 'archived',
+                'archived_at'  => now()->toDateTimeString(),
+            ]
+        );
+    }
+
+    public static function productRestored($product): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_PRODUCT_RESTORED,
+            "Restored product from archive: {$product->name} (SKU: {$product->sku})",
+            $product,
+            ['product_name' => $product->name, 'sku' => $product->sku]
+        );
+    }
+
+    /**
+     * Permanent removal from the database (from the Archive screen only).
+     */
     public static function productDeleted($productName, $sku): ActivityLog
     {
         return self::log(
             ActivityLog::TYPE_PRODUCT_DELETED,
-            "Deleted product: {$productName} (SKU: {$sku})",
+            "Permanently deleted product: {$productName} (SKU: {$sku})",
             null,
-            ['product_name' => $productName, 'sku' => $sku]
+            ['product_name' => $productName, 'sku' => $sku, 'action' => 'permanent']
+        );
+    }
+
+    // ── Input formula shortcuts (for store owners) ────────────────
+
+    private static function formulaMeta($formula): array
+    {
+        return [
+            'crop_type'    => $formula->crop_type,
+            'season'       => $formula->season,
+            'stage'        => $formula->stage,
+            'product_name' => $formula->product?->name,
+            'rate'         => $formula->rate_per_hectare,
+            'min_rate'     => $formula->min_rate_per_hectare,
+            'max_rate'     => $formula->max_rate_per_hectare,
+            'unit'         => $formula->unit,
+        ];
+    }
+
+    /**
+     * "Basal (at planting)" style stage suffix — omitted entirely for the
+     * default `standard` stage so pre-stage log entries read the same.
+     */
+    private static function formulaStageSuffix($formula): string
+    {
+        return $formula->stage && $formula->stage !== 'standard'
+            ? ' [' . $formula->stageLabel() . ']'
+            : '';
+    }
+
+    public static function formulaCreated($formula): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_FORMULA_CREATED,
+            "Added input formula: {$formula->crop_type} (" . ucfirst($formula->season) . " season)" . self::formulaStageSuffix($formula) . " — {$formula->rate_per_hectare} {$formula->unit}/ha for " . ($formula->product?->name ?? 'a product'),
+            $formula,
+            self::formulaMeta($formula)
+        );
+    }
+
+    public static function formulaUpdated($formula, string $change): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_FORMULA_UPDATED,
+            "Updated input formula: {$formula->crop_type} (" . ucfirst($formula->season) . " season)" . self::formulaStageSuffix($formula) . " — {$change}",
+            $formula,
+            self::formulaMeta($formula) + ['change' => $change]
+        );
+    }
+
+    public static function formulaDeleted($formula): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_FORMULA_DELETED,
+            "Removed input formula: {$formula->crop_type} (" . ucfirst($formula->season) . " season)" . self::formulaStageSuffix($formula) . " for " . ($formula->product?->name ?? 'a product'),
+            $formula,
+            self::formulaMeta($formula)
         );
     }
 
@@ -295,7 +472,8 @@ class ActivityLogger
             "Review from {$review->farmer?->name} ({$review->rating}★) on \"{$review->product?->name}\" was approved and is now public",
             $review,
             self::reviewTargetMeta($review, $admin?->name ?? 'Admin', ProductReview::STATUS_APPROVED),
-            $storeOwner
+            $storeOwner,
+            $admin instanceof User ? $admin : null
         );
     }
 
@@ -306,7 +484,8 @@ class ActivityLogger
             "Review from {$review->farmer?->name} ({$review->rating}★) on \"{$review->product?->name}\" was disapproved and is hidden",
             $review,
             self::reviewTargetMeta($review, $admin?->name ?? 'Admin', ProductReview::STATUS_REJECTED),
-            $storeOwner
+            $storeOwner,
+            $admin instanceof User ? $admin : null
         );
     }
 

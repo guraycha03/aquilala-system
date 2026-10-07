@@ -259,9 +259,9 @@
     </span>
 
     @if($product->mainImage && !empty($product->mainImage->file_path))
-      <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $displayName }}" class="product-card-img" loading="lazy">
+      <img src="{{ $product->mainImage->thumb_url }}" alt="{{ $displayName }}" class="product-card-img" loading="lazy">
     @elseif($product->images && $product->images->first())
-      <img src="{{ asset('storage/' . $product->images->first()->file_path) }}" alt="{{ $displayName }}" class="product-card-img" loading="lazy">
+      <img src="{{ $product->images->first()->thumb_url }}" alt="{{ $displayName }}" class="product-card-img" loading="lazy">
     @else
       <i data-lucide="image" width="40" height="40" aria-hidden="true"></i>
     @endif
@@ -308,10 +308,10 @@
             <i data-lucide="pencil" aria-hidden="true"></i>
             Edit
           </a>
-          <form method="POST" action="{{ route('store.products.destroy', $product->id) }}" data-aqui-confirm="Are you sure you want to delete this product?" data-aqui-danger data-aqui-confirm-label="Delete" style="margin:0;">
+          <form method="POST" action="{{ route('store.products.destroy', $product->id) }}" data-aqui-confirm="Archive “{{ $product->name }}”? It will be hidden from the catalog and marketplace but you can restore it anytime from the Archive." data-aqui-danger data-aqui-confirm-label="Archive" style="margin:0;">
             @csrf
             @method('DELETE')
-            <button type="submit" class="btn-action btn-delete" title="Delete Product">
+            <button type="submit" class="btn-action btn-delete" title="Archive Product (restorable)">
               <i data-lucide="trash-2" aria-hidden="true"></i>
             </button>
           </form>

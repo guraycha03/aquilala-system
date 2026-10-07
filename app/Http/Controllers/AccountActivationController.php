@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\Onboarding\ExpiredOtpException;
 use App\Exceptions\Onboarding\InvalidOtpException;
 use App\Exceptions\Onboarding\MailDeliveryException;
+use App\Models\ActivityLog;
 use App\Models\EmailOtp;
 use App\Models\User;
 use App\Services\ActivityLogger;
@@ -210,7 +211,7 @@ class AccountActivationController extends Controller
         $request->session()->forget(['activation_user_id', 'activation_email']);
 
         ActivityLogger::log(
-            'user.activated',
+            ActivityLog::TYPE_USER_ACTIVATED,
             "Activated account for {$user->name} via email verification",
             $user,
             ['email' => $user->email],

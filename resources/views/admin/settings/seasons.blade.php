@@ -41,6 +41,7 @@
           ['key' => 'general',   'label' => 'General',              'url' => route('admin.settings.index')],
           ['key' => 'seasons',   'label' => 'Seasons',              'url' => route('admin.settings.seasons')],
           ['key' => 'interface', 'label' => 'Interface',            'url' => route('admin.settings.interface')],
+          ['key' => 'weather',   'label' => 'Weather Log',          'url' => route('admin.settings.weather')],
           ['key' => 'logs',      'label' => 'Audit Log',            'url' => route('admin.audit.index')],
         ],
         'activeTab' => 'seasons',

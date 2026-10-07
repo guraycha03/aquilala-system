@@ -23,7 +23,7 @@ use Throwable;
  * fine but fails every extraction with "Failed loading language", so
  * isAvailable() also verifies that at least one language actually loads.
  *
- * This service is optional infrastructure: the structured CSV / Excel / JSON
+ * This service is optional infrastructure: the structured CSV / Excel
  * member importer never requires it. Callers must check isAvailable() and
  * treat extractText() failures as a friendly upload error, never a fatal.
  */

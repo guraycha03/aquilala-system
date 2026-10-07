@@ -75,7 +75,10 @@ class StoreOwnerActivityController extends Controller
         }
 
         // ── Build the filtered query ──
-        $query = ActivityLog::where('user_id', $userId);
+        // Sign-in/sign-out rows belong to the admin audit trail; the store
+        // history is about work done on the store (products, formulas, …).
+        $query = ActivityLog::where('user_id', $userId)
+            ->where('type', 'not like', 'auth.%');
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -98,12 +101,13 @@ class StoreOwnerActivityController extends Controller
 
         // ── Aggregate stats from the store owner's FULL history ──
         $statsBase = ActivityLog::where('user_id', $userId);
-        $totalProducts   = (clone $statsBase)->where('type', 'product.created')->count();
+        $totalProducts   = (clone $statsBase)->where('type', ActivityLog::TYPE_PRODUCT_CREATED)->count();
+        $totalUpdated    = (clone $statsBase)->where('type', ActivityLog::TYPE_PRODUCT_UPDATED)->count();
         $totalReviews    = (clone $statsBase)->reviewNotifications()->count();
-        $totalDisapproved = (clone $statsBase)->where('type', 'review.rejected')->count();
-        $totalLogins     = (clone $statsBase)->where('type', 'auth.login')->count();
+        $totalDisapproved = (clone $statsBase)->where('type', ActivityLog::TYPE_REVIEW_REJECTED)->count();
 
         $uniqueTypes = ActivityLog::where('user_id', $userId)
+            ->where('type', 'not like', 'auth.%')
             ->select('type')
             ->distinct()
             ->pluck('type')
@@ -120,9 +124,9 @@ class StoreOwnerActivityController extends Controller
             'type',
             'uniqueTypes',
             'totalProducts',
+            'totalUpdated',
             'totalReviews',
-            'totalDisapproved',
-            'totalLogins'
+            'totalDisapproved'
         ));
     }
 

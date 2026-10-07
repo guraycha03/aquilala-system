@@ -96,7 +96,7 @@
   <form action="{{ route('store.formulas.store') }}" method="POST" class="form-card-body">
     @csrf
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
       <div>
         <label for="crop_type" class="input-label">Crop Type</label>
         <input type="text" name="crop_type" id="crop_type" class="input-field"
@@ -118,6 +118,16 @@
           <option value="dry" @selected(old('season') === 'dry')>Dry Season (February – May)</option>
         </select>
         <div class="input-hint">Input requirements differ between wet and dry cropping cycles.</div>
+      </div>
+
+      <div>
+        <label for="stage" class="input-label">Application Stage</label>
+        <select name="stage" id="stage" class="input-field" required>
+          @foreach(\App\Models\DecisionFormula::STAGES as $key => $label)
+            <option value="{{ $key }}" @selected(old('stage', 'standard') === $key)>{{ $label }}</option>
+          @endforeach
+        </select>
+        <div class="input-hint">Stage rows for the same crop + season + product are summed by the engine.</div>
       </div>
     </div>
 
@@ -162,6 +172,24 @@
           <option value="Boxes"></option>
         </datalist>
         <div class="input-hint">The unit this rate is expressed in (e.g., Bags per hectare).</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+      <div>
+        <label for="min_rate_per_hectare" class="input-label">Minimum Rate <span style="color: #94a3b8; font-weight: 400;">(safety bound)</span></label>
+        <input type="number" name="min_rate_per_hectare" id="min_rate_per_hectare" class="input-field"
+               placeholder="e.g., 1.00" step="0.01" min="0.01" max="999.99"
+               value="{{ old('min_rate_per_hectare') }}">
+        <div class="input-hint">Quotations are clamped up to this floor if the entry ever drifts below it.</div>
+      </div>
+
+      <div>
+        <label for="max_rate_per_hectare" class="input-label">Maximum Rate <span style="color: #94a3b8; font-weight: 400;">(safety bound)</span></label>
+        <input type="number" name="max_rate_per_hectare" id="max_rate_per_hectare" class="input-field"
+               placeholder="e.g., 4.00" step="0.01" min="0.01" max="999.99"
+               value="{{ old('max_rate_per_hectare') }}">
+        <div class="input-hint">Quotations are clamped down to this ceiling to prevent runaway dosing.</div>
       </div>
     </div>
 

@@ -3,9 +3,11 @@
 use App\Helpers\SeasonHelper;
 use App\Helpers\SettingsHelper;
 use App\Http\Controllers\AccountActivationController;
+use App\Http\Controllers\AdminAuditController;
 use App\Http\Controllers\AdminReviewController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminUserImportController;
+use App\Http\Controllers\AdminWeatherLogController;
 use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CropsDirectoryController;
@@ -24,6 +26,7 @@ use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\StoreDirectoryController;
 use App\Http\Controllers\StoreOwnerActivityController;
+use App\Http\Controllers\WeatherController;
 use App\Models\DecisionFormula;
 use App\Models\FarmerCrop;
 use App\Models\HarvestReport;
@@ -94,6 +97,15 @@ Route::middleware('guest')->group(function () {
         ->name('email.verify')->middleware('throttle:otp');
     Route::post('/verify-email/resend', [EmailVerificationController::class, 'resend'])
         ->name('email.verify.resend')->middleware('throttle:otp');
+});
+
+// Background weather feed for the sidebar climate widget. Authenticated (and
+// throttled) so only signed-in sessions can spend the OpenWeather quota; the
+// widget itself only calls this when the server had no cached reading.
+Route::middleware('auth')->group(function () {
+    Route::get('/weather/current', [WeatherController::class, 'current'])
+        ->name('weather.current')
+        ->middleware('throttle:30,1');
 });
 
 /*
@@ -254,6 +266,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
     */
     Route::prefix('store')->name('store.')->middleware('role:store_owner')->group(function () {
         Route::get('/dashboard', [ProductController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/top-performers', [ProductController::class, 'performance'])->name('dashboard.performance');
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
         Route::post('/inventory/{product}/update-stock', [InventoryController::class, 'updateStock'])->name('inventory.update');
         Route::get('/quotations', [QuotationController::class, 'storeIndex'])->name('quotations.index');
@@ -303,6 +316,15 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::post('/products/import/cancel', [ProductImportController::class, 'cancel'])->name('products.import.cancel');
         Route::get('/products/import-template/{format}', [ProductImportController::class, 'template'])->name('products.import.template');
 
+        // Archive — soft-deleted products. Literal path declared before
+        // /products/{product} so "trash" is never read as a product id.
+        Route::get('/products/trash', [ProductController::class, 'trash'])->name('products.trash');
+        Route::post('/products/archive-bulk', [ProductController::class, 'archiveBulk'])->name('products.archive-bulk');
+        Route::post('/products/{product}/restore', [ProductController::class, 'restore'])
+            ->withTrashed()->name('products.restore');
+        Route::delete('/products/{product}/force', [ProductController::class, 'forceDestroy'])
+            ->withTrashed()->name('products.force-destroy');
+
         Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
         Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
@@ -333,7 +355,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::post('/users/{user}/reject', [AdminUserController::class, 'reject'])
             ->name('users.reject');
 
-        // Bulk member import from CSV / Excel / JSON files
+        // Bulk member import from CSV / XLSX files
         Route::get('/users/import', [AdminUserImportController::class, 'create'])
             ->name('users.import');
         Route::post('/users/import/preview', [AdminUserImportController::class, 'preview'])
@@ -347,6 +369,9 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // Records only ever become accounts after explicit per-row approval.
         Route::post('/users/import/ocr', [AdminUserImportController::class, 'previewOcr'])
             ->name('users.import.ocr');
+        // Re-validate the cells the administrator edited in the review table.
+        Route::post('/users/import/ocr/revalidate', [AdminUserImportController::class, 'revalidateOcr'])
+            ->name('users.import.ocr.revalidate');
         Route::post('/users/import/ocr/confirm', [AdminUserImportController::class, 'confirmOcr'])
             ->name('users.import.ocr.confirm');
 
@@ -418,6 +443,15 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
 
             return response()->json(['ok' => true, 'preview' => SettingsHelper::formatYield(2.45)]);
         })->name('settings.interface');
+        // Weather Log — a dated journal of typhoons, floods, droughts and the
+        // like. Separate from the preference closures above because it owns rows
+        // in weather_logs that the harvest AI analysis reads.
+        Route::get('/settings/weather', [AdminWeatherLogController::class, 'index'])
+            ->name('settings.weather');
+        Route::post('/settings/weather', [AdminWeatherLogController::class, 'store'])
+            ->name('settings.weather.store');
+        Route::delete('/settings/weather/{weatherLog}', [AdminWeatherLogController::class, 'destroy'])
+            ->name('settings.weather.destroy');
         // ── Crops & Inputs (grouped pages ──────────────────────────
         Route::get('/operations', fn () => redirect()->route('admin.operations.formulas'))->name('operations.index');
         Route::get('/operations/formulas', function () {
@@ -533,12 +567,26 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         })->name('analytics.expenses');
 
         // ── Settings (grouped pages) ───────────────────────────────
-        Route::get('/audit', function () {
-            return view('admin.audit.index');
-        })->name('audit.index');
+        // Real audit trail: every row comes from activity_logs.
+        Route::get('/audit', [AdminAuditController::class, 'index'])->name('audit.index');
 
         // Harvest Reports — admin view of every farmer's harvest reports
         Route::get('/harvests', [HarvestReportController::class, 'adminIndex'])->name('harvests.index');
+
+        // All Harvest Reports — the full, filterable table, split out from the
+        // landing page so that page can surface summary cards instead.
+        Route::get('/harvests/reports', [HarvestReportController::class, 'reportsIndex'])
+            ->name('harvests.reports');
+
+        // AI Harvest Insights — analytics subpage over the harvest_reports table.
+        // Declared before the index so the literal path can never be shadowed.
+        Route::get('/harvests/ai', [HarvestReportController::class, 'aiIndex'])
+            ->name('harvests.ai');
+
+        // One chat turn. Returns JSON so the chat keeps its own loading and
+        // error state instead of round tripping the whole page.
+        Route::post('/harvests/ai/ask', [HarvestReportController::class, 'aiAsk'])
+            ->name('harvests.ai.ask');
     });
 
     // Explicit fallback alias for dashboard.admin reference in layout and AuthController

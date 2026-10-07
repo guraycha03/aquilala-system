@@ -101,7 +101,6 @@ class PopulateDemoDataSeeder extends Seeder
         $stores = $this->ensureStores();
         $this->distributeProducts();
         $this->addExtraProducts();
-        $this->bumpProductViews();
         $farmers = $this->ensureFarmers();
 
         $this->seedHarvestHistory($farmers);
@@ -420,18 +419,6 @@ class PopulateDemoDataSeeder extends Seeder
                     'views_count' => 0,
                 ]
             );
-        }
-    }
-
-    private function bumpProductViews(): void
-    {
-        foreach (Product::all() as $p) {
-            mt_srand(crc32('views|'.$p->id));
-            $current = (int) $p->views_count;
-            $target = max($current, mt_rand(25, 240));
-            if ($target !== $current) {
-                $p->forceFill(['views_count' => $target])->save();
-            }
         }
     }
 

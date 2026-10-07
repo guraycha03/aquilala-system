@@ -347,6 +347,55 @@
     </div>
     @endif
 
+    @php
+        $existingImages = $product->gallery;
+        $slotsLeft = max(0, \App\Models\Product::MAX_IMAGES - $existingImages->count());
+    @endphp
+
+    @if($existingImages->isNotEmpty())
+        {{--
+            "Set main" and "Remove" each own their own form element, so this
+            block must stay OUTSIDE the product form below. Nesting one form
+            inside another is invalid HTML: browsers drop the inner tag, the
+            button then submits the product form instead, and its _method=DELETE
+            field makes Laravel run products.destroy — archiving the product.
+        --}}
+        <div class="form-card" style="margin-bottom: 20px;">
+            <div class="section-header" style="margin-top: 0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Product Photos <span style="font-weight: 400; font-size: 13px; color: #64748b;">({{ $existingImages->count() }} uploaded)</span>
+            </div>
+            <div class="existing-gallery">
+                @foreach($existingImages as $image)
+                    <div class="existing-gallery-item">
+                        <img src="{{ $image->thumb_url }}" alt="{{ $product->name }}" loading="lazy">
+                        @if($image->image_type === 'main')
+                            <span class="existing-gallery-tag">MAIN</span>
+                        @endif
+                        <div class="existing-gallery-actions">
+                            @if($image->image_type !== 'main')
+                                <form method="POST" action="{{ route('store.products.images.main', [$product->id, $image->id]) }}" style="margin:0;">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="gallery-btn gallery-btn-main" title="Use as cover photo">Set main</button>
+                                </form>
+                            @endif
+                            <form method="POST" action="{{ route('store.products.images.destroy', [$product->id, $image->id]) }}" style="margin:0;"
+                                  data-aqui-confirm="Remove this image from the product?" data-aqui-danger data-aqui-confirm-label="Remove">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="gallery-btn gallery-btn-delete" title="Remove image">
+                                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <span class="hint">The cover photo is what catalog cards show. Removing the cover promotes the next image automatically.</span>
+        </div>
+    @endif
+
     <!-- Main Form -->
     <div class="form-card">
         <form method="POST" action="{{ route('store.products.update', $product->id) }}" enctype="multipart/form-data">
@@ -519,50 +568,11 @@
                     :registration="$product->registration"
                 />
 
-                <!-- SECTION 4: PRODUCT PHOTOS -->
+                <!-- SECTION 4: ADD MORE PHOTOS -->
                 <div class="section-header">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                    Product Photos <span style="font-weight: 400; font-size: 13px; color: #64748b;">(Optional)</span>
+                    Add More Photos <span style="font-weight: 400; font-size: 13px; color: #64748b;">(Optional)</span>
                 </div>
-
-                @php
-                    $existingImages = $product->gallery;
-                    $slotsLeft = max(0, \App\Models\Product::MAX_IMAGES - $existingImages->count());
-                @endphp
-
-                @if($existingImages->isNotEmpty())
-                    <div class="form-group full-width">
-                        <label>Uploaded Images <span class="hint" style="display: inline; font-weight: 400;">({{ $existingImages->count() }})</span></label>
-                        <div class="existing-gallery">
-                            @foreach($existingImages as $image)
-                                <div class="existing-gallery-item">
-                                    <img src="{{ asset('storage/' . $image->file_path) }}" alt="{{ $product->name }}" loading="lazy">
-                                    @if($image->image_type === 'main')
-                                        <span class="existing-gallery-tag">MAIN</span>
-                                    @endif
-                                    <div class="existing-gallery-actions">
-                                        @if($image->image_type !== 'main')
-                                            <form method="POST" action="{{ route('store.products.images.main', [$product->id, $image->id]) }}" style="margin:0;">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="gallery-btn gallery-btn-main" title="Use as cover photo">Set main</button>
-                                            </form>
-                                        @endif
-                                        <form method="POST" action="{{ route('store.products.images.destroy', [$product->id, $image->id]) }}" style="margin:0;"
-                                              data-aqui-confirm="Remove this image from the product?" data-aqui-danger data-aqui-confirm-label="Remove">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="gallery-btn gallery-btn-delete" title="Remove image">
-                                                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <span class="hint">The cover photo is what catalog cards show. Removing the cover promotes the next image automatically.</span>
-                    </div>
-                @endif
 
                 @if($slotsLeft > 0)
                     <x-product-image-picker

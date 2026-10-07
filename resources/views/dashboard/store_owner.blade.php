@@ -3,6 +3,13 @@
 @section('title', 'My Store')
 
 @section('content')
+@include('partials.admin-tabs', [
+  'tabs' => [
+    ['key' => 'overview', 'label' => 'Overview',        'url' => route('store.dashboard')],
+    ['key' => 'performance', 'label' => 'Top Products', 'url' => route('store.dashboard.performance')],
+  ],
+  'activeTab' => 'overview',
+])
 @php
   $user = auth()->user();
   $storeName = $user->store_name ?? $user->name;
@@ -63,25 +70,6 @@
   .btn-hero:hover { background: #f0fdf4; transform: translateY(-1px); }
   .btn-hero svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
   .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-
-  /* ── Quick Actions ──────────────────────────────────────────── */
-  .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 28px; }
-  .qa-btn {
-    display: flex; align-items: center; gap: 12px;
-    background: #fff; border: 1px solid #e6ece7; border-radius: 14px;
-    padding: 14px 16px; text-decoration: none; color: #1e2922;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-    transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
-  }
-  .qa-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 26px rgba(0,0,0,0.09); border-color: #cfe3d6; }
-  .qa-icon {
-    width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .qa-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .qa-btn .qa-txt { min-width: 0; }
-  .qa-btn .qa-txt b { display: block; font-size: 13px; font-weight: 700; color: #143d23; }
-  .qa-btn .qa-txt span { display: block; font-size: 11px; color: #64748b; }
 
   /* ── Panels ─────────────────────────────────────────────────── */
   .dash-panel {
@@ -153,51 +141,6 @@
   .carousel-arrow.prev { left: -12px; }
   .carousel-arrow.next { right: -12px; }
 
-  /* ── Top performers (Most Viewed / Most Quoted / Top Rated) ───────── */
-  .top-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-  .top-grid .dash-panel { display: flex; flex-direction: column; height: 100%; }
-  .top-grid .dash-panel .panel-body { flex: 1; }
-  .top-panel-head { display: flex; align-items: center; gap: 10px; }
-  .top-panel-head .top-ic {
-    width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  .top-panel-head .top-ic svg { width: 17px; height: 17px; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .top-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 9px 0; border-bottom: 1px dashed #eef2ef;
-    text-decoration: none; color: inherit; min-width: 0;
-  }
-  .top-row:last-child { border-bottom: none; }
-  .top-row:hover .top-name { color: #15803d; }
-  .top-rank {
-    width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0;
-    background: #eef2ef; color: #475569; font-size: 10px; font-weight: 800;
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  .top-row:nth-child(2) .top-rank { background: #fef9ec; color: #b45309; }
-  .top-row:nth-child(3) .top-rank { background: #fef2f2; color: #b91c1c; }
-  .top-thumb {
-    width: 38px; height: 38px; border-radius: 10px; object-fit: cover; flex-shrink: 0;
-    background: #f4f7f5; display: flex; align-items: center; justify-content: center;
-  }
-  .top-thumb svg { width: 20px; height: 20px; stroke: #cbd5e1; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .top-name {
-    flex: 1; min-width: 0; font-size: 12.5px; font-weight: 700; color: #1e2922;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35;
-  }
-  .top-stat { text-align: right; flex-shrink: 0; line-height: 1.15; }
-  .top-stat b { display: block; font-size: 13px; font-weight: 800; color: #14532d; }
-  .top-stat i { font-style: normal; font-size: 9.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.03em; }
-  .top-stat .top-stars { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
-  .top-stat .top-stars svg { width: 12px; height: 12px; fill: #f59e0b; }
-  .top-empty { text-align: center; padding: 26px 12px; }
-  .top-empty svg { width: 30px; height: 30px; stroke: #cbd5e1; stroke-width: 1.5; fill: none; }
-  .top-empty p { font-size: 12.5px; color: #94a3b8; margin: 8px 0 0 0; line-height: 1.5; }
-  @media (max-width: 960px) {
-    .top-grid { grid-template-columns: 1fr; }
-  }
-
   @media (max-width: 640px) {
     .hero-band { padding: 22px; }
     .hero-title { font-size: 21px; }
@@ -268,133 +211,8 @@
       </x-kpi-card>
     </section>
 
-    <!-- 3. QUICK ACTIONS -->
-    <section class="quick-actions reveal" data-reveal>
-      <a href="{{ route('store.products.create') }}" class="qa-btn">
-        <span class="qa-icon" style="background:#dcfce7;color:#16a34a;"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
-        <span class="qa-txt"><b>Add Product</b><span>New listing</span></span>
-      </a>
-      <a href="{{ route('store.inventory.index') }}" class="qa-btn">
-        <span class="qa-icon" style="background:#dbeafe;color:#2563eb;"><svg viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></span>
-        <span class="qa-txt"><b>Inventory</b><span>Manage stock</span></span>
-      </a>
-      <a href="{{ route('store.quotations.index') }}" class="qa-btn">
-        <span class="qa-icon" style="background:#f3e8ff;color:#7c3aed;"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
-        <span class="qa-txt"><b>Quotations</b><span>Cost Quotations</span></span>
-      </a>
-      <a href="{{ route('store.formulas.index') }}" class="qa-btn">
-        <span class="qa-icon" style="background:#fef3c7;color:#d97706;"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-        <span class="qa-txt"><b>Formulas</b><span>Input rates</span></span>
-      </a>
-      <a href="{{ route('store.storefront.index') }}" class="qa-btn">
-        <span class="qa-icon" style="background:#ccfbf1;color:#0f766e;"><svg viewBox="0 0 24 24"><path d="M3 9l1.5-4.5h15L21 9"/><path d="M3 9v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"/><path d="M3 9h18"/><path d="M6 14h4v4H6z"/><path d="M14 14h4v6h-4z"/></svg></span>
-        <span class="qa-txt"><b>My Store</b><span>Storefront</span></span>
-      </a>
-    </section>
-
-    <!-- 4. MAIN GRID -->
+    <!-- 3. MY PRODUCTS -->
     <section style="display:grid;grid-template-columns:1fr;gap:22px;align-items:start;">
-
-      <!-- 5. TOP PERFORMERS -->
-      <section class="top-grid reveal" data-reveal>
-
-        <!-- MOST VIEWED -->
-        <div class="dash-panel">
-          <div class="panel-head">
-            <div class="top-panel-head">
-              <span class="top-ic" style="background:#dbeafe;color:#2563eb;"><i data-lucide="eye" width="17" height="17"></i></span>
-              <div><h3>Most Viewed</h3><p>Product pages opened by farmers</p></div>
-            </div>
-          </div>
-          <div class="panel-body">
-            @forelse($topViewed as $idx => $product)
-              <a class="top-row" href="{{ route('store.products.show', $product->id) }}">
-                <span class="top-rank">#{{ $idx + 1 }}</span>
-                @if($product->mainImage && !empty($product->mainImage->file_path))
-                  <img class="top-thumb" src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
-                @else
-                  <span class="top-thumb"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
-                @endif
-                <span class="top-name">{{ $product->display_name }}</span>
-                <span class="top-stat"><b>{{ $product->views_count }}</b><i>views</i></span>
-              </a>
-            @empty
-              <div class="top-empty">
-                <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <p>No farmer views yet. When farmers open your product pages, they'll be ranked here.</p>
-              </div>
-            @endforelse
-          </div>
-        </div>
-
-        <!-- MOST QUOTED -->
-        <div class="dash-panel">
-          <div class="panel-head">
-            <div class="top-panel-head">
-              <span class="top-ic" style="background:#f3e8ff;color:#7c3aed;"><i data-lucide="file-text" width="17" height="17"></i></span>
-              <div><h3>Most Quoted</h3><p>Products requested in generated quotations</p></div>
-            </div>
-          </div>
-          <div class="panel-body">
-            @forelse($topQuoted as $idx => $row)
-              @php $product = $row->product; @endphp
-              <a class="top-row" href="{{ route('store.products.show', $product->id) }}">
-                <span class="top-rank">#{{ $idx + 1 }}</span>
-                @if($product->mainImage && !empty($product->mainImage->file_path))
-                  <img class="top-thumb" src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
-                @else
-                  <span class="top-thumb"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
-                @endif
-                <span class="top-name">{{ $product->display_name }}</span>
-                <span class="top-stat"><b>{{ $row->count }}</b><i>quotes</i></span>
-              </a>
-            @empty
-              <div class="top-empty">
-                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-                <p>No quotations generated yet. Products farmers request will be ranked here.</p>
-              </div>
-            @endforelse
-          </div>
-        </div>
-
-        <!-- TOP RATED -->
-        <div class="dash-panel">
-          <div class="panel-head">
-            <div class="top-panel-head">
-              <span class="top-ic" style="background:#fef9ec;color:#d97706;"><i data-lucide="star" width="17" height="17"></i></span>
-              <div><h3>Top Rated</h3><p>Highest rated by farmers' approved reviews</p></div>
-            </div>
-          </div>
-          <div class="panel-body">
-            @forelse($topRated as $idx => $product)
-              <a class="top-row" href="{{ route('store.products.show', $product->id) }}">
-                <span class="top-rank">#{{ $idx + 1 }}</span>
-                @if($product->mainImage && !empty($product->mainImage->file_path))
-                  <img class="top-thumb" src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
-                @else
-                  <span class="top-thumb"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
-                @endif
-                <span class="top-name">{{ $product->display_name }}</span>
-                <span class="top-stat">
-                  <span class="top-stars">
-                    @for($i = 1; $i <= 5; $i++)
-                      <svg viewBox="0 0 24 24" style="{{ $i <= (int) round($product->average_rating) ? '' : 'fill:#e2e8f0;' }}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    @endfor
-                  </span>
-                  <i>{{ number_format($product->average_rating, 1) }} · {{ $product->review_count }} reviews</i>
-                </span>
-              </a>
-            @empty
-              <div class="top-empty">
-                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                <p>No approved reviews yet. Farmer ratings will be ranked here.</p>
-              </div>
-            @endforelse
-          </div>
-        </div>
-      </section>
-
-      <!-- 4b. MY PRODUCTS -->
       <div class="dash-panel reveal" data-reveal>
         <div class="panel-head">
           <div>

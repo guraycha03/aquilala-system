@@ -666,9 +666,9 @@
         <a href="{{ route('farmer.products.show', $product->id) }}" class="sr-product-card" {{ $facets }}>
           <div class="sr-product-img">
             @if($product->mainImage && !empty($product->mainImage->file_path))
-              <img src="{{ asset('storage/' . $product->mainImage->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
+              <img src="{{ $product->mainImage->thumb_url }}" alt="{{ $product->display_name }}" loading="lazy">
             @elseif($product->images && $product->images->first())
-              <img src="{{ asset('storage/' . $product->images->first()->file_path) }}" alt="{{ $product->display_name }}" loading="lazy">
+              <img src="{{ $product->images->first()->thumb_url }}" alt="{{ $product->display_name }}" loading="lazy">
             @else
               <svg viewBox="0 0 24 24">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>

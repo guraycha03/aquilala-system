@@ -343,7 +343,7 @@
 
 <div class="page-header">
   <h1 class="page-title">Store Activity</h1>
-  <p class="page-subtitle">Your store's complete history — product management, reviews received, and sign-ins.</p>
+  <p class="page-subtitle">Your store's complete history — product listings, stock, input formulas, and reviews received.</p>
 </div>
 
 <!-- Stats Row -->
@@ -377,11 +377,11 @@
   </div>
   <div class="stat-pill slate">
     <div class="stat-icon">
-      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
     </div>
     <div>
-      <div class="stat-val">{{ $totalLogins ?? 0 }}</div>
-      <div class="stat-lbl">Logins</div>
+      <div class="stat-val">{{ $totalUpdated ?? 0 }}</div>
+      <div class="stat-lbl">Products Updated</div>
     </div>
   </div>
 </div>
@@ -552,7 +552,7 @@
               <span>{{ optional($activity->created_at)->diffForHumans() }}</span>
               <span>&middot;</span>
               <span>{{ optional($activity->created_at)->format('M d, Y \a\t g:i A') }}</span>
-              @if($activity->type === 'auth.login' && ($activity->metadata['via'] ?? false))
+              @if($activity->type === \App\Models\ActivityLog::TYPE_LOGIN && ($activity->metadata['via'] ?? false))
                 <span style="background:#f1f5f9;color:#475569;border-radius:6px;padding:2px 8px;font-size:11px;">via {{ $activity->metadata['via'] }}</span>
               @endif
             </div>

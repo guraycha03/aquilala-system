@@ -95,6 +95,24 @@ class ProductCardTest extends TestCase
             ->assertSee('UNIQUE-SKU-9001');
     }
 
+    /** The farmer preview tab lives behind role:farmer, so its cards must link
+     *  to the store-prefixed route or the store owner hits a 403. */
+    public function test_the_preview_tab_links_to_detail_pages_a_store_owner_can_open(): void
+    {
+        $html = $this->actingAs($this->store)->get(route('store.storefront.index'))->assertOk()->getContent();
+
+        $this->assertStringContainsString(route('store.products.show', $this->product->id), $html);
+
+        $this->actingAs($this->store)
+            ->get(route('store.products.show', $this->product))
+            ->assertOk()
+            ->assertSee('Urea Fertilizer');
+
+        $this->actingAs($this->store)
+            ->get(route('farmer.products.show', $this->product))
+            ->assertForbidden();
+    }
+
     public function test_the_card_still_shows_the_essentials(): void
     {
         $html = $this->actingAs($this->farmer)->get(route('farmer.products.browse'))->getContent();

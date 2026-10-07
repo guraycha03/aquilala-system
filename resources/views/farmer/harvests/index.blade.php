@@ -346,6 +346,8 @@
                   data-yield="{{ (float) $report->actual_yield_metric_tons }}"
                   data-expenses="{{ (float) $report->actual_total_expenses }}"
                   data-date="{{ $report->harvest_date->format('Y-m-d') }}"
+                  data-year="{{ $report->harvest_date->year }}"
+                  data-month="{{ $report->harvest_date->month }}"
                   data-search="{{ strtolower($report->crop_type . ' ' . $report->season) }}">
                 <td style="font-weight: 600; color: #1e293b;">
                   <div style="display: flex; align-items: center; gap: 10px;">

@@ -1,5 +1,12 @@
 
 
+update system structure and code to log store owners creation of products and doing crud and make it show in the activity log of store owner users, also to add a soft delete where store can remove product temporarily but its saved on archive for later restore
+
+
+
+
+
+
 ngrok http 8000
 
 opencode -s ses_f149a6cd0ffeYCxBdsMS1qJ14B

@@ -8,6 +8,9 @@ use App\Models\ProductImage;
 use App\Models\Quotation;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Services\ActivityLogger;
+use App\Support\ProductImageResizer;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -44,18 +47,64 @@ class ProductController extends Controller
         $computedQuotationCount = $involvedStoreQuery(Quotation::STATUS_COMPUTED)->count();
         $viewedQuotationCount = $involvedStoreQuery(Quotation::STATUS_VIEWED)->count();
 
-        // ─── Top performers (Most Viewed / Most Quoted / Top Rated) ─────
+        // ─── Rating & review metrics for this store ───────────────────
         $products->load('approvedReviews');
 
         // Saved-for-later state for the dashboard "My Products" carousel.
         Product::markSavedState($products, $user);
 
-        // ─── Rating & review metrics for this store ───────────────────
         $ratedProducts = $products->filter(fn ($p) => $p->average_rating !== null);
         $averageRating = $ratedProducts->isNotEmpty()
             ? round((float) $ratedProducts->avg('average_rating'), 1)
             : null;
         $totalReviews = $products->sum('review_count');
+
+        // Pass $products to your dashboard blade view
+        return view('dashboard.store_owner', compact(
+            'products',
+            'productCount',
+            'lowStockCount',
+            'demandQuotationCount',
+            'computedQuotationCount',
+            'viewedQuotationCount',
+            'ratedProducts',
+            'averageRating',
+            'totalReviews'
+        ));
+    }
+
+    /**
+     * Store dashboard sub-page: the "Top Products" rankings.
+     */
+    public function performance()
+    {
+        $user = Auth::user();
+
+        $products = Product::where('user_id', $user->id)
+            ->with(['category', 'mainImage', 'images'])
+            ->latest()
+            ->get();
+
+        $products->load('approvedReviews');
+
+        ['topViewed' => $topViewed, 'topQuoted' => $topQuoted, 'topRated' => $topRated] = $this->topPerformers($products);
+
+        return view('dashboard.store_performance', compact(
+            'topViewed',
+            'topQuoted',
+            'topRated'
+        ));
+    }
+
+    /**
+     * Most viewed, most quoted and highest rated products for the
+     * signed-in store owner (5 each) — shared by both dashboard pages.
+     *
+     * @return array{topViewed: \Illuminate\Support\Collection, topQuoted: \Illuminate\Support\Collection, topRated: \Illuminate\Support\Collection}
+     */
+    private function topPerformers($products)
+    {
+        $user = Auth::user();
 
         $topViewed = $products
             ->where('views_count', '>', 0)
@@ -89,21 +138,7 @@ class ProductController extends Controller
             ->take(5)
             ->values();
 
-        // Pass $products to your dashboard blade view
-        return view('dashboard.store_owner', compact(
-            'products',
-            'productCount',
-            'lowStockCount',
-            'demandQuotationCount',
-            'computedQuotationCount',
-            'viewedQuotationCount',
-            'ratedProducts',
-            'averageRating',
-            'totalReviews',
-            'topViewed',
-            'topQuoted',
-            'topRated'
-        ));
+        return compact('topViewed', 'topQuoted', 'topRated');
     }
 
     /**
@@ -122,7 +157,13 @@ class ProductController extends Controller
 
         $facets = $this->filterFacets($products);
 
-        return view('store.storefront.index', compact('products') + $facets);
+        // Drives the "Archive (n)" badge in the header — a soft-deleted
+        // product is invisible to the query above but still recoverable.
+        $archivedCount = Product::onlyTrashed()
+            ->where('user_id', Auth::id())
+            ->count();
+
+        return view('store.storefront.index', compact('products', 'archivedCount') + $facets);
     }
 
     /**
@@ -217,6 +258,9 @@ class ProductController extends Controller
      *
      * `updateOrCreate` alone silently leaves stale data behind when the user
      * clears every field on an edit, so an all-blank submission deletes the row.
+     *
+     * Returns true when the submission actually wrote or cleared a row, so the
+     * caller can record the change in the activity log.
      */
     private function syncSpecDetails(
         Product $product,
@@ -224,21 +268,23 @@ class ProductController extends Controller
         array $validated,
         array $keys,
         array $attributes
-    ): void {
+    ): bool {
         if (! $this->wasSubmitted($validated, $keys)) {
-            return;
+            return false;
         }
 
         if (! $this->hasAnyValue($validated, $keys)) {
             $product->{$relation}()->delete();
 
-            return;
+            return true;
         }
 
         $product->{$relation}()->updateOrCreate(
             ['product_id' => $product->id],
             $attributes
         );
+
+        return true;
     }
 
     private const FERTILIZER_FIELDS = [
@@ -275,7 +321,7 @@ class ProductController extends Controller
         // the insert satisfies strict mode and legacy readers still see a label.
         $category = Category::with('parent')->findOrFail($validated['category_id']);
 
-        DB::transaction(function () use ($validated, $request, $category) {
+        $product = DB::transaction(function () use ($validated, $request, $category) {
             $product = Product::create([
                 'user_id'            => Auth::id(),
                 'category_id'        => $validated['category_id'],
@@ -327,7 +373,13 @@ class ProductController extends Controller
                     'expiration_date'        => $validated['expiration_date'] ?? null,
                 ]);
             }
+
+            return $product;
         });
+
+        // Written after the transaction so a rolled-back insert never leaves a
+        // phantom "product created" entry in the store owner's activity history.
+        ActivityLogger::productCreated($product);
 
         return redirect()
             ->route('store.storefront.index')
@@ -355,40 +407,51 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product)
     {
-        if ($product->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
+        $this->authorizeProductOwner($product);
 
         $validated = $request->validated();
         $category = Category::with('parent')->findOrFail($validated['category_id']);
 
-        DB::transaction(function () use ($validated, $request, $product, $category) {
-            $product->update([
-                'category_id'        => $validated['category_id'],
-                'category'           => $this->legacyCategoryLabel($category),
-                'name'               => $validated['name'],
-                'brand'              => $validated['brand'] ?? null,
-                'sku'                => $validated['sku'],
-                'product_type'       => $validated['product_type'] ?? null,
-                'description'        => $validated['description'] ?? null,
-                'package_size'       => $validated['package_size'] ?? null,
-                'package_unit'       => $validated['package_unit'] ?? null,
-                'packaging_type'     => $validated['packaging_type'] ?? null,
-                'price'              => $validated['price'],
-                'price_unit'         => $validated['price_unit'] ?? null,
-                'stock_quantity'    => $validated['stock_quantity'],
-                'stock_unit'         => $validated['stock_unit'] ?? null,
-                'reorder_threshold'  => $validated['reorder_threshold'],
-                'recommended_season' => $validated['recommended_season'],
-                'status'             => $validated['status'],
-            ]);
+        $payload = [
+            'category_id'        => $validated['category_id'],
+            'category'           => $this->legacyCategoryLabel($category),
+            'name'               => $validated['name'],
+            'brand'              => $validated['brand'] ?? null,
+            'sku'                => $validated['sku'],
+            'product_type'       => $validated['product_type'] ?? null,
+            'description'        => $validated['description'] ?? null,
+            'package_size'       => $validated['package_size'] ?? null,
+            'package_unit'       => $validated['package_unit'] ?? null,
+            'packaging_type'     => $validated['packaging_type'] ?? null,
+            'price'              => $validated['price'],
+            'price_unit'         => $validated['price_unit'] ?? null,
+            'stock_quantity'     => $validated['stock_quantity'],
+            'stock_unit'         => $validated['stock_unit'] ?? null,
+            'reorder_threshold'  => $validated['reorder_threshold'],
+            'recommended_season' => $validated['recommended_season'],
+            'status'             => $validated['status'],
+        ];
+
+        // Snapshot what this request is about to touch so the activity log can
+        // report *what* changed ("price: ₱100.00 → ₱120.00") rather than a
+        // bare "something was updated".
+        $before = $product->only(array_keys($payload));
+        $notes = [];
+
+        DB::transaction(function () use ($validated, $request, $product, $payload, &$notes) {
+            $product->update($payload);
 
             // Append any newly uploaded images; existing ones are left alone
             // and managed individually from the edit form.
             $this->storeProductImages($product, $request->file('images', []));
 
+            $imagesAdded = count(array_filter($request->file('images', [])));
+            if ($imagesAdded > 0) {
+                $notes[] = $imagesAdded . ' image' . ($imagesAdded > 1 ? 's' : '') . ' added';
+            }
+
             // Fertilizer Details: create, update, or clear when blanked.
-            $this->syncSpecDetails(
+            if ($this->syncSpecDetails(
                 $product,
                 'fertilizerDetail',
                 $validated,
@@ -404,10 +467,12 @@ class ProductController extends Controller
                     'application_method'    => $validated['fertilizer_method'] ?? null,
                     'application_timing'    => $validated['fertilizer_timing'] ?? null,
                 ]
-            );
+            )) {
+                $notes[] = 'fertilizer details updated';
+            }
 
             // Registration Details: create, update, or clear when blanked.
-            $this->syncSpecDetails(
+            if ($this->syncSpecDetails(
                 $product,
                 'registration',
                 $validated,
@@ -421,8 +486,20 @@ class ProductController extends Controller
                     'manufacturing_date'     => $validated['manufacturing_date'] ?? null,
                     'expiration_date'        => $validated['expiration_date'] ?? null,
                 ]
-            );
+            )) {
+                $notes[] = 'registration details updated';
+            }
         });
+
+        $change = array_filter(array_merge(
+            [$this->describeChanges($before, $product->only(array_keys($payload)))],
+            $notes
+        ));
+
+        // A no-op resubmit writes nothing — the log stays a record of real changes.
+        if ($change !== []) {
+            ActivityLogger::productUpdated($product, implode('; ', $change));
+        }
 
         return redirect()
             ->route('store.storefront.index')
@@ -430,28 +507,198 @@ class ProductController extends Controller
     }
 
     /**
-     * Remove the specified product from the database.
+     * Fields whose before/after values are summarised in the activity log.
+     */
+    private const CHANGE_LABELS = [
+        'name'               => 'name',
+        'brand'              => 'brand',
+        'sku'                => 'SKU',
+        'product_type'       => 'type',
+        'description'        => 'description',
+        'package_size'       => 'package size',
+        'package_unit'       => 'package unit',
+        'packaging_type'     => 'packaging',
+        'price'              => 'price',
+        'price_unit'         => 'price unit',
+        'stock_quantity'     => 'stock',
+        'stock_unit'         => 'stock unit',
+        'reorder_threshold'  => 'reorder level',
+        'recommended_season' => 'season',
+        'status'             => 'status',
+        'category'           => 'category',
+    ];
+
+    /**
+     * Attributes skipped in the change summary (the legacy category label
+     * already tells the reader what changed).
+     */
+    private const CHANGE_SKIP = ['category_id'];
+
+    /**
+     * Human-readable "field: old → new" summary of the touched attributes.
+     */
+    private function describeChanges(array $before, array $after): string
+    {
+        $parts = [];
+
+        foreach ($before as $key => $old) {
+            if (in_array($key, self::CHANGE_SKIP, true) || ! array_key_exists($key, $after)) {
+                continue;
+            }
+
+            $new = $after[$key];
+
+            // Loose comparison so "10.00" and 10.0 (decimal cast) count as equal.
+            if ($old == $new) {
+                continue;
+            }
+
+            $label = self::CHANGE_LABELS[$key] ?? str_replace('_', ' ', (string) $key);
+            $parts[] = "{$label}: " . $this->formatValue($key, $old) . ' → ' . $this->formatValue($key, $new);
+
+            if (count($parts) >= 6) {
+                $parts[] = '…';
+                break;
+            }
+        }
+
+        return implode(', ', $parts);
+    }
+
+    private function formatValue(string $key, $value): string
+    {
+        if ($value === null || $value === '') {
+            return '(empty)';
+        }
+
+        return match ($key) {
+            'price'  => '₱' . number_format((float) $value, 2),
+            'status', 'recommended_season' => ucfirst(str_replace('_', ' ', (string) $value)),
+            'description' => mb_strimwidth((string) $value, 0, 40, '…'),
+            default => (string) $value,
+        };
+    }
+
+    /**
+     * Archive the product: a soft delete that hides it everywhere while the
+     * row, its images and its specs stay in the database for recovery.
      */
     public function destroy(Product $product)
     {
-        if ($product->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
+        $this->authorizeProductOwner($product);
+
+        $product->delete();
+
+        ActivityLogger::productArchived($product);
+
+        return redirect()
+            ->route('store.storefront.index')
+            ->with('success', 'Product moved to the Archive. Restore it anytime from the Archive screen.');
+    }
+
+    /**
+     * The store owner's archive (trashed products), newest removals first.
+     * The header's "Add Product" modal picks from the active catalog, so the
+     * live products travel with the page too.
+     */
+    public function trash()
+    {
+        $products = Product::onlyTrashed()
+            ->where('user_id', Auth::id())
+            ->with(['category', 'mainImage', 'images'])
+            ->latest('deleted_at')
+            ->get();
+
+        $archivedCount = $products->count();
+
+        $activeProducts = Product::where('user_id', Auth::id())
+            ->whereNull('deleted_at')
+            ->with('mainImage')
+            ->orderBy('name')
+            ->get();
+
+        return view('store.storefront.trash', compact('products', 'archivedCount', 'activeProducts'));
+    }
+
+    /**
+     * Move the products checked in the archive's "Add Product" modal into the
+     * archive in one request. Anything the store owner does not own (or that
+     * is already archived) is silently skipped.
+     */
+    public function archiveBulk(Request $request)
+    {
+        $validated = $request->validate([
+            'product_ids' => ['required', 'array', 'min:1'],
+            'product_ids.*' => ['integer', 'exists:products,id'],
+        ]);
+
+        $products = Product::where('user_id', Auth::id())
+            ->whereNull('deleted_at')
+            ->whereIn('id', $validated['product_ids'])
+            ->get();
+
+        foreach ($products as $product) {
+            $product->delete();
+
+            ActivityLogger::productArchived($product);
         }
+
+        $count = $products->count();
+
+        return redirect()
+            ->route('store.products.trash')
+            ->with('success', ($count === 1 ? '1 product' : $count . ' products') . ' moved to the Archive.');
+    }
+
+    /**
+     * Bring an archived product back into the storefront.
+     */
+    public function restore(Product $product)
+    {
+        $this->authorizeProductOwner($product);
+
+        abort_unless($product->trashed(), 404);
+
+        $product->restore();
+
+        ActivityLogger::productRestored($product);
+
+        return redirect()
+            ->route('store.products.trash')
+            ->with('success', "“{$product->name}” is live in your storefront again.");
+    }
+
+    /**
+     * Permanently remove an archived product: files and spec rows are cleaned
+     * up here (the archive screen is the only place this is reachable).
+     */
+    public function forceDestroy(Product $product)
+    {
+        $this->authorizeProductOwner($product);
+
+        abort_unless($product->trashed(), 404);
+
+        $name = $product->name;
+        $sku = $product->sku;
 
         DB::transaction(function () use ($product) {
             foreach ($product->images as $image) {
                 Storage::disk('public')->delete($image->file_path);
+                Storage::disk('public')->delete($image->thumb_path);
             }
+
             $product->images()->delete();
             $product->fertilizerDetail()->delete();
             $product->registration()->delete();
             $product->documents()->delete();
-            $product->delete();
+            $product->forceDelete();
         });
 
+        ActivityLogger::productDeleted($name, $sku);
+
         return redirect()
-            ->route('store.storefront.index')
-            ->with('success', 'Product profile deleted successfully.');
+            ->route('store.products.trash')
+            ->with('success', 'Product permanently deleted.');
     }
 
     /**
@@ -568,17 +815,35 @@ class ProductController extends Controller
                 continue;
             }
 
-            $path = $file->store('products/' . $product->id, 'public');
+            // Down-scaled on the way in (see ProductImageResizer) so a camera
+            // photo never lands in storage at full resolution, and paired with
+            // a thumbnail the card/list views serve instead.
+            $stored = ProductImageResizer::store($file, 'products/' . $product->id);
+            $storedMime = $this->storedMime($stored['path']);
 
             $product->images()->create([
                 'image_type'        => ($isFirst && $promoteFirstToMain) ? 'main' : 'gallery',
-                'file_path'         => $path,
+                'file_path'         => $stored['path'],
+                'thumb_path'        => $stored['thumb_path'],
                 'original_filename' => $file->getClientOriginalName(),
-                'mime_type'         => $file->getMimeType(),
-                'file_size'         => $file->getSize(),
+                'mime_type'         => $storedMime ?: $file->getMimeType(),
+                'file_size'         => Storage::disk('public')->size($stored['path']),
             ]);
 
             $isFirst = false;
+        }
+    }
+
+    /**
+     * Mime type of the file as it was stored: an opaque PNG is flattened to
+     * JPEG on the way in, so the uploaded file's type can no longer be trusted.
+     */
+    private function storedMime(string $path): ?string
+    {
+        try {
+            return Storage::disk('public')->mimeType($path);
+        } catch (\Throwable) {
+            return null;
         }
     }
 
@@ -595,6 +860,8 @@ class ProductController extends Controller
             $product->images()->where('image_type', 'main')->update(['image_type' => 'gallery']);
             $image->update(['image_type' => 'main']);
         });
+
+        ActivityLogger::productUpdated($product, 'main image changed');
 
         return back()->with('success', 'Main image updated.');
     }
@@ -618,6 +885,8 @@ class ProductController extends Controller
                 $product->images()->orderBy('id')->first()?->update(['image_type' => 'main']);
             }
         });
+
+        ActivityLogger::productUpdated($product, 'image removed');
 
         return back()->with('success', 'Image removed successfully.');
     }

@@ -52,6 +52,19 @@
   .season-badge-wet { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
   .season-badge-dry { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 
+  .stage-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+    background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe;
+    white-space: nowrap;
+  }
+  .stage-badge-standard { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+  .bounds-text {
+    font-size: 12px; color: #94a3b8; margin-top: 4px; white-space: nowrap;
+  }
+  .bounds-text.out-of-bounds { color: #b45309; font-weight: 600; }
+
   .btn-primary {
     background: #143d23;
     color: white;
@@ -87,20 +100,58 @@
   .btn-icon-delete { color: #b0403a; border-color: #e4c6c3; }
   .btn-icon-delete:hover { background: #faf2f1; border-color: #b0403a; color: #b0403a; }
 
-  .info-banner {
-    background: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: 10px;
-    padding: 14px 18px;
-    margin-bottom: 24px;
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    font-size: 13px;
-    color: #166534;
-    line-height: 1.6;
+  /* ── Help (?) button + how-it-works modal ──────────────────────── */
+  .help-btn {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: #ffffff; border: 1px solid #e2e8f0; color: #475569;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s; padding: 0;
   }
-  .info-banner svg { flex-shrink: 0; margin-top: 2px; }
+  .help-btn:hover { border-color: #143d23; color: #143d23; background: #f0fdf4; }
+  .help-btn:focus-visible { outline: 2px solid #16a34a; outline-offset: 2px; }
+
+  .btn-ghost {
+    background: transparent; color: #475569; border: 1px solid #e2e8f0;
+    padding: 10px 18px; border-radius: 8px; font-size: 14px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 60; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(15, 23, 42, 0.45); padding: 32px 20px 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #ffffff; border-radius: 14px; width: 100%; max-width: 520px;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, .25);
+    display: flex; flex-direction: column; overflow: hidden;
+    animation: modalIn .18s ease-out;
+  }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+  .modal-head { padding: 18px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-shrink: 0; }
+  .modal-head h3 { font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 3px 0; }
+  .modal-head p { margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.5; }
+  .modal-close {
+    background: transparent; border: none; font-size: 24px; line-height: 1;
+    color: #94a3b8; cursor: pointer; padding: 2px 6px; border-radius: 8px;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .modal-close:hover { background: #e2e8f0; color: #0f172a; }
+  .modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; min-height: 0; }
+  .modal-foot { padding: 14px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0; }
+
+  .help-list { margin: 0; padding-left: 18px; font-size: 13.5px; color: #475569; line-height: 1.65; }
+  .help-list li { margin-bottom: 12px; }
+  .help-list li:last-child { margin-bottom: 0; }
+  .help-list strong { color: #1e2922; }
+
+  @media (max-width: 640px) {
+    .modal-overlay { padding-top: 56px; }
+    .modal { max-height: calc(100vh - 72px); }
+  }
 
   /* ── Sortable Table ──────────────────────────────────────────────── */
   .formula-table-card {
@@ -108,7 +159,7 @@
     overflow: hidden;
   }
   .table-scroll { overflow-x: auto; }
-  table.formula-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 820px; }
+  table.formula-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 960px; }
   .formula-table thead th {
     background: #fafcfa; padding: 13px 14px; font-weight: 700;
     color: #4a574e; border-bottom: 1px solid #e2e8f0; text-align: left;
@@ -172,10 +223,20 @@
       Define standard per-hectare application rates that drive the cost quotation engine's recommended input quantities.
     </p>
   </div>
-  <a href="{{ route('store.formulas.create') }}" class="btn-primary">
-    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Add Formula
-  </a>
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <button type="button" class="help-btn" id="openHelpModal"
+            aria-label="How formulas work" title="How formulas work">
+      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        <circle cx="12" cy="12" r="10"/>
+      </svg>
+    </button>
+    <a href="{{ route('store.formulas.create') }}" class="btn-primary">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Formula
+    </a>
+  </div>
 </div>
 
 @if(session('success'))
@@ -195,14 +256,40 @@
   </div>
 @endif
 
-<div class="info-banner">
-  <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" style="flex-shrink: 0; margin-top: 2px;">
-    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-  </svg>
-  <div>
-    <strong>How formulas work:</strong> When a farmer generates a cost quotation for a crop + season, the engine computes
-    <strong>recommended quantity = rate per hectare × land area</strong> for every product with a formula here.
-    Soil and weather adjustments (e.g., sandy soil, typhoon season) are applied automatically on top of these base rates.
+<!-- How-formulas-work modal (opened by the ? button in the header) -->
+<div class="modal-overlay" id="helpModal" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
+    <div class="modal-head">
+      <div>
+        <h3 id="helpModalTitle">How formulas work</h3>
+        <p>What happens on this page behind the scenes.</p>
+      </div>
+      <button type="button" class="modal-close" id="closeHelpModal" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <ul class="help-list">
+        <li>
+          <strong>Base recommendation.</strong> When a farmer generates a cost quotation for a crop + season,
+          the engine computes <strong>recommended quantity = rate per hectare × land area</strong> for every
+          product with a formula here.
+        </li>
+        <li>
+          <strong>Application stages.</strong> When a product has several stage rows (e.g., basal + topdress),
+          their rates are <strong>summed</strong> into one season total and the split is shown on the quote.
+        </li>
+        <li>
+          <strong>Safety bounds.</strong> Min/max bounds clamp any rate that ever drifts outside its
+          window, so a typo can never push a quotation outside the agronomic safety range.
+        </li>
+        <li>
+          <strong>Adjustments on top.</strong> Soil and weather conditions (e.g., sandy soil,
+          typhoon season) are applied automatically on top of these base rates.
+        </li>
+      </ul>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-ghost" id="gotItHelpModal">Got it</button>
+    </div>
   </div>
 </div>
 
@@ -254,6 +341,7 @@
       :filters="[
           ['key' => 'crop', 'label' => 'All Crop Types', 'options' => $crops->map(fn($c) => [strtolower($c), ucfirst($c)])->values()->all()],
           ['key' => 'season', 'label' => 'All Seasons', 'options' => [['wet', 'Wet Season'], ['dry', 'Dry Season']]],
+          ['key' => 'stage', 'label' => 'All Stages', 'options' => collect(\App\Models\DecisionFormula::STAGES)->map(fn($label, $key) => [$key, $label])->values()->all()],
       ]"
       :sorts="[
           ['key' => 'name', 'dir' => 1, 'type' => 'str', 'label' => 'Product (A–Z)'],
@@ -279,6 +367,7 @@
             <th>Product</th>
             <th>Crop Type</th>
             <th>Season</th>
+            <th>Stage</th>
             <th>Rate / Ha</th>
             <th>Unit</th>
             <th>Notes</th>
@@ -287,9 +376,10 @@
         </thead>
         <tbody id="formulaTableBody">
           @foreach($formulas as $formula)
-          <tr data-search="{{ strtolower(trim(($formula->product->name ?? '') . ' ' . ($formula->product->size_label ?? '') . ' ' . ($formula->product->category_display_name ?? '') . ' ' . ($formula->crop_type ?? '') . ' ' . ($formula->season ?? '') . ' ' . ($formula->unit ?? '') . ' ' . ($formula->notes ?? ''))) }}"
+          <tr data-search="{{ strtolower(trim(($formula->product->name ?? '') . ' ' . ($formula->product->size_label ?? '') . ' ' . ($formula->product->category_display_name ?? '') . ' ' . ($formula->crop_type ?? '') . ' ' . ($formula->season ?? '') . ' ' . $formula->stageLabel() . ' ' . ($formula->unit ?? '') . ' ' . ($formula->notes ?? ''))) }}"
               data-crop="{{ strtolower($formula->crop_type) }}"
               data-season="{{ $formula->season }}"
+              data-stage="{{ $formula->stage }}"
               data-rate="{{ (float) $formula->rate_per_hectare }}"
               data-unit="{{ strtolower(trim($formula->unit ?? '')) }}"
               data-name="{{ strtolower($formula->product->name ?? '') }}">
@@ -314,7 +404,24 @@
               </span>
             </td>
             <td>
+              <span class="stage-badge {{ $formula->stage === 'standard' ? 'stage-badge-standard' : '' }}" title="{{ $formula->stage }}">
+                {{ $formula->stageLabel() }}
+              </span>
+            </td>
+            <td>
               <span class="rate-chip"><strong>{{ number_format((float) $formula->rate_per_hectare, 2) }}</strong><span>/ ha</span></span>
+              @if($formula->min_rate_per_hectare !== null || $formula->max_rate_per_hectare !== null)
+                <div class="bounds-text {{ $formula->rateNeedsClamp() ? 'out-of-bounds' : '' }}">
+                  @if($formula->min_rate_per_hectare !== null && $formula->max_rate_per_hectare !== null)
+                    {{ number_format((float) $formula->min_rate_per_hectare, 2) }} – {{ number_format((float) $formula->max_rate_per_hectare, 2) }}
+                  @elseif($formula->min_rate_per_hectare !== null)
+                    ≥ {{ number_format((float) $formula->min_rate_per_hectare, 2) }}
+                  @else
+                    ≤ {{ number_format((float) $formula->max_rate_per_hectare, 2) }}
+                  @endif
+                  <span style="font-weight: 400;">bounds</span>
+                </div>
+              @endif
             </td>
             <td style="color: #475569;">{{ $formula->unit ?? '—' }}</td>
             <td style="color: #64748b; font-size: 13px; max-width: 280px;">{{ $formula->notes ?? '—' }}</td>
@@ -347,4 +454,30 @@
     </div>
   </div>
   @endif
+
+<script>
+(function () {
+  const overlay = document.getElementById('helpModal');
+  const openBtn = document.getElementById('openHelpModal');
+  const closeBtn = document.getElementById('closeHelpModal');
+  const gotItBtn = document.getElementById('gotItHelpModal');
+
+  function open() {
+    overlay.classList.add('open');
+    overlay.setAttribute('aria-hidden', 'false');
+    closeBtn.focus();
+  }
+  function close() {
+    overlay.classList.remove('open');
+    overlay.setAttribute('aria-hidden', 'true');
+    openBtn.focus();
+  }
+
+  openBtn.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+  gotItBtn.addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.classList.contains('open')) close(); });
+})();
+</script>
 @endsection

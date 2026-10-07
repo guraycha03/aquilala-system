@@ -249,7 +249,8 @@
         }
 
         function render() {
-            var filtered = getRows().filter(matches);
+            var all = getRows();
+            var filtered = all.filter(matches);
             filtered.sort(cmpRow);
             var visible = filtered;
             if (perPage > 0) {
@@ -260,9 +261,23 @@
                 visible = filtered.slice(start, start + perPage);
                 renderPagination(filtered.length);
             }
-            var visibleIds = {};
-            getRows().forEach(function (r) { r.style.display = 'none'; });
-            visible.forEach(function (r) { r.style.display = ''; visibleIds[r] = true; });
+
+            // sort() only reorders an array. The nodes have to be moved too,
+            // otherwise every row keeps its original document position and all
+            // the sort can change is which rows land on this page — which looks
+            // fine while pagination is hiding rows, and like a dead control as
+            // soon as a filter leaves fewer rows than fit on one page.
+            var container = resolveTable();
+            if (container) {
+                filtered.forEach(function (r) { container.appendChild(r); });
+                all.forEach(function (r) {
+                    if (filtered.indexOf(r) === -1) container.appendChild(r);
+                });
+            }
+
+            all.forEach(function (r) {
+                r.style.display = visible.indexOf(r) !== -1 ? '' : 'none';
+            });
 
             if (countEl) countEl.textContent = filtered.length;
             var table = document.getElementById(tableId);

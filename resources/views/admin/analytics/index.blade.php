@@ -678,7 +678,18 @@
           @else
             <div class="matrix-mini">
               @foreach($topCrops as $crop => $seasons)
-                @php $flattened = $seasons->flatten(); @endphp
+                @php
+                  $flattened = $seasons->flatten();
+                  // Stage rows collapse into one line per product with the
+                  // stages summed, so a basal + topdress rule isn't listed twice.
+                  $perProduct = $flattened
+                    ->groupBy('product_id')
+                    ->map(fn ($rows) => [
+                        'name' => $rows->first()->product->display_name ?? 'Unknown Product',
+                        'rate' => (float) $rows->sum(fn ($f) => $f->effectiveRate()),
+                        'unit' => $rows->first()->unit,
+                    ]);
+                @endphp
                 <div class="mx-crop">
                   <div class="mx-crop-head">
                     <span class="mx-crop-name">{{ $crop }}</span>
@@ -690,17 +701,17 @@
                     @endforeach
                   </div>
                   <div class="mx-prods">
-                    @foreach($flattened->take(3) as $formula)
+                    @foreach($perProduct->take(3) as $summary)
                       <div class="mx-prod">
-                        <b>{{ $formula->product->display_name ?? 'Unknown Product' }}</b>
-                        <span class="r">{{ number_format((float) $formula->rate_per_hectare, 2) }} {{ $formula->unit }}/ha</span>
+                        <b>{{ $summary['name'] }}</b>
+                        <span class="r">{{ number_format($summary['rate'], 2) }} {{ $summary['unit'] }}/ha</span>
                       </div>
                     @endforeach
                   </div>
-                  @if($flattened->count() > 3)
+                  @if($perProduct->count() > 3)
                     <div class="mx-extra">
                       <svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="M6 6h12v12"/></svg>
-                      +{{ $flattened->count() - 3 }} more input{{ $flattened->count() - 3 === 1 ? '' : 's' }}
+                      +{{ $perProduct->count() - 3 }} more input{{ $perProduct->count() - 3 === 1 ? '' : 's' }}
                     </div>
                   @endif
                 </div>

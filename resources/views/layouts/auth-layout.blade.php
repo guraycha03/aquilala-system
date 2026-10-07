@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title') | Aquilala</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scrollbar-width: none; -ms-overflow-style: none; }

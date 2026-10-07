@@ -6,12 +6,18 @@ use App\Helpers\SettingsHelper;
 use App\Models\Crop;
 use App\Models\HarvestReport;
 use App\Services\ActivityLogger;
+use App\Services\HarvestInsightService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class HarvestReportController extends Controller
 {
+    public function __construct(
+        private readonly HarvestInsightService $insights,
+    ) {}
+
     /**
      * Farmer-facing list of their own harvest reports.
      * Reads the same harvest_reports table the admin page reads, so a report
@@ -38,13 +44,33 @@ class HarvestReportController extends Controller
     }
 
     /**
-     * Admin-facing list of every farmer's harvest reports (read-only).
+     * Admin landing page: headline metrics plus the period / comparison /
+     * farmer charts, and navigation into the supporting sub-pages. The raw
+     * report list lives on `admin.harvests.reports`.
+     *
+     * The charts read from the same HarvestInsightService digest the AI page
+     * sends to the model, so the picture on this page and the figures the
+     * analysis quotes can never drift apart.
      */
     public function adminIndex(Request $request)
     {
-        $query = HarvestReport::with('farmer');
+        [, $stats] = $this->applyFiltersAndStats(HarvestReport::with('farmer'), $request);
 
-        [$reports, $stats, $allReports, $yearOptions, $monthOptions] = $this->applyFiltersAndStats($query, $request);
+        return view('admin.harvests.index', [
+            'stats'   => $stats,
+            'context' => $this->insights->context(),
+        ]);
+    }
+
+    /**
+     * Admin sub-page holding the full, filterable harvest report table.
+     */
+    public function reportsIndex(Request $request)
+    {
+        [$reports, $stats, $allReports, $yearOptions, $monthOptions] = $this->applyFiltersAndStats(
+            HarvestReport::with('farmer'),
+            $request
+        );
 
         $farmerOptions = $allReports->pluck('farmer.name')
             ->filter()
@@ -52,7 +78,63 @@ class HarvestReportController extends Controller
             ->sort()
             ->values();
 
-        return view('admin.harvests.index', compact('reports', 'stats', 'allReports', 'farmerOptions', 'yearOptions', 'monthOptions'));
+        return view('admin.harvests.reports', compact(
+            'reports',
+            'stats',
+            'allReports',
+            'farmerOptions',
+            'yearOptions',
+            'monthOptions'
+        ));
+    }
+
+    /**
+     * AI Harvest Insights subpage.
+     *
+     * Rendered with the digest already in hand so the page can show exactly
+     * which harvest records the analysis will draw from, before anything is
+     * sent to the model.
+     */
+    public function aiIndex()
+    {
+        $context = $this->insights->context();
+
+        return view('admin.harvests.ai', ['context' => $context]);
+    }
+
+    /**
+     * Answer one chat question about the harvest digest. Returns JSON so the
+     * chat can run its own loading and error states without a page round trip.
+     *
+     * Always answers with 200 + a `reply`: when the model is offline or
+     * unusable, `source` reports `fallback` and the text comes from
+     * deterministic PHP over the same records.
+     */
+    public function aiAsk(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'message'              => ['required', 'string', 'min:1', 'max:500'],
+            'messages'             => ['sometimes', 'array', 'max:20'],
+            'messages.*.role'      => ['required', 'in:user,assistant'],
+            'messages.*.content'   => ['required', 'string', 'max:2000'],
+        ]);
+
+        $history = collect($validated['messages'] ?? [])
+            ->map(fn (array $turn) => [
+                'role'    => $turn['role'],
+                'content' => mb_substr($turn['content'], 0, 300),
+            ])
+            ->reject(fn (array $turn) => trim($turn['content']) === '')
+            ->values()
+            ->all();
+
+        $result = $this->insights->ask(trim($validated['message']), $history);
+
+        return response()->json([
+            'source'  => $result['source'],
+            'reply'   => $result['reply'],
+            'context' => $result['context'],
+        ]);
     }
 
     /**

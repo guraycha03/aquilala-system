@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\OcrException;
 use App\Exceptions\Onboarding\MailDeliveryException;
+use App\Models\ActivityLog;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\OcrMemberAiMapper;
 use App\Services\OcrMemberExtractor;
 use App\Services\OcrService;
 use App\Services\UserInvitationService;
+use App\Support\ImportFormats;
 use DateTimeImmutable;
 use finfo;
 use Illuminate\Database\QueryException;
@@ -28,11 +31,27 @@ class AdminUserImportController extends Controller
 {
     private const SESSION_KEY = 'admin.user_import';
 
-    private const ALLOWED_EXTENSIONS = ['csv', 'xls', 'xlsx', 'json'];
+    /**
+     * Spreadsheet extensions => PhpSpreadsheet reader. Must cover every
+     * spreadsheet type listed in config/import-formats.php; the allow-list
+     * decides what is accepted, this decides how it is read. The legacy .xls
+     * reader is kept so that widening the config is a one-line change.
+     */
+    private const SPREADSHEET_READERS = [
+        'xls' => Xls::class,
+        'xlsx' => Xlsx::class,
+    ];
 
     private const ALLOWED_OCR_EXTENSIONS = ['jpg', 'jpeg', 'png'];
 
     private const OCR_IMAGE_MIMES = ['image/jpeg', 'image/png'];
+
+    /**
+     * The only columns the OCR review table lets an administrator change.
+     * Everything else on a row is carried over untouched, so an edit can
+     * never smuggle a status, password or id into the created account.
+     */
+    private const OCR_EDITABLE_FIELDS = ['name', 'email', 'phone', 'role', 'assoc_member_no'];
 
     private const MAX_TOTAL_ROWS = 2000;
 
@@ -89,6 +108,13 @@ class AdminUserImportController extends Controller
         'accounttype' => 'role',
     ];
 
+    private OcrMemberAiMapper $aiMapper;
+
+    public function __construct(OcrMemberAiMapper $aiMapper)
+    {
+        $this->aiMapper = $aiMapper;
+    }
+
     public function create()
     {
         abort_unless(auth()->user()?->role === 'admin', 403);
@@ -107,14 +133,14 @@ class AdminUserImportController extends Controller
         $file = $request->file('file');
         $extension = strtolower($file->getClientOriginalExtension());
 
-        if (! in_array($extension, self::ALLOWED_EXTENSIONS, true)) {
-            return back()->with('error', 'Unsupported file type. Upload a .csv, .xls, .xlsx, or .json file.')->withInput();
+        if (! ImportFormats::allows($extension)) {
+            return back()->with('error', 'Unsupported file type. Upload a ' . ImportFormats::orLabel() . ' file.')->withInput();
         }
 
         try {
             $rawRows = $this->readRawRows($file->getRealPath(), $extension);
         } catch (Throwable $e) {
-            return back()->with('error', 'Could not read the file. Make sure it is a valid CSV, Excel, or JSON file.')->withInput();
+            return back()->with('error', 'Could not read the file. Make sure it is a valid ' . ImportFormats::orLabel() . ' file.')->withInput();
         }
 
         if (count($rawRows) === 0) {
@@ -190,7 +216,7 @@ class AdminUserImportController extends Controller
             ]);
 
             return back()
-                ->with('error', 'OCR scanning is not available on this server — Tesseract or its language data could not be found. You can still import using the CSV / Excel / JSON option below.')
+                ->with('error', 'OCR scanning is not available on this server — Tesseract or its language data could not be found. You can still import using the ' . ImportFormats::orLabel() . ' option below.')
                 ->withInput();
         }
 
@@ -214,31 +240,47 @@ class AdminUserImportController extends Controller
                 ->withInput();
         }
 
+        $filename = $file->getClientOriginalName();
+
+        // Stage 1 — rule-based candidates. Always runs, and stays the
+        // fallback for every AI outcome below.
         $candidates = app(OcrMemberExtractor::class)->extract($text);
 
-        if ($candidates === []) {
+        // Stage 2 — optional AI field matching. It returns either a
+        // sanitized row set or [], so a missing API key, a network error or
+        // an unusable reply all degrade to the rule-based rows instead of
+        // failing the upload.
+        $aiRows = $this->aiMapper->map($text, $filename, $candidates);
+        $aiAssisted = $aiRows !== [];
+        $records = $aiAssisted ? $aiRows : $candidates;
+
+        if ($records === []) {
             return back()
                 ->with('error', 'No recognizable member records were found in this document. Check the scan quality or use the Excel/CSV import option.')
                 ->withInput();
         }
 
-        if (count($candidates) > self::MAX_TOTAL_ROWS) {
+        if (count($records) > self::MAX_TOTAL_ROWS) {
             return back()
-                ->with('error', 'The document contains about '.number_format(count($candidates)).' possible records. Split the scan and import up to '.number_format(self::MAX_TOTAL_ROWS).' at a time.')
+                ->with('error', 'The document contains about '.number_format(count($records)).' possible records. Split the scan and import up to '.number_format(self::MAX_TOTAL_ROWS).' at a time.')
                 ->withInput();
         }
 
         // Reuse the exact same normalization + duplicate detection as the
         // structured-file importer, so OCR rows flow through one pipeline.
-        $rows = array_map(fn (array $raw) => $this->normalizeRow($raw), $candidates);
-
-        $this->markDuplicates($rows);
+        // AI rows are validated here too — the model never bypasses this.
+        $rows = array_map(fn (array $raw) => $this->normalizeRow($raw), $records);
 
         foreach ($rows as $index => &$row) {
             $row['_row'] = $index + 1;
             $row['_source'] = 'ocr';
+            // The record the row came from, kept so the review table can edit
+            // a cell without losing the fields that table does not display.
+            $row['_raw'] = $records[$index] ?? [];
         }
         unset($row);
+
+        $this->markDuplicates($rows);
 
         $validRows = array_values(array_filter($rows, fn (array $row) => $row['issues'] === []));
 
@@ -248,18 +290,72 @@ class AdminUserImportController extends Controller
                 ->withInput();
         }
 
-        session()->put(self::SESSION_KEY, [
+        $this->stageOcrRows($rows, [
             'token' => Str::random(32),
-            'filename' => $file->getClientOriginalName(),
-            'source' => 'ocr',
+            'filename' => $filename,
+            'ai_assisted' => $aiAssisted,
             'ocr_text' => $text,
-            'rows' => $rows,
-            'valid' => count($validRows),
-            'errors' => count($rows) - count($validRows),
-            'expires' => now()->addMinutes(60)->timestamp,
         ]);
 
         return view('admin.users.import', ['import' => session(self::SESSION_KEY)]);
+    }
+
+    /**
+     * Re-validate the cells an administrator edited in the OCR review table.
+     *
+     * The posted rows go through the same normalizeRow() + duplicate pass a
+     * scan does, so fixing a row here cannot produce an account the normal
+     * import path would have rejected.
+     */
+    public function revalidateOcr(Request $request): RedirectResponse
+    {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
+        $import = session(self::SESSION_KEY);
+
+        if (! is_array($import) || ($import['source'] ?? 'file') !== 'ocr'
+            || ! hash_equals((string) ($import['token'] ?? ''), (string) $request->input('token'))) {
+            return redirect()->route('admin.users.import')
+                ->with('error', 'The OCR review session has expired. Please scan the document again.');
+        }
+
+        $posted = $request->input('rows', []);
+
+        if (! is_array($posted) || $posted === []) {
+            return back()->with('error', 'There is nothing to re-check.');
+        }
+
+        $rebuilt = $this->rebuildOcrRows($posted, $import);
+
+        if (isset($rebuilt['error'])) {
+            return back()->with('error', $rebuilt['error'])->withInput(['token' => $import['token']]);
+        }
+
+        $rows = $rebuilt['rows'];
+
+        // Rows stay ticked across a re-check as long as they still exist and
+        // still pass validation — the server drops the rest.
+        $rowNumbers = array_map(fn (array $row) => (string) $row['_row'], $rows);
+        $approved = array_values(array_filter(
+            array_map('strval', (array) $request->input('approve', [])),
+            fn (string $rowNo) => in_array($rowNo, $rowNumbers, true)
+        ));
+
+        $this->stageOcrRows($rows, [
+            'token' => $import['token'],
+            'filename' => $import['filename'] ?? '',
+            'ai_assisted' => (bool) ($import['ai_assisted'] ?? false),
+            'ocr_text' => (string) ($import['ocr_text'] ?? ''),
+        ], $approved);
+
+        $invalid = count(array_filter($rows, fn (array $row) => $row['issues'] !== []));
+
+        return back()->with(
+            'success',
+            $invalid === 0
+                ? 'All '.count($rows).' row(s) now pass validation.'
+                : $invalid.' row(s) still need attention.'
+        );
     }
 
     public function confirmOcr(Request $request): RedirectResponse
@@ -277,6 +373,23 @@ class AdminUserImportController extends Controller
         $approvedIndexes = (array) $request->input('approve', []);
         $approvedIndexes = array_map('strval', $approvedIndexes);
 
+        // The review table posts its cells with the ticks, so importing right
+        // after an edit imports the edited values — validated the same way,
+        // never the stale ones the scan produced.
+        $posted = $request->input('rows');
+
+        if (is_array($posted) && $posted !== []) {
+            $rebuilt = $this->rebuildOcrRows($posted, $import);
+
+            if (isset($rebuilt['error'])) {
+                return back()
+                    ->with('error', $rebuilt['error'])
+                    ->withInput(['token' => $import['token']]);
+            }
+
+            $import['rows'] = $rebuilt['rows'];
+        }
+
         // Only OCR rows the administrator explicitly checked, and only rows
         // that also pass the same validation the file importer applies.
         $validRows = array_values(array_filter(
@@ -285,6 +398,12 @@ class AdminUserImportController extends Controller
                 && $row['issues'] === []
                 && in_array((string) $row['_row'], $approvedIndexes, true)
         ));
+
+        if (count($validRows) > self::MAX_BATCH) {
+            return back()
+                ->with('error', 'You approved '.number_format(count($validRows)).' members, above the '.self::MAX_BATCH.' per-import limit. Import them in batches.')
+                ->withInput(['token' => $import['token']]);
+        }
 
         if ($validRows === []) {
             return back()
@@ -309,7 +428,7 @@ class AdminUserImportController extends Controller
 
         if ($inserted > 0) {
             ActivityLogger::log(
-                'user.imported',
+                ActivityLog::TYPE_USER_IMPORTED,
                 "Imported {$inserted} member".($inserted > 1 ? 's' : '').' from a scanned document'.($skipped > 0 ? " ({$skipped} duplicate".($skipped > 1 ? 's' : '').' skipped)' : ''),
                 null,
                 ['inserted' => $inserted, 'skipped' => $skipped, 'source' => 'ocr']
@@ -372,7 +491,7 @@ class AdminUserImportController extends Controller
 
         if ($inserted > 0) {
             ActivityLogger::log(
-                'user.imported',
+                ActivityLog::TYPE_USER_IMPORTED,
                 "Imported {$inserted} member".($inserted > 1 ? 's' : '').' from a file'.($skipped > 0 ? " ({$skipped} duplicate".($skipped > 1 ? 's' : '').' skipped)' : ''),
                 null,
                 ['inserted' => $inserted, 'skipped' => $skipped]
@@ -471,15 +590,17 @@ class AdminUserImportController extends Controller
 
     private function readRawRows(string $path, string $extension): array
     {
-        if ($extension === 'json') {
-            return $this->readJsonRows($path);
-        }
-
         if ($extension === 'csv') {
             return $this->readCsvRows($path);
         }
 
-        $reader = $extension === 'xls' ? new Xls : new Xlsx;
+        $readerClass = self::SPREADSHEET_READERS[$extension] ?? null;
+
+        if ($readerClass === null) {
+            throw new RuntimeException('That file type is not supported.');
+        }
+
+        $reader = new $readerClass;
         $reader->setReadDataOnly(true);
 
         $sheet = $reader->load($path)->getActiveSheet();
@@ -571,31 +692,145 @@ class AdminUserImportController extends Controller
         return $rows;
     }
 
-    private function readJsonRows(string $path): array
+    /**
+     * Put an OCR review table back into the session with fresh counts.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @param  array{token: string, filename: string, ai_assisted: bool, ocr_text: string}  $meta
+     * @param  list<string>  $approved
+     */
+    private function stageOcrRows(array $rows, array $meta, array $approved = []): void
     {
-        $contents = file_get_contents($path);
+        $valid = count(array_filter($rows, fn (array $row) => $row['issues'] === []));
 
-        if ($contents === false) {
-            throw new RuntimeException('Unable to read the JSON file.');
-        }
+        session()->put(self::SESSION_KEY, [
+            'token' => $meta['token'],
+            'filename' => $meta['filename'],
+            'source' => 'ocr',
+            'ai_assisted' => $meta['ai_assisted'],
+            'ocr_text' => $meta['ocr_text'],
+            'rows' => $rows,
+            'valid' => $valid,
+            'errors' => count($rows) - $valid,
+            'approved' => array_values($approved),
+            'expires' => now()->addMinutes(60)->timestamp,
+        ]);
+    }
 
-        $decoded = json_decode($contents, true);
+    /**
+     * Rebuild the OCR rows from the cells the review table posted.
+     *
+     * Rows are matched back to their staged counterpart by `_row`, so every
+     * field the table does not show (barangay, birth date, a value that
+     * failed validation earlier, …) survives a partial edit. Rows the
+     * administrator added get the next free row number, which is also what
+     * keeps their approval tick attached to them.
+     *
+     * @param  array<mixed>  $posted
+     * @param  array<string, mixed>  $import
+     * @return array{rows: list<array<string, mixed>>}|array{error: string}
+     */
+    private function rebuildOcrRows(array $posted, array $import): array
+    {
+        $staged = [];
 
-        if (! is_array($decoded)) {
-            throw new RuntimeException('The JSON file does not contain a valid object or array.');
-        }
-
-        if (array_is_list($decoded)) {
-            return array_values(array_filter($decoded, 'is_array'));
-        }
-
-        foreach (['members', 'users', 'data', 'records', 'rows'] as $key) {
-            if (isset($decoded[$key]) && is_array($decoded[$key])) {
-                return array_values(array_filter($decoded[$key], 'is_array'));
+        foreach (($import['rows'] ?? []) as $row) {
+            if (is_array($row) && isset($row['_row'])) {
+                $staged[(string) $row['_row']] = $row;
             }
         }
 
-        return [$decoded];
+        $maxRow = 0;
+        foreach (array_keys($staged) as $key) {
+            $maxRow = max($maxRow, (int) $key);
+        }
+
+        $rows = [];
+        $used = [];
+
+        foreach ($posted as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $key = trim((string) ($entry['__row'] ?? ''));
+            $original = ($key !== '' && isset($staged[$key]) && ! isset($used[$key])) ? $staged[$key] : null;
+
+            $row = $this->rebuildOcrRow($entry, $original);
+
+            if ($original !== null) {
+                $row['_row'] = (int) $original['_row'];
+            } else {
+                // A row added in the table keeps the number the browser gave
+                // it when that number is free, so its tick still matches.
+                $candidate = (int) $key;
+                $row['_row'] = $candidate > $maxRow ? $candidate : ++$maxRow;
+                $maxRow = max($maxRow, $row['_row']);
+            }
+
+            $used[(string) $row['_row']] = true;
+            $rows[] = $row;
+        }
+
+        if ($rows === []) {
+            return ['error' => 'There is nothing to re-check.'];
+        }
+
+        if (count($rows) > self::MAX_TOTAL_ROWS) {
+            return ['error' => 'The table now holds '.number_format(count($rows)).' rows, above the '.self::MAX_TOTAL_ROWS.' per-import limit. Remove some rows and try again.'];
+        }
+
+        // Same pass a fresh scan gets: within-file and already-registered
+        // duplicates are re-detected from the edited values.
+        $this->markDuplicates($rows);
+
+        return ['rows' => $rows];
+    }
+
+    /**
+     * Rebuild one row: the posted cells win, the staged raw record supplies
+     * everything else, and normalizeRow() decides what is valid.
+     *
+     * @param  array<mixed>  $entry
+     * @param  array<string, mixed>|null>  $original
+     * @return array<string, mixed>
+     */
+    private function rebuildOcrRow(array $entry, ?array $original): array
+    {
+        $raw = is_array($original['_raw'] ?? null)
+            ? $original['_raw']
+            // Sessions staged before the edit table existed only hold the
+            // normalized copy — still better than dropping the fields.
+            : (is_array($original['data'] ?? null) ? $original['data'] : []);
+
+        foreach (self::OCR_EDITABLE_FIELDS as $field) {
+            if (array_key_exists($field, $entry)) {
+                $raw[$field] = is_scalar($entry[$field]) ? (string) $entry[$field] : '';
+            }
+        }
+
+        if (array_key_exists('name', $entry) && is_scalar($entry['name'])) {
+            $name = $this->clean((string) $entry['name']);
+
+            if ($original === null || $name !== $this->clean($original['data']['name'] ?? '')) {
+                // The table edits one composed name, so drop any first/last/middle
+                // split the extractor produced — normalizeRow() would otherwise
+                // prefer the stale parts over what was just typed.
+                $raw['first_name'] = '';
+                $raw['last_name'] = '';
+                $raw['middle_initial'] = '';
+            }
+        }
+
+        ['data' => $data, 'issues' => $issues] = $this->normalizeRow($raw);
+
+        return [
+            'data' => $data,
+            'issues' => $issues,
+            '_raw' => $raw,
+            '_source' => 'ocr',
+            '_row' => $original['_row'] ?? 0,
+        ];
     }
 
     private function normalizeRow(array $raw): array

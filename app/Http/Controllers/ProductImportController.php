@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Services\ActivityLogger;
 use App\Services\ProductImportService;
 use App\Services\ProductRowAiFixer;
+use App\Support\ImportFormats;
 use App\Support\ProductFields;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -60,10 +61,10 @@ class ProductImportController extends Controller
         return view('store.storefront.import', [
             'staged' => $this->staged(),
             'columns' => ProductFields::COLUMNS,
-            'allowedExtensions' => ProductImportService::ALLOWED_EXTENSIONS,
+            'allowedExtensions' => ImportFormats::extensions(),
             'maxRows' => ProductImportService::MAX_ROWS,
             'maxFileKb' => ProductImportService::MAX_FILE_KB,
-            'accept' => ProductImportService::ACCEPT_ATTRIBUTE,
+            'accept' => ImportFormats::accept(),
             'aiAvailable' => $this->aiFixer->isAvailable(),
             'aiMaxRows' => ProductRowAiFixer::MAX_ROWS_PER_CALL,
             'categories' => Category::with('parent')->get()->sortBy('name')->values(),
@@ -82,7 +83,7 @@ class ProductImportController extends Controller
                 'max:' . ProductImportService::MAX_FILE_KB,
             ],
         ], [
-            'file.required' => 'Choose a CSV or Excel file to import.',
+            'file.required' => 'Choose a ' . ImportFormats::orLabel() . ' file to import.',
             'file.file' => 'The upload must be a real file.',
             'file.max' => 'The file must be ' . (ProductImportService::MAX_FILE_KB / 1024) . ' MB or smaller.',
         ]);
@@ -97,7 +98,7 @@ class ProductImportController extends Controller
         if ($extension === null) {
             return back()
                 ->withInput()
-                ->withErrors(['file' => 'Only CSV, XLS and XLSX files can be imported.']);
+                ->withErrors(['file' => 'Only ' . ImportFormats::label() . ' files can be imported.']);
         }
 
         try {
@@ -306,7 +307,7 @@ class ProductImportController extends Controller
     {
         $format = strtolower($format);
 
-        if (! in_array($format, ['csv', 'xlsx'], true)) {
+        if (! ImportFormats::hasTemplate($format)) {
             abort(404);
         }
 
@@ -458,7 +459,11 @@ class ProductImportController extends Controller
             return [];
         }
 
-        return Product::whereIn('sku', array_values(array_unique($candidates)))
+        // withTrashed(): the SKU column is unique across the whole table, so
+        // an archived product still blocks a re-import of the same SKU — the
+        // store owner has to restore it instead of creating a duplicate.
+        return Product::withTrashed()
+            ->whereIn('sku', array_values(array_unique($candidates)))
             ->pluck('sku')
             ->mapWithKeys(fn ($sku) => [Str::lower($sku) => true])
             ->all();

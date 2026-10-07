@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\ImportFormats;
 use App\Support\ProductFields;
 use DateTimeImmutable;
 use Illuminate\Database\QueryException;
@@ -18,7 +19,8 @@ use Throwable;
  * Turns a merchant's CSV / Excel file into validated, editable product rows.
  *
  * Responsibilities:
- *  - read CSV, XLS and XLSX into a header + rows grid
+ *  - read the accepted spreadsheet formats (see config/import-formats.php)
+ *    into a header + rows grid
  *  - map whatever column spellings the merchant used onto our field names
  *  - normalise messy real-world values (currency symbols, thousand separators,
  *    "Out of Stock", "KG", a trailing "- 50 kg" inside the name, "14-14-14")
@@ -29,14 +31,6 @@ use Throwable;
  */
 class ProductImportService
 {
-    /**
-     * Spreadsheet formats a store owner may upload.
-     *
-     * CSV and Excel are what suppliers actually send. The list is deliberately
-     * closed so a renamed .php or a .json payload is rejected before parsing.
-     */
-    public const ALLOWED_EXTENSIONS = ['csv', 'xls', 'xlsx'];
-
     public const MAX_FILE_KB = 5120;
 
     /**
@@ -46,17 +40,15 @@ class ProductImportService
      */
     public const MAX_ROWS = 500;
 
-    public const ACCEPT_ATTRIBUTE = '.csv,.xls,.xlsx';
-
     /**
      * Resolve the real extension from the uploaded filename, rejecting
-     * anything outside the allow-list.
+     * anything outside the allow-list in config/import-formats.php.
      */
     public function extensionOf(string $originalName): ?string
     {
         $extension = strtolower((string) pathinfo($originalName, PATHINFO_EXTENSION));
 
-        return in_array($extension, self::ALLOWED_EXTENSIONS, true) ? $extension : null;
+        return ImportFormats::allows($extension) ? $extension : null;
     }
 
     /**
@@ -698,7 +690,7 @@ class ProductImportService
         try {
             $spreadsheet = $reader->load($path);
         } catch (Throwable $e) {
-            throw new RuntimeException('That workbook could not be read. Make sure it is a real .xlsx or .xls file and not a renamed CSV.');
+            throw new RuntimeException('That workbook could not be read. Make sure it is a real .xlsx file and not a renamed CSV.');
         }
 
         $grid = [];

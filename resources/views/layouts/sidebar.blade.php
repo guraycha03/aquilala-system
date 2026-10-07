@@ -5,10 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>@yield('title') | Aquilala</title>
+  <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@1.47.0/dist/umd/lucide.min.js"></script>
+  {{-- Render-blocking only hurts here: a slow/blocked CDN would hold the whole
+       page blank until it answers. Loading it as print/swap paints the page on
+       the system font first, then swaps in DM Sans when it arrives. --}}
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet"></noscript>
+  {{-- Served from the app (not unpkg) so a CDN outage can never stall the UI.
+       Deferred: the layout re-runs createIcons() on DOMContentLoaded. --}}
+  <script src="{{ asset('js/lucide.min.js') }}" defer></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scrollbar-width: none; -ms-overflow-style: none; }
@@ -29,6 +36,14 @@
       letter-spacing: 0.03em;
     }
     .nav-links li a, .nav-dropdown-btn, .sub-nav-links li a { letter-spacing: 0.02em; }
+
+    /* Sidebar menu: kill the blue tap highlight and the focus box the browser
+       draws when a menu item is tapped. Keyboard users keep a themed outline. */
+    .sidebar a, .sidebar button { -webkit-tap-highlight-color: transparent; }
+    .nav-links li a:focus, .nav-dropdown-btn:focus, .sub-nav-links li a:focus,
+    .sidebar .nav-dropdown-btn:focus { outline: none; }
+    .nav-links li a:focus-visible, .nav-dropdown-btn:focus-visible,
+    .sub-nav-links li a:focus-visible { outline: 2px solid #6aeb2f; outline-offset: -2px; }
 
     /* Global select / dropdown styling — matches the Aquilala white + green theme */
     select {
@@ -663,7 +678,11 @@
   $climate = $globalClimateInfo ?? (class_exists('\App\Helpers\SeasonHelper') ? \App\Helpers\SeasonHelper::getClimateInfo() : ['season' => 'dry', 'label' => 'Dry']); 
   $isWet = ($climate['season'] ?? 'dry') === 'wet';
   
-  $weather = class_exists('\App\Services\WeatherService') ? \App\Services\WeatherService::getCurrentWeather() : ['temperature' => null, 'condition' => 'Weather unavailable', 'is_available' => false];
+  // Cache read only — never the live API. The sidebar is rendered on every
+  // page, so a blocking OpenWeather call here would add seconds to each
+  // navigation whenever the network or API is slow. When the cache is cold the
+  // widget shows a placeholder and fills itself in from /weather/current.
+  $weather = class_exists('\App\Services\WeatherService') ? \App\Services\WeatherService::cachedWeather() : null;
 
   $weatherIconMap = [
     'sun'             => 'sunny',
@@ -673,19 +692,23 @@
     'cloud-lightning' => 'cloud-lightning',
     'cloud-drizzle'   => 'drizzle',
   ];
-  $weatherAvailable = !empty($weather['is_available']) && !empty($weather['icon']);
+  $weatherAvailable = is_array($weather) && !empty($weather['is_available']) && !empty($weather['icon']);
   $weatherIconFile = $weatherAvailable ? ($weatherIconMap[$weather['icon']] ?? 'cloudy') : 'cloudy';
   $seasonIconFile = $isWet ? 'wet-season' : 'dry-season';
 @endphp
 
-<div class="climate-card" id="climate-card" tabindex="0" role="button" aria-expanded="false" aria-label="Weather details">
+<div class="climate-card" id="climate-card" tabindex="0" role="button" aria-expanded="false" aria-label="Weather details"
+     data-weather-loaded="{{ $weatherAvailable ? '1' : '0' }}"
+     data-weather-src="{{ route('weather.current') }}"
+     data-weather-icon-base="{{ asset('images/weather') }}"
+     data-weather-icons="{{ json_encode($weatherIconMap) }}">
   <div class="climate-row">
-    <span class="season-icon {{ $weatherAvailable ? 'weather-available' : 'weather-unavailable' }}" style="width: 34px; height: 34px;">
-      <img src="{{ asset('images/weather/' . $weatherIconFile . '.png') }}" alt="{{ $weatherAvailable ? ($weather['condition'] ?? 'Weather') : 'Weather unavailable' }}">
+    <span class="season-icon {{ $weatherAvailable ? 'weather-available' : 'weather-unavailable' }}" id="climate-weather-icon" style="width: 34px; height: 34px;">
+      <img src="{{ asset('images/weather/' . $weatherIconFile . '.png') }}" id="climate-weather-img" alt="{{ $weatherAvailable ? ($weather['condition'] ?? 'Weather') : 'Weather unavailable' }}">
     </span>
     <div class="climate-mini-info">
-      <div class="climate-mini-temp">{{ $weather['is_available'] && $weather['temperature'] !== null ? $weather['temperature'] . '°C' : '—' }}</div>
-      <div class="climate-mini-sub">{{ $weather['condition'] ?? 'Weather unavailable' }}</div>
+      <div class="climate-mini-temp" id="climate-weather-temp">{{ $weatherAvailable && $weather['temperature'] !== null ? $weather['temperature'] . '°C' : '—' }}</div>
+      <div class="climate-mini-sub" id="climate-weather-condition">{{ $weatherAvailable ? ($weather['condition'] ?? 'Weather unavailable') : 'Loading weather…' }}</div>
     </div>
     <svg class="climate-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
   </div>
@@ -811,12 +834,6 @@
 
         @elseif(auth()->user()->role === 'store_owner')
           @if($subPagesStyle === 'sidebar' && $storeNav)
-            <li>
-              <a href="{{ route('store.dashboard') }}" class="{{ request()->routeIs('store.dashboard') ? 'active' : '' }}">
-                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
-                Store Dashboard
-              </a>
-            </li>
             @foreach($storeNav as $si => $section)
               @php $isStoreOpen = ($activeStoreSection === $si); @endphp
               <li class="nav-dropdown {{ $isStoreOpen ? 'open' : '' }}">
@@ -846,6 +863,12 @@
               </a>
             </li>
           <li>
+            <a href="{{ route('store.dashboard.performance') }}" class="{{ request()->routeIs('store.dashboard.performance') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Top Products
+            </a>
+          </li>
+          <li>
             <a href="{{ route('store.inventory.index') }}" class="{{ request()->routeIs('store.inventory.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
               Inventory Management
@@ -867,6 +890,12 @@
             <a href="{{ route('store.storefront.index') }}" class="{{ request()->routeIs('store.storefront.index') ? 'active' : '' }}">
               <img src="{{ asset('images/store-%23b9cfc0.png') }}" alt="" />
               My Store
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('store.products.trash') }}" class="{{ request()->routeIs('store.products.trash') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+              Archive
             </a>
           </li>
 <li>
@@ -1140,6 +1169,43 @@ updateLiveTime();
         btn.addEventListener('click', function () { toggleNavDropdown(btn); });
       });
     });
+
+    // Climate widget: background fill when the server had no fresh weather to
+    // render. The page never waits on the weather API — this runs after paint
+    // and only when the card was rendered without cached data.
+    (function () {
+      var card = document.getElementById('climate-card');
+      if (!card || card.getAttribute('data-weather-loaded') === '1') return;
+      if (card.getAttribute('data-weather-src') === null || typeof window.fetch !== 'function') return;
+
+      var tempEl = document.getElementById('climate-weather-temp');
+      var condEl = document.getElementById('climate-weather-condition');
+      var iconEl = document.getElementById('climate-weather-icon');
+      var imgEl = document.getElementById('climate-weather-img');
+      var icons = {};
+      try { icons = JSON.parse(card.getAttribute('data-weather-icons') || '{}'); } catch (e) { icons = {}; }
+      var iconBase = (card.getAttribute('data-weather-icon-base') || '').replace(/\/+$/, '');
+
+      function markUnavailable() {
+        if (condEl) condEl.textContent = 'Weather unavailable';
+        card.setAttribute('data-weather-loaded', '1');
+      }
+
+      fetch(card.getAttribute('data-weather-src'), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+        .then(function (res) { if (!res.ok) throw new Error('weather ' + res.status); return res.json(); })
+        .then(function (w) {
+          if (!w || !w.is_available) { markUnavailable(); return; }
+          if (tempEl && w.temperature !== null && w.temperature !== undefined) tempEl.textContent = w.temperature + '°C';
+          if (condEl && w.condition) condEl.textContent = w.condition;
+          if (imgEl && w.icon && icons[w.icon] && iconBase) {
+            imgEl.src = iconBase + '/' + icons[w.icon] + '.png';
+            if (w.condition) imgEl.alt = w.condition;
+          }
+          if (iconEl) { iconEl.classList.remove('weather-unavailable'); iconEl.classList.add('weather-available'); }
+          card.setAttribute('data-weather-loaded', '1');
+        })
+        .catch(markUnavailable);
+    })();
 
     // Climate widget: click/tap toggles open/closed (pins it; hover also expands on desktop)
     function toggleClimate() {

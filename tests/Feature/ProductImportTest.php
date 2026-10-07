@@ -613,6 +613,16 @@ class ProductImportTest extends TestCase
         $this->actingAs($this->store)
             ->post(route('store.products.import.preview'), ['file' => $this->upload('name,sku', 'products.txt')])
             ->assertSessionHasErrors('file');
+
+        // Legacy .xls and developer-only .json are not in
+        // config/import-formats.php, so neither may reach the parser.
+        $this->actingAs($this->store)
+            ->post(route('store.products.import.preview'), ['file' => $this->upload('name,sku', 'products.xls')])
+            ->assertSessionHasErrors('file');
+
+        $this->actingAs($this->store)
+            ->post(route('store.products.import.preview'), ['file' => $this->upload('[]', 'products.json')])
+            ->assertSessionHasErrors('file');
     }
 
     public function test_files_over_the_row_cap_are_rejected(): void

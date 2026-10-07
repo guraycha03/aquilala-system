@@ -40,6 +40,42 @@ class WeatherService
     const CACHE_DURATION = 1800;
 
     /**
+     * Cooldown marker written after a failed API call (seconds).
+     *
+     * Without it a dead/slow network turns into a retry on every single page
+     * render (and on every background widget refresh), which is what made the
+     * whole app feel frozen for minutes at a time. One attempt per minute is
+     * plenty to recover as soon as the API is reachable again.
+     */
+    const FAILURE_COOLDOWN = 60;
+
+    /**
+     * Cache entry holding the failed-call cooldown marker.
+     */
+    const COOLDOWN_KEY = 'weather_bulan_sorsogon_cooldown';
+
+    /**
+     * Read the cached weather snapshot without touching the network.
+     *
+     * Used by the sidebar layout so rendering a page can never block on
+     * OpenWeather. Returns null when there is no usable snapshot (the caller
+     * then renders a placeholder and lets the browser fetch /weather/current).
+     *
+     * Stale-but-real readings are returned too — a temperature from a few
+     * minutes ago is still honest, and `updated_at` carries its age.
+     */
+    public static function cachedWeather(): ?array
+    {
+        $cached = Cache::get(self::CACHE_KEY);
+
+        if (is_array($cached) && !empty($cached['is_available'])) {
+            return $cached;
+        }
+
+        return null;
+    }
+
+    /**
      * Get the current weather for Bulan, Sorsogon with a read-through cache.
      *
      * Cache + fallback strategy (keeps the OpenWeather free tier from being
@@ -47,10 +83,14 @@ class WeatherService
      *
      *   1. If a fresh snapshot exists (< 15 minutes old) it is returned
      *      immediately — no API call is made.
-     *   2. Otherwise the OpenWeather /data/2.5/weather endpoint is called,
+     *   2. If the last API call failed within FAILURE_COOLDOWN seconds, the
+     *      expired snapshot (or an unavailable payload) is returned without
+     *      re-trying, so a dead network costs one attempt per minute instead
+     *      of one per request.
+     *   3. Otherwise the OpenWeather /data/2.5/weather endpoint is called,
      *      the result replaces the cache with a fresh timestamp, and is
      *      returned.
-     *   3. If the live call fails, the expired snapshot is returned as a
+     *   4. If the live call fails, the expired snapshot is returned as a
      *      fallback so the UI keeps working. Only when there is nothing
      *      cached at all is an "unavailable" payload returned.
      *
@@ -68,7 +108,19 @@ class WeatherService
             return $cached;
         }
 
-        // 2) Cache is missing or stale — refresh from the API and repopulate
+        // 2) The last attempt failed recently — reuse the cached snapshot (or
+        //    report unavailable) instead of re-trying on every request.
+        if (Cache::has(self::COOLDOWN_KEY)) {
+            if (is_array($cached)) {
+                $cached['stale'] = true;
+
+                return $cached;
+            }
+
+            return self::unavailable();
+        }
+
+        // 3) Cache is missing or stale — refresh from the API and repopulate
         //    the cache (longer retention than the freshness window so a later
         //    failed refresh can still fall back to this snapshot).
         $fresh = self::fetchCurrentWeather();
@@ -79,8 +131,10 @@ class WeatherService
             return $fresh;
         }
 
-        // 3) Live API call failed — fall back to the expired snapshot so the
-        //    UI does not break.
+        // Live API call failed — arm the cooldown, then fall back to the
+        // expired snapshot so the UI does not break.
+        Cache::put(self::COOLDOWN_KEY, true, self::FAILURE_COOLDOWN);
+
         if (is_array($cached)) {
             $cached['stale'] = true;
 
@@ -414,19 +468,19 @@ class WeatherService
     /**
      * Shared HTTP client for OpenWeatherMap requests.
      *
-     * Verifies TLS against a local CA bundle at storage/certs/cacert.pem when
-     * present (e.g. for Windows/CLI environments without a system bundle).
-     * Falls back to Guzzle's default verification otherwise.
+     * Tight connect/request caps keep the background /weather/current call
+     * short-lived when the network stalls. Verifies TLS against a local CA
+     * bundle at storage/certs/cacert.pem when present (e.g. for Windows/CLI
+     * environments without a system bundle), falling back to Guzzle's default
+     * verification otherwise.
      */
     private static function http(): \Illuminate\Http\Client\PendingRequest
     {
         $cacert = storage_path('certs/cacert.pem');
         if (is_file($cacert)) {
-            // 4s cap: the widget must never block a page render for long.
-            // Cached for 30 minutes afterwards, so this only hits cold caches.
-            return Http::timeout(4)->withOptions(['verify' => $cacert]);
+            return Http::timeout(4)->connectTimeout(2)->withOptions(['verify' => $cacert]);
         }
-        return Http::timeout(4);
+        return Http::timeout(4)->connectTimeout(2);
     }
 
     /**
