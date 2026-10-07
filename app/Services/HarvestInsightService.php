@@ -72,7 +72,7 @@ class HarvestInsightService
      */
     public function context(): array
     {
-        $reports = HarvestReport::with('farmer')->orderBy('harvest_date')->get();
+        $reports = $this->loadReports();
 
         if ($reports->isEmpty()) {
             return ['coverage' => ['reports' => 0, 'farmers' => 0, 'crops' => []]];
@@ -108,18 +108,31 @@ class HarvestInsightService
             'by_crop'            => $this->byCrop($reports),
             'top_farmers_by_reports' => $this->topFarmers($reports, 'reports'),
             'top_farmers_by_yield'   => $this->topFarmers($reports, 'yield'),
+            // Every farmer, worst yield per hectare last. The leaderboards
+            // above only show who did well; this is what answers "who did
+            // badly, and why" once farmer_focus zooms into one of them.
+            'farmers'           => $this->farmers($reports),
             'varieties'          => $this->varieties($reports),
             'weather_events'     => $weather,
             'climatology_reference' => $this->climatology($coverage['seasons']),
         ];
     }
 
+    private function loadReports(): Collection
+    {
+        return HarvestReport::with('farmer')->orderBy('harvest_date')->get();
+    }
+
     /**
      * Answer one question from the chat on the AI Harvest Insights subpage.
      *
      * The digest is rebuilt for every turn so an answer can never be based on
-     * a stale snapshot, and the caller is handed it back unchanged so the
-     * conversation can be replayed on the next question.
+     * a stale snapshot. Alongside it the subject of the question is resolved —
+     * a farmer named here, a farmer named earlier in the conversation, or the
+     * best/worst performer when the question asks for a ranking — and that
+     * farmer's own rows are attached as `farmer_focus`. It is what makes a
+     * bare "why" come back with that farmer's area, cadence, season mix and
+     * planting records instead of a fresh overview.
      *
      * @param  array<int, array{role: string, content: string}>  $history  Prior turns, oldest first.
      * @return array{source: string, reply: string, context: array<string, mixed>}
@@ -136,6 +149,10 @@ class HarvestInsightService
             ];
         }
 
+        if (($focus = $this->focusFarmer($context, $message, $history)) !== null) {
+            $context['farmer_focus'] = $focus;
+        }
+
         $completion = $this->llm->completeJson([
             ['role' => 'system', 'content' => HarvestQaPrompt::system()],
             ['role' => 'user', 'content' => HarvestQaPrompt::user($context, $message, $history)],
@@ -145,9 +162,24 @@ class HarvestInsightService
 
         return [
             'source'  => $reply !== null ? 'ai' : 'fallback',
-            'reply'   => $reply ?? $this->fallback($context),
+            'reply'   => $reply ?? $this->fallbackFor($context),
             'context' => $context,
         ];
+    }
+
+    /**
+     * The fallback that matches the question actually asked: the farmer
+     * dossier when one was resolved, the five-section overview otherwise.
+     *
+     * @param  array<string, mixed>  $context
+     */
+    private function fallbackFor(array $context): string
+    {
+        if (isset($context['farmer_focus'])) {
+            return $this->focusFallback($context['farmer_focus']);
+        }
+
+        return $this->fallback($context);
     }
 
     // ────────────────────────────────────────────────────────────────
@@ -312,6 +344,58 @@ class HarvestInsightService
     }
 
     /**
+     * One row per farmer with harvest reports, ordered by yield per hectare
+     * (best first, no farmer dropped), with their own season and crop splits.
+     *
+     * Yield per hectare is the ranking key on purpose: total yield mostly
+     * measures how much land someone farms, which is exactly the wrong yard
+     * stick for "who performed worst".
+     *
+     * @param  Collection<int, HarvestReport>  $reports
+     * @return array<int, array<string, mixed>>
+     */
+    private function farmers(Collection $reports): array
+    {
+        return $reports
+            ->groupBy('user_id')
+            ->map(function (Collection $rows) {
+                $summary = Arr::except($this->summarize($rows), ['farmers']);
+
+                return $summary + [
+                    'farmer'        => $rows->first()->farmer?->name ?? 'Unknown farmer',
+                    'seasons'       => $this->splitBy($rows, 'season'),
+                    'crops'         => $this->splitBy($rows, 'crop_type'),
+                    'period_labels' => array_column($this->periods($rows), 'label'),
+                    'first_harvest' => $this->dateOf($rows->min('harvest_date')),
+                    'last_harvest'  => $this->dateOf($rows->max('harvest_date')),
+                ];
+            })
+            ->sortByDesc(fn (array $row) => $row['yield_per_ha'] === null ? -1.0 : (float) $row['yield_per_ha'])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Reports grouped by one column, each group as report count + yield/ha,
+     * so a farmer's own wet-vs-dry or rice-vs-corn split can be compared
+     * against the association's.
+     *
+     * @param  Collection<int, HarvestReport>  $rows
+     * @return array<string, array{reports: int, yield_per_ha: float|null}>
+     */
+    private function splitBy(Collection $rows, string $column): array
+    {
+        return $rows
+            ->filter(fn (HarvestReport $row) => trim((string) $row->getAttribute($column)) !== '')
+            ->groupBy($column)
+            ->map(fn (Collection $group) => [
+                'reports'      => $group->count(),
+                'yield_per_ha' => $this->summarize($group)['yield_per_ha'],
+            ])
+            ->toArray();
+    }
+
+    /**
      * Variety detail, reachable only through farmer_crops rows that were linked
      * back to a harvest report. Returns [] when nothing is linked, which the
      * prompt treats as "do not discuss varieties".
@@ -468,13 +552,670 @@ class HarvestInsightService
     }
 
     // ────────────────────────────────────────────────────────────────
+    //  Subject resolution — what makes a bare "why" mean something
+    // ────────────────────────────────────────────────────────────────
+
+    /**
+     * Build `farmer_focus`: one farmer's own rows plus the facts that could
+     * explain their yield, ready to be read as questions rather than verdicts.
+     *
+     * Returns null when nothing in the question or the conversation names or
+     * ranks a farmer — a question about a season or a crop needs no dossier.
+     *
+     * @param  array<string, mixed>  $context
+     * @param  array<int, array{role: string, content: string}>  $history
+     * @return array<string, mixed>|null
+     */
+    private function focusFarmer(array $context, string $message, array $history): ?array
+    {
+        $farmers = $context['farmers'] ?? [];
+
+        if ($farmers === []) {
+            return null;
+        }
+
+        $subject = $this->resolveSubject($farmers, $message, $history);
+
+        if ($subject === null) {
+            return null;
+        }
+
+        $name = $subject['farmer'];
+        $row  = collect($farmers)->firstWhere('farmer', $name);
+
+        if ($row === null) {
+            return null;
+        }
+
+        $reports = $this->loadReports()
+            ->filter(fn (HarvestReport $report) => ($report->farmer?->name ?? 'Unknown farmer') === $name)
+            ->values();
+
+        if ($reports->isEmpty()) {
+            return null;
+        }
+
+        $plantings = FarmerCrop::with('crop')
+            ->where('user_id', $reports->first()->user_id)
+            ->get()
+            ->sortByDesc(fn (FarmerCrop $crop) => $crop->planting_date?->getTimestamp() ?? 0)
+            ->take(self::FOCUS_PLANTINGS)
+            ->values();
+
+        $activity = ActivityLog::whereIn('type', self::FARM_ACTIVITY_TYPES)
+            ->where('user_id', $reports->first()->user_id)
+            ->orderByDesc('created_at')
+            ->limit(self::FOCUS_ACTIVITY)
+            ->get();
+
+        $against = $this->againstAssociation($row, $context);
+
+        return [
+            'farmer'             => $name,
+            'resolved_by'        => $subject['resolved_by'],
+            'summary'            => $row,
+            'vs_association'     => $against,
+            'reports'            => $this->focusReports($reports),
+            'plantings'          => $this->focusPlantings($plantings),
+            'activity_log'       => $this->focusActivity($activity),
+            'candidate_readings' => $this->candidateReadings($row, $against, $plantings, $activity, $context),
+        ];
+    }
+
+    /**
+     * Which farmer is this turn about, walking the question first and the
+     * conversation backwards after it — newest text wins, and within a text
+     * the farmer named first wins.
+     *
+     * A farmer name always beats a ranking word, so an answer that says
+     * "Juan Cruz has the lowest yield" followed by "why" stays on Juan Cruz
+     * instead of re-deriving whoever happens to rank worst today.
+     *
+     * @param  array<int, array<string, mixed>>  $farmers
+     * @param  array<int, array{role: string, content: string}>  $history
+     * @return array{farmer: string, resolved_by: string}|null
+     */
+    private function resolveSubject(array $farmers, string $message, array $history): ?array
+    {
+        $texts = [$message];
+
+        foreach (array_reverse($history) as $turn) {
+            $texts[] = (string) ($turn['content'] ?? '');
+        }
+
+        foreach ($texts as $index => $text) {
+            if (trim($text) === '') {
+                continue;
+            }
+
+            if (($named = $this->firstMention($text, $farmers)) !== null) {
+                return [
+                    'farmer'      => $named,
+                    'resolved_by' => $index === 0
+                        ? 'named in this question'
+                        : 'named earlier in the conversation',
+                ];
+            }
+
+            if (($ranking = $this->resolveRanking($text)) !== null) {
+                $ranked = $this->rankedFarmer($farmers, $ranking[0], $ranking[1]);
+
+                if ($ranked !== null) {
+                    return [
+                        'farmer'      => $ranked,
+                        'resolved_by' => $index === 0
+                            ? 'ranking asked for in this question'
+                            : 'ranking asked for earlier in the conversation',
+                    ];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The farmer whose name appears first in $text, matching the full name
+     * before falling back to any distinctive part of it.
+     *
+     * A name part shared by two farmers ("Farmer" in both "Farmer Ana" and
+     * "Farmer Ben") identifies nobody, so those parts are dropped — otherwise
+     * the word "farmer" in an ordinary question would pick an arbitrary
+     * farmer instead of letting the ranking rules run.
+     *
+     * @param  array<int, array<string, mixed>>  $farmers
+     */
+    private function firstMention(string $text, array $farmers): ?string
+    {
+        $partsByFarmer = [];
+        $partCounts    = [];
+
+        foreach ($farmers as $farmer) {
+            $name = (string) ($farmer['farmer'] ?? '');
+
+            if ($name === '' || $name === 'Unknown farmer') {
+                continue;
+            }
+
+            foreach (preg_split('/\s+/', $name) as $part) {
+                $key = mb_strtolower($part);
+
+                $partsByFarmer[$name][$key] = $part;
+                $partCounts[$key] = ($partCounts[$key] ?? 0) + 1;
+            }
+        }
+
+        $closest   = null;
+        $closestAt = PHP_INT_MAX;
+
+        foreach ($partsByFarmer as $name => $parts) {
+            $at = null;
+
+            if (preg_match('/\b' . preg_quote($name, '/') . '\b/u', $text, $m, PREG_OFFSET_CAPTURE) === 1) {
+                $at = $m[0][1];
+            } else {
+                foreach ($parts as $key => $part) {
+                    // Four characters or more keeps "Ana" from matching
+                    // "analysis"; a shared part matches nobody.
+                    if (mb_strlen($part) < 4 || $partCounts[$key] > 1) {
+                        continue;
+                    }
+
+                    if (preg_match('/\b' . preg_quote($part, '/') . '\b/u', $text, $m, PREG_OFFSET_CAPTURE) === 1) {
+                        if ($at === null || $m[0][1] < $at) {
+                            $at = $m[0][1];
+                        }
+                    }
+                }
+            }
+
+            if ($at !== null && $at < $closestAt) {
+                $closestAt = $at;
+                $closest = $name;
+            }
+        }
+
+        return $closest;
+    }
+
+    /**
+     * Ranking words, most specific first: cadence words pin the metric to
+     * report count, performance words to yield per hectare.
+     *
+     * @return array{0: string, 1: string}|null  Column and direction.
+     */
+    private function resolveRanking(string $text): ?array
+    {
+        $lower = mb_strtolower($text);
+
+        $rules = [
+            ['/\b(fewest|least|fewer|rarely|seldom|infrequent\w*|least often|lowest number)\b/', 'reports', 'asc'],
+            ['/\b(most reports|most often|most frequently|frequent\w*|often|highest number|most active)\b/', 'reports', 'desc'],
+            ['/\b(worst|lowest|bottom|weakest|poorest|smallest yield|lowest yield|least productive|underperform\w*)\b/', 'yield_per_ha', 'asc'],
+            ['/\b(best|highest|top|leading|leader|strongest|highest yield|top yield|most productive|outperform\w*)\b/', 'yield_per_ha', 'desc'],
+        ];
+
+        foreach ($rules as [$pattern, $column, $direction]) {
+            if (preg_match($pattern, $lower) === 1) {
+                return [$column, $direction];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $farmers
+     */
+    private function rankedFarmer(array $farmers, string $column, string $direction): ?string
+    {
+        $sorted = collect($farmers)->sortBy(
+            fn (array $row) => (float) ($row[$column] ?? -1),
+            SORT_NUMERIC,
+            $direction === 'desc'
+        );
+
+        return $sorted->first()['farmer'] ?? null;
+    }
+
+    /**
+     * The farmer against the association, expressed only as numbers the
+     * digest already holds — nothing here is an opinion.
+     *
+     * @param  array<string, mixed>  $row
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    private function againstAssociation(array $row, array $context): array
+    {
+        $totals   = $context['totals'] ?? [];
+        $coverage = $context['coverage'] ?? [];
+        $farmers  = $context['farmers'] ?? [];
+
+        $reportsPerFarmer = ($coverage['farmers'] ?? 0) > 0
+            ? round($coverage['reports'] / $coverage['farmers'], 2)
+            : null;
+
+        $areaPerReport = $row['reports'] > 0
+            ? round($row['area_ha'] / $row['reports'], 2)
+            : null;
+
+        $associationAreaPerReport = ($coverage['reports'] ?? 0) > 0
+            ? round(($totals['area_ha'] ?? 0) / $coverage['reports'], 2)
+            : null;
+
+        $yieldRank = collect($farmers)->search(fn (array $other) => $other['farmer'] === $row['farmer']);
+        $reportOrder = collect($farmers)->sortByDesc('reports')->values();
+        $reportRank = $reportOrder->search(fn (array $other) => $other['farmer'] === $row['farmer']);
+
+        return [
+            'yield_per_ha' => [
+                'farmer'        => $row['yield_per_ha'],
+                'association'   => $totals['yield_per_ha'] ?? null,
+                'pct_vs'        => $this->pctChange($totals['yield_per_ha'] ?? null, $row['yield_per_ha']),
+                'rank_of'       => $yieldRank === false ? null : $yieldRank + 1,
+                'farmers_total' => count($farmers),
+            ],
+            'total_yield_tons' => [
+                'farmer'      => $row['yield_tons'],
+                'association' => $totals['yield_tons'] ?? null,
+            ],
+            'area_per_report_ha' => [
+                'farmer'      => $areaPerReport,
+                'association' => $associationAreaPerReport,
+                'pct_vs'      => $this->pctChange($associationAreaPerReport, $areaPerReport),
+            ],
+            'reports' => [
+                'farmer'            => $row['reports'],
+                'association_avg'   => $reportsPerFarmer,
+                'pct_vs'            => $this->pctChange($reportsPerFarmer, $row['reports']),
+                'rank_of'           => $reportRank === false ? null : $reportRank + 1,
+            ],
+            'expenses_per_ton' => [
+                'farmer'      => $row['expenses_per_ton'],
+                'association' => $totals['expenses_per_ton'] ?? null,
+                'pct_vs'      => $this->pctChange($totals['expenses_per_ton'] ?? null, $row['expenses_per_ton']),
+            ],
+        ];
+    }
+
+    /**
+     * @param  Collection<int, HarvestReport>  $reports
+     * @return array<int, array<string, mixed>>
+     */
+    private function focusReports(Collection $reports): array
+    {
+        return $reports
+            ->reverse()
+            ->take(self::FOCUS_REPORTS)
+            ->map(function (HarvestReport $report) {
+                $area  = (float) $report->land_area;
+                $yield = (float) $report->actual_yield_metric_tons;
+
+                return [
+                    'harvest_date'  => $this->dateOf($report->harvest_date),
+                    'crop'          => $report->crop_type,
+                    'season'        => $report->season,
+                    'area_ha'       => round($area, 2),
+                    'yield_tons'    => round($yield, 2),
+                    'yield_per_ha'  => $area > 0 ? round($yield / $area, 3) : null,
+                    'expenses_php'  => round((float) $report->actual_total_expenses, 2),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int, FarmerCrop>  $plantings
+     * @return array<int, array<string, mixed>>
+     */
+    private function focusPlantings(Collection $plantings): array
+    {
+        return $plantings
+            ->map(function (FarmerCrop $crop) {
+                $note = $crop->variety_key
+                    ? ($this->crops->varietyByKey($crop->crop?->name, $crop->variety_key)['note'] ?? null)
+                    : null;
+
+                return [
+                    'crop'              => $crop->crop?->name,
+                    'variety'           => $crop->variety ?: null,
+                    'variety_note'      => $note,
+                    'planting_date'     => $crop->planting_date?->format('M d, Y'),
+                    'season'            => $crop->season,
+                    'growth_stage'      => $crop->growth_stage,
+                    'growth_stage_label' => $crop->growth_stage_label,
+                    'best_season'       => $this->crops->infoFor($crop->crop?->name)['best_season'] ?? null,
+                    'land_area_ha'      => $crop->land_area !== null ? round((float) $crop->land_area, 2) : null,
+                    'actual_yield_tons' => $crop->actual_yield !== null ? round((float) $crop->actual_yield, 2) : null,
+                    'harvest_date'      => $crop->actual_harvest_date?->format('M d, Y'),
+                    'linked_report'     => $crop->harvest_report_id !== null,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  Collection<int, ActivityLog>  $activity
+     * @return array<int, array<string, mixed>>
+     */
+    private function focusActivity(Collection $activity): array
+    {
+        return $activity
+            ->map(fn (ActivityLog $log) => [
+                'date'        => $log->created_at->format('M d, Y'),
+                'type'        => $log->type,
+                'description' => $log->description,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Facts about this farmer, written by PHP so the model can only choose
+     * between readings the records support — never invent one of its own.
+     *
+     * Every line is a comparison or a count. The model is told to label each
+     * it repeats as "worth verifying", because none of them is a cause.
+     *
+     * @param  array<string, mixed>  $row
+     * @param  array<string, mixed>  $against
+     * @param  Collection<int, FarmerCrop>  $plantings
+     * @param  Collection<int, ActivityLog>  $activity
+     * @param  array<string, mixed>  $context
+     * @return array<int, string>
+     */
+    private function candidateReadings(array $row, array $against, Collection $plantings, Collection $activity, array $context): array
+    {
+        $readings = [];
+
+        $readings[] = sprintf(
+            'Yield per hectare **%s MT/ha** against the association\'s **%s MT/ha** — **%s**, ranked **%d of %d** farmers.',
+            $row['yield_per_ha'] !== null ? number_format((float) $row['yield_per_ha'], 3) : '—',
+            $against['yield_per_ha']['association'] !== null ? number_format((float) $against['yield_per_ha']['association'], 3) : '—',
+            $this->pctLabel($against['yield_per_ha']['pct_vs']),
+            $against['yield_per_ha']['rank_of'] ?? 0,
+            $against['yield_per_ha']['farmers_total']
+        );
+
+        $readings[] = sprintf(
+            'Harvested **%s ha** over **%d** reports — **%s ha** per report against the association average of **%s ha** (**%s**).',
+            number_format((float) $row['area_ha'], 2),
+            $row['reports'],
+            $against['area_per_report_ha']['farmer'] !== null ? number_format((float) $against['area_per_report_ha']['farmer'], 2) : '—',
+            $against['area_per_report_ha']['association'] !== null ? number_format((float) $against['area_per_report_ha']['association'], 2) : '—',
+            $this->pctLabel($against['area_per_report_ha']['pct_vs'])
+        );
+
+        $readings[] = sprintf(
+            '**%d** harvest reports filed against an association average of **%s** per farmer (**%s**, ranked **%d of %d** by report count).',
+            $row['reports'],
+            $against['reports']['association_avg'] ?? 0,
+            $this->pctLabel($against['reports']['pct_vs']),
+            $against['reports']['rank_of'] ?? 0,
+            count($context['farmers'] ?? [])
+        );
+
+        // Season split — is the shortfall concentrated in one season?
+        foreach ($row['seasons'] as $season => $split) {
+            $association = $context['by_season'][$season] ?? null;
+
+            $readings[] = sprintf(
+                '%s: **%d** reports at **%s MT/ha**, against the association\'s **%s** at **%s MT/ha**.',
+                ucfirst($season) . ' season',
+                $split['reports'],
+                $split['yield_per_ha'] !== null ? number_format((float) $split['yield_per_ha'], 3) : '—',
+                $association['label'] ?? $season,
+                ($association['yield_per_ha'] ?? null) !== null ? number_format((float) $association['yield_per_ha'], 3) : '—'
+            );
+        }
+
+        // Crop split — is one crop dragging the average down?
+        foreach ($row['crops'] as $crop => $split) {
+            $association = collect($context['by_crop'] ?? [])->firstWhere('crop', $crop);
+
+            $readings[] = sprintf(
+                '%s: **%d** reports at **%s MT/ha**, against the association\'s **%s MT/ha** for this crop.',
+                $crop,
+                $split['reports'],
+                $split['yield_per_ha'] !== null ? number_format((float) $split['yield_per_ha'], 3) : '—',
+                ($association['yield_per_ha'] ?? null) !== null ? number_format((float) $association['yield_per_ha'], 3) : '—'
+            );
+        }
+
+        foreach ($this->plantingReadings($plantings) as $reading) {
+            $readings[] = $reading;
+        }
+
+        foreach ($this->activityReadings($plantings, $activity, $row) as $reading) {
+            $readings[] = $reading;
+        }
+
+        return $readings;
+    }
+
+    /**
+     * What the crop batches say: how often he plants, whether anything is
+     * still growing or failed, and whether a batch went in against the crop's
+     * own documented season.
+     *
+     * @param  Collection<int, FarmerCrop>  $plantings
+     * @return array<int, string>
+     */
+    private function plantingReadings(Collection $plantings): array
+    {
+        if ($plantings->isEmpty()) {
+            return ['No crop batches are on record for this farmer, so planting frequency, growth stage and variety cannot be assessed from this data.'];
+        }
+
+        $readings = [sprintf(
+            '**%d** crop batches on record: %s.',
+            $plantings->count(),
+            $plantings->countBy('growth_stage')
+                ->map(fn (int $count, string $stage) => '**' . $count . '** ' . ($stage !== '' ? $stage : 'unstaged'))
+                ->values()
+                ->implode(', ')
+        )];
+
+        $failed = $plantings->where('growth_stage', 'failed')->count();
+        if ($failed > 0) {
+            $readings[] = sprintf('**%d** of those batches are recorded as **failed**, so they produced no harvest.', $failed);
+        }
+
+        $growing = $plantings
+            ->reject(fn (FarmerCrop $crop) => in_array($crop->growth_stage, ['harvested', 'failed'], true))
+            ->count();
+        if ($growing > 0) {
+            $readings[] = sprintf(
+                '**%d** batches are still growing and have not reached harvest, so they contribute nothing to the yield recorded so far.',
+                $growing
+            );
+        }
+
+        $mismatched = $plantings->filter(function (FarmerCrop $crop) {
+            $best = $this->crops->infoFor($crop->crop?->name)['best_season'] ?? null;
+
+            if ($best === null || $best === '' || in_array($best, ['Wet & Dry', 'Year-round'], true)) {
+                return false;
+            }
+
+            $suitsWet = mb_strtolower($best) === 'wet';
+
+            return $suitsWet
+                ? $crop->season !== 'wet'
+                : $crop->season !== 'dry';
+        });
+
+        if ($mismatched->isNotEmpty()) {
+            $readings[] = sprintf(
+                '**%d** batch%s planted in a season the crop directory does **not** list as its best season: %s. Worth checking what was planted when.',
+                $mismatched->count(),
+                $mismatched->count() === 1 ? '' : 'es',
+                $mismatched
+                    ->take(4)
+                    ->map(fn (FarmerCrop $crop) => sprintf(
+                        '**%s** in the **%s** season (directory best season: **%s**)',
+                        $crop->crop?->name ?? 'Unknown crop',
+                        $crop->season,
+                        $this->crops->infoFor($crop->crop?->name)['best_season'] ?? '—'
+                    ))
+                    ->implode('; ')
+            );
+        }
+
+        $varietyCounts = $plantings
+            ->filter(fn (FarmerCrop $crop) => trim((string) $crop->variety) !== '')
+            ->groupBy(fn (FarmerCrop $crop) => $crop->variety);
+
+        if ($varietyCounts->isEmpty()) {
+            $readings[] = 'No variety is recorded on any of these batches, so variety cannot be considered as a factor.';
+        } else {
+            foreach ($varietyCounts->take(3) as $variety => $group) {
+                $note = $group->first()->variety_key
+                    ? ($this->crops->varietyByKey($group->first()->crop?->name, $group->first()->variety_key)['note'] ?? null)
+                    : null;
+
+                $readings[] = sprintf(
+                    'Variety **%s** on **%d** batch%s%s.',
+                    $variety,
+                    $group->count(),
+                    $group->count() === 1 ? '' : 'es',
+                    $note !== null ? ' — crop library note: **' . $note . '**' : ''
+                );
+            }
+        }
+
+        return $readings;
+    }
+
+    /**
+     * What the activity log says about cadence — how often planting and
+     * harvesting actually happened, and whether anything is missing.
+     *
+     * @param  Collection<int, FarmerCrop>  $plantings
+     * @param  Collection<int, ActivityLog>  $activity
+     * @param  array<string, mixed>  $row
+     * @return array<int, string>
+     */
+    private function activityReadings(Collection $plantings, Collection $activity, array $row): array
+    {
+        if ($activity->isEmpty()) {
+            return ['No planting, growth-stage, land or harvest activity is logged for this farmer, so planting cadence cannot be assessed from this data.'];
+        }
+
+        $readings = [sprintf(
+            '**%d** planting, growth-stage, land or harvest entries in the activity log, newest **%s**, oldest **%s**.',
+            $activity->count(),
+            $activity->first()->created_at->format('M d, Y'),
+            $activity->last()->created_at->format('M d, Y')
+        )];
+
+        $planted = $activity
+            ->where('type', ActivityLog::TYPE_CROP_PLANTED)
+            ->sortBy('created_at')
+            ->values();
+
+        if ($planted->isNotEmpty()) {
+            $first = $planted->first()->created_at;
+            $last  = $planted->last()->created_at;
+            $years = max(1, round($first->diffInDays($last) / 365, 1));
+
+            $readings[] = sprintf(
+                '**%d** `crop.planted` entries between **%s** and **%s** — roughly **%s** planting events a year.',
+                $planted->count(),
+                $first->format('M d, Y'),
+                $last->format('M d, Y'),
+                round($planted->count() / $years, 1)
+            );
+
+            $gaps = $planted
+                ->slice(1)
+                ->map(fn (ActivityLog $log, int $index) => (int) $planted[$index]->created_at->diffInDays($log->created_at));
+
+            if ($gaps->isNotEmpty()) {
+                $readings[] = sprintf(
+                    'Longest gap between two recorded plantings: **%d days**.',
+                    (int) $gaps->max()
+                );
+            }
+        }
+
+        $harvestLogs = $activity->where('type', ActivityLog::TYPE_HARVEST_CREATED)->count();
+
+        if ($harvestLogs !== $row['reports']) {
+            $readings[] = sprintf(
+                'The activity log holds **%d** `harvest.created` entries while the harvest report table holds **%d** reports for this farmer — worth reconciling.',
+                $harvestLogs,
+                $row['reports']
+            );
+        }
+
+        $linked = $plantings->whereNotNull('harvest_report_id')->count();
+        if ($plantings->isNotEmpty() && $linked < $plantings->count()) {
+            $readings[] = sprintf(
+                'Only **%d** of **%d** crop batches are linked to a harvest report, so some plantings never reached a recorded harvest.',
+                $linked,
+                $plantings->count()
+            );
+        }
+
+        return $readings;
+    }
+
+    /**
+     * Offline answer for a question about one farmer: the comparison, then
+     * the readings, each marked as something to verify rather than a cause.
+     *
+     * @param  array<string, mixed>  $focus
+     */
+    private function focusFallback(array $focus): string
+    {
+        $against = $focus['vs_association'] ?? [];
+        $summary = $focus['summary'] ?? [];
+
+        $lines = [sprintf(
+            '**%s** — **%d** reports, **%s ha**, **%s MT** total, **%s MT/ha**, against the association\'s **%s MT/ha** (**%s**).',
+            $focus['farmer'],
+            $summary['reports'] ?? 0,
+            number_format((float) ($summary['area_ha'] ?? 0), 2),
+            number_format((float) ($summary['yield_tons'] ?? 0), 2),
+            isset($summary['yield_per_ha']) && $summary['yield_per_ha'] !== null
+                ? number_format((float) $summary['yield_per_ha'], 3)
+                : '—',
+            ($against['yield_per_ha']['association'] ?? null) !== null
+                ? number_format((float) $against['yield_per_ha']['association'], 3)
+                : '—',
+            $this->pctLabel($against['yield_per_ha']['pct_vs'] ?? null)
+        )];
+
+        $lines[] = '';
+        $lines[] = 'Worth verifying from the records:';
+
+        foreach (($focus['candidate_readings'] ?? []) as $reading) {
+            $lines[] = '- ' . $reading;
+        }
+
+        $lines[] = '';
+        $lines[] = 'The model is offline, so these are the recorded facts rather than a reading of them. Nothing above is a stated cause — each one needs checking against the field before it explains anything.';
+
+        return implode("\n", $lines);
+    }
+
+    // ────────────────────────────────────────────────────────────────
     //  Model round-trip
     // ────────────────────────────────────────────────────────────────
 
     /**
-     * Pull {"insight": "..."} out of a completion, tolerating the model
-     * wrapping its answer in prose or code fences. Returns null when nothing
-     * usable came back, so the caller can fall through to fallback().
+     * Pull the answer out of a completion.
+     *
+     * The model is asked for {"reply": "…"} and usually obeys. When it wraps
+     * that in prose or code fences the envelope is still found. When it drops
+     * the envelope entirely and answers in plain sentences, those sentences
+     * are kept — a real, on-topic answer beats the generic report — and only
+     * an empty or envelope-shaped-but-empty response falls through to null so
+     * the caller can use fallback().
      */
     private function decode(string $raw, string $field = 'insight'): ?string
     {
@@ -484,21 +1225,45 @@ class HarvestInsightService
             return null;
         }
 
+        $raw = preg_replace('/```(?:json|markdown)?/i', '', $raw);
+        $raw = trim((string) $raw);
+
+        $envelope = null;
+
         if (preg_match('/\{.*\}/s', $raw, $match) === 1) {
-            $raw = $match[0];
+            $decoded = json_decode($match[0], true);
+
+            if (is_array($decoded)) {
+                $envelope = $decoded;
+            }
         }
 
-        $decoded = json_decode($raw, true);
-        $text    = is_array($decoded) ? ($decoded[$field] ?? null) : null;
+        if ($envelope !== null) {
+            $text = $envelope[$field] ?? null;
 
-        if (! is_string($text) || trim($text) === '') {
-            return null;
+            // The model named the key something else — take its single answer
+            // rather than throwing away a good reply over a label.
+            if (! is_string($text) || trim($text) === '') {
+                foreach ($envelope as $key => $value) {
+                    if (is_string($value) && trim($value) !== '' && ! in_array($key, ['error', 'errors', 'refusal'], true)) {
+                        $text = $value;
+                        break;
+                    }
+                }
+            }
+
+            if (! is_string($text) || trim($text) === '') {
+                return null;
+            }
+        } else {
+            // Plain prose: no envelope to decode, so the whole reply is the
+            // answer — unless it is only a stray brace fragment.
+            $text = $raw;
         }
 
         // Belt and braces: the prompt forbids these, but a stray one would
         // render as literal junk on an admin page.
         $text = preg_replace('/\[[ \t\x{00A0}]*SUGGEST:[^\]]*\]/iu', '', $text);
-        $text = preg_replace('/```(?:markdown)?/i', '', $text);
 
         return trim((string) $text);
     }
@@ -758,5 +1523,18 @@ class HarvestInsightService
         }
 
         return Carbon::parse($date)->format('M d, Y');
+    }
+
+    /**
+     * "+12.4%" / "-38.2%" / "—" — a percentage change has no direction worth
+     * showing when the baseline was missing or zero.
+     */
+    private function pctLabel(?float $pct): string
+    {
+        if ($pct === null) {
+            return '—';
+        }
+
+        return ($pct >= 0 ? '+' : '') . $pct . '%';
     }
 }

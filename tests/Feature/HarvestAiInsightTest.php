@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\AI\Prompts\HarvestQaPrompt;
+use App\Models\ActivityLog;
 use App\Models\Crop;
 use App\Models\FarmerCrop;
 use App\Models\HarvestReport;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use App\Services\HarvestInsightService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
@@ -73,6 +75,18 @@ class HarvestAiInsightTest extends TestCase
 
         $this->assertSame(5, $context['coverage']['reports']);
         $this->assertSame(2, $context['coverage']['farmers']);
+    }
+
+    public function test_the_chat_offers_a_data_driven_why_about_the_weakest_performer(): void
+    {
+        $this->seedHarvests();
+
+        // The chip is built from the digest, so it always names a real
+        // farmer with a real figure and teaches the follow-up by example.
+        $this->actingAs($this->admin)
+            ->get(route('admin.harvests.ai'))
+            ->assertOk()
+            ->assertSee('Why does Farmer Ana sit at 3.400 MT/ha?', false);
     }
 
     public function test_the_harvest_page_links_to_the_ai_subpage(): void
@@ -316,14 +330,14 @@ class HarvestAiInsightTest extends TestCase
         });
     }
 
-    public function test_an_unusable_model_reply_still_yields_the_php_summary(): void
+    public function test_an_empty_model_reply_still_yields_the_php_summary(): void
     {
         $this->seedHarvests();
 
         Config::set('services.groq.key', 'test-key');
         Http::fake([
             'api.groq.com/*' => Http::response([
-                'choices' => [['message' => ['content' => 'sorry, here are some numbers I made up']]],
+                'choices' => [['message' => ['content' => '{"reply": "   "}']]],
             ]),
         ]);
 
@@ -333,6 +347,43 @@ class HarvestAiInsightTest extends TestCase
         $response->assertOk()->assertJson(['source' => 'fallback']);
         $this->assertStringContainsString('### Performance Snapshot', $response->json('reply'));
         $this->assertStringContainsString('24.50', $response->json('reply'));
+    }
+
+    public function test_a_reply_that_drops_the_json_envelope_is_still_an_answer(): void
+    {
+        $this->seedHarvests();
+
+        Config::set('services.groq.key', 'test-key');
+        Http::fake([
+            'api.groq.com/*' => Http::response([
+                'choices' => [['message' => ['content' => 'The **5** reports came from **2** farmers, **24.50 MT** in total.']]],
+            ]),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'Summarise everything.']);
+
+        // A real, on-topic sentence beats being handed the generic report.
+        $response->assertOk()->assertJson(['source' => 'ai']);
+        $this->assertStringContainsString('**24.50 MT**', $response->json('reply'));
+        $this->assertStringNotContainsString('### Performance Snapshot', $response->json('reply'));
+    }
+
+    public function test_an_error_shaped_envelope_never_reaches_the_administrator(): void
+    {
+        $this->seedHarvests();
+
+        Config::set('services.groq.key', 'test-key');
+        Http::fake([
+            'api.groq.com/*' => Http::response([
+                'choices' => [['message' => ['content' => '{"error": "rate limited"}']]],
+            ]),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'Summarise everything.'])
+            ->assertOk()
+            ->assertJson(['source' => 'fallback']);
     }
 
     public function test_a_provider_failure_does_not_become_an_error_page(): void
@@ -358,6 +409,100 @@ class HarvestAiInsightTest extends TestCase
             ->assertJsonValidationErrors(['message']);
 
         Http::assertNothingSent();
+    }
+
+    // ── Subject resolution: what a follow-up is about ──────────────
+
+    public function test_a_question_about_a_farmer_carries_their_own_dossier(): void
+    {
+        $this->seedHarvests();
+        $this->plantFor($this->farmerA);
+
+        $context = app(HarvestInsightService::class)
+            ->ask('Why does Farmer Ana yield so little per hectare?')['context'];
+
+        $focus = $context['farmer_focus'];
+
+        $this->assertSame('Farmer Ana', $focus['farmer']);
+        $this->assertSame('named in this question', $focus['resolved_by']);
+        $this->assertSame(3, $focus['summary']['reports']);
+
+        // Her own rows, not the association's.
+        $this->assertCount(3, $focus['reports']);
+        $this->assertSame('Rice', $focus['reports'][2]['crop']);
+        $this->assertNotEmpty($focus['plantings']);
+        $this->assertNotEmpty($focus['activity_log']);
+
+        // Every reading is a comparison or a count the records support.
+        $readings = implode("\n", $focus['candidate_readings']);
+        $this->assertStringContainsString('MT/ha', $readings);
+        $this->assertStringContainsString('ha** per report', $readings);
+        $this->assertStringContainsString('harvest reports filed', $readings);
+        $this->assertStringNotContainsString('caused by', $readings);
+    }
+
+    public function test_a_bare_why_keeps_the_farmer_the_last_turn_was_about(): void
+    {
+        $this->seedHarvests();
+
+        $context = app(HarvestInsightService::class)->ask('why', [
+            ['role' => 'user', 'content' => 'Which farmer performs the worst in aquilala?'],
+            ['role' => 'assistant', 'content' => 'Farmer Ana has the lowest yield per hectare, at 3.400 MT/ha.'],
+        ])['context'];
+
+        $this->assertSame('Farmer Ana', $context['farmer_focus']['farmer']);
+        $this->assertSame('named earlier in the conversation', $context['farmer_focus']['resolved_by']);
+    }
+
+    public function test_a_ranking_question_focusses_the_worst_performer(): void
+    {
+        $this->seedHarvests();
+
+        $context = app(HarvestInsightService::class)
+            ->ask('which farmer performs the worst in aquilala')['context'];
+
+        // Ana files 3 reports over 5.0 ha = 3.4 MT/ha; Ben 2 over 2.0 = 3.75.
+        $this->assertSame('Farmer Ana', $context['farmer_focus']['farmer']);
+        $this->assertSame('ranking asked for in this question', $context['farmer_focus']['resolved_by']);
+
+        $best = app(HarvestInsightService::class)
+            ->ask('which farmer performs best here')['context'];
+
+        $this->assertSame('Farmer Ben', $best['farmer_focus']['farmer']);
+    }
+
+    public function test_a_question_with_no_subject_carries_no_farmer_focus(): void
+    {
+        $this->seedHarvests();
+
+        $context = app(HarvestInsightService::class)
+            ->ask('How did the latest season compare with the one before it?')['context'];
+
+        $this->assertArrayNotHasKey('farmer_focus', $context);
+    }
+
+    public function test_the_offline_answer_for_a_farmer_is_their_own_numbers(): void
+    {
+        $this->seedHarvests();
+        $this->plantFor($this->farmerA);
+
+        $reply = app(HarvestInsightService::class)
+            ->ask('Why is Farmer Ana behind?')['reply'];
+
+        $this->assertStringContainsString('Farmer Ana', $reply);
+        $this->assertStringContainsString('Worth verifying from the records', $reply);
+        $this->assertStringNotContainsString('### Performance Snapshot', $reply);
+        $this->assertStringContainsString('3.400', $reply);
+    }
+
+    public function test_the_prompt_forbids_blaming_a_person_for_their_yield(): void
+    {
+        $system = HarvestQaPrompt::system();
+
+        $this->assertStringContainsString('Never judge a person\'s character', $system);
+        $this->assertStringContainsString('candidate_readings', $system);
+        $this->assertStringContainsString('Never write "because"', $system);
+        $this->assertStringContainsString('resolved_by', $system);
     }
 
     // ── Guard rails in the prompt itself ───────────────────────────
@@ -392,6 +537,63 @@ class HarvestAiInsightTest extends TestCase
     }
 
     // ── Helpers ────────────────────────────────────────────────────
+
+    /**
+     * Give one farmer the planting side of the picture: crop batches (one
+     * linked to a report, one planted against the crop's documented season)
+     * plus the activity-log entries the dossier reads.
+     */
+    private function plantFor(User $farmer): void
+    {
+        $rice = Crop::create([
+            'name' => 'Rice',
+            'category' => 'Cereal',
+            'description' => 'Test crop row',
+        ]);
+
+        $cane = Crop::create([
+            'name' => 'Sugarcane',
+            'category' => 'Cash Crop',
+            'description' => 'Test crop row',
+        ]);
+
+        FarmerCrop::create([
+            'user_id' => $farmer->id,
+            'crop_id' => $rice->id,
+            'variety' => 'NSIC Rc 194 (Submarino 1)',
+            'variety_key' => 'nsic-rc-194',
+            'batch_name' => 'RICE-FIELD1-010125',
+            'land_area' => 2.0,
+            'planting_date' => '2025-01-01',
+            'season' => 'dry',
+            'growth_stage' => 'harvested',
+            'actual_yield' => 8.0,
+            'harvest_report_id' => HarvestReport::where('user_id', $farmer->id)->first()->id,
+        ]);
+
+        // Sugarcane is documented as a dry-season crop; this batch went in
+        // during the wet season, which is the mismatch the dossier reports.
+        FarmerCrop::create([
+            'user_id' => $farmer->id,
+            'crop_id' => $cane->id,
+            'batch_name' => 'SUGARCANE-FIELD1-150726',
+            'land_area' => 1.5,
+            'planting_date' => '2026-07-15',
+            'season' => 'wet',
+            'growth_stage' => 'vegetative',
+            'harvest_report_id' => null,
+        ]);
+
+        foreach ([
+            [ActivityLog::TYPE_CROP_PLANTED, 'Planted Rice (RICE-FIELD1-010125) - 2.00 ha'],
+            [ActivityLog::TYPE_LAND_UPDATED, 'Land area updated for Rice'],
+            [ActivityLog::TYPE_CROP_HARVESTED, 'Harvested Rice (RICE-FIELD1-010125)'],
+            [ActivityLog::TYPE_HARVEST_CREATED, 'Recorded harvest of Rice (dry)'],
+            [ActivityLog::TYPE_CROP_PLANTED, 'Planted Sugarcane (SUGARCANE-FIELD1-150726) - 1.50 ha'],
+        ] as [$type, $description]) {
+            ActivityLogger::log($type, $description, null, [], $farmer);
+        }
+    }
 
     private function makeUser(string $name, string $firstName, string $role): User
     {

@@ -339,16 +339,16 @@ class WeatherLogTest extends TestCase
         Http::fake([
             'api.groq.com/*' => Http::response([
                 'choices' => [['message' => ['content' => json_encode([
-                    'insight' => "### What The Data Suggests\n\n- **Typhoon Kristine** was logged **Aug 10 – 14, 2026**.",
+                    'reply' => '**Typhoon Kristine** was logged **Aug 10 – 14, 2026** and falls inside **2026 Wet Season**.',
                 ])]]],
             ]),
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->postJson(route('admin.harvests.ai.generate'));
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'What weather was logged last year?']);
 
         $response->assertOk()->assertJson(['source' => 'ai']);
-        $this->assertStringContainsString('Typhoon Kristine', $response->json('insight'));
+        $this->assertStringContainsString('Typhoon Kristine', $response->json('reply'));
 
         Http::assertSent(function ($request) {
             $messages = $request->data()['messages'] ?? [];

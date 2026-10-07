@@ -17,6 +17,12 @@
   $totals   = $context['totals'] ?? [];
   $hasData  = (int) ($coverage['reports'] ?? 0) > 0;
   $crops    = $coverage['crops'] ?? [];
+  // `farmers` is sorted best-yield-per-hectare first, so the last row is the
+  // weakest performer — the question every admin wants to ask second.
+  $worst    = collect($context['farmers'] ?? [])->last();
+  $worstYield = $worst && isset($worst['yield_per_ha']) && $worst['yield_per_ha'] !== null
+      ? number_format((float) $worst['yield_per_ha'], 3)
+      : null;
 @endphp
 
 <style>
@@ -207,7 +213,8 @@
             <div class="ai-msg-meta"><span class="ai-msg-name">Aquilala harvest assistant</span></div>
             <div class="ai-msg-bubble">
               <p>Hi — I read your <strong>{{ number_format((int) $coverage['reports']) }} harvest reports</strong> from {{ ($coverage['first_harvest'] ?? '—') }} to {{ ($coverage['last_harvest'] ?? '—') }} and nothing else.</p>
-              <p>Ask me about seasons, crops, farmers, yield, costs, or the weather events you logged. Every figure I give you comes from those records.</p>
+              <p>Ask me about seasons, crops, farmers, yield, costs, planting records, or the weather events you logged. Every figure I give you comes from those records.</p>
+              <p>It is a conversation — if I name a farmer, just reply <strong>why</strong> and I will walk through their own land, planting cadence, seasons and crop batches with you.</p>
             </div>
           </div>
         </div>
@@ -217,6 +224,9 @@
           <div class="ai-msg-body">
             <div class="ai-msg-meta"><span class="ai-msg-name">Try one of these</span></div>
             <div class="ai-chip-row">
+              @if($worst !== null && $worstYield !== null)
+                <button type="button" class="ai-chip" onclick="askChip(this)">Why does {{ $worst['farmer'] }} sit at {{ $worstYield }} MT/ha?</button>
+              @endif
               <button type="button" class="ai-chip" onclick="askChip(this)">How did the latest season compare with the one before it?</button>
               <button type="button" class="ai-chip" onclick="askChip(this)">Which farmers should I recognise?</button>
               <button type="button" class="ai-chip" onclick="askChip(this)">Is the wet season out-yielding the dry season?</button>
