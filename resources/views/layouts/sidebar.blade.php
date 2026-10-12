@@ -31,8 +31,7 @@
 
     /* Global readability: readable letter-spacing across headings, labels and controls */
     h1, h2, h3, h4, h5, h6, button, select, th,
-    label, .form-label, .menu-group-title, .user-role,
-    .aqua-tab, .aqua-tabs {
+    label, .form-label, .menu-group-title, .user-role {
       letter-spacing: 0.03em;
     }
     .nav-links li a, .nav-dropdown-btn, .sub-nav-links li a { letter-spacing: 0.02em; }
@@ -267,51 +266,6 @@
       display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
     }
 
-    /* Sub-page pill tab bar (partials/admin-tabs).
-       Floats at the very top of the screen, mirrored to the notification bell
-       (bell = top-right, tabs = top-left). */
-    .aqua-tabs {
-      position: fixed;
-      top: 26px;
-      left: 280px;
-      z-index: 200;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px;
-      background: #ffffff;
-      border: 1px solid #eef1f4;
-      border-radius: 999px;
-      box-shadow: 0 2px 12px rgba(16, 24, 40, 0.10);
-      max-width: calc(100vw - 340px);
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      transition: transform 0.3s ease;
-    }
-    .aqua-tabs::-webkit-scrollbar { display: none; }
-    .aqua-tabs.hidden { transform: translateY(-90px); }
-    .aqua-tab {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 12px 26px;
-      border-radius: 999px;
-      background: #ffffff;
-      color: #5b6b60;
-      font-size: 13px;
-      font-weight: 700;
-      text-decoration: none;
-      white-space: nowrap;
-      transition: all 0.2s ease;
-    }
-    .aqua-tab:hover { background: #f1f5f9; color: #143d23; }
-    .aqua-tab.active {
-      background: #14532d;
-      color: #ffffff;
-      box-shadow: 0 2px 8px rgba(20, 83, 45, 0.30);
-    }
-    .aqua-tabs-spacer { height: 18px; }
-
     @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
@@ -323,18 +277,6 @@
   .desktop-notif { background: transparent; border: none; box-shadow: none; color: var(--sb-fg); }
   .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(255, 255, 255, 0.08); }
   .desktop-notif-wrap { top: 11px; right: 16px; }
-
-  .aqua-tabs {
-    top: 68px;
-    left: 16px;
-    right: 16px;
-    max-width: none;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .aqua-tabs::-webkit-scrollbar { display: none; }
-  .aqua-tab { padding: 12px 20px; flex: 0 0 auto; }
-  .aqua-tabs-spacer { height: 48px; }
 
   /* --- UPDATE HERE --- */
   /* 1. Add right padding to nav-body so space matches the left (14px on both sides) */
@@ -609,9 +551,7 @@
 </head>
 @php $stActive = in_array((string) optional(auth()->user())->sidebar_theme, array_keys(config('sidebar.themes')), true) ? auth()->user()->sidebar_theme : config('sidebar.default'); @endphp
 @php
-  $subPagesStyle = (string) optional(auth()->user())->sub_pages_style;
-  $subPagesStyle = $subPagesStyle === 'top' ? 'top' : 'sidebar';
-  $adminNav = $subPagesStyle === 'sidebar' ? (config('admin-nav') ?? []) : [];
+  $adminNav = config('admin-nav') ?? [];
   $activeAdminSection = null;
   if ($adminNav) {
     foreach ($adminNav as $ai => $section) {
@@ -620,7 +560,7 @@
       }
     }
   }
-  $storeNav = $subPagesStyle === 'sidebar' ? (config('store-nav') ?? []) : [];
+  $storeNav = config('store-nav') ?? [];
   $activeStoreSection = null;
   if ($storeNav) {
     foreach ($storeNav as $si => $section) {
@@ -629,7 +569,7 @@
       }
     }
   }
-  $farmerNav = $subPagesStyle === 'sidebar' ? (config('farmer-nav') ?? []) : [];
+  $farmerNav = config('farmer-nav') ?? [];
   $activeFarmerSection = null;
   if ($farmerNav) {
     foreach ($farmerNav as $fi => $section) {
@@ -732,7 +672,7 @@
       </div>
       <ul class="nav-links">
         @if(auth()->user()->role === 'farmer')
-          @if($subPagesStyle === 'sidebar' && $farmerNav)
+          @if($farmerNav)
             @foreach($farmerNav as $fi => $section)
               @php $isFarmerOpen = ($activeFarmerSection === $fi); @endphp
               <li class="nav-dropdown {{ $isFarmerOpen ? 'open' : '' }}">
@@ -842,7 +782,7 @@
           @endif
 
         @elseif(auth()->user()->role === 'store_owner')
-          @if($subPagesStyle === 'sidebar' && $storeNav)
+          @if($storeNav)
             @foreach($storeNav as $si => $section)
               @php $isStoreOpen = ($activeStoreSection === $si); @endphp
               <li class="nav-dropdown {{ $isStoreOpen ? 'open' : '' }}">
@@ -922,7 +862,7 @@
           @endif
 
         @elseif(auth()->user()->role === 'admin')
-          @if($subPagesStyle === 'sidebar' && $adminNav)
+          @if($adminNav)
             @foreach($adminNav as $ai => $section)
               @php $isOpen = ($activeAdminSection === $ai); @endphp
               <li class="nav-dropdown {{ $isOpen ? 'open' : '' }}">
@@ -951,49 +891,42 @@
               Dashboard
             </a>
           </li>
-          @yield('sidebar-tabs-nav')
           <li>
             <a href="{{ route('admin.users.index') }}" class="{{ request()->is('admin/users*') || request()->is('admin/approvals*') || request()->is('admin/stores*') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               Users
             </a>
           </li>
-          @yield('sidebar-tabs-nav')
           <li>
             <a href="{{ route('admin.operations.formulas') }}" class="{{ request()->is('admin/operations*') || request()->routeIs('admin.plantings.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
               Crops &amp; Inputs
             </a>
           </li>
-          @yield('sidebar-tabs-nav')
           <li>
             <a href="{{ route('admin.harvests.index') }}" class="{{ request()->routeIs('admin.harvests.*') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M12 10C9 10 6 9 6 5c3 0 6 2 6 5"/><path d="M12 14c3 0 6-1 6-5-3 0-6 2-6 5"/><path d="M3 20h18"/><path d="M3 12l4-4 4 4 5-5 5 5"/></svg>
               Harvest
             </a>
           </li>
-          @yield('sidebar-tabs-nav')
           <li>
             <a href="{{ route('admin.calendar.index') }}" class="{{ request()->routeIs('admin.calendar.*') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               Calendar
             </a>
           </li>
-          @yield('sidebar-tabs-nav')
           <li>
             <a href="{{ route('admin.quotations.index') }}" class="{{ request()->is('admin/analytics*') || request()->is('admin/quotations*') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
               Analytics
             </a>
           </li>
-          @yield('sidebar-tabs-nav')
           <li>
             <a href="{{ route('admin.settings.index') }}" class="{{ request()->is('admin/settings*') || request()->routeIs('admin.audit.index') || request()->routeIs('admin.activity.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               Settings
             </a>
           </li>
-          @yield('sidebar-tabs-nav')
           @endif
         @endif
 
@@ -1266,16 +1199,13 @@ updateLiveTime();
       if (!wrap) return;
 
       var lastY = window.scrollY;
-      var tabsBar = document.querySelector('.aqua-tabs');
       window.addEventListener('scroll', function () {
         var y = window.scrollY;
         if (window.innerWidth > 768) {
           if (y > lastY && y > 80) {
             wrap.classList.add('hidden');
-            if (tabsBar) tabsBar.classList.add('hidden');
           } else if (y < lastY || y <= 80) {
             wrap.classList.remove('hidden');
-            if (tabsBar) tabsBar.classList.remove('hidden');
           }
         }
         lastY = y;

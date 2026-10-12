@@ -3,17 +3,9 @@
 @section('title', 'Top Quoted Products')
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'browse',      'label' => 'Browse Products',      'url' => route('farmer.products.browse')],
-      ['key' => 'top-quoted',  'label' => 'Top Quoted Products',  'url' => route('farmer.top-quoted.index')],
-      ['key' => 'stores',      'label' => 'Stores Directory',     'url' => route('farmer.stores.index')],
-    ],
-    'activeTab' => 'top-quoted',
-  ])
 <style>
   @media (min-width: 769px) {
-    .main-content { padding-top: {{ ((string) optional(auth()->user())->sub_pages_style === 'top') ? '64px' : '32px' }}; }
+    .main-content { padding-top: 32px; }
   }
   .page-header { margin-bottom: 20px; }
   .page-title {

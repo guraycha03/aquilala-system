@@ -3,13 +3,6 @@
 @section('title', 'Settings')
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'settings', 'label' => 'Settings',    'url' => route('farmer.settings.index')],
-      ['key' => 'activity', 'label' => 'Activity Log', 'url' => route('farmer.activity.index')],
-    ],
-    'activeTab' => 'settings',
-  ])
   <div style="max-width: 860px;">
     <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 22px;">
       <div>
@@ -25,13 +18,6 @@
       <p style="font-size: 12px; color: #64748b; margin: 0 0 16px;">Choose one of three colors for your navigation sidebar. It applies everywhere you are signed in.</p>
 
       @include('partials.sidebar-theme-picker')
-
-      <hr style="border:none;border-top:1px solid #eef1f4;margin:22px 0 18px;">
-
-      <h2 style="font-size: 15px; font-weight: 800; color: #1e293b; margin: 0 0 4px;">Sub-page navigation</h2>
-      <p style="font-size: 12px; color: #64748b; margin: 0 0 16px;">Choose how grouped pages appear. Side menu style shows them under the current menu name; Tabs on top pins them above the content.</p>
-
-      @include('partials.sub-pages-style-picker')
     </div>
   </div>
 @endsection

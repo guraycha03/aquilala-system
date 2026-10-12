@@ -3,14 +3,6 @@
 @section('title', 'My Harvest Reports')
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'crops',    'label' => 'My Crops',       'url' => route('farmer.crops.index')],
-      ['key' => 'harvests', 'label' => 'Harvest Reports', 'url' => route('farmer.harvests.index')],
-      ['key' => 'compare',  'label' => 'Estimate vs Harvest', 'url' => route('farmer.harvests.compare')],
-    ],
-    'activeTab' => 'harvests',
-  ])
 <style>
   .stats-grid {
     display: grid;

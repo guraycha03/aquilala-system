@@ -3,13 +3,6 @@
 @section('title', 'Submit Harvest Report')
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'overview', 'label' => 'Overview',             'url' => route('dashboard.farmer')],
-      ['key' => 'submit',   'label' => 'Submit Harvest Report', 'url' => route('farmer.harvests.create')],
-    ],
-    'activeTab' => 'submit',
-  ])
 <style>
   .harvest-submit-page { max-width: 880px; }
   .header-panel {

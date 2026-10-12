@@ -3,13 +3,6 @@
 @section('title', 'Farmer Dashboard')
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'overview', 'label' => 'Overview',             'url' => route('dashboard.farmer')],
-      ['key' => 'submit',   'label' => 'Submit Harvest Report', 'url' => route('farmer.harvests.create')],
-    ],
-    'activeTab' => 'overview',
-  ])
 @php
   $user = auth()->user();
   $now = now();

@@ -50,7 +50,6 @@ class User extends Authenticatable
         'assoc_member_no',
         'approved_at',
         'sidebar_theme',
-        'sub_pages_style',
         'activation_completed_at',
         'must_change_password',
     ];

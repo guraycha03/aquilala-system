@@ -3,15 +3,6 @@
 @section('title', 'Harvest Performance')
 
 @section('content')
-@include('partials.admin-tabs', [
-  'tabs' => [
-    ['key' => 'overview', 'label' => 'Overview',             'url' => route('admin.harvests.index')],
-    ['key' => 'reports',  'label' => 'All Harvest Reports',  'url' => route('admin.harvests.reports')],
-    ['key' => 'compare',  'label' => 'Estimate vs Harvest',   'url' => route('admin.harvests.compare')],
-    ['key' => 'ai',       'label' => 'AI Insights',          'url' => route('admin.harvests.ai')],
-  ],
-  'activeTab' => 'overview',
-])
 @php
   $periods = $context['periods'] ?? [];
   $recent  = $context['recent_vs_previous'] ?? null;

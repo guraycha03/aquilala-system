@@ -72,13 +72,6 @@
         <p>Planned budget versus actual farm expenditures across harvest reports.</p>
       </div>
 
-      @include('partials.admin-tabs', [
-        'tabs' => [
-          ['key' => 'demand',   'label' => 'Demand Trends',    'url' => route('admin.quotations.index')],
-          ['key' => 'expenses', 'label' => 'Cost vs Expenses', 'url' => route('admin.analytics.expenses')],
-        ],
-        'activeTab' => 'expenses',
-      ])
 
       <div class="exp-kpis">
         <div class="exp-kpi">

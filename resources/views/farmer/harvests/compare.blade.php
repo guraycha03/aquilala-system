@@ -3,14 +3,6 @@
 @section('title', 'Estimate vs Actual Harvest')
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'crops',    'label' => 'My Crops',       'url' => route('farmer.crops.index')],
-      ['key' => 'harvests', 'label' => 'Harvest Reports', 'url' => route('farmer.harvests.index')],
-      ['key' => 'compare',  'label' => 'Estimate vs Harvest', 'url' => route('farmer.harvests.compare')],
-    ],
-    'activeTab' => 'compare',
-  ])
 
   <div class="header-panel" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 24px 26px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
     <div>

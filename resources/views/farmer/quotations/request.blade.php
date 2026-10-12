@@ -3,13 +3,6 @@
 @section('title', 'Generate Cost Quotation')
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'generate', 'label' => 'Generate Quotation',  'url' => route('farmer.quotations.request')],
-      ['key' => 'my',       'label' => 'My Cost Quotations', 'url' => route('farmer.quotations.index')],
-    ],
-    'activeTab' => 'generate',
-  ])
 @php
   $selSeason = old('season') ?? $globalSeason;
   $climate = $globalClimateInfo;

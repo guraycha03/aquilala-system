@@ -3,15 +3,6 @@
 @section('title', 'Estimate vs Actual Harvest')
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'overview', 'label' => 'Overview',             'url' => route('admin.harvests.index')],
-      ['key' => 'reports',  'label' => 'All Harvest Reports',  'url' => route('admin.harvests.reports')],
-      ['key' => 'compare',  'label' => 'Estimate vs Harvest',   'url' => route('admin.harvests.compare')],
-      ['key' => 'ai',       'label' => 'AI Insights',          'url' => route('admin.harvests.ai')],
-    ],
-    'activeTab' => 'compare',
-  ])
 
   <div class="header-panel" style="margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
     <div>

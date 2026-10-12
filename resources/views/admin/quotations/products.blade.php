@@ -3,13 +3,6 @@
 @section('title', 'Product Demand — All Products')
 
 @section('content')
-@include('partials.admin-tabs', [
-  'tabs' => [
-    ['key' => 'demand',   'label' => 'Demand Trends',    'url' => route('admin.quotations.index')],
-    ['key' => 'expenses', 'label' => 'Cost vs Expenses', 'url' => route('admin.analytics.expenses')],
-  ],
-  'activeTab' => 'demand',
-])
 <style>
   .data-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 20px; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }

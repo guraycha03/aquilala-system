@@ -187,13 +187,6 @@
 <div class="dash-page">
   <div class="dash-content">
 
-    @include('partials.admin-tabs', [
-      'tabs' => [
-        ['key' => 'overview', 'label' => 'Overview',       'url' => route('dashboard.admin')],
-        ['key' => 'activity', 'label' => 'Recent Activity', 'url' => route('admin.activity.index')],
-      ],
-      'activeTab' => 'overview',
-    ])
 
     <!-- 1. HERO -->
     <section class="hero-band reveal in">

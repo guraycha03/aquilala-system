@@ -3,14 +3,6 @@
 @section('title', 'Partner Stores Directory')
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'browse',  'label' => 'Browse Products',    'url' => route('farmer.products.browse')],
-      ['key' => 'top-quoted', 'label' => 'Top Quoted Products', 'url' => route('farmer.top-quoted.index')],
-      ['key' => 'stores',  'label' => 'Stores Directory',   'url' => route('farmer.stores.index')],
-    ],
-    'activeTab' => 'stores',
-  ])
 <style>
   .store-grid {
     display: grid;

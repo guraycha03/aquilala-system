@@ -124,15 +124,6 @@
   </a>
 </div>
 
-@include('partials.admin-tabs', [
-  'tabs' => [
-    ['key' => 'formulas', 'label' => 'Formulas', 'url' => route('admin.operations.formulas')],
-    ['key' => 'catalog',  'label' => 'Catalog',  'url' => route('admin.operations.catalog')],
-    ['key' => 'plantings','label' => 'Planting Requests', 'url' => route('admin.plantings.index')],
-    ['key' => 'seasons',  'label' => 'Seasons',  'url' => route('admin.operations.seasons')],
-  ],
-  'activeTab' => 'plantings',
-])
 
 {{-- Status summary — each card doubles as the filter for its status. --}}
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 18px;">

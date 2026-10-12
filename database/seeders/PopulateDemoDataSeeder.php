@@ -108,7 +108,6 @@ class PopulateDemoDataSeeder extends Seeder
                 'activation_completed_at' => $user->activation_completed_at ?? Carbon::parse('2023-01-02 08:00:00'),
                 'approved_at' => $user->approved_at ?? Carbon::parse('2023-01-02 08:00:00'),
                 'sidebar_theme' => $user->sidebar_theme ?? 'emerald',
-                'sub_pages_style' => $user->sub_pages_style ?? 'sidebar',
             ]);
             if ($isNew) {
                 $user->password = Hash::make(env('SEED_STORE_PASSWORD', 'qwerty_Store01'));
@@ -453,7 +452,6 @@ class PopulateDemoDataSeeder extends Seeder
                 'activation_completed_at' => $user->activation_completed_at ?? Carbon::parse($def['approved_at'].' 09:30:00'),
                 'approved_at' => $user->approved_at ?? Carbon::parse($def['approved_at'].' 09:30:00'),
                 'sidebar_theme' => $user->sidebar_theme ?? 'emerald',
-                'sub_pages_style' => $user->sub_pages_style ?? 'sidebar',
             ]);
             if ($isNew) {
                 $user->password = Hash::make(env('SEED_FARMER_PASSWORD', 'qwerty_Farmer01'));

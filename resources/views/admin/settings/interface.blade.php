@@ -32,16 +32,6 @@
         </div>
       </div>
 
-      @include('partials.admin-tabs', [
-        'tabs' => [
-          ['key' => 'general',   'label' => 'General',              'url' => route('admin.settings.index')],
-          ['key' => 'seasons',   'label' => 'Seasons',              'url' => route('admin.settings.seasons')],
-          ['key' => 'interface', 'label' => 'Interface',            'url' => route('admin.settings.interface')],
-          ['key' => 'weather',   'label' => 'Weather Log',          'url' => route('admin.settings.weather')],
-          ['key' => 'logs',      'label' => 'Audit Log',            'url' => route('admin.audit.index')],
-        ],
-        'activeTab' => 'interface',
-      ])
 
       <div class="set-panel">
         <div class="set-body">
@@ -53,16 +43,6 @@
               and saves it to your account for every page.
             </p>
             @include('partials.sidebar-theme-picker')
-          </div>
-
-          <div class="set-section">
-            <div class="set-section-title">Sub-page Navigation</div>
-            <p style="font-size:12px;color:#64748b;margin:-8px 0 14px 0;max-width:760px;">
-              Choose how grouped pages appear. Side menu style shows them under
-              the current menu name inside the sidebar; Tabs on top pins them
-              above the content.
-            </p>
-            @include('partials.sub-pages-style-picker')
           </div>
 
           <div class="set-section">

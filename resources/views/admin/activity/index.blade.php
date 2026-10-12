@@ -3,13 +3,6 @@
 @section('title', 'Recent Activity')
 
 @section('content')
-@include('partials.admin-tabs', [
-  'tabs' => [
-    ['key' => 'overview', 'label' => 'Overview',       'url' => route('dashboard.admin')],
-    ['key' => 'activity', 'label' => 'Recent Activity', 'url' => route('admin.activity.index')],
-  ],
-  'activeTab' => 'activity',
-])
 <style>
   .activity-item {
     display: flex;

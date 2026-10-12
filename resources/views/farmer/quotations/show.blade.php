@@ -3,13 +3,6 @@
 @section('title', 'Cost Quotation ' . $quotation->quotation_number)
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'generate', 'label' => 'Generate Quotation',  'url' => route('farmer.quotations.request')],
-      ['key' => 'my',       'label' => 'My Cost Quotations', 'url' => route('farmer.quotations.index')],
-    ],
-    'activeTab' => 'my',
-  ])
 @php
   $total      = (float) $quotation->estimated_total_cost;
   $landArea   = (float) $quotation->land_area;

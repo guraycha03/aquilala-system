@@ -3,15 +3,6 @@
 @section('title', 'AI Harvest Insights')
 
 @section('content')
-@include('partials.admin-tabs', [
-  'tabs' => [
-    ['key' => 'overview', 'label' => 'Overview',             'url' => route('admin.harvests.index')],
-    ['key' => 'reports',  'label' => 'All Harvest Reports',  'url' => route('admin.harvests.reports')],
-    ['key' => 'compare',  'label' => 'Estimate vs Harvest',   'url' => route('admin.harvests.compare')],
-    ['key' => 'ai',       'label' => 'AI Insights',          'url' => route('admin.harvests.ai')],
-  ],
-  'activeTab' => 'ai',
-])
 
 @php
   $coverage = $context['coverage'] ?? ['reports' => 0, 'farmers' => 0, 'crops' => []];

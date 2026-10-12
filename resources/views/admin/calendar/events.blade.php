@@ -3,13 +3,6 @@
 @section('title', 'Association Events')
 
 @section('content')
-@include('partials.admin-tabs', [
-  'tabs' => [
-    ['key' => 'calendar', 'label' => 'Calendar', 'url' => route('admin.calendar.index')],
-    ['key' => 'events',   'label' => 'Events',   'url' => route('admin.calendar.events')],
-  ],
-  'activeTab' => 'events',
-])
 
 <div class="header-panel" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 22px 26px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
   <div>

@@ -14,10 +14,6 @@
       $tabs[] = ['key' => 'stores', 'label' => 'Stores Directory', 'url' => route('farmer.stores.index')];
     }
   @endphp
-  @include('partials.admin-tabs', [
-    'tabs' => $tabs,
-    'activeTab' => 'browse',
-  ])
 <x-breadcrumb :items="[
   ['label' => $isStoreOwner ? 'My Products' : 'Browse Products', 'url' => $browseUrl],
   ['label' => $product->display_name],

@@ -3,13 +3,6 @@
 @section('title', 'My Store')
 
 @section('content')
-@include('partials.admin-tabs', [
-  'tabs' => [
-    ['key' => 'overview', 'label' => 'Overview',        'url' => route('store.dashboard')],
-    ['key' => 'performance', 'label' => 'Top Products', 'url' => route('store.dashboard.performance')],
-  ],
-  'activeTab' => 'overview',
-])
 @php
   $user = auth()->user();
   $storeName = $user->store_name ?? $user->name;

@@ -3,13 +3,6 @@
 @section('title', 'Top Products')
 
 @section('content')
-@include('partials.admin-tabs', [
-  'tabs' => [
-    ['key' => 'overview', 'label' => 'Overview',  'url' => route('store.dashboard')],
-    ['key' => 'performance', 'label' => 'Top Products', 'url' => route('store.dashboard.performance')],
-  ],
-  'activeTab' => 'performance',
-])
 
 <style>
   .dash-page { position: relative; }

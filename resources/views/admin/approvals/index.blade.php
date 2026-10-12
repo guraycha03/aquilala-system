@@ -3,13 +3,6 @@
 @section('title', 'Registration Approvals')
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'all',       'label' => 'All Users', 'url' => route('admin.users.index')],
-      ['key' => 'stores',    'label' => 'Stores',    'url' => route('admin.stores.index')],
-    ],
-    'activeTab' => 'approvals',
-  ])
   @php
     $pendingApplications = $applications->filter(fn($u) => $u->isPending());
     $approvedApplications = $applications->filter(fn($u) => !$u->isPending());

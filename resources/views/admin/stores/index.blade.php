@@ -3,13 +3,6 @@
 @section('title', 'Stores')
 
 @section('content')
-  @include('partials.admin-tabs', [
-    'tabs' => [
-      ['key' => 'all',       'label' => 'All Users', 'url' => route('admin.users.index')],
-      ['key' => 'stores',    'label' => 'Stores',    'url' => route('admin.stores.index')],
-    ],
-    'activeTab' => 'stores',
-  ])
 
   <style>
     .stores-page { position: relative; }

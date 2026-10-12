@@ -3,13 +3,6 @@
 @section('title', 'Cost Quotation Analytics')
 
 @section('content')
-@include('partials.admin-tabs', [
-  'tabs' => [
-    ['key' => 'demand',   'label' => 'Demand Trends',  'url' => route('admin.quotations.index')],
-    ['key' => 'expenses', 'label' => 'Cost vs Expenses', 'url' => route('admin.analytics.expenses')],
-  ],
-  'activeTab' => 'demand',
-])
 <style>
   .stat-card {
     background: #ffffff;

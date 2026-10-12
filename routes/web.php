@@ -144,19 +144,6 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         return response()->json(['ok' => true, 'theme' => $theme]);
     })->name('settings.ui');
 
-    // Personal UI preferences (sub-page / tab navigation style) — available to all roles
-    Route::post('/settings/tabs-style', function (Request $request) {
-        $style = (string) $request->input('style');
-
-        if (! in_array($style, ['top', 'sidebar'], true)) {
-            return response()->json(['ok' => false, 'message' => 'Invalid sub-page style.'], 422);
-        }
-
-        $request->user()->update(['sub_pages_style' => $style]);
-
-        return response()->json(['ok' => true, 'style' => $style]);
-    })->name('settings.tabs-style');
-
     // Save / unsave a product for later — every signed-in role may keep their
     // own list. There is no saved-products page yet; the toggle just syncs the
     // bookmark state shown on the product cards.
