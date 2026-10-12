@@ -5,8 +5,9 @@
 @section('content')
 @include('partials.admin-tabs', [
   'tabs' => [
-    ['key' => 'demand',   'label' => 'Demand Trends',       'url' => route('admin.quotations.index')],
-    ['key' => 'harvests', 'label' => 'Harvest Performance',  'url' => route('admin.harvests.index')],
+    ['key' => 'overview', 'label' => 'Overview',             'url' => route('admin.harvests.index')],
+    ['key' => 'reports',  'label' => 'All Harvest Reports',  'url' => route('admin.harvests.reports')],
+    ['key' => 'compare',  'label' => 'Estimate vs Harvest',   'url' => route('admin.harvests.compare')],
     ['key' => 'ai',       'label' => 'AI Insights',          'url' => route('admin.harvests.ai')],
   ],
   'activeTab' => 'ai',

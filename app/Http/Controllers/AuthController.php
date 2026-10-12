@@ -6,7 +6,6 @@ use App\Helpers\SeasonHelper;
 use App\Models\Category;
 use App\Models\HarvestReport;
 use App\Models\Product;
-use App\Models\ProductReview;
 use App\Models\Quotation;
 use App\Models\User;
 use App\Services\ActivityLogger;
@@ -198,7 +197,6 @@ class AuthController extends Controller
         $currentSeasonLabel = SeasonHelper::getSeasonLabel();
         $currentSeasonHarvests = HarvestReport::whereRaw('LOWER(season) LIKE ?', [strtolower($currentSeason).'%'])->count();
         $pendingCount = User::where('status', User::STATUS_PENDING)->count();
-        $totalPendingReviews = ProductReview::pending()->count();
 
         // Harvest report activity over the past 14 days
         $harvestCountsByDate = DB::table('harvest_reports')
@@ -353,7 +351,6 @@ class AuthController extends Controller
             'currentSeasonLabel',
             'currentSeasonHarvests',
             'pendingCount',
-            'totalPendingReviews',
             'harvestTrend',
             'harvestGraphYear',
             'harvestGraphMonth',

@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -103,8 +101,6 @@ class StoreOwnerActivityController extends Controller
         $statsBase = ActivityLog::where('user_id', $userId);
         $totalProducts   = (clone $statsBase)->where('type', ActivityLog::TYPE_PRODUCT_CREATED)->count();
         $totalUpdated    = (clone $statsBase)->where('type', ActivityLog::TYPE_PRODUCT_UPDATED)->count();
-        $totalReviews    = (clone $statsBase)->reviewNotifications()->count();
-        $totalDisapproved = (clone $statsBase)->where('type', ActivityLog::TYPE_REVIEW_REJECTED)->count();
 
         $uniqueTypes = ActivityLog::where('user_id', $userId)
             ->where('type', 'not like', 'auth.%')
@@ -124,54 +120,7 @@ class StoreOwnerActivityController extends Controller
             'type',
             'uniqueTypes',
             'totalProducts',
-            'totalUpdated',
-            'totalReviews',
-            'totalDisapproved'
+            'totalUpdated'
         ));
-    }
-
-    /**
-     * Store owner's notifications — review events on their products
-     * (new / approved / disapproved / removed), newest first.
-     */
-    public function notifications(): View
-    {
-        $notifications = ActivityLog::forUser(Auth::id())
-            ->reviewNotifications()
-            ->latest()
-            ->paginate(12)
-            ->withQueryString();
-
-        $unreadCount = ActivityLog::forUser(Auth::id())
-            ->reviewNotifications()
-            ->unread()
-            ->count();
-
-        return view('store.notifications.index', compact('notifications', 'unreadCount'));
-    }
-
-    /**
-     * Mark every unread notification (review events) for this store owner as read.
-     */
-    public function markAllRead(): RedirectResponse
-    {
-        ActivityLog::forUser(Auth::id())
-            ->reviewNotifications()
-            ->unread()
-            ->update(['read_at' => now()]);
-
-        return back()->with('success', 'All notifications marked as read.');
-    }
-
-    /**
-     * Mark a single notification as read. Only rows owned by the store owner.
-     */
-    public function markRead(Request $request, ActivityLog $activityLog): RedirectResponse
-    {
-        abort_unless($activityLog->user_id === Auth::id(), 403);
-
-        $activityLog->forceFill(['read_at' => now()])->save();
-
-        return back();
     }
 }

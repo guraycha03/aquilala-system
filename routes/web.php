@@ -4,12 +4,13 @@ use App\Helpers\SeasonHelper;
 use App\Helpers\SettingsHelper;
 use App\Http\Controllers\AccountActivationController;
 use App\Http\Controllers\AdminAuditController;
-use App\Http\Controllers\AdminReviewController;
+use App\Http\Controllers\AdminPlantingController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminUserImportController;
 use App\Http\Controllers\AdminWeatherLogController;
 use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\CropsDirectoryController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\FarmerCropController;
@@ -22,7 +23,6 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PasswordSetupController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductImportController;
-use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\StoreDirectoryController;
 use App\Http\Controllers\StoreOwnerActivityController;
@@ -31,7 +31,6 @@ use App\Models\DecisionFormula;
 use App\Models\FarmerCrop;
 use App\Models\HarvestReport;
 use App\Models\Product;
-use App\Models\ProductReview;
 use App\Models\Quotation;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -216,10 +215,8 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
         Route::get('/stores', [StoreDirectoryController::class, 'index'])->name('stores.index');
 
-        // Product Reviews & Top Rated
-        Route::get('/reviews', [ProductReviewController::class, 'index'])->name('reviews.index');
-        Route::post('/products/{product}/review', [ProductReviewController::class, 'store'])->name('products.review.store');
-        Route::delete('/reviews/{review}', [ProductReviewController::class, 'destroy'])->name('reviews.destroy');
+        // Top Quoted Products — ranked by real farmer demand (quotation count)
+        Route::get('/top-quoted', [ProductController::class, 'topQuoted'])->name('top-quoted.index');
 
         // Quotations
         Route::get('/quotations', [QuotationController::class, 'farmerIndex'])->name('quotations.index');
@@ -241,8 +238,15 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // Harvest Reports (shared with admin — same harvest_reports table)
         Route::get('/harvests', [HarvestReportController::class, 'farmerIndex'])->name('harvests.index');
         Route::get('/harvests/create', [HarvestReportController::class, 'farmerCreate'])->name('harvests.create');
+        // Estimate vs Actual — planting estimate against filed yield.
+        Route::get('/harvests/compare', [HarvestReportController::class, 'farmerCompare'])
+            ->name('harvests.compare');
         Route::post('/harvests', [HarvestReportController::class, 'store'])->name('harvests.store');
         Route::delete('/harvests/{harvestReport}', [HarvestReportController::class, 'destroy'])->name('harvests.destroy');
+
+        // Association calendar (read-only for farmers)
+        Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
+        Route::get('/calendar/events', [CalendarController::class, 'events'])->name('calendar.events');
 
         // Notifications
         Route::get('/notifications', [FarmerNotificationController::class, 'index'])->name('notifications.index');
@@ -274,10 +278,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::post('/quotations/ai-overview', [QuotationController::class, 'storeAiOverview'])->name('quotations.ai-overview');
         Route::get('/storefront', [ProductController::class, 'storefront'])->name('storefront.index');
 
-        // Notifications & Activity history
-        Route::get('/notifications', [StoreOwnerActivityController::class, 'notifications'])->name('notifications.index');
-        Route::post('/notifications/read-all', [StoreOwnerActivityController::class, 'markAllRead'])->name('notifications.read-all');
-        Route::post('/notifications/{activityLog}/read', [StoreOwnerActivityController::class, 'markRead'])->name('notifications.read');
+        // Activity history
         Route::get('/activity', [StoreOwnerActivityController::class, 'index'])->name('activity.index');
 
         // Settings (UI preferences)
@@ -402,10 +403,6 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
             return view('admin.stores.index', compact('storeOwners', 'totals'));
         })->name('stores.index');
 
-        // Product review moderation
-        Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
-        Route::post('/reviews/{review}/approve', [AdminReviewController::class, 'approve'])->name('reviews.approve');
-        Route::post('/reviews/{review}/disapprove', [AdminReviewController::class, 'disapprove'])->name('reviews.disapprove');
         Route::get('/quotations', [QuotationController::class, 'adminIndex'])->name('quotations.index');
         Route::get('/quotations/products', [QuotationController::class, 'adminProducts'])->name('quotations.products');
         Route::get('/activity', [QuotationController::class, 'adminActivity'])->name('activity.index');
@@ -485,17 +482,21 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
                 ->orderByDesc('count')
                 ->get();
 
-            $reviewCounts = [
-                'pending' => ProductReview::pending()->count(),
-                'approved' => ProductReview::approved()->count(),
-                'rejected' => ProductReview::rejected()->count(),
-            ];
-            $reviews = ProductReview::with(['farmer', 'product.storeOwner'])
-                ->latest()
+            // Demand snapshot: products ranked by how many distinct farmer
+            // quotations include them — a real-intent signal, not opinions.
+            $topQuoted = \Illuminate\Support\Facades\DB::table('quotation_items')
+                ->join('products', 'quotation_items.product_id', '=', 'products.id')
+                ->select(
+                    'quotation_items.product_id',
+                    'products.name',
+                    \Illuminate\Support\Facades\DB::raw('COUNT(DISTINCT quotation_items.quotation_id) as quote_count')
+                )
+                ->groupBy('quotation_items.product_id', 'products.name')
+                ->orderByDesc('quote_count')
                 ->take(12)
                 ->get();
 
-            return view('admin.operations.catalog', compact('productStats', 'productsByCategory', 'reviewCounts', 'reviews'));
+            return view('admin.operations.catalog', compact('productStats', 'productsByCategory', 'topQuoted'));
         })->name('operations.catalog');
         Route::get('/operations/seasons', function () {
             $climate = SeasonHelper::getClimateInfo();
@@ -531,6 +532,25 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
 
             return view('admin.operations.seasons', compact('climate', 'seasons'));
         })->name('operations.seasons');
+
+        // ── Planting Requests ─────────────────────────────────────
+        // Farmer crop batches await admin confirmation before their growth
+        // stages unlock.
+        Route::get('/plantings', [AdminPlantingController::class, 'index'])
+            ->name('plantings.index');
+        Route::post('/plantings/{farmerCrop}/confirm', [AdminPlantingController::class, 'confirm'])
+            ->name('plantings.confirm');
+        Route::post('/plantings/{farmerCrop}/reject', [AdminPlantingController::class, 'reject'])
+            ->name('plantings.reject');
+
+        // ── Association calendar ──────────────────────────────────
+        // Shared schedule: the admin adds events (never on past dates),
+        // farmers read them. Store accounts have no routes here.
+        Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
+        Route::get('/calendar/events', [CalendarController::class, 'events'])->name('calendar.events');
+        Route::post('/calendar/events', [CalendarController::class, 'store'])->name('calendar.events.store');
+        Route::put('/calendar/events/{event}', [CalendarController::class, 'update'])->name('calendar.events.update');
+        Route::delete('/calendar/events/{event}', [CalendarController::class, 'destroy'])->name('calendar.events.destroy');
 
         // ── Analytics & Reports (grouped pages) ────────────────────
         // Expenses — budget vs actual farm expenditure analysis
@@ -587,6 +607,10 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // error state instead of round tripping the whole page.
         Route::post('/harvests/ai/ask', [HarvestReportController::class, 'aiAsk'])
             ->name('harvests.ai.ask');
+
+        // Estimate vs Actual — planting estimate against reported yield.
+        Route::get('/harvests/compare', [HarvestReportController::class, 'adminCompare'])
+            ->name('harvests.compare');
     });
 
     // Explicit fallback alias for dashboard.admin reference in layout and AuthController

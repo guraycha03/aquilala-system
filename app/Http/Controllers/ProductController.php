@@ -47,17 +47,8 @@ class ProductController extends Controller
         $computedQuotationCount = $involvedStoreQuery(Quotation::STATUS_COMPUTED)->count();
         $viewedQuotationCount = $involvedStoreQuery(Quotation::STATUS_VIEWED)->count();
 
-        // ─── Rating & review metrics for this store ───────────────────
-        $products->load('approvedReviews');
-
         // Saved-for-later state for the dashboard "My Products" carousel.
         Product::markSavedState($products, $user);
-
-        $ratedProducts = $products->filter(fn ($p) => $p->average_rating !== null);
-        $averageRating = $ratedProducts->isNotEmpty()
-            ? round((float) $ratedProducts->avg('average_rating'), 1)
-            : null;
-        $totalReviews = $products->sum('review_count');
 
         // Pass $products to your dashboard blade view
         return view('dashboard.store_owner', compact(
@@ -66,10 +57,7 @@ class ProductController extends Controller
             'lowStockCount',
             'demandQuotationCount',
             'computedQuotationCount',
-            'viewedQuotationCount',
-            'ratedProducts',
-            'averageRating',
-            'totalReviews'
+            'viewedQuotationCount'
         ));
     }
 
@@ -85,22 +73,19 @@ class ProductController extends Controller
             ->latest()
             ->get();
 
-        $products->load('approvedReviews');
-
-        ['topViewed' => $topViewed, 'topQuoted' => $topQuoted, 'topRated' => $topRated] = $this->topPerformers($products);
+        ['topViewed' => $topViewed, 'topQuoted' => $topQuoted] = $this->topPerformers($products);
 
         return view('dashboard.store_performance', compact(
             'topViewed',
-            'topQuoted',
-            'topRated'
+            'topQuoted'
         ));
     }
 
     /**
-     * Most viewed, most quoted and highest rated products for the
-     * signed-in store owner (5 each) — shared by both dashboard pages.
+     * Most viewed and most quoted products for the signed-in store owner
+     * (5 each) — shared by both dashboard pages.
      *
-     * @return array{topViewed: \Illuminate\Support\Collection, topQuoted: \Illuminate\Support\Collection, topRated: \Illuminate\Support\Collection}
+     * @return array{topViewed: \Illuminate\Support\Collection, topQuoted: \Illuminate\Support\Collection}
      */
     private function topPerformers($products)
     {
@@ -132,13 +117,7 @@ class ProductController extends Controller
                 'count'   => (int) $quotedCounts[$p->id]->total,
             ]);
 
-        $topRated = $products
-            ->filter(fn ($p) => $p->review_count > 0)
-            ->sortByDesc(fn ($p) => [$p->average_rating, $p->review_count])
-            ->take(5)
-            ->values();
-
-        return compact('topViewed', 'topQuoted', 'topRated');
+        return compact('topViewed', 'topQuoted');
     }
 
     /**
@@ -147,9 +126,7 @@ class ProductController extends Controller
     public function storefront()
     {
         $products = Product::where('user_id', Auth::id())
-            // The catalog card renders star ratings, which are accessors over
-            // this relation. Eager load it or every card costs its own query.
-            ->with(['category.parent', 'mainImage', 'images', 'approvedReviews'])
+            ->with(['category.parent', 'mainImage', 'images'])
             ->latest()
             ->get();
 
@@ -172,10 +149,7 @@ class ProductController extends Controller
     public function recommendations()
     {
         $products = Product::active()
-            // approvedReviews backs the rating/review facets the shared filter
-            // bar sorts on, so it has to be eager loaded rather than resolved
-            // once per card.
-            ->with(['category.parent', 'mainImage', 'images', 'storeOwner', 'approvedReviews'])
+            ->with(['category.parent', 'mainImage', 'images', 'storeOwner'])
             ->latest()
             ->get();
 
@@ -749,7 +723,7 @@ class ProductController extends Controller
         $products = Product::active()
             // category.parent is what lets a card report its top-level group,
             // which the shared filter bar matches on.
-            ->with(['category.parent', 'storeOwner', 'mainImage', 'images', 'approvedReviews'])
+            ->with(['category.parent', 'storeOwner', 'mainImage', 'images'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -782,20 +756,57 @@ class ProductController extends Controller
             'images',
             'documents',
             'mainImage',
-            'approvedReviews.farmer',
         ]);
 
         $relatedProducts = Product::active()
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
-            ->with('approvedReviews')
             ->take(4)
             ->get();
 
-        // The farmer's own review (any status) so they can see moderation state.
-        $myReview = $product->reviews()->where('user_id', Auth::id())->first();
+        return view('farmer.products.show', compact('product', 'relatedProducts'));
+    }
 
-        return view('farmer.products.show', compact('product', 'relatedProducts', 'myReview'));
+    /**
+     * Farmer-facing Top Quoted Products page: active products ranked by how
+     * many distinct cost quotations include them. Quotations are real
+     * purchase-intent requests, so this is a demand signal rather than
+     * unverifiable ratings.
+     */
+    public function topQuoted()
+    {
+        $products = Product::active()
+            ->with(['category.parent', 'storeOwner', 'mainImage'])
+            ->topQuoted()
+            ->get();
+
+        Product::markSavedState($products, Auth::user());
+
+        $totalQuoted = $products->count();
+
+        // Facet data for the shared <x-catalog-filters> bar, built the same way
+        // as the other catalog pages (see ProductController::filterFacets).
+        $facets = [
+            'categories' => $products
+                ->flatMap(function (Product $product) {
+                    $cat = $product->getRelation('category');
+                    $names = [$product->category_display_name];
+                    if ($cat instanceof Category && $cat->parent_id && $cat->relationLoaded('parent') && $cat->parent) {
+                        $names[] = (string) $cat->parent->name;
+                    }
+                    return $names;
+                })
+                ->map(fn ($name) => trim((string) $name))
+                ->filter()
+                ->reject(fn ($name) => $name === 'Uncategorized')
+                ->unique()
+                ->sort()
+                ->values(),
+            'priceMin' => round((float) ($products->min('price') ?? 0), 2),
+            'priceMax' => round((float) ($products->max('price') ?? 0), 2),
+        ];
+
+        return view('farmer.products.top-quoted', compact('products', 'totalQuoted') + $facets);
     }
 
     /**

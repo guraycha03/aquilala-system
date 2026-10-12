@@ -10,7 +10,7 @@ use Illuminate\View\View;
 class FarmerNotificationController extends Controller
 {
     /**
-     * Farmer's notifications — quotations and reviews, newest first.
+     * Farmer's notifications — quotation events, newest first.
      */
     public function index(): View
     {

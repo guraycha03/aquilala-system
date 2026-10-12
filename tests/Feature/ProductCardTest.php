@@ -69,7 +69,7 @@ class ProductCardTest extends TestCase
         $surfaces = [
             'store catalog' => fn () => $this->actingAs($this->store)->get(route('store.storefront.index')),
             'farmer browse'  => fn () => $this->actingAs($this->farmer)->get(route('farmer.products.browse')),
-            'farmer reviews' => fn () => $this->actingAs($this->farmer)->get(route('farmer.reviews.index')),
+            'farmer top-quoted' => fn () => $this->actingAs($this->farmer)->get(route('farmer.top-quoted.index')),
             'owner dashboard' => fn () => $this->actingAs($this->store)->get(route('store.dashboard')),
         ];
 
@@ -161,7 +161,7 @@ class ProductCardTest extends TestCase
         $surfaces = [
             'store catalog'   => fn () => $this->actingAs($this->store)->get(route('store.storefront.index')),
             'farmer browse'   => fn () => $this->actingAs($this->farmer)->get(route('farmer.products.browse')),
-            'farmer reviews'  => fn () => $this->actingAs($this->farmer)->get(route('farmer.reviews.index')),
+            'farmer top-quoted' => fn () => $this->actingAs($this->farmer)->get(route('farmer.top-quoted.index')),
             'owner dashboard' => fn () => $this->actingAs($this->store)->get(route('store.dashboard')),
         ];
 
@@ -172,41 +172,6 @@ class ProductCardTest extends TestCase
             $this->assertStringNotContainsString('stock-badge', $html, "the stock badge must be gone from the {$label} card");
             $this->assertStringNotContainsString('stock-status', $html, "the stock line must be gone from the {$label} card");
         }
-    }
-
-    public function test_an_unrated_product_shows_zero_with_a_grey_star(): void
-    {
-        $html = $this->actingAs($this->farmer)->get(route('farmer.products.browse'))->getContent();
-
-        // The rating is the official Lucide star (the <i data-lucide="star">
-        // placeholder that createIcons swaps for the glyph) plus the number.
-        // The string only appears in the card markup, so a plain count is exact.
-        $this->assertSame(1, substr_count($html, 'data-lucide="star"'));
-        $this->assertStringContainsString('class="pc-rating is-unrated"', $html);
-        $this->assertStringContainsString('Not yet rated', $html);
-        $this->assertStringContainsString('<b>0.0</b>', $html);
-    }
-
-    public function test_a_rated_product_shows_one_yellow_star_with_the_score(): void
-    {
-        $review = $this->product->reviews()->create([
-            'user_id' => $this->farmer->id,
-            'rating'  => 4,
-            'status'  => 'approved',
-        ]);
-
-        $this->assertNotNull($review);
-
-        $html = $this->actingAs($this->farmer)->get(route('farmer.products.browse'))->getContent();
-
-        // Exactly one star, amber by default, with the score beside it. The
-        // "is-unrated" marker also appears in the stylesheet, so assert on the
-        // rendered class attribute, not the bare token.
-        $this->assertSame(1, substr_count($html, 'data-lucide="star"'));
-        $this->assertStringContainsString('class="pc-rating"', $html);
-        $this->assertStringNotContainsString('class="pc-rating is-unrated"', $html);
-        $this->assertStringContainsString('Rated 4.0 out of 5', $html);
-        $this->assertStringContainsString('<b>4.0</b>', $html);
     }
 
     public function test_the_card_uses_official_lucide_icons_instead_of_inline_svg(): void
@@ -221,7 +186,6 @@ class ProductCardTest extends TestCase
         // Every icon on the card goes through <i data-lucide="..."> so the
         // official open-source glyphs render, not hand-rolled polygons.
         $html = $card('wet');
-        $this->assertStringContainsString('data-lucide="star"', $html);
         $this->assertStringContainsString('data-lucide="pencil"', $html);
         $this->assertStringContainsString('data-lucide="trash-2"', $html);
         $this->assertStringContainsString('data-lucide="umbrella"', $html);
@@ -241,7 +205,7 @@ class ProductCardTest extends TestCase
         $this->assertStringContainsString('-webkit-line-clamp: 2', $html);
 
         // The clamp must reserve its own two lines (2.7em = 2 x 1.35 line-height)
-        // even for a short name, otherwise the rating row below drifts down on
+        // even for a short name, otherwise the row below drifts down on
         // cards with long names and up on cards with short ones.
         $this->assertStringContainsString('min-height: 2.7em', $html);
 

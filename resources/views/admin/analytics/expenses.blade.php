@@ -74,9 +74,8 @@
 
       @include('partials.admin-tabs', [
         'tabs' => [
-          ['key' => 'demand',   'label' => 'Demand Trends',       'url' => route('admin.quotations.index')],
-          ['key' => 'harvests', 'label' => 'Harvest Performance',  'url' => route('admin.harvests.index')],
-          ['key' => 'ai',       'label' => 'AI Insights',          'url' => route('admin.harvests.ai')],
+          ['key' => 'demand',   'label' => 'Demand Trends',    'url' => route('admin.quotations.index')],
+          ['key' => 'expenses', 'label' => 'Cost vs Expenses', 'url' => route('admin.analytics.expenses')],
         ],
         'activeTab' => 'expenses',
       ])

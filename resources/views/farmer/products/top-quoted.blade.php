@@ -1,15 +1,15 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Top Rated Products')
+@section('title', 'Top Quoted Products')
 
 @section('content')
   @include('partials.admin-tabs', [
     'tabs' => [
-      ['key' => 'browse',  'label' => 'Browse Products',    'url' => route('farmer.products.browse')],
-      ['key' => 'reviews', 'label' => 'Top Rated Products', 'url' => route('farmer.reviews.index')],
-      ['key' => 'stores',  'label' => 'Stores Directory',   'url' => route('farmer.stores.index')],
+      ['key' => 'browse',      'label' => 'Browse Products',      'url' => route('farmer.products.browse')],
+      ['key' => 'top-quoted',  'label' => 'Top Quoted Products',  'url' => route('farmer.top-quoted.index')],
+      ['key' => 'stores',      'label' => 'Stores Directory',     'url' => route('farmer.stores.index')],
     ],
-    'activeTab' => 'reviews',
+    'activeTab' => 'top-quoted',
   ])
 <style>
   @media (min-width: 769px) {
@@ -75,18 +75,15 @@
     white-space: nowrap;
   }
   .rank-badge svg { width: 12px; height: 12px; fill: #f59e0b; stroke: none; }
-  .category-pill {
-    font-size: 10px; font-weight: 700;
-    background: #f1f5f9; color: #475569;
-    padding: 3px 8px; border-radius: 6px;
-    text-transform: uppercase; letter-spacing: 0.03em;
+  .quote-count {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 700;
+    background: #f0fdf4; color: #16a34a;
+    border: 1px solid #bbf7d0;
+    padding: 3px 8px; border-radius: 8px;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 55%;
-    margin-left: 6px;
   }
-  .product-title { font-size: 13.5px; font-weight: 700; color: #143d23; margin-bottom: 4px; line-height: 1.35; }
+  .quote-count svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .store-name { font-size: 11.5px; color: #64748b; display: flex; align-items: center; gap: 5px; }
   .store-name svg { width: 12px; height: 12px; stroke: #94a3b8; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
@@ -98,9 +95,8 @@
     align-items: center;
     justify-content: space-between;
   }
-  .price-tag { font-size: 15px; font-weight: 800; color: #143d23; }
-  .review-link { font-size: 12px; font-weight: 700; color: #16a34a; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
-  .review-link:hover { text-decoration: underline; }
+  .quote-link { font-size: 12px; font-weight: 700; color: #16a34a; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+  .quote-link:hover { text-decoration: underline; }
 
   /* Empty state */
   .empty-state { text-align: center; padding: 60px 20px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 16px; }
@@ -125,30 +121,29 @@
   @media (max-width: 640px) {
     .card-body { padding: 14px; }
     .card-footer { padding: 12px 14px; }
-    .product-title { font-size: 13px; }
   }
 </style>
 
-<x-breadcrumb :items="[['label' => 'Top Rated Products']]"/>
+<x-breadcrumb :items="[['label' => 'Top Quoted Products']]"/>
 
 <div class="page-header">
-  <h1 class="page-title">Top Rated Products</h1>
-  <p class="page-subtitle">See which farm supplies other farmers rate highest, based on real farmer reviews.</p>
+  <h1 class="page-title">Top Quoted Products</h1>
+  <p class="page-subtitle">Farm supplies other farmers request most in cost quotations — ranked by real purchase intent, not ratings.</p>
 </div>
 
 <div class="stats-row">
   <div class="stat-chip">
-    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     <div>
-      <div class="stat-num">{{ $products->count() }}</div>
-      <div class="stat-label">Rated Supplies</div>
+      <div class="stat-num">{{ $totalQuoted }}</div>
+      <div class="stat-label">In Demand</div>
     </div>
   </div>
   <div class="stat-chip">
-    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
     <div>
-      <div class="stat-num">{{ $totalReviews }}</div>
-      <div class="stat-label">Farmer Reviews</div>
+      <div class="stat-num">{{ $products->sum(fn ($p) => $p->quotationItems_count ?? 0) }}</div>
+      <div class="stat-label">Total Quotations</div>
     </div>
   </div>
 </div>
@@ -158,13 +153,13 @@
      ?search=/?season=/?category=/?min=/?max=/?sort= so a filtered list can be
      linked. --}}
 <x-catalog-filters
-  uid="reviews"
+  uid="top-quoted"
   target="#productGrid"
   :categories="$categories"
   :price-min="$priceMin"
   :price-max="$priceMax"
-  search-placeholder="Search rated supplies, SKU, brand..."
-  noun="rated supplies" />
+  search-placeholder="Search in-demand supplies, SKU, brand..."
+  noun="in-demand supplies" />
 
 <div class="product-grid" id="productGrid">
   @forelse($products as $index => $product)
@@ -177,8 +172,12 @@
               Top {{ $index + 1 }}
             </span>
           @else
-            <span class="rank-badge" style="background: #475569;">#{{ $index + 1 }} Most Rated</span>
+            <span class="rank-badge" style="background: #475569;">#{{ $index + 1 }} Most Quoted</span>
           @endif
+          <span class="quote-count">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            {{ $product->quotationItems_count ?? 0 }} {{ Str::plural('quote', $product->quotationItems_count ?? 0) }}
+          </span>
         </div>
 
         <div class="store-name">
@@ -188,8 +187,8 @@
       </x-slot>
 
       <x-slot name="footer">
-        <span class="review-link">
-          See Reviews
+        <span class="quote-link">
+          Generate Quotation
           <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </span>
       </x-slot>
@@ -197,10 +196,10 @@
   @empty
     <div class="empty-state" data-cf-no-products>
       <div class="empty-icon">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       </div>
-      <h3>No Reviews Yet</h3>
-      <p>No farmer reviews have been submitted yet. Browse the supplies catalog and be the first to share your experience with a product.</p>
+      <h3>No Quotations Yet</h3>
+      <p>Products appear here once farmers include them in cost quotations. Generate a quotation from the supplies catalog to get started.</p>
       <a href="{{ route('farmer.products.browse') }}" class="btn-primary">
         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Browse Supplies
@@ -213,10 +212,10 @@
      toggles this via [data-cf-no-results]. --}}
 <div class="empty-state" id="filterEmpty" data-cf-no-results style="display: none;">
   <div class="empty-icon">
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
   </div>
-  <h3>No Rated Supplies Yet</h3>
-  <p>No rated supplies match your current filters. Try widening the price range or clearing a filter.</p>
+  <h3>No Matching Supplies</h3>
+  <p>No in-demand supplies match your current filters. Try widening the price range or clearing a filter.</p>
   <a href="{{ route('farmer.products.browse') }}" class="btn-primary">
     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     Browse Supplies

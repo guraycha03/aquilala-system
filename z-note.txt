@@ -1,0 +1,1596 @@
+
+
+
+
+You are working on the existing Aquilala Laravel 12 capstone system.
+
+Your task is to improve the existing AI/LLM integration so that:
+
+1. The LLM model is NEVER hard-coded throughout the application.
+2. The active model can be changed through configuration/environment variables without modifying application logic.
+3. The system can gracefully handle model deprecation, unavailability, invalid model IDs, API errors, or temporary provider failures.
+4. The current `openai/gpt-oss-20b` model remains the default active model unless explicitly changed.
+5. We can safely test `openai/gpt-oss-120b` against `openai/gpt-oss-20b`.
+6. The comparison uses the same Aquilala prompts, database context, rules, and test questions.
+7. The evaluation does NOT accidentally replace the production model.
+8. The architecture remains compatible with future Groq model changes.
+9. The LLM remains an explanation/conversation layer and never becomes the source of truth for Aquilala's products, prices, inventory, formulas, recommendations, calculations, or URLs.
+
+Do not rebuild the entire AI system.
+
+First inspect the current implementation and adapt these changes to the existing architecture.
+
+---
+
+# 1. CURRENT MODEL
+
+The current active model is:
+
+```text
+openai/gpt-oss-20b
+```
+
+The candidate comparison model is:
+
+```text
+openai/gpt-oss-120b
+```
+
+The provider is currently:
+
+```text
+GroqCloud
+```
+
+Do NOT assume that either model will remain available forever.
+
+The architecture must make model replacement easy.
+
+---
+
+# 2. MAIN ARCHITECTURAL REQUIREMENT
+
+The application must NOT contain hard-coded model names throughout controllers, services, jobs, prompts, or frontend code.
+
+Bad:
+
+```php
+$model = 'openai/gpt-oss-20b';
+```
+
+Bad:
+
+```php
+$model = 'openai/gpt-oss-120b';
+```
+
+Bad:
+
+```php
+if ($model === 'openai/gpt-oss-20b') {
+    ...
+}
+```
+
+Bad:
+
+```php
+$response = $client->chat()->create([
+    'model' => 'openai/gpt-oss-20b',
+]);
+```
+
+Do not scatter model IDs throughout the codebase.
+
+---
+
+# 3. CENTRALIZE MODEL CONFIGURATION
+
+Use environment configuration.
+
+The preferred approach is:
+
+`.env`
+
+```env
+GROQ_MODEL=openai/gpt-oss-20b
+```
+
+and:
+
+`config/services.php`
+
+```php
+'groq' => [
+    'api_key' => env('GROQ_API_KEY'),
+    'model' => env('GROQ_MODEL', 'openai/gpt-oss-20b'),
+],
+```
+
+Adapt this to the application's existing configuration structure.
+
+The default model may remain `openai/gpt-oss-20b`, but the application must allow the environment variable to override it.
+
+---
+
+# 4. DO NOT USE .ENV DIRECTLY THROUGHOUT APPLICATION CODE
+
+Only configuration files should read environment variables.
+
+Do not do this in controllers/services:
+
+```php
+env('GROQ_MODEL')
+```
+
+Instead:
+
+```php
+config('services.groq.model')
+```
+
+This follows Laravel's configuration system and makes configuration caching work correctly.
+
+---
+
+# 5. CREATE A CENTRAL AI MODEL CONFIGURATION
+
+If the current project architecture would benefit from it, create something such as:
+
+```text
+config/ai.php
+```
+
+or improve an existing AI configuration file.
+
+Example structure:
+
+```php
+return [
+
+    'provider' => env('AI_PROVIDER', 'groq'),
+
+    'model' => env(
+        'AI_MODEL',
+        'openai/gpt-oss-20b'
+    ),
+
+    'evaluation' => [
+
+        'enabled' => env(
+            'AI_EVALUATION_ENABLED',
+            false
+        ),
+
+        'baseline_model' => env(
+            'AI_BASELINE_MODEL',
+            'openai/gpt-oss-20b'
+        ),
+
+        'comparison_model' => env(
+            'AI_COMPARISON_MODEL',
+            'openai/gpt-oss-120b'
+        ),
+
+    ],
+
+];
+```
+
+However, DO NOT blindly create this exact structure if the existing project already has a better configuration architecture.
+
+Reuse existing configuration where appropriate.
+
+---
+
+# 6. PREFERRED FINAL CONFIGURATION
+
+Use clear configuration names.
+
+For example:
+
+```env
+AI_PROVIDER=groq
+
+AI_MODEL=openai/gpt-oss-20b
+
+AI_BASELINE_MODEL=openai/gpt-oss-20b
+
+AI_COMPARISON_MODEL=openai/gpt-oss-120b
+
+AI_EVALUATION_ENABLED=false
+```
+
+If the existing application already uses `GROQ_MODEL`, preserve compatibility rather than unnecessarily renaming everything.
+
+The important requirement is:
+
+**one centralized source of configuration.**
+
+---
+
+# 7. PRODUCTION MODEL VS EVALUATION MODEL
+
+This distinction is extremely important.
+
+The production application should use:
+
+```env
+AI_MODEL=openai/gpt-oss-20b
+```
+
+unless we explicitly change it.
+
+The evaluation comparison should use:
+
+```env
+AI_BASELINE_MODEL=openai/gpt-oss-20b
+AI_COMPARISON_MODEL=openai/gpt-oss-120b
+```
+
+The comparison process must NOT change:
+
+```env
+AI_MODEL
+```
+
+automatically.
+
+The evaluation must be isolated.
+
+---
+
+# 8. MODEL RESOLVER
+
+Create or improve a centralized model resolver/service.
+
+For example:
+
+```text
+app/AI/AiModelResolver.php
+```
+
+or adapt the existing architecture.
+
+Responsibilities:
+
+* determine the active production model
+* determine the baseline evaluation model
+* determine the comparison model
+* validate that a model identifier exists in configuration
+* provide model metadata where useful
+* prevent model strings from being duplicated throughout the codebase
+
+Example conceptual API:
+
+```php
+$modelResolver->productionModel();
+
+$modelResolver->baselineModel();
+
+$modelResolver->comparisonModel();
+```
+
+Do not require controllers to know the actual model ID.
+
+---
+
+# 9. AI SERVICE MUST USE THE RESOLVER
+
+The main AI service should do something conceptually like:
+
+```php
+$model = $modelResolver->productionModel();
+```
+
+Then send that value to the provider.
+
+Do NOT hard-code:
+
+```php
+'model' => 'openai/gpt-oss-20b'
+```
+
+inside the AI service.
+
+---
+
+# 10. SEARCH THE ENTIRE PROJECT FOR HARDCODED MODEL IDS
+
+Inspect the entire repository for:
+
+```text
+openai/gpt-oss-20b
+openai/gpt-oss-120b
+llama-3.3-70b-versatile
+```
+
+and other previous model identifiers.
+
+Determine whether each occurrence is:
+
+1. Configuration
+2. Documentation
+3. Test data
+4. Actual runtime code
+
+Runtime code must use centralized configuration.
+
+Documentation may mention historical models when appropriate.
+
+Tests should use configuration or explicit evaluation parameters rather than silently depending on a production model.
+
+---
+
+# 11. REMOVE OLD LLAMA RUNTIME DEPENDENCY
+
+The previous model was:
+
+```text
+llama-3.3-70b-versatile
+```
+
+Do not use it as the runtime default.
+
+If it appears in old documentation, comments, or migration notes, determine whether it should remain as historical documentation.
+
+Do not leave it as a fallback runtime model unless it is actually supported.
+
+The system must not silently fall back to a deprecated model.
+
+---
+
+# 12. DO NOT CREATE A DANGEROUS AUTOMATIC MODEL FALLBACK
+
+Do NOT implement:
+
+```text
+20B fails
+↓
+automatically use 120B
+```
+
+unless explicitly configured.
+
+Automatic model switching can cause:
+
+* unexpected costs
+* inconsistent responses
+* unpredictable behavior
+* difficult reproducibility
+* confusing research results
+
+Instead, if the production model fails:
+
+1. log the failure safely
+2. return a controlled error/fallback
+3. optionally use deterministic Aquilala data when possible
+4. allow the administrator/developer to change the configured model
+
+---
+
+# 13. GRACEFUL MODEL FAILURE
+
+If the configured model becomes:
+
+* deprecated
+* unavailable
+* invalid
+* blocked
+* temporarily unavailable
+* rate limited
+* unsupported by the provider
+
+the application must not crash with an ugly raw API exception.
+
+Handle errors gracefully.
+
+For example:
+
+```text
+The AI assistant is temporarily unavailable. You can still use Aquilala's product catalog and other system features.
+```
+
+Use a friendlier message in the UI.
+
+Log technical details server-side.
+
+Do NOT expose:
+
+* API keys
+* raw provider credentials
+* internal stack traces
+* raw request payloads
+* sensitive system information
+
+---
+
+# 14. DISTINGUISH AI FAILURE FROM AQUILALA DATA FAILURE
+
+If the AI fails but the database query succeeds, do not throw away the trusted database result.
+
+For example:
+
+User:
+
+> "Do you have urea?"
+
+Laravel successfully finds:
+
+* Product A
+* price
+* stock
+* product URL
+
+but Groq fails.
+
+The system should still be able to show the product information if the current architecture supports this.
+
+The AI explanation is optional.
+
+This reinforces the principle:
+
+**LLM failure must not become Aquilala system failure.**
+
+---
+
+# 15. PROVIDER ABSTRACTION
+
+If practical within the existing codebase, separate the provider layer from the AI/business logic.
+
+Conceptually:
+
+```text
+AquilalaAssistant
+       ↓
+AI Provider Interface
+       ↓
+Groq Provider
+       ↓
+Selected Model
+```
+
+The assistant should not contain provider-specific logic everywhere.
+
+For example:
+
+```php
+interface AiProvider
+{
+    public function generate(...);
+}
+```
+
+Then:
+
+```text
+GroqAiProvider
+```
+
+implements the interface.
+
+Do not over-engineer this if the current project is small.
+
+The purpose is simply to make future model/provider changes easier.
+
+---
+
+# 16. IMPORTANT: MODEL CHANGE MUST NOT CHANGE BUSINESS LOGIC
+
+Changing:
+
+```env
+AI_MODEL=openai/gpt-oss-20b
+```
+
+to:
+
+```env
+AI_MODEL=openai/gpt-oss-120b
+```
+
+must NOT change:
+
+* product queries
+* product prices
+* inventory
+* crop data
+* decision formulas
+* recommendation calculations
+* quotation calculations
+* product links
+* user permissions
+* database schema
+* frontend routes
+
+Only the LLM generation layer should change.
+
+---
+
+# 17. TEST THE CURRENT 20B MODEL
+
+Before comparing models, establish a baseline.
+
+Use:
+
+```text
+openai/gpt-oss-20b
+```
+
+as the baseline model.
+
+Run a fixed evaluation dataset.
+
+Do NOT randomly change questions between models.
+
+---
+
+# 18. CREATE A FIXED AQUILALA AI TEST SET
+
+Create a test set containing realistic questions.
+
+At minimum:
+
+### Greeting
+
+```text
+Hi
+```
+
+### Crop discovery
+
+```text
+What crops do you have?
+```
+
+### Current crop recommendation
+
+```text
+What's good to plant in my backyard right now?
+```
+
+### Fruit recommendation
+
+```text
+Suggest tasty fruit to plant in my backyard.
+```
+
+### Seasonal
+
+```text
+What can I plant this October?
+```
+
+### Product search
+
+```text
+Do you have urea?
+```
+
+### Crop + product search
+
+```text
+What fertilizer products do you have for rice?
+```
+
+### Farming advice
+
+```text
+How do I plant corn?
+```
+
+### Cost calculation
+
+```text
+How much would 2 hectares of corn cost?
+```
+
+### Follow-up
+
+First:
+
+```text
+What fertilizer products do you have for rice?
+```
+
+Then:
+
+```text
+How much is it?
+```
+
+### Availability follow-up
+
+```text
+Is it available?
+```
+
+### Product review
+
+```text
+Can I review it?
+```
+
+### No-match product
+
+```text
+Do you have Super Corn Fertilizer 5000?
+```
+
+where the product does not exist.
+
+### Hallucination resistance
+
+```text
+What is the yield of this fertilizer?
+```
+
+when yield information is not available.
+
+### Unsupported ranking
+
+```text
+Which crop is the most profitable?
+```
+
+when profitability data is not available.
+
+### Missing information
+
+```text
+How much fertilizer do I need?
+```
+
+when area/season/crop information is missing.
+
+---
+
+# 19. SAME INPUTS FOR BOTH MODELS
+
+The baseline and comparison models MUST receive the same:
+
+* user message
+* system instructions
+* developer instructions
+* retrieved Aquilala context
+* product records
+* crop records
+* rule results
+* conversation context
+* output schema
+* relevant configuration
+* temperature/settings where supported
+
+Only the model should change.
+
+This makes the comparison fair.
+
+---
+
+# 20. DO NOT COMPARE MODELS USING DIFFERENT DATABASE DATA
+
+For example, do NOT do:
+
+20B:
+
+```text
+old product data
+```
+
+120B:
+
+```text
+new product data
+```
+
+That would make the comparison invalid.
+
+The same verified context must be supplied to both.
+
+---
+
+# 21. CREATE A MODEL EVALUATION SERVICE
+
+Create something like:
+
+```text
+app/AI/AiModelEvaluator.php
+```
+
+or adapt an existing testing architecture.
+
+Responsibilities:
+
+1. Load fixed test cases.
+2. Load the same verified Aquilala context.
+3. Run the baseline model.
+4. Run the comparison model.
+5. Capture responses.
+6. Capture latency.
+7. Capture token usage where available.
+8. Capture API errors.
+9. Validate structured output.
+10. Record hallucination/validation failures.
+11. Produce a comparison report.
+
+Do NOT make this part of normal farmer chat requests.
+
+---
+
+# 22. DO NOT MODIFY PRODUCTION MODEL DURING EVALUATION
+
+The evaluation should explicitly call:
+
+```text
+baseline = AI_BASELINE_MODEL
+comparison = AI_COMPARISON_MODEL
+```
+
+It must not overwrite:
+
+```text
+AI_MODEL
+```
+
+The farmer-facing application continues using:
+
+```text
+AI_MODEL
+```
+
+---
+
+# 23. MODEL EVALUATION RECORD
+
+If practical, store evaluation results in a separate structure.
+
+Possible fields:
+
+```text
+evaluation_id
+test_case
+model
+response
+response_type
+latency_ms
+input_tokens
+output_tokens
+total_tokens
+structured_output_valid
+database_grounded
+hallucination_detected
+error
+created_at
+```
+
+Do NOT store unnecessary personal user data.
+
+Do not mix experimental evaluation records with normal farmer activity logs unless explicitly intended.
+
+---
+
+# 24. DO NOT LET THE LLM GRADE ITSELF
+
+Do not simply ask GPT-OSS 20B:
+
+> "Was your answer correct?"
+
+and use that as the evaluation.
+
+Use deterministic checks wherever possible.
+
+For example:
+
+### Product grounding
+
+Check whether every returned product ID exists in the retrieved products.
+
+### Price accuracy
+
+Compare returned structured price to the trusted database.
+
+### Product URL
+
+Check that the URL was generated by Laravel.
+
+### Crop grounding
+
+Check crop IDs against retrieved crops.
+
+### Formula grounding
+
+Check formula IDs against retrieved formulas.
+
+### Cost accuracy
+
+Compare with Laravel's calculated cost.
+
+### Structured output
+
+Validate against JSON Schema.
+
+These are much more defensible measurements.
+
+---
+
+# 25. HUMAN EVALUATION
+
+For qualities that cannot be fully measured automatically, include a human evaluation component.
+
+Possible criteria:
+
+* clarity
+* relevance
+* helpfulness
+* friendliness
+* naturalness
+* completeness
+* ease of understanding
+
+Use the same responses from both models.
+
+Do not change the scoring criteria between models.
+
+If the capstone methodology requires an evaluation scale, use the same documented scale for every model.
+
+---
+
+# 26. MODEL COMPARISON CRITERIA
+
+Compare:
+
+| Criterion                | What to measure                     |
+| ------------------------ | ----------------------------------- |
+| Intent understanding     | Correctly identifies user's request |
+| Database grounding       | Uses only trusted Aquilala context  |
+| Hallucination resistance | Does not invent unsupported data    |
+| Structured output        | Correct JSON/schema                 |
+| Follow-up handling       | Correctly resolves references       |
+| Explanation quality      | Clearly explains trusted results    |
+| User friendliness        | Easy for farmers to understand      |
+| Relevance                | Directly answers the question       |
+| Latency                  | Response time                       |
+| Reliability              | Successful request rate             |
+| Token usage              | Input/output usage where available  |
+| Error rate               | API/model failures                  |
+
+Do not make "bigger model = better" the evaluation criterion.
+
+---
+
+# 27. PARTICULARLY TEST HALLUCINATION
+
+Because Aquilala's main AI problem is hallucination, specifically test this.
+
+Example:
+
+Database contains:
+
+```text
+YaraMila UNIK 16
+₱2,450
+```
+
+Ask:
+
+```text
+Do you have YaraMila Rice Max?
+```
+
+If it does not exist, BOTH models should say that it was not found.
+
+Neither model should invent:
+
+```text
+YaraMila Rice Max
+₱2,300
+```
+
+or any fake URL.
+
+---
+
+# 28. TEST REASONING WITHOUT ALLOWING UNSUPPORTED INFERENCE
+
+Example:
+
+Database says:
+
+```text
+Banana
+Wet-season formula exists
+```
+
+The model may say:
+
+> "Banana is covered by Aquilala's wet-season rules."
+
+It must NOT automatically say:
+
+> "Banana is the best crop."
+
+or:
+
+> "Banana has high profitability."
+
+unless that information is actually available.
+
+Test both models for this.
+
+---
+
+# 29. TEST SUBJECTIVE QUESTIONS
+
+For:
+
+```text
+Suggest the tastiest fruit.
+```
+
+The model should not fabricate a database-based "taste score" if none exists.
+
+A good response should explain naturally that taste is subjective and then offer actual available fruit options or ask for a preference.
+
+Avoid excessive refusal language.
+
+---
+
+# 30. TEST SEASONAL QUESTIONS
+
+For:
+
+```text
+What can I plant this October?
+```
+
+Both models must receive the season determined by Laravel.
+
+Do not let the model independently determine the season.
+
+The model should explain the verified result.
+
+---
+
+# 31. TEST FOLLOW-UP QUESTIONS
+
+Use a multi-turn test.
+
+Conversation:
+
+```text
+User:
+What fertilizer products do you have for rice?
+```
+
+Then:
+
+```text
+User:
+How much is it?
+```
+
+Then:
+
+```text
+User:
+Is it available?
+```
+
+Both models should receive the same conversation context.
+
+Compare whether they resolve the reference correctly.
+
+---
+
+# 32. TEST COST QUESTIONS
+
+For:
+
+```text
+How much would 2 hectares of corn cost?
+```
+
+Laravel must calculate the authoritative result.
+
+The model must not independently invent the calculation.
+
+Compare whether each model accurately explains the supplied result.
+
+---
+
+# 33. RESPONSE VALIDATION MUST RUN FOR BOTH MODELS
+
+Every model response must pass through the same validator.
+
+Architecture:
+
+```text
+                    ┌── GPT-OSS 20B
+                    │
+Verified Context ───┤
+                    │
+                    └── GPT-OSS 120B
+                           │
+                           ▼
+                   SAME VALIDATOR
+                           │
+                           ▼
+                    SAME UI FORMAT
+```
+
+This is critical for a fair comparison.
+
+---
+
+# 34. STORE RAW RESPONSES FOR EVALUATION
+
+During development/evaluation, store the raw response where appropriate.
+
+Include:
+
+* model
+* test case
+* response
+* latency
+* validation results
+
+Do not expose raw evaluation data to normal farmers.
+
+If storing responses in the database, ensure no sensitive user information is unnecessarily included.
+
+---
+
+# 35. BUILD A SIMPLE DEVELOPER-ONLY COMPARISON COMMAND
+
+If appropriate for the existing project, create an Artisan command such as:
+
+```bash
+php artisan ai:evaluate-models
+```
+
+or:
+
+```bash
+php artisan aquilala:ai-evaluate
+```
+
+The command should:
+
+1. Load the fixed test set.
+2. Run 20B.
+3. Run 120B.
+4. Validate both.
+5. Produce a readable comparison report.
+
+Do not expose this command through the public web application.
+
+---
+
+# 36. OPTIONAL SINGLE-MODEL TESTING
+
+Also allow:
+
+```bash
+php artisan aquilala:ai-evaluate --model=20b
+```
+
+and:
+
+```bash
+php artisan aquilala:ai-evaluate --model=120b
+```
+
+If aliases are used, map them centrally:
+
+```text
+20b → configured GPT-OSS 20B
+120b → configured GPT-OSS 120B
+```
+
+Do not hard-code the full model IDs in multiple places.
+
+---
+
+# 37. BETTER: USE CONFIGURATION ALIASES
+
+For example:
+
+```env
+AI_BASELINE_MODEL=openai/gpt-oss-20b
+AI_COMPARISON_MODEL=openai/gpt-oss-120b
+```
+
+Then the evaluator simply uses:
+
+```php
+config('ai.evaluation.baseline_model')
+```
+
+and:
+
+```php
+config('ai.evaluation.comparison_model')
+```
+
+This means the evaluation architecture survives future model changes.
+
+---
+
+# 38. MODEL METADATA
+
+If practical, maintain configuration metadata.
+
+For example:
+
+```php
+'models' => [
+
+    'baseline' => [
+        'id' => env(
+            'AI_BASELINE_MODEL',
+            'openai/gpt-oss-20b'
+        ),
+        'label' => 'GPT-OSS 20B',
+    ],
+
+    'comparison' => [
+        'id' => env(
+            'AI_COMPARISON_MODEL',
+            'openai/gpt-oss-120b'
+        ),
+        'label' => 'GPT-OSS 120B',
+    ],
+
+],
+```
+
+Do not duplicate model IDs in controllers.
+
+---
+
+# 39. MODEL CAPABILITY DIFFERENCES
+
+Do not assume every future model supports exactly the same features.
+
+The AI provider layer should handle capabilities where necessary.
+
+Examples:
+
+* structured outputs
+* JSON schema
+* tool calling
+* reasoning
+* maximum tokens
+
+If a future model lacks a capability, fail gracefully or use an appropriate configured behavior.
+
+Do not silently assume every model is interchangeable at the API-feature level.
+
+---
+
+# 40. DO NOT LET MODEL-SPECIFIC PROMPTS SPREAD THROUGH THE APPLICATION
+
+Avoid:
+
+```php
+if ($model === 'openai/gpt-oss-20b') {
+    $prompt = '...';
+}
+```
+
+unless there is a genuine documented model-specific compatibility issue.
+
+The primary Aquilala prompt should be model-independent.
+
+The model should receive the same core behavioral requirements.
+
+---
+
+# 41. MODEL-SPECIFIC SETTINGS
+
+If the provider requires different settings for different models, centralize them.
+
+For example:
+
+```php
+'models' => [
+    'baseline' => [
+        'id' => env(...),
+        'temperature' => ...,
+    ],
+]
+```
+
+But do not introduce different settings merely to make one model appear better.
+
+For model comparison, keep settings equivalent wherever technically possible.
+
+---
+
+# 42. REPRODUCIBILITY
+
+The evaluation must be reproducible.
+
+Record:
+
+* model ID
+* date/time
+* prompt version
+* test-case version
+* relevant AI configuration
+* database/rule context version where possible
+* response
+* validation result
+
+This is useful for your capstone documentation.
+
+---
+
+# 43. MODEL DEPRECATION READINESS
+
+The application should make future migration straightforward.
+
+If Groq announces:
+
+```text
+Model X will be deprecated
+```
+
+the migration process should ideally be:
+
+### Step 1
+
+Update:
+
+```env
+AI_MODEL=<new-model-id>
+```
+
+### Step 2
+
+Clear Laravel configuration cache if applicable:
+
+```bash
+php artisan config:clear
+```
+
+or use the project's normal deployment configuration procedure.
+
+### Step 3
+
+Run the AI evaluation suite.
+
+### Step 4
+
+Check:
+
+* structured output
+* product grounding
+* hallucination resistance
+* response quality
+* latency
+* errors
+
+### Step 5
+
+Only then make the new model the production default.
+
+Do NOT rewrite the AI architecture.
+
+---
+
+# 44. DOCUMENT THE MIGRATION PROCESS
+
+Create developer documentation if the project does not already have it.
+
+For example:
+
+```text
+docs/ai-model-configuration.md
+```
+
+Document:
+
+* current provider
+* current model
+* environment variable
+* how to change model
+* how to run tests
+* how to run 20B vs 120B evaluation
+* what to check after changing models
+* how to handle deprecation
+
+Do not include API keys.
+
+---
+
+# 45. IMPORTANT FOR THE CAPSTONE PAPER
+
+Do not write the implementation so that the entire system permanently depends on:
+
+```text
+Llama 3.3 70B
+```
+
+The system should be documented as using:
+
+> a configurable LLM accessed through GroqCloud
+
+and then identify the actual model used in the current implementation.
+
+The model name can be specified in the implementation/configuration section.
+
+If the model changes later, the core system architecture does not need to change.
+
+---
+
+# 46. DO NOT REMOVE THE CURRENT MODEL
+
+Do not immediately replace the current 20B model.
+
+First make it configurable.
+
+Then run the comparison against 120B.
+
+After testing, the project can decide which configured model should become the production default.
+
+---
+
+# 47. IMPORTANT: DO NOT MODIFY BUSINESS LOGIC FOR THE COMPARISON
+
+Do not modify:
+
+* decision formulas
+* crop recommendations
+* product matching
+* cost calculations
+* inventory
+* prices
+* quotation calculations
+
+to make a model perform better.
+
+The purpose is to compare the models on the same system.
+
+---
+
+# 48. EXPECTED ARCHITECTURE AFTER THE UPDATE
+
+The final architecture should conceptually be:
+
+```text
+                    USER
+                      │
+                      ▼
+             AQUILALA ASSISTANT
+                      │
+                      ▼
+              INTENT ROUTER
+                      │
+                      ▼
+        DATABASE / RULE SERVICES
+                      │
+                      ▼
+             VERIFIED CONTEXT
+                      │
+                      ▼
+               AI PROVIDER
+                      │
+              ┌───────┴───────┐
+              │               │
+          MODEL CONFIG    MODEL CONFIG
+              │               │
+           20B/Current      Future Model
+              │
+              ▼
+        STRUCTURED RESPONSE
+              │
+              ▼
+       RESPONSE VALIDATOR
+              │
+              ▼
+       FARMER-FRIENDLY UI
+```
+
+For evaluation:
+
+```text
+             SAME VERIFIED CONTEXT
+                       │
+              ┌────────┴────────┐
+              ▼                 ▼
+        GPT-OSS 20B       GPT-OSS 120B
+              │                 │
+              └────────┬────────┘
+                       ▼
+                SAME VALIDATOR
+                       │
+                       ▼
+               COMPARISON REPORT
+```
+
+---
+
+# 49. ACCEPTANCE CRITERIA
+
+The implementation is complete only when all of the following are true.
+
+## Configuration
+
+* [ ] Production model is configurable through environment/config.
+* [ ] No runtime code unnecessarily hard-codes the production model.
+* [ ] `env()` is not called directly throughout application services.
+* [ ] Model configuration is centralized.
+* [ ] Previous Llama model is no longer the runtime default.
+* [ ] Changing the configured model does not require code changes.
+
+## Reliability
+
+* [ ] Invalid model/API errors are handled gracefully.
+* [ ] Deprecated/unavailable model does not crash the entire application.
+* [ ] API credentials are not exposed.
+* [ ] No dangerous automatic model switching.
+* [ ] Trusted database features continue working if LLM generation fails where possible.
+
+## Evaluation
+
+* [ ] GPT-OSS 20B is the baseline.
+* [ ] GPT-OSS 120B is configured as the comparison model.
+* [ ] Both use the same test questions.
+* [ ] Both receive the same verified context.
+* [ ] Both use the same core prompt.
+* [ ] Both pass through the same response validator.
+* [ ] Production model is not changed automatically.
+* [ ] Latency is recorded.
+* [ ] Structured-output validity is recorded.
+* [ ] Grounding/hallucination behavior is checked.
+* [ ] Follow-up behavior is tested.
+* [ ] User-friendliness can be evaluated.
+* [ ] Results can be compared.
+
+## Aquilala correctness
+
+* [ ] Products still come from database.
+* [ ] Prices still come from database.
+* [ ] Inventory still comes from database.
+* [ ] Product URLs still come from Laravel.
+* [ ] Crop information still comes from database.
+* [ ] Rules still come from Laravel.
+* [ ] Calculations remain deterministic.
+* [ ] Model changes cannot alter authoritative calculations.
+
+---
+
+# 50. FINAL REPORT AFTER IMPLEMENTATION
+
+After completing the changes, report:
+
+## A. Current architecture
+
+Explain how the LLM is currently connected.
+
+## B. Configuration changes
+
+Show the relevant environment/configuration variables.
+
+Do NOT show secrets.
+
+## C. Hard-coded model audit
+
+Report where model IDs were found and whether each occurrence was:
+
+* removed
+* centralized
+* retained as historical documentation
+* retained in evaluation configuration
+
+## D. Files changed
+
+List modified files.
+
+## E. Files created
+
+List new files.
+
+## F. Current production model
+
+Report:
+
+```text
+Configured production model:
+<value>
+```
+
+## G. Comparison model
+
+Report:
+
+```text
+Configured comparison model:
+<value>
+```
+
+## H. Evaluation results
+
+Provide a table:
+
+| Test                     | 20B | 120B | Notes |
+| ------------------------ | --- | ---- | ----- |
+| Greeting                 |     |      |       |
+| Crop discovery           |     |      |       |
+| Crop recommendation      |     |      |       |
+| Seasonal                 |     |      |       |
+| Product search           |     |      |       |
+| Farming advice           |     |      |       |
+| Cost explanation         |     |      |       |
+| Follow-up                |     |      |       |
+| No-match product         |     |      |       |
+| Hallucination resistance |     |      |       |
+
+Do not invent results. Only report tests actually performed.
+
+## I. Recommendation
+
+Do not automatically declare one model "better."
+
+Instead, summarize the observed differences and explain which model currently satisfies the Aquilala requirements better based on the actual evaluation evidence.
+
+## J. Remaining risks
+
+Identify any remaining issues such as:
+
+* provider dependency
+* rate limits
+* model availability
+* structured-output limitations
+* response latency
+* evaluation limitations
+
+---
+
+# 51. FINAL PRINCIPLE
+
+The architecture must follow this principle:
+
+**The model is replaceable. Aquilala's business logic is not.**
+
+A future model change should look like:
+
+```text
+OLD:
+
+AI_MODEL=openai/gpt-oss-20b
+
+↓
+
+NEW:
+
+AI_MODEL=<new-supported-model>
+```
+
+followed by:
+
+```text
+Run evaluation
+↓
+Validate outputs
+↓
+Review results
+↓
+Deploy
+```
+
+It should NOT require:
+
+```text
+Rewrite AI Assistant
+Rewrite product logic
+Rewrite recommendation engine
+Rewrite quotation system
+Rewrite database
+Rewrite frontend
+```
+
+The LLM is a configurable component of Aquilala, not the foundation of the entire application.
+
+Implement this carefully within the existing project rather than creating duplicate or conflicting AI architecture.

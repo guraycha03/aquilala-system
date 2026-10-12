@@ -32,7 +32,7 @@
 <style>
   /* ── Shared catalog filter bar ────────────────────────────────────────
      One look for every catalog surface (farmer browse, storefront, farmer
-     reviews, farmer recommendations) so filtering behaves and reads the same
+     top-quoted, farmer recommendations) so filtering behaves and reads the same
      everywhere. Native <select> and <input type="number"> are used on
      purpose: they inherit the platform picker on phones and keyboard and
      screen-reader behaviour for free, which the hand-rolled dropdowns this
@@ -247,8 +247,6 @@
         <option value="newest">Newest first</option>
         <option value="price-asc">Price: low to high</option>
         <option value="price-desc">Price: high to low</option>
-        <option value="rating">Highest rated</option>
-        <option value="reviews">Most reviewed</option>
         <option value="name">Name (A&ndash;Z)</option>
       </select>
     </div>
@@ -273,22 +271,12 @@
     'use strict';
 
     /* Sorts return a comparable key; the caller uses compareKeys so string
-       keys (name) and numeric keys (price) both sort correctly. "rating" and
-       "reviews" return the negated count so higher is better, and shift
-       unrated products to the end instead of treating them as worst. */
+       keys (name) and numeric keys (price) both sort correctly. */
     var SORTS = {
       'default': function () { return 0; },
       'newest': function (c) { return num(c, 'date'); },
       'price-asc': function (c) { return num(c, 'price'); },
       'price-desc': function (c) { return -num(c, 'price'); },
-      'rating': function (c) {
-        var n = num(c, 'rating');
-        return n > 0 ? 1000 - n : 1000;
-      },
-      'reviews': function (c) {
-        var n = num(c, 'reviews');
-        return n > 0 ? 1000000 - n : 1000000;
-      },
       'name': function (c) { return str(c, 'name'); },
     };
 

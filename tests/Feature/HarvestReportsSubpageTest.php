@@ -111,11 +111,13 @@ class HarvestReportsSubpageTest extends TestCase
 
     public function test_the_reports_subpage_is_reachable_from_the_sidebar_config(): void
     {
-        $items = collect(config('admin-nav.analytics.items'));
+        // Harvest pages moved out of Analytics into their own top-level
+        // "Harvest" sidebar section — the entry must live there now.
+        $items = collect(config('admin-nav.harvest.items'));
 
         $entry = $items->first(fn (array $item) => ($item['routes'] ?? []) === ['admin.harvests.reports']);
 
-        $this->assertNotNull($entry, 'All Harvest Reports must be listed in the sidebar.');
+        $this->assertNotNull($entry, 'All Harvest Reports must be listed in the Harvest sidebar section.');
         $this->assertSame('All Harvest Reports', $entry['label']);
     }
 

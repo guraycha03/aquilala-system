@@ -79,18 +79,15 @@ class SavedProductsTest extends TestCase
             'the save button must POST at the per-product save URL'
         );
 
-        // Icon-only bookmark on the rating's own line: the button must sit
-        // between the rating (above it) and the footer price (below it), and
-        // there must be no inline label next to it. Class markers are matched
-        // on the rendered markup, not bare tokens: the card's own stylesheet
-        // also spells out those selector names.
-        $ratingPos = strpos($html, 'class="pc-rating');
+        // Icon-only bookmark on the card's own top row: the button must sit
+        // above the footer price, and there must be no inline label next to
+        // it. Class markers are matched on the rendered markup, not bare
+        // tokens: the card's own stylesheet also spells out those selector
+        // names.
         $savePos   = strpos($html, 'data-save-url=');
         $pricePos  = strpos($html, 'class="price-tag');
-        $this->assertNotFalse($ratingPos);
         $this->assertNotFalse($savePos);
         $this->assertNotFalse($pricePos);
-        $this->assertLessThan($savePos, $ratingPos, 'the save icon shares the rating line');
         $this->assertLessThan($pricePos, $savePos, 'the save icon sits above the footer price');
         $this->assertStringContainsString('aria-pressed=', $html);
         $this->assertStringNotContainsString('pc-save-text', $html, 'the bookmark is icon-only');

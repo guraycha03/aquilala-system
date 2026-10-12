@@ -35,6 +35,8 @@ class ActivityLog extends Model
     const TYPE_CROP_UPDATED      = 'crop.updated';
     const TYPE_CROP_HARVESTED    = 'crop.harvested';
     const TYPE_CROP_DELETED      = 'crop.deleted';
+    const TYPE_CROP_CONFIRMED    = 'crop.confirmed';
+    const TYPE_CROP_REJECTED     = 'crop.rejected';
     const TYPE_LAND_UPDATED      = 'land.updated';
     const TYPE_PRODUCT_CREATED   = 'product.created';
     const TYPE_PRODUCT_UPDATED   = 'product.updated';
@@ -52,6 +54,9 @@ class ActivityLog extends Model
     const TYPE_HARVEST_DELETED   = 'harvest.deleted';
     const TYPE_WEATHER_CREATED   = 'weather.created';
     const TYPE_WEATHER_DELETED   = 'weather.deleted';
+    const TYPE_EVENT_CREATED     = 'event.created';
+    const TYPE_EVENT_UPDATED     = 'event.updated';
+    const TYPE_EVENT_DELETED     = 'event.deleted';
     const TYPE_LOGIN             = 'auth.login';
     const TYPE_LOGOUT            = 'auth.logout';
     const TYPE_LOGIN_FAILED      = 'auth.login_failed';
@@ -76,7 +81,7 @@ class ActivityLog extends Model
         'product'  => ['product'],
         'formula'  => ['formula'],
         'quotation' => ['quotation'],
-        'farm'     => ['crop', 'land', 'harvest', 'weather'],
+        'farm'     => ['crop', 'land', 'harvest', 'weather', 'event'],
         'review'   => ['review'],
     ];
 
@@ -182,23 +187,13 @@ class ActivityLog extends Model
         return $query->whereNull('read_at');
     }
 
-    public function scopeReviewNotifications($query)
-    {
-        return $query->whereIn('type', [
-            self::TYPE_REVIEW_CREATED,
-            self::TYPE_REVIEW_APPROVED,
-            self::TYPE_REVIEW_REJECTED,
-            self::TYPE_REVIEW_DELETED,
-        ]);
-    }
-
     public function scopeFarmerNotifications($query)
     {
         return $query->whereIn('type', [
             self::TYPE_QUOTATION_CREATED,
             self::TYPE_QUOTATION_DELETED,
-            self::TYPE_REVIEW_CREATED,
-            self::TYPE_REVIEW_DELETED,
+            self::TYPE_CROP_CONFIRMED,
+            self::TYPE_CROP_REJECTED,
         ]);
     }
 
@@ -211,6 +206,7 @@ class ActivityLog extends Model
             str_starts_with($this->type, 'product')  => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
             str_starts_with($this->type, 'formula')  => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="m9 17 6-10"/><path d="m5 11 4 4"/><path d="m9 11 4 4"/></svg>',
             str_starts_with($this->type, 'review')   => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+            str_starts_with($this->type, 'event')    => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
             str_starts_with($this->type, 'land')      => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
             str_starts_with($this->type, 'auth')      => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>',
             str_starts_with($this->type, 'user')
@@ -226,6 +222,7 @@ class ActivityLog extends Model
         return match (true) {
             str_ends_with($this->type, 'created') => '#16a34a',
             str_ends_with($this->type, 'approved') => '#16a34a',
+            str_ends_with($this->type, 'confirmed') => '#16a34a',
             str_ends_with($this->type, 'planted')  => '#16a34a',
             str_ends_with($this->type, 'restored') => '#16a34a',
             str_ends_with($this->type, 'activated') => '#16a34a',
@@ -248,6 +245,7 @@ class ActivityLog extends Model
         return match (true) {
             str_ends_with($this->type, 'created') => '#f0fdf4',
             str_ends_with($this->type, 'approved') => '#f0fdf4',
+            str_ends_with($this->type, 'confirmed') => '#f0fdf4',
             str_ends_with($this->type, 'planted')  => '#f0fdf4',
             str_ends_with($this->type, 'restored') => '#f0fdf4',
             str_ends_with($this->type, 'activated') => '#f0fdf4',

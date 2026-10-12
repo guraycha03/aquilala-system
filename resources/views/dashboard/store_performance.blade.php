@@ -46,8 +46,8 @@
   .panel-head p { font-size: 12px; color: #64748b; margin: 2px 0 0 0; }
   .panel-body { padding: 18px 22px; }
 
-  /* ── Top products (Most Viewed / Most Quoted / Top Rated) ───────── */
-  .top-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  /* ── Top products (Most Viewed / Most Quoted) ─────────────────────── */
+  .top-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
   .top-grid .dash-panel { display: flex; flex-direction: column; height: 100%; }
   .top-grid .dash-panel .panel-body { flex: 1; }
   .top-panel-head { display: flex; align-items: center; gap: 10px; }
@@ -157,42 +157,6 @@
             <div class="top-empty">
               <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
               <p>No quotations generated yet. Products farmers request will be ranked here.</p>
-            </div>
-          @endforelse
-        </div>
-      </div>
-
-      <!-- TOP RATED -->
-      <div class="dash-panel">
-        <div class="panel-head">
-          <div class="top-panel-head">
-            <span class="top-ic" style="background:#fef9ec;color:#d97706;"><i data-lucide="star" width="17" height="17"></i></span>
-            <div><h3>Top Rated</h3><p>Highest rated by farmers' approved reviews</p></div>
-          </div>
-        </div>
-        <div class="panel-body">
-          @forelse($topRated as $idx => $product)
-            <a class="top-row" href="{{ route('store.products.show', $product->id) }}">
-              <span class="top-rank">#{{ $idx + 1 }}</span>
-              @if($product->mainImage && !empty($product->mainImage->file_path))
-                <img class="top-thumb" src="{{ $product->mainImage->thumb_url }}" alt="{{ $product->display_name }}" loading="lazy">
-              @else
-                <span class="top-thumb"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>
-              @endif
-              <span class="top-name">{{ $product->display_name }}</span>
-              <span class="top-stat">
-                <span class="top-stars">
-                  @for($i = 1; $i <= 5; $i++)
-                    <svg viewBox="0 0 24 24" style="{{ $i <= (int) round($product->average_rating) ? '' : 'fill:#e2e8f0;' }}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  @endfor
-                </span>
-                <i>{{ number_format($product->average_rating, 1) }} · {{ $product->review_count }} reviews</i>
-              </span>
-            </a>
-          @empty
-            <div class="top-empty">
-              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <p>No approved reviews yet. Farmer ratings will be ranked here.</p>
             </div>
           @endforelse
         </div>

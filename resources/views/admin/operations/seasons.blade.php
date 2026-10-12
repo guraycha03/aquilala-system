@@ -99,7 +99,8 @@
       @include('partials.admin-tabs', [
         'tabs' => [
           ['key' => 'formulas', 'label' => 'Formulas',          'url' => route('admin.operations.formulas')],
-          ['key' => 'catalog',  'label' => 'Catalog & Reviews', 'url' => route('admin.operations.catalog')],
+          ['key' => 'catalog',  'label' => 'Catalog', 'url' => route('admin.operations.catalog')],
+          ['key' => 'plantings','label' => 'Planting Requests', 'url' => route('admin.plantings.index')],
           ['key' => 'seasons',  'label' => 'Seasons',           'url' => route('admin.operations.seasons')],
         ],
         'activeTab' => 'seasons',

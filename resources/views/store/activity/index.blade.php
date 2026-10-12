@@ -343,7 +343,7 @@
 
 <div class="page-header">
   <h1 class="page-title">Store Activity</h1>
-  <p class="page-subtitle">Your store's complete history — product listings, stock, input formulas, and reviews received.</p>
+  <p class="page-subtitle">Your store's complete history — product listings, stock changes, and input formulas.</p>
 </div>
 
 <!-- Stats Row -->
@@ -355,24 +355,6 @@
     <div>
       <div class="stat-val">{{ $totalProducts ?? 0 }}</div>
       <div class="stat-lbl">Products Added</div>
-    </div>
-  </div>
-  <div class="stat-pill amber">
-    <div class="stat-icon">
-      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-    </div>
-    <div>
-      <div class="stat-val">{{ $totalReviews ?? 0 }}</div>
-      <div class="stat-lbl">Reviews Received</div>
-    </div>
-  </div>
-  <div class="stat-pill red">
-    <div class="stat-icon">
-      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </div>
-    <div>
-      <div class="stat-val">{{ $totalDisapproved ?? 0 }}</div>
-      <div class="stat-lbl">Reviews Disapproved</div>
     </div>
   </div>
   <div class="stat-pill slate">

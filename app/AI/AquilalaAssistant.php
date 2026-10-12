@@ -864,7 +864,6 @@ class AquilalaAssistant
             '- "Do you have urea products?"',
             '- "What fertilizers for rice?"',
             '- "How much would 2 hectares of corn cost?"',
-            '- "Can I review it?"',
             '- "How do I plant corn?"',
         ];
 

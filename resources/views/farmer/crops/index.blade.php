@@ -102,6 +102,8 @@
     .crop-batch-chip { font-size: 11px; font-weight: 600; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 12px; white-space: nowrap; }
     .crop-sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
     .stage-badge-mini { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+    .stage-badge-mini.confirm-badge { margin-left: 6px; }
+    .confirm-badge.pending { border: 1px dashed #f59e0b; }
     .stage-dot-mini { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
     .season-badge-mini { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; text-transform: capitalize; }
     .season-badge-mini.wet { background: #eff6ff; color: #1d4ed8; }
@@ -605,6 +607,11 @@
                         <span class="stage-dot-mini"></span>
                         {{ $fc->growth_stage_label }}
                     </span>
+                    @unless($fc->isConfirmed())
+                        <span class="stage-badge-mini confirm-badge {{ $fc->confirmation_status }}" style="background: {{ $fc->confirmation_status_color }}12; color: {{ $fc->confirmation_status_color }};">
+                            {{ $fc->confirmation_status_label }}
+                        </span>
+                    @endunless
                 </td>
                 <td class="yield-cell">
                     <b>{{ rtrim(rtrim(number_format($fc->land_area, 2, '.', ''), '0'), '.') }}</b>
@@ -635,10 +642,17 @@
                 <td class="hide-sm">
                     <div class="row-actions">
                         @if(!$isFinished)
-                            <button class="row-btn plain" title="Update growth stage or record the harvest" onclick="event.stopPropagation(); openUpdateModal({{ $fc->id }}, '{{ $fc->growth_stage }}')">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                Update
-                            </button>
+                            @if(!$fc->isConfirmed())
+                                <button class="row-btn disabled" disabled title="Growth updates unlock once an admin confirms this planting.">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    Pending
+                                </button>
+                            @else
+                                <button class="row-btn plain" title="Update growth stage or record the harvest" onclick="event.stopPropagation(); openUpdateModal({{ $fc->id }}, '{{ $fc->growth_stage }}')">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    Update
+                                </button>
+                            @endif
                         @else
                             <button class="row-btn disabled" disabled title="Updates are not applicable to completed batches.">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>

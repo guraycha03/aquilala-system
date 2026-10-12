@@ -297,6 +297,9 @@ class FarmerCropController extends Controller
 
         $validated['user_id'] = Auth::id();
         $validated['growth_stage'] = 'seeding';
+        // Plantings must be approved by an admin before the batch becomes
+        // trackable (stage updates, harvest reports).
+        $validated['confirmation_status'] = FarmerCrop::CONFIRMATION_PENDING;
 
         if (blank($validated['batch_name'] ?? null)) {
             $crop = Crop::find($validated['crop_id']);
@@ -320,13 +323,23 @@ class FarmerCropController extends Controller
         }
 
         return redirect()->route('farmer.crops.index')
-            ->with('success', 'Crop batch added successfully!');
+            ->with('success', 'Crop batch submitted! It is now awaiting admin confirmation.');
     }
 
     public function update(Request $request, FarmerCrop $farmerCrop)
     {
         if ($farmerCrop->user_id !== Auth::id()) {
             abort(403);
+        }
+
+        // Growth-stage management (including marking harvested) only opens up
+        // once an admin has confirmed the planting. Notes alone stay editable
+        // so a farmer can still correct remarks while waiting.
+        if (! $farmerCrop->isConfirmed() && $request->input('growth_stage') !== $farmerCrop->growth_stage) {
+            return back()->withErrors([
+                'growth_stage' => 'This crop batch is '.strtolower($farmerCrop->confirmation_status_label)
+                    .'. Growth stages unlock once an admin confirms the planting.',
+            ])->withInput();
         }
 
         $validated = $request->validate([

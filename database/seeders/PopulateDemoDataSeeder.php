@@ -3,11 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\ActivityLog;
+use App\Models\AssociationEvent;
 use App\Models\Crop;
 use App\Models\FarmerCrop;
 use App\Models\HarvestReport;
 use App\Models\Product;
-use App\Models\ProductReview;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
 use App\Models\User;
@@ -38,63 +38,7 @@ class PopulateDemoDataSeeder extends Seeder
         'dominador.estrella@example.com' => ['crop' => 'String Beans', 'land' => 0.50, 'gender' => 'Male'],
     ];
 
-    private array $reviewRows = [
-        ['cruz@gmail.com', 'Karate Lambda-Cyhalothrin', 4, 'Sulit sa presyo, isang takip sapat na para sa isang tanke. Timer lang talaga dapat para hindi masunog ang dahon.', '2025-11-02', 'approved'],
-        ['cruz@gmail.com', 'Beam Tricyclazole', 5, 'Ito ang go-to ko kontra rice blast. Dalawang araw makikita mo agad ang epekto sa dahon.', '2026-02-18', 'approved'],
-        ['cruz@gmail.com', 'Roundup Glyphosate', 4, 'Mabilis mapatay ang damo, malinis ang paligid ng palayan bago magtanim. Dosis lang ang dapat bantayan.', '2026-05-09', 'approved'],
-        ['cruz@gmail.com', 'Manual Knapsack Sprayer', 4, 'Magaan sa likod at hindi agad napapagod ang balikat. Dalawang taon ko nang gamit, wala pang sira.', '2025-08-21', 'approved'],
-        ['cruz@gmail.com', 'Drip Irrigation Kit', 5, 'Malaking tulong sa gulayan ko tuwing dry season, tipid sa tubig at tipid din sa oras ng pagdidilig.', '2024-03-15', 'approved'],
-        ['cruz@gmail.com', 'NPK Fertilizer (16-20-0)', 4, 'Maganda ang formulation lalo na kung kailangan ng pananim ng nitrogen. Mas luntian ang dahon pagkatapos.', '2024-07-30', 'approved'],
-        ['guraycha@gmail.com', 'NSIC Rc216 Rice Seeds', 4, 'Magandang variety, malinis ang bigas at mataas ang recovery. Umabot naman ako ng 4.9 MT bawat ektarya.', '2025-10-11', 'approved'],
-        ['guraycha@gmail.com', 'Foliar Fertilizer Grow More (14-40-13)', 5, 'Palaging kasama sa tank mix ko tuwing foliar. Mabilis magrecover ang tanim at makintab ang dahon.', '2025-04-03', 'approved'],
-        ['guraycha@gmail.com', 'Selecron Profenofos', 4, 'Epektibo sa armyworm nang inatake yung mais ko. Medyo masangsang lang talaga yung amoy pero gumana naman.', '2024-09-17', 'approved'],
-        ['guraycha@gmail.com', 'Complete Fertilizer (14-14-14)', 4, 'Balanseng fertilizer, okay pang basal bago magsabog ng urea. Hindi nag-clump kahit naulanan ang bodega ko.', '2024-02-12', 'approved'],
-        ['guraycha@gmail.com', 'NSIC Rc160 Rice Seeds', 4, 'Maaga ng konti mag-ani, dinagdagan ko lang ng pataba noong pagkatubo, umabot naman ang kailangan.', '2026-04-25', 'pending'],
-        ['dev.farmer@aquilala.org', 'Aelah Sweet Corn Seeds', 4, 'Matamis ang bunga at mabilis mag-mature. Ingat lang sa corn borer pero sulit naman ang resulta.', '2025-05-22', 'approved'],
-        ['dev.farmer@aquilala.org', 'Roundup Glyphosate', 5, 'Standard ko ito sa paglilinis ng taniman, mabilis at malinis ang tingnan.', '2024-11-05', 'approved'],
-        ['dev.farmer@aquilala.org', 'Chicken Layer Mash', 4, 'Eto ginamit ko, mas marami ang itlog ng mga manok ko simula nito. Mabubuti din ang timpla.', '2024-06-30', 'approved'],
-        ['dev.farmer@aquilala.org', 'Confidor Imidacloprid', 5, 'Ang taga-papatay ng aphids at leafhopper sa palayan ko. Sulit talaga ang bote.', '2023-10-14', 'approved'],
-        ['dev.farmer@aquilala.org', 'Urea Fertilizer (46-0-0)', 4, 'Standard na urea, wala naman akong reklamo. Basta tama lang ang timing ng sabog.', '2023-07-20', 'approved'],
-        ['ernie.buhay@example.com', 'Urea Fertilizer (46-0-0)', 4, 'Mabuti ang granules, madaling isaboy nang pantay. Medyo tumaas lang ang presyo nung tag-ani.', '2023-06-15', 'approved'],
-        ['ernie.buhay@example.com', 'Complete Fertilizer (14-14-14)', 4, 'Okay sa basal, pantay ang tubo ng palay sa buong bukid ko kahit may mababang parte.', '2023-07-23', 'approved'],
-        ['ernie.buhay@example.com', 'NSIC Rc222 Rice Seeds', 5, 'Rc222 pa rin ang tapat ko, hindi binigo kahit malakas ang ulan noong nakaraang wet season.', '2024-05-18', 'approved'],
-        ['ernie.buhay@example.com', 'NSIC Rc302 (Submarino) Rice Seeds', 4, 'Sinubukan ko ang Rc302 sa mababang bahagi, humawak kahit bahain. Sulit para dun sa parteng malalim.', '2024-11-09', 'approved'],
-        ['ernie.buhay@example.com', 'Decis 2.5 EC', 4, 'Mabilis kumilos kontra stem borer. Isang aplikasyon lang, sakto na sa dalawang ektarya ko.', '2025-09-28', 'approved'],
-        ['ernie.buhay@example.com', 'Saaf Carbendazim + Mancozeb', 4, 'Magandang kombinasyong fungicide, ginamit ko sa leaf blight at gumaling agad ang tanim.', '2026-09-27', 'pending'],
-        ['ernie.buhay@example.com', 'NSIC Rc160 Rice Seeds', 4, 'Magandang palagyan kung gusto mo sunod-sunod na taniman sa isang taon, maaga lang ang panahon ng pag-ani.', '2026-04-08', 'approved'],
-        ['marites.lachica@example.com', 'NK 8828 Hybrid Corn Seeds', 5, 'Asahan mo ang NK 8828, hindi ka magsisisi. Malalaki ang puso ng mais ko at puro kumpleto ang uray.', '2023-05-06', 'approved'],
-        ['marites.lachica@example.com', 'Urea Fertilizer (46-0-0)', 4, 'Pang-topdress ko sa mais, maganda naman ang resulta. Basta hilera-hilera ang pagkalat.', '2023-08-30', 'approved'],
-        ['marites.lachica@example.com', 'NPK Fertilizer (16-20-0)', 4, 'Mas mabigat ang puso ng mais ko simula nang gamitin ko ito. Balanseng para sa pananim.', '2024-06-25', 'approved'],
-        ['marites.lachica@example.com', 'Karate Lambda-Cyhalothrin', 4, 'Epektibo kontra corn borer. Hintayin mo lang ang tamang oras ng pag-spray, wag tanghali.', '2024-09-15', 'approved'],
-        ['marites.lachica@example.com', 'Aelah Sweet Corn Seeds', 4, 'Magandang sweet corn, mataas naman ang bentahan ko sa palengke. Hinanap-hanap ng mga suki.', '2025-03-29', 'approved'],
-        ['marites.lachica@example.com', 'Drip Irrigation Kit', 5, 'Ito ang sumagip sa mais ko noong tagtuyot. Nagawa kong mag-ani kahit ganoon ka-init ang panahon.', '2025-12-20', 'approved'],
-        ['marites.lachica@example.com', 'Woven Rice Bags (50 kg) — Bundle of 50', 4, 'Matibay ang sako, hindi nabubutas kahit mabigat ang karga. Pinasan ko na ng buong sako, buo pa rin.', '2026-09-28', 'pending'],
-        ['rodrigo.salazar@example.com', 'RAMGO F1 Eggplant Seeds', 4, 'Mabuti ang tubo, mahaba at makintab ang prutas. Mahilig lang talaga sa sipag ng pest control.', '2023-05-21', 'approved'],
-        ['rodrigo.salazar@example.com', 'Vermicast Organic Fertilizer', 5, 'Pinaghalo ko sa lupa bago magtanim, tunay na bumuti ang lupa ko. Mas mataba at mabigat ang talong.', '2023-07-02', 'approved'],
-        ['rodrigo.salazar@example.com', 'Superphosphate (0-20-0)', 4, 'Maganda para sa pag-uugat, lalo na sa mga batang talong. Tamang-tama pang basal.', '2024-01-19', 'approved'],
-        ['rodrigo.salazar@example.com', 'Agricultural Lime (Calcium Carbonate)', 4, 'Inilatag ko tatlong linggo bago magtanim at napaayos ang acidity ng lupa. Sulit na sulit.', '2024-04-16', 'approved'],
-        ['rodrigo.salazar@example.com', 'Confidor Imidacloprid', 5, 'Wala nang surot na bumutas sa bunga ko nung gamitin ko ito. Rekomendado ko talaga.', '2024-10-08', 'approved'],
-        ['rodrigo.salazar@example.com', 'HDPE Irrigation Pipe (2 in)', 4, 'Okay ang tubo, hindi pumutok kahit mataas ang presyon ng bomba ko. Madaling i-install.', '2025-08-14', 'approved'],
-        ['rodrigo.salazar@example.com', 'Bordak Copper Fungicide (500 g)', 4, 'Ginamit sa leaf spot ng talong, humupa agad ang kumalat. Dalawang aplikasyon lang.', '2026-02-27', 'approved'],
-        ['vicente.olarte@example.com', 'F1 Ampalaya Seeds', 4, 'Magandang variety, mahaba ang bunga at mapait ng konting sakto. Kailangan lang talaga consistent na spray.', '2023-06-10', 'approved'],
-        ['vicente.olarte@example.com', 'Foliar Fertilizer Grow More (14-40-13)', 5, 'Ang laging kasama sa foliar spray ng ampalaya ko. Mabilis lumago ang mga baging, hitik ang bunga.', '2023-08-01', 'approved'],
-        ['vicente.olarte@example.com', 'Bio-N Nitrogen Biofertilizer', 4, 'Tuwang-tuwa ang mga ugat, mas lumakas ang resistensya ng mga tanim ko kahit mabantot ang halong dumi.', '2024-02-20', 'approved'],
-        ['vicente.olarte@example.com', 'RAMGO F1 Tomato Seeds', 4, 'Sabay kong tinanim sa ampalaya area, parehong maganda ang tubo. Maayos ang laki ng prutas.', '2024-07-11', 'approved'],
-        ['vicente.olarte@example.com', 'Relte Molluscicide (Niclosamide)', 5, 'Ito ang tapat ko kontra kuhol sa bagong tanim na ampalaya. Grabe ang dami ng hukay pero naitaboy.', '2025-10-03', 'approved'],
-        ['vicente.olarte@example.com', 'Drip Irrigation Kit', 4, 'Dahil dito naka-iwas ako sa amag sa dahon, hindi na nababasa ang dahon pagka-didilig. Sulit.', '2026-04-12', 'approved'],
-        ['lorna.beltran@example.com', 'RAMGO F1 Tomato Seeds', 5, 'Ang pinaka-magandang tomato seed na nagamit ko, pantay-pantay ang laki ng prutas. Dami din ng bunga.', '2023-05-14', 'approved'],
-        ['lorna.beltran@example.com', 'Vermicast Organic Fertilizer', 5, 'Umasa talaga ako sa vermicast, gulay na gulay ang mga punla ko. Hindi na ako naglalagay ng sobrang pataba.', '2023-06-20', 'approved'],
-        ['lorna.beltran@example.com', 'Super Humus Organic Fertilizer', 4, 'Mabubuti ang humus, hindi na masyadong madalas magpataba pagkatapos. Maayos ang texture ng lupa.', '2024-03-05', 'approved'],
-        ['lorna.beltran@example.com', 'Selecron Profenofos', 4, 'Ginamit ko kontra fruit borer ng kamatis, bumaba talaga ang sira ng bunga.', '2024-09-30', 'approved'],
-        ['lorna.beltran@example.com', 'Zinc Sulfate Micronutrient (33% Zn)', 4, 'Maganda pang supplement, mas berde ang dahon at mas maganda ang set ng bunga.', '2025-07-12', 'approved'],
-        ['lorna.beltran@example.com', 'Round Point Steel Shovel (Heavy)', 5, 'Matitibay ang bao, hindi baluktot kahit sa matigas na lupa. Komportable din hawakan.', '2026-09-26', 'pending'],
-        ['dominador.estrella@example.com', 'Sitaw (String Beans) Seeds', 4, 'Malago ang baging at hitik ang mga pods. Basta nakatayo ang trellis, todo ang bunga nito.', '2023-07-05', 'approved'],
-        ['dominador.estrella@example.com', 'Pechay (Bok Choy) Seeds', 5, 'Mabilis lumago, tatlumpung araw puwede nang anihin. Kinakaya kahit anong panahon.', '2024-10-20', 'approved'],
-        ['dominador.estrella@example.com', 'Superphosphate (0-20-0)', 4, 'Mainam para sa gulay na namumunga, mas marami ang bulaklak at mas matibay ang tanim.', '2025-02-16', 'approved'],
-        ['dominador.estrella@example.com', 'NPK Fertilizer (16-20-0)', 4, 'Maganda ang sabay na nitrogen at phosphorus para sa sitaw. Halatang halata ang tubo.', '2025-08-04', 'approved'],
-        ['dominador.estrella@example.com', 'Roundup Glyphosate', 4, 'Nilinis ko agad ang taniman bago magtanim, makinis ang lupa at madaling naghukay.', '2026-01-12', 'approved'],
-        ['dominador.estrella@example.com', 'Manual Knapsack Sprayer', 4, 'Matibay na sprayer, tatlong taon ko nang gamit, buo pa rin. Madaling hugasan at hindi nagsasara agad.', '2026-06-09', 'approved'],
-    ];
+
 
     public function run(): void
     {
@@ -104,8 +48,8 @@ class PopulateDemoDataSeeder extends Seeder
         $farmers = $this->ensureFarmers();
 
         $this->seedHarvestHistory($farmers);
+        $this->seedEvents();
         $this->seedQuotations($farmers);
-        $this->seedProductReviews($farmers);
 
         $this->command?->info('Demo data populated.');
     }
@@ -234,6 +178,8 @@ class PopulateDemoDataSeeder extends Seeder
             if ($prefix !== 'OKR' && str_starts_with((string) $newSku, 'OKR-')) {
                 $newSku = str_replace('OKR-', $prefix.'-', (string) $newSku);
             }
+            // Never let a soft-deleted row's SKU block the rename.
+            Product::withTrashed()->where('sku', $newSku)->whereKeyNot($product->id)->restore();
             $product->forceFill([
                 'user_id' => $userId,
                 'sku' => $newSku,
@@ -395,6 +341,9 @@ class PopulateDemoDataSeeder extends Seeder
             if (! $user) {
                 continue;
             }
+            // A soft-deleted row still owns the SKU's unique index — bring it
+            // back before upserting or the insert fails on the duplicate key.
+            Product::withTrashed()->where('sku', $def['sku'])->whereNotNull('deleted_at')->restore();
             Product::updateOrCreate(
                 ['sku' => $def['sku']],
                 [
@@ -526,6 +475,7 @@ class PopulateDemoDataSeeder extends Seeder
     private function seedHarvestHistory(array $farmers): array
     {
         $lastDryReport = [];
+        $confirmerId = User::where('role', 'admin')->value('id');
 
         foreach ($farmers as $email => $farmer) {
             $crop = $this->farmerMeta[$email]['crop'];
@@ -535,16 +485,129 @@ class PopulateDemoDataSeeder extends Seeder
 
             foreach ([2023, 2024, 2025] as $year) {
                 foreach (['dry', 'wet'] as $season) {
-                    $this->makeHarvestReport($farmer, $crop, $cropId, $land, $season, $year, $yMeta);
+                    $report = $this->makeHarvestReport($farmer, $crop, $cropId, $land, $season, $year, $yMeta);
+                    $this->makeHistoricalBatch($farmer, $crop, $cropId, $land, $yMeta, $season, $report, $confirmerId);
                 }
             }
 
             $lastDryReport[$email] = $this->makeHarvestReport($farmer, $crop, $cropId, $land, 'dry', 2026, $yMeta);
 
-            $this->makeCurrentCrop($farmer, $crop, $cropId, $land, $yMeta, $lastDryReport[$email]);
+            $this->makeCurrentCrop($farmer, $crop, $cropId, $land, $yMeta, $lastDryReport[$email], $confirmerId);
         }
 
+        $this->seedPendingCrops($farmers);
+
         return $lastDryReport;
+    }
+
+    /**
+     * One confirmed-but-unfinished batch per farmer for 2023–2025 harvest reports,
+     * linked to the report so the Estimate vs Actual page has full history.
+     */
+    private function makeHistoricalBatch(User $farmer, string $crop, int $cropId, float $land, array $yMeta, string $season, HarvestReport $report, ?int $confirmerId): void
+    {
+        $harvestedAt = Carbon::parse($report->harvest_date);
+        $planted = $harvestedAt->copy()->subDays($this->cropDays($crop));
+        $yKey = $season === 'dry' ? 'dry_yield' : 'wet_yield';
+        $eKey = $season === 'dry' ? 'dry_exp' : 'wet_exp';
+        $batchName = $this->demoBatchName($crop, $planted, 10 + (int) $planted->format('ym'));
+
+        FarmerCrop::firstOrCreate(
+            ['user_id' => $farmer->id, 'batch_name' => $batchName],
+            [
+                'crop_id' => $cropId,
+                'land_area' => $land,
+                'land_area_unit' => 'ha',
+                'planting_date' => $planted->toDateString(),
+                'expected_harvest_date' => $planted->copy()->addDays($this->cropDays($crop))->toDateString(),
+                'actual_harvest_date' => $harvestedAt->toDateString(),
+                'growth_stage' => 'harvested',
+                'season' => $season,
+                'estimated_yield' => round($land * $yMeta[$yKey], 2),
+                'yield_unit' => 'mt',
+                'actual_yield' => (float) $report->actual_yield_metric_tons,
+                'estimated_cost' => round($land * $yMeta[$eKey], 0),
+                'harvest_report_id' => $report->id,
+                'confirmation_status' => FarmerCrop::CONFIRMATION_CONFIRMED,
+                'confirmed_by' => $confirmerId,
+                'confirmed_at' => $planted->copy()->addDay(),
+            ]
+        )->forceFill(['created_at' => $planted, 'updated_at' => $planted])->save();
+    }
+
+    /**
+     * Two unfinished batches left pending so the Planting Requests page has live demo rows.
+     */
+    private function seedPendingCrops(array $farmers): void
+    {
+        $pending = array_slice(array_keys($farmers), 0, 2);
+
+        foreach ($pending as $email) {
+            if (! isset($this->farmerMeta[$email])) {
+                continue;
+            }
+            $farmer = $farmers[$email];
+            $crop = $this->farmerMeta[$email]['crop'];
+            $land = $this->farmerMeta[$email]['land'];
+            $cropId = Crop::where('name', $crop)->value('id');
+            $yMeta = $this->yieldMeta[$crop];
+            $planted = Carbon::create(2026, 9, 18, 8, 0, 0);
+            $batchName = $this->demoBatchName($crop, $planted, 3);
+
+            FarmerCrop::firstOrCreate(
+                ['user_id' => $farmer->id, 'batch_name' => $batchName],
+                [
+                    'crop_id' => $cropId,
+                    'land_area' => $land,
+                    'land_area_unit' => 'ha',
+                    'planting_date' => $planted->toDateString(),
+                    'expected_harvest_date' => $planted->copy()->addDays($this->cropDays($crop))->toDateString(),
+                    'growth_stage' => 'seeding',
+                    'season' => 'wet',
+                    'estimated_yield' => round($land * $yMeta['wet_yield'], 2),
+                    'yield_unit' => 'mt',
+                    'estimated_cost' => round($land * $yMeta['wet_exp'], 0),
+                    'confirmation_status' => FarmerCrop::CONFIRMATION_PENDING,
+                    'confirmed_by' => null,
+                    'confirmed_at' => null,
+                ]
+            )->forceFill(['created_at' => $planted, 'updated_at' => $planted])->save();
+        }
+    }
+
+    /**
+     * Demo association calendar — one event live today for the "Today"
+     * highlight, upcoming events to browse, and past ones for history.
+     */
+    private function seedEvents(): void
+    {
+        $adminId = User::where('role', 'admin')->value('id');
+
+        $events = [
+            // Today — the farmer "notification" moment in the demo.
+            ['Free Fertilizer Distribution (DA release)', AssociationEvent::TYPE_FREE_INPUT, now()->toDateString(), '09:00', '12:00', 'Association Warehouse', 'Urea and complete fertilizer for member-farmers. Bring your association ID.'],
+            // Upcoming
+            ['Water Scheduling — Panay Irrigation Unit', AssociationEvent::TYPE_WATER_SCHEDULE, now()->addDays(5)->toDateString(), '06:00', '08:00', 'Panay Canal', 'Rotation for the eastern block. Priority to rice fields in vegetative stage.'],
+            ['General Assembly & Livelihood Seminar', AssociationEvent::TYPE_MEETING, now()->addDays(12)->toDateString(), '08:00', '12:00', 'Bulan Sports Complex', 'Attendance is open to all member-farmers. Free snacks provided.'],
+            ['Vegetable Seedlings Release', AssociationEvent::TYPE_FREE_INPUT, now()->addDays(25)->toDateString(), null, null, 'Association Warehouse', 'Open-pollinated tomato and eggplant seedlings, first come first served.'],
+            // Past
+            ['Association Meeting', AssociationEvent::TYPE_MEETING, now()->subDays(10)->toDateString(), '13:00', '15:00', 'Association Office', 'Monthly coordination meeting with barangay farm technicians.'],
+            ['Free Pesticide Distribution', AssociationEvent::TYPE_FREE_INPUT, now()->subDays(25)->toDateString(), '09:00', '11:00', 'Association Warehouse', 'Karate and Decis for corn members.'],
+        ];
+
+        foreach ($events as [$title, $type, $date, $start, $end, $location, $description]) {
+            AssociationEvent::firstOrCreate(
+                ['title' => $title, 'event_date' => $date],
+                [
+                    'event_type' => $type,
+                    'start_time' => $start,
+                    'end_time' => $end,
+                    'location' => $location,
+                    'description' => $description,
+                    'created_by' => $adminId,
+                ]
+            );
+        }
     }
 
     private function makeHarvestReport(User $farmer, string $crop, int $cropId, float $land, string $season, int $year, array $yMeta): HarvestReport
@@ -584,11 +647,11 @@ class PopulateDemoDataSeeder extends Seeder
         return $report;
     }
 
-    private function makeCurrentCrop(User $farmer, string $crop, int $cropId, float $land, array $yMeta, HarvestReport $dry2026): void
+    private function makeCurrentCrop(User $farmer, string $crop, int $cropId, float $land, array $yMeta, HarvestReport $dry2026, ?int $confirmerId = null): void
     {
         mt_srand(crc32($farmer->email.'|current|2026'));
         $planted = Carbon::create(2026, 8, mt_rand(5, 25), 8, 0, 0);
-        $harvestedBatch = $this->makeHarvestedBatch($farmer, $crop, $cropId, $land, $yMeta, $dry2026);
+        $harvestedBatch = $this->makeHarvestedBatch($farmer, $crop, $cropId, $land, $yMeta, $dry2026, $confirmerId);
 
         $batchName = $this->demoBatchName($crop, $planted, 2);
         $farmerCrop = FarmerCrop::firstOrCreate(
@@ -604,6 +667,9 @@ class PopulateDemoDataSeeder extends Seeder
                 'estimated_yield' => round($land * $yMeta['wet_yield'], 2),
                 'yield_unit' => 'mt',
                 'estimated_cost' => round($land * $yMeta['wet_exp'], 0),
+                'confirmation_status' => FarmerCrop::CONFIRMATION_CONFIRMED,
+                'confirmed_by' => $confirmerId,
+                'confirmed_at' => $planted->copy()->addDay(),
             ]
         );
         $farmerCrop->forceFill(['created_at' => $planted, 'updated_at' => $planted])->save();
@@ -617,7 +683,7 @@ class PopulateDemoDataSeeder extends Seeder
         unset($harvestedBatch);
     }
 
-    private function makeHarvestedBatch(User $farmer, string $crop, int $cropId, float $land, array $yMeta, HarvestReport $dry2026): void
+    private function makeHarvestedBatch(User $farmer, string $crop, int $cropId, float $land, array $yMeta, HarvestReport $dry2026, ?int $confirmerId = null): void
     {
         $planted = Carbon::create(2025, 12, 10, 8, 0, 0);
         $harvestedAt = Carbon::parse($dry2026->harvest_date);
@@ -639,6 +705,9 @@ class PopulateDemoDataSeeder extends Seeder
                 'actual_yield' => (float) $dry2026->actual_yield_metric_tons,
                 'estimated_cost' => (float) $dry2026->actual_total_expenses,
                 'harvest_report_id' => $dry2026->id,
+                'confirmation_status' => FarmerCrop::CONFIRMATION_CONFIRMED,
+                'confirmed_by' => $confirmerId,
+                'confirmed_at' => $planted->copy()->addDay(),
             ]
         );
         $farmerCrop->forceFill(['created_at' => $planted, 'updated_at' => $planted])->save();
@@ -804,99 +873,6 @@ class PopulateDemoDataSeeder extends Seeder
                 $createdAt, read: false
             );
         }
-    }
-
-    private function seedProductReviews(array $farmers): void
-    {
-        foreach ($this->reviewRows as [$email, $productName, $rating, $comment, $dateStr, $status]) {
-            $farmer = $farmers[$email] ?? User::where('email', $email)->first();
-            $product = Product::where('name', $productName)->first();
-            if (! $farmer || ! $product) {
-                continue;
-            }
-            $createdAt = Carbon::parse($dateStr.' 09:00:00');
-
-            $review = ProductReview::updateOrCreate(
-                ['product_id' => $product->id, 'user_id' => $farmer->id],
-                [
-                    'rating' => $rating,
-                    'comment' => $comment,
-                    'status' => $status,
-                ]
-            );
-            $review->forceFill(['created_at' => $createdAt, 'updated_at' => $createdAt])->save();
-
-            $star = $rating !== 1 ? 's' : '';
-            $this->logActivity(
-                $farmer->id, ActivityLog::TYPE_REVIEW_CREATED,
-                "Reviewed {$product->name} — {$rating} star{$star}", $review,
-                ['product_name' => $product->name, 'rating' => $rating],
-                $createdAt, read: $createdAt->isBefore(now()->subDays(7))
-            );
-
-            if ($status === 'approved') {
-                $approveAt = $createdAt->copy()->addDays(2);
-                if ($approveAt->gt(now())) {
-                    $approveAt = now()->subHours(mt_rand(2, 40));
-                }
-                $store = $product->storeOwner;
-                if ($store) {
-                    $this->logActivity(
-                        $store->id, ActivityLog::TYPE_REVIEW_APPROVED,
-                        "Review from {$farmer->name} ({$rating}★) on \"{$product->name}\" was approved and is now public", $review,
-                        ['review_id' => $review->id, 'product_id' => $product->id, 'product_name' => $product->name, 'reviewer' => $farmer->name, 'actor' => 'Admin', 'rating' => $rating, 'status' => 'approved'],
-                        $approveAt, read: $approveAt->isBefore(now()->subDays(7))
-                    );
-                }
-            }
-        }
-
-        $this->approveStaleSeedReviews();
-    }
-
-    private function approveStaleSeedReviews(): void
-    {
-        $seedFarmerEmails = array_unique(array_column($this->reviewRows, 0));
-        $ownedByDemoStores = ['maya@gmail.com', 'cgguray1227@gmail.com', 'dev.store@aquilala.org'];
-
-        ProductReview::where('status', ProductReview::STATUS_PENDING)
-            ->with(['farmer', 'product.storeOwner'])
-            ->get()
-            ->each(function (ProductReview $review) use ($seedFarmerEmails, $ownedByDemoStores) {
-                $belongsToDemoStores = in_array($review->product?->storeOwner?->email, $ownedByDemoStores, true);
-                $reviewFarmerEmail = $review->farmer?->email;
-                $isSeedFarmerReview = in_array($reviewFarmerEmail, $seedFarmerEmails, true);
-                if (! $belongsToDemoStores && ! $isSeedFarmerReview) {
-                    return;
-                }
-                if ($review->created_at->gt(now()->subDays(5))) {
-                    return;
-                }
-                $approveAt = $review->created_at->copy()->addDays(3);
-                if ($approveAt->gt(now())) {
-                    return;
-                }
-                $review->forceFill(['status' => ProductReview::STATUS_APPROVED])->save();
-                $farmer = $review->farmer;
-                $store = $review->product?->storeOwner;
-
-                if ($farmer) {
-                    $this->logActivity(
-                        $farmer->id, ActivityLog::TYPE_REVIEW_APPROVED,
-                        "Approved review for {$review->product?->name} by {$farmer->name}", $review,
-                        ['product_name' => $review->product?->name, 'rating' => $review->rating, 'reviewer' => $farmer->name],
-                        $approveAt, read: true
-                    );
-                }
-                if ($store) {
-                    $this->logActivity(
-                        $store->id, ActivityLog::TYPE_REVIEW_APPROVED,
-                        "Review from {$farmer?->name} ({$review->rating}★) on \"{$review->product?->name}\" was approved and is now public", $review,
-                        ['review_id' => $review->id, 'product_id' => $review->product_id, 'product_name' => $review->product?->name, 'reviewer' => $farmer?->name, 'actor' => 'Admin', 'rating' => $review->rating, 'status' => 'approved'],
-                        $approveAt, read: $approveAt->isBefore(now()->subDays(30))
-                    );
-                }
-            });
     }
 
     private function logActivity(int $userId, string $type, string $description, $subject = null, array $metadata = [], ?Carbon $at = null, bool $read = false): void

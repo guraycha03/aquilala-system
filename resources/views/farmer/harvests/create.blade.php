@@ -138,12 +138,46 @@
       </div>
     </div>
     <div class="record-body">
+      @if(($batches ?? collect())->isEmpty())
+        <div style="padding: 34px 6px 10px; text-align: center;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: #fffbeb; color: #d97706; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h3 style="margin: 0 0 6px; font-size: 16px; color: #1e2922;">No crop batches ready to report</h3>
+          <p style="margin: 0 auto 16px; font-size: 13.5px; color: #64748b; max-width: 460px; line-height: 1.6;">
+            Harvest reports start from a crop batch. Confirm a planting in <b>My Crops</b> (association admins approve new plantings), or clear an existing report, and it will appear here.
+          </p>
+          <a href="{{ route('farmer.crops.index') }}" class="btn-history">
+            <svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
+            Go to My Crops
+          </a>
+        </div>
+      @else
       <form method="POST" action="{{ route('farmer.harvests.store') }}">
         @csrf
+        <div class="form-grid" style="grid-template-columns: 1fr;">
+          <div class="form-field">
+            <label>Crop Batch <span style="color:#dc2626;">*</span></label>
+            <select name="crop_batch_id" id="cropBatchSelect" required>
+              <option value="">Select a confirmed crop batch…</option>
+              @foreach($batches as $batch)
+                <option value="{{ $batch->id }}"
+                        {{ old('crop_batch_id') == $batch->id ? 'selected' : '' }}
+                        data-crop="{{ $batch->crop?->name }}"
+                        data-season="{{ $batch->season }}"
+                        data-area="{{ $batch->land_area }}">
+                  {{ $batch->crop?->name ?? 'Unknown crop' }} — {{ $batch->batch_name ?? 'batch #' . $batch->id }}
+                  ({{ rtrim(rtrim(number_format((float) $batch->land_area, 2, '.', ''), '0'), '.') }} {{ $batch->land_area_unit === 'ha' ? 'ha' : $batch->land_area_unit }}, {{ ucfirst($batch->season) }} season)
+                </option>
+              @endforeach
+            </select>
+            <p style="margin: 6px 0 0; font-size: 11.5px; color: #94a3b8;">Picking a batch fills the crop, season and land area below. Yield, expenses and date stay yours to enter.</p>
+          </div>
+        </div>
         <div class="form-grid">
           <div class="form-field">
             <label>Crop Type</label>
-            <select name="crop_type" required>
+            <select name="crop_type" id="cropTypeField" required>
               <option value="">Select crop…</option>
               @foreach($cropTypes as $cropName)
                 <option value="{{ $cropName }}" {{ old('crop_type') === $cropName ? 'selected' : '' }}>{{ $cropName }}</option>
@@ -152,7 +186,7 @@
           </div>
           <div class="form-field">
             <label>Season</label>
-            <select name="season" required>
+            <select name="season" id="seasonField" required>
               <option value="dry" {{ old('season') === 'dry' ? 'selected' : '' }}>Dry Season</option>
               <option value="wet" {{ old('season') === 'wet' ? 'selected' : '' }}>Wet Season</option>
             </select>
@@ -163,7 +197,7 @@
           </div>
           <div class="form-field">
             <label>Land Area (hectares)</label>
-            <input type="number" name="land_area" step="0.01" min="0.01" max="999.99" value="{{ old('land_area') }}" placeholder="e.g. 1.50" required>
+            <input type="number" name="land_area" id="landAreaField" step="0.01" min="0.01" max="999.99" value="{{ old('land_area') }}" placeholder="e.g. 1.50" required>
           </div>
           <div class="form-field">
             <label>Actual Yield (metric tons)</label>
@@ -185,8 +219,38 @@
           </a>
         </div>
       </form>
+      @endif
     </div>
   </div>
+
+  <script>
+    (function () {
+      var batchSelect = document.getElementById('cropBatchSelect');
+      if (!batchSelect) return;
+
+      var cropField = document.getElementById('cropTypeField');
+      var seasonField = document.getElementById('seasonField');
+      var landField = document.getElementById('landAreaField');
+
+      function applyBatch() {
+        var opt = batchSelect.options[batchSelect.selectedIndex];
+        if (!opt || !opt.value) return;
+        var crop = opt.getAttribute('data-crop');
+        if (crop && cropField) {
+          for (var i = 0; i < cropField.options.length; i++) {
+            if (cropField.options[i].value === crop) { cropField.selectedIndex = i; break; }
+          }
+        }
+        var season = opt.getAttribute('data-season');
+        if (season && seasonField) seasonField.value = season;
+        var area = opt.getAttribute('data-area');
+        if (area && landField) landField.value = area;
+      }
+
+      batchSelect.addEventListener('change', applyBatch);
+      if (batchSelect.value) applyBatch();
+    })();
+  </script>
 
 </div>
 @endsection

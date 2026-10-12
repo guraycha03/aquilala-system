@@ -555,7 +555,7 @@
       @php
         $forYourCrops = $products->count();
         $seasonalPicks = $products->where('recommended_season', 'wet')->count() + $products->where('recommended_season', 'both')->count();
-        $topRated = $products->count();
+        $topQuoted = $products->count();
       @endphp
 
       <a href="#recommended-products" class="sr-cat-card">
@@ -593,18 +593,18 @@
         </div>
       </a>
 
-      <a href="{{ route('farmer.reviews.index') }}" class="sr-cat-card">
+      <a href="{{ route('farmer.top-quoted.index') }}" class="sr-cat-card">
         <div class="sr-cat-icon" style="background: linear-gradient(135deg, #fef3c7, #fef9c3);">
           <svg viewBox="0 0 24 24" width="22" height="22" stroke="#d97706" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
           </svg>
         </div>
         <div>
-          <h3>Top Rated</h3>
-          <p>Most popular and highly recommended products from partner stores.</p>
+          <h3>Top Quoted</h3>
+          <p>Products other farmers request most in cost quotations.</p>
         </div>
         <div class="sr-cat-count">
-          {{ $topRated }} {{ Str::plural('product', $topRated) }}
+          {{ $topQuoted }} {{ Str::plural('product', $topQuoted) }}
           <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
       </a>

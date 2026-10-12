@@ -194,6 +194,11 @@
                     <span class="stage-dot"></span>
                     {{ $farmerCrop->growth_stage_label }}
                 </span>
+                @unless($farmerCrop->isConfirmed())
+                    <span class="stage-badge" style="background: {{ $farmerCrop->confirmation_status_color }}14; color: {{ $farmerCrop->confirmation_status_color }}; border: 1px dashed {{ $farmerCrop->confirmation_status_color }};">
+                        {{ $farmerCrop->confirmation_status_label }} Confirmation
+                    </span>
+                @endunless
             </div>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -201,7 +206,7 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
                 Back to My Crops
             </a>
-            @if(!in_array($farmerCrop->growth_stage, ['harvested', 'failed']))
+            @if(!in_array($farmerCrop->growth_stage, ['harvested', 'failed']) && $farmerCrop->isConfirmed())
                 <a class="btn-hero" href="#update-stage">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     Update Stage
@@ -210,6 +215,29 @@
         </div>
     </div>
 </div>
+
+@unless($farmerCrop->isConfirmed())
+<div style="max-width: 1100px; margin: 0 auto 4px; padding: 14px 18px; border-radius: 14px; display: flex; gap: 12px; align-items: flex-start;
+     background: {{ $farmerCrop->isRejected() ? '#fef2f2' : '#fffbeb' }}; border: 1px solid {{ $farmerCrop->isRejected() ? '#fecaca' : '#fde68a' }};">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ $farmerCrop->isRejected() ? '#dc2626' : '#d97706' }}" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
+        @if($farmerCrop->isRejected())
+            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        @else
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        @endif
+    </svg>
+    <div style="font-size: 13px; line-height: 1.5; color: #78350f;">
+        @if($farmerCrop->isRejected())
+            <b style="color: #991b1b;">Planting rejected.</b>
+            {{ $farmerCrop->admin_remarks ? $farmerCrop->admin_remarks : 'An admin rejected this planting request. You can remove this batch and submit a new one.' }}
+        @else
+            <b style="color: #92400e;">Awaiting admin confirmation.</b>
+            Growth stage updates and harvest reporting unlock once an association admin confirms this planting.
+            @if($farmerCrop->admin_remarks) <span style="display:block; margin-top:2px;">Admin note: {{ $farmerCrop->admin_remarks }}</span> @endif
+        @endif
+    </div>
+</div>
+@endunless
 
 {{-- ── Stats Strip ── --}}
 @php
@@ -462,7 +490,7 @@ $unit = $farmerCrop->land_area_unit === 'ha' ? 'ha' : $farmerCrop->land_area_uni
 </div>
 
 {{-- ── Update Growth Stage ── --}}
-@if(!$isFinished)
+@if(!$isFinished && $farmerCrop->isConfirmed())
 <div class="box-card" id="update-stage" style="scroll-margin-top: 20px;">
     <div class="box-head">
         <div>
@@ -512,6 +540,23 @@ $unit = $farmerCrop->land_area_unit === 'ha' ? 'ha' : $farmerCrop->land_area_uni
                 <a class="btn-cancel" href="{{ route('farmer.crops.index') }}">Cancel</a>
             </div>
         </form>
+    </div>
+</div>
+@elseif(!$farmerCrop->isConfirmed())
+<div class="box-card">
+    <div class="box-head">
+        <div>
+            <h2>Growth Stage</h2>
+            <p>Stage updates are locked for this batch.</p>
+        </div>
+        <span class="stage-badge" style="background: {{ $farmerCrop->confirmation_status_color }}14; color: {{ $farmerCrop->confirmation_status_color }}; border: 1px dashed {{ $farmerCrop->confirmation_status_color }};">
+            {{ $farmerCrop->confirmation_status_label }}
+        </span>
+    </div>
+    <div class="box-body">
+        <p style="margin: 0; font-size: 13.5px; color: #475569; line-height: 1.6;">
+            This planting request has not been confirmed by an admin yet. Once confirmed, you can advance growth stages, record the harvest, and file a harvest report from this page.
+        </p>
     </div>
 </div>
 @endif

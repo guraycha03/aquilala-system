@@ -8,9 +8,9 @@
 @once
 <style>
   /* ── Shared product card (catalog style) ─────────────────────────── */
-  /* Used by the store storefront, farmer browse, farmer reviews and the
+  /* Used by the store storefront, farmer browse, farmer top-quoted and the
      store-owner dashboard, so every role gets the same card.
-     Deliberately minimal: name, price, rating, season. Stock level, quantity
+     Deliberately minimal: name, price, season. Stock level, quantity
      and brand all live on the product detail page — a shopper scanning a
      catalog does not decide on those, and each extra line made the card
      taller than its neighbours in the two-column phone grid. */
@@ -88,7 +88,7 @@
 
   /* Two lines maximum: a long product name is the main reason a card in a
      two-column phone grid grew taller than the rest of the row. The min-height
-     reserves those two lines even for short names, so the rating row below
+     reserves those two lines even for short names, so the row below
      sits at the same offset on every card in a row. */
   .product-title {
     font-size: 14.5px; color: #0f172a; font-weight: 700; margin: 0 0 6px;
@@ -99,24 +99,12 @@
     min-height: 2.7em;
   }
 
-  /* A catalog only needs a quick sense of quality, so the rating is the
-     official Lucide star plus the number. The colour comes from `color`
-     inherited into the glyph (filled via currentColor), so the same icon
-     serves rated (amber) and unrated (grey) cards. */
-  .pc-rating { display: flex; align-items: center; gap: 4px; min-width: 0; color: #f59e0b; }
-
-  /* The top row holds the rating on the left and the save bookmark on the
-     right. Its bottom margin is what the old .pc-rating margin supplied, so
-     the vertical rhythm below it is unchanged. */
+  /* The top row holds the save bookmark on the right. Its bottom margin
+     keeps the vertical rhythm below it stable across cards. */
   .pc-top-row {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: flex-end;
     gap: 8px; margin-bottom: 6px; min-width: 0;
   }
-  .pc-rating .lucide { width: 14px; height: 14px; flex-shrink: 0; fill: currentColor; stroke: none; }
-  .pc-rating-text { font-size: 11.5px; color: #64748b; white-space: nowrap; }
-  .pc-rating-text b { color: #334155; font-weight: 700; }
-  .pc-rating.is-unrated { color: #cbd5e1; }
-  .pc-rating.is-unrated .pc-rating-text b { color: #94a3b8; }
 
   .pc-body { display: flex; flex-direction: column; gap: 6px; margin-bottom: 6px; min-width: 0; }
 
@@ -138,15 +126,15 @@
   .price-tag {
     font-size: 16px; font-weight: 700; color: #0f172a;
     letter-spacing: -0.01em; white-space: nowrap;
-    /* Anchor the price to the right edge; where a footer slot follows (e.g.
-       the reviews card) it sits inline right after the price. */
+    /* Anchor the price to the right edge; where a footer slot follows it
+       sits inline right after the price. */
     margin-left: auto;
   }
   .price-right { display: flex; align-items: center; gap: 4px; min-width: 0; }
 
-  /* Save for later: an icon-only bookmark on the rating's right that fills
-     solid when saved. It sits above the stretched card link (z-index 2) so
-     the tap lands on this button, not on the link behind it. */
+  /* Save for later: an icon-only bookmark that fills solid when saved.
+     It sits above the stretched card link (z-index 2) so the tap lands
+     on this button, not on the link behind it. */
   .pc-save {
     display: inline-flex; align-items: center; justify-content: center;
     background: none; border: none; cursor: pointer;
@@ -187,9 +175,6 @@
     .pc-season { top: 8px; right: 8px; width: 23px; height: 23px; }
     .pc-season svg { width: 13px; height: 13px; }
     .pc-top-row { gap: 6px; margin-bottom: 5px; }
-    .pc-rating { gap: 3px; }
-    .pc-rating .lucide { width: 12px; height: 12px; }
-    .pc-rating-text { font-size: 11px; }
     .pc-body { gap: 5px; margin-bottom: 5px; }
     .card-footer { padding: 8px 0 9px; }
     .price-row { gap: 6px; margin-bottom: 6px; }
@@ -205,7 +190,6 @@
     .product-image-container { height: calc(var(--img-h, 190px) * .58); }
     .product-title { font-size: 12.5px; }
     .price-tag { font-size: 14px; }
-    .pc-rating .lucide { width: 11px; height: 11px; }
     .pc-save .lucide { width: 12px; height: 12px; }
     .btn-action svg { width: 12px; height: 12px; }
   }
@@ -217,14 +201,6 @@
   $seasonClass = $season === 'wet' ? 'season-wet' : ($season === 'dry' ? 'season-dry' : 'season-all');
   $seasonLabel = $season === 'wet' ? 'Wet season' : ($season === 'dry' ? 'Dry season' : 'All seasons');
   $displayName = $product->display_name;
-
-  // Accessors over the approvedReviews relation, so any surface that renders
-  // the card can show a rating without knowing where the number came from.
-  // A product with no approved reviews is treated as 0 rather than left blank,
-  // so the card always shows a star and a number.
-  $rating = $product->average_rating;
-  $hasRating = $rating !== null;
-  $ratingValue = $hasRating ? (float) $rating : 0.0;
 
   // Save-for-later state for the signed-in user. The controllers that render
   // the card eager-tag each product with a transient `saved` flag in a single
@@ -271,13 +247,6 @@
     <h3 class="product-title" title="{{ $displayName }}">{{ $displayName }}</h3>
 
     <div class="pc-top-row">
-      <div class="pc-rating{{ $hasRating ? '' : ' is-unrated' }}"
-           role="img"
-           aria-label="{{ $hasRating ? 'Rated ' . number_format($ratingValue, 1) . ' out of 5' : 'Not yet rated' }}"
-           title="{{ $hasRating ? 'Rated ' . number_format($ratingValue, 1) . ' out of 5' : 'Not yet rated' }}">
-        <i data-lucide="star" aria-hidden="true"></i>
-        <span class="pc-rating-text"><b>{{ number_format($ratingValue, 1) }}</b></span>
-      </div>
       @auth
         @if($href)
           <button type="button"

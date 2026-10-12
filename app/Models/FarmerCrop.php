@@ -26,6 +26,10 @@ class FarmerCrop extends Model
         'season',
         'estimated_yield',
         'yield_unit',
+        'confirmation_status',
+        'confirmed_by',
+        'confirmed_at',
+        'admin_remarks',
         'actual_yield',
         'estimated_cost',
         'notes',
@@ -36,11 +40,16 @@ class FarmerCrop extends Model
         'planting_date' => 'date',
         'expected_harvest_date' => 'date',
         'actual_harvest_date' => 'date',
+        'confirmed_at' => 'datetime',
         'land_area' => 'decimal:2',
         'estimated_yield' => 'decimal:2',
         'actual_yield' => 'decimal:2',
         'estimated_cost' => 'decimal:2',
     ];
+
+    public const CONFIRMATION_PENDING = 'pending';
+    public const CONFIRMATION_CONFIRMED = 'confirmed';
+    public const CONFIRMATION_REJECTED = 'rejected';
 
     public function user(): BelongsTo
     {
@@ -60,6 +69,44 @@ class FarmerCrop extends Model
     public function harvestReport(): BelongsTo
     {
         return $this->belongsTo(HarvestReport::class);
+    }
+
+    public function confirmedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'confirmed_by');
+    }
+
+    public function isConfirmed(): bool
+    {
+        return $this->confirmation_status === self::CONFIRMATION_CONFIRMED;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->confirmation_status === self::CONFIRMATION_PENDING;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->confirmation_status === self::CONFIRMATION_REJECTED;
+    }
+
+    public function getConfirmationStatusLabelAttribute(): string
+    {
+        return match ($this->confirmation_status) {
+            self::CONFIRMATION_CONFIRMED => 'Confirmed',
+            self::CONFIRMATION_REJECTED => 'Rejected',
+            default => 'Pending',
+        };
+    }
+
+    public function getConfirmationStatusColorAttribute(): string
+    {
+        return match ($this->confirmation_status) {
+            self::CONFIRMATION_CONFIRMED => '#16a34a',
+            self::CONFIRMATION_REJECTED => '#dc2626',
+            default => '#d97706',
+        };
     }
 
     /**
@@ -156,6 +203,21 @@ class FarmerCrop extends Model
     public function scopeActive($query)
     {
         return $query->whereNotIn('growth_stage', ['harvested', 'failed']);
+    }
+
+    public function scopeConfirmed($query)
+    {
+        return $query->where('confirmation_status', self::CONFIRMATION_CONFIRMED);
+    }
+
+    public function scopePendingConfirmation($query)
+    {
+        return $query->where('confirmation_status', self::CONFIRMATION_PENDING);
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('confirmation_status', self::CONFIRMATION_REJECTED);
     }
 
     /**

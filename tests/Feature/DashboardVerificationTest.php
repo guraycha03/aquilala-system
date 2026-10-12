@@ -66,7 +66,7 @@ class DashboardVerificationTest extends TestCase
             ->assertSee('Top Products')
             ->assertSee('Most Viewed')
             ->assertSee('Most Quoted')
-            ->assertSee('Top Rated');
+            ->assertDontSee('Top Rated');
     }
 
     public function test_farmer_dashboard_loads(): void

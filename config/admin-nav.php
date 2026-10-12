@@ -35,8 +35,27 @@ return [
         'icon' => '<svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>',
         'items' => [
             ['label' => 'Formulas', 'routes' => ['admin.operations.formulas']],
-            ['label' => 'Catalog & Reviews', 'routes' => ['admin.operations.catalog']],
+            ['label' => 'Catalog', 'routes' => ['admin.operations.catalog']],
+            ['label' => 'Planting Requests', 'routes' => ['admin.plantings.index']],
             ['label' => 'Seasons', 'routes' => ['admin.operations.seasons']],
+        ],
+    ],
+    'harvest' => [
+        'label' => 'Harvest',
+        'icon' => '<svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M12 10C9 10 6 9 6 5c3 0 6 2 6 5"/><path d="M12 14c3 0 6-1 6-5-3 0-6 2-6 5"/><path d="M3 20h18"/><path d="M3 12l4-4 4 4 5-5 5 5"/></svg>',
+        'items' => [
+            ['label' => 'Overview', 'routes' => ['admin.harvests.index']],
+            ['label' => 'All Harvest Reports', 'routes' => ['admin.harvests.reports']],
+            ['label' => 'Estimate vs Harvest', 'routes' => ['admin.harvests.compare']],
+            ['label' => 'AI Insights', 'routes' => ['admin.harvests.ai']],
+        ],
+    ],
+    'calendar' => [
+        'label' => 'Calendar',
+        'icon' => '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+        'items' => [
+            ['label' => 'Calendar', 'routes' => ['admin.calendar.index']],
+            ['label' => 'Events', 'routes' => ['admin.calendar.events']],
         ],
     ],
     'analytics' => [
@@ -44,9 +63,7 @@ return [
         'icon' => '<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
         'items' => [
             ['label' => 'Demand Trends', 'routes' => ['admin.quotations.index']],
-            ['label' => 'Harvest Performance', 'routes' => ['admin.harvests.index']],
-            ['label' => 'All Harvest Reports', 'routes' => ['admin.harvests.reports']],
-            ['label' => 'AI Harvest Insights', 'routes' => ['admin.harvests.ai']],
+            ['label' => 'Cost vs Expenses', 'routes' => ['admin.analytics.expenses']],
         ],
     ],
     'settings' => [

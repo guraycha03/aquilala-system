@@ -147,11 +147,6 @@ class Product extends Model
         return $this->hasMany(QuotationItem::class);
     }
 
-    public function reviews(): HasMany
-    {
-        return $this->hasMany(ProductReview::class);
-    }
-
     public function savedByUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'saved_products')->withTimestamps();
@@ -171,15 +166,6 @@ class Product extends Model
         foreach ($products as $product) {
             $product->saved = in_array((int) $product->getKey(), $savedIds, true);
         }
-    }
-
-    /**
-     * Reviews that have been moderated and approved by an admin.
-     * Farmer-facing ratings and the public review list only use these.
-     */
-    public function approvedReviews(): HasMany
-    {
-        return $this->hasMany(ProductReview::class)->approved();
     }
 
     public function scopeActive($query)
@@ -202,17 +188,16 @@ class Product extends Model
         return $query->orderByDesc('views_count');
     }
 
-    public function scopeTopRated($query)
+    /**
+     * Products ranked by distinct farmer quotations that include them.
+     * A quotation is a real cost-planning request, so this counts actual
+     * purchase intent rather than unverifiable opinions.
+     */
+    public function scopeTopQuoted($query)
     {
-        // whereHas rather than having('approved_reviews_count', '>', 0): the
-        // HAVING form relies on a sub-select alias, which MySQL accepts but
-        // SQLite rejects outright ("HAVING clause on a non-aggregate query").
-        // Both mean "at least one approved review".
-        return $query->whereHas('approvedReviews')
-            ->withCount('approvedReviews')
-            ->withAvg('approvedReviews as avg_rating', 'rating')
-            ->orderByDesc('avg_rating')
-            ->orderByDesc('approved_reviews_count');
+        return $query->whereHas('quotationItems')
+            ->withCount('quotationItems')
+            ->orderByDesc('quotation_items_count');
     }
 
     public function getIsLowStockAttribute(): bool
@@ -324,39 +309,6 @@ class Product extends Model
             ->values();
     }
 
-    private function reviewSource()
-    {
-        return $this->relationLoaded('approvedReviews')
-            ? $this->approvedReviews
-            : $this->reviews;
-    }
-
-    public function getAverageRatingAttribute(): ?float
-    {
-        $reviews = $this->reviewSource();
-
-        if ($reviews->isEmpty()) {
-            return null;
-        }
-
-        return round((float) $reviews->avg('rating'), 1);
-    }
-
-    public function getReviewCountAttribute(): int
-    {
-        return $this->reviewSource()->count();
-    }
-
-    public function getRatingBarsAttribute(): array
-    {
-        $counts = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
-        foreach ($this->reviewSource() as $review) {
-            $counts[(int) $review->rating] = ($counts[(int) $review->rating] ?? 0) + 1;
-        }
-
-        return $counts;
-    }
-
     public function getCategoryDisplayNameAttribute(): string
     {
         // The products table keeps a legacy string `category` column that
@@ -464,8 +416,6 @@ class Product extends Model
             'data-cf-season' => $season,
             'data-cf-stock' => $stock,
             'data-cf-price' => (float) $this->price,
-            'data-cf-rating' => (float) ($this->average_rating ?? 0),
-            'data-cf-reviews' => (int) $this->review_count,
             'data-cf-date' => optional($this->created_at)->getTimestamp() ?? 0,
         ];
     }

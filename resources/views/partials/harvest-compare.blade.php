@@ -1,0 +1,348 @@
+{{--
+  Shared Estimate vs Actual body for farmer + admin.
+
+  Expects (from HarvestCompareService::compare()):
+    $rows, $kpis, $chart, $options, $group_by, $filters
+  Plus from the page:
+    $compareRoute  route name for the GET filter form
+    $isAdmin       bool — adds the farmer filter column/badge
+--}}
+@php
+  $cmpRoute = $compareRoute ?? 'farmer.harvests.compare';
+  $cmpIsAdmin = $isAdmin ?? false;
+  $f = $filters ?? ['year' => '', 'season' => '', 'crop' => '', 'farmer' => ''];
+@endphp
+<style>
+  .cmp-filters {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
+    padding: 14px 18px; margin-bottom: 18px;
+    display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+  }
+  .cmp-filters .fld { display: flex; flex-direction: column; gap: 5px; }
+  .cmp-filters label { font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+  .cmp-filters select {
+    height: 38px; min-width: 132px; padding: 0 10px; border: 1.5px solid #e2e8f0;
+    border-radius: 9px; font-size: 13px; color: #1e293b; background: #fff;
+    font-family: inherit; outline: none;
+  }
+  .cmp-filters select:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.10); }
+  .cmp-btn {
+    appearance: none; height: 38px; padding: 0 18px; border: none; border-radius: 9px;
+    background: #16a34a; color: #fff; font-size: 12.5px; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px; text-decoration: none;
+    box-shadow: 0 3px 8px rgba(22,163,74,.25);
+  }
+  .cmp-btn:hover { background: #15803d; }
+  .cmp-btn.ghost { background: #f8fafc; color: #475569; border: 1.5px solid #e2e8f0; box-shadow: none; }
+  .cmp-btn.ghost:hover { background: #f1f5f9; }
+
+  .cmp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .cmp-kpi { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 18px; }
+  .cmp-kpi .k { font-size: 12px; color: #64748b; font-weight: 600; }
+  .cmp-kpi .v { font-size: 24px; font-weight: 800; color: #143d23; margin-top: 5px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .cmp-kpi .s { font-size: 11.5px; color: #94a3b8; margin-top: 5px; }
+  .cmp-kpi .v.pos { color: #15803d; }
+  .cmp-kpi .v.neg { color: #b91c1c; }
+
+  .cmp-grid { display: grid; grid-template-columns: 1fr; gap: 18px; margin-bottom: 18px; }
+  .cmp-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; }
+  .cmp-card-head { padding: 16px 18px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .cmp-card-title { font-size: 14.5px; font-weight: 700; color: #1a2b1e; margin: 0; }
+  .cmp-card-sub { font-size: 12.5px; color: #94a3b8; margin: 3px 0 0 0; }
+  .cmp-chart { position: relative; height: 320px; padding: 14px 18px 18px; }
+
+  .cmp-legend { display: flex; gap: 14px; align-items: center; font-size: 12px; color: #475569; font-weight: 600; }
+  .cmp-legend .sw { width: 11px; height: 11px; border-radius: 3px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
+
+  .cmp-table-wrap { overflow-x: auto; }
+  .cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 780px; }
+  .cmp-table thead th {
+    text-align: left; padding: 11px 14px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .05em; color: #64748b;
+    background: #f8fafc; border-bottom: 1px solid #e5e7eb; white-space: nowrap;
+  }
+  .cmp-table tbody td { padding: 11px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .cmp-table tbody tr:last-child td { border-bottom: none; }
+  .cmp-table tbody tr:hover { background: #fafcfb; }
+  .cmp-table .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .cmp-var { display: inline-flex; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .cmp-var.up { background: #ecfdf5; color: #15803d; }
+  .cmp-var.down { background: #fef2f2; color: #b91c1c; }
+  .cmp-var.flat { background: #f1f5f9; color: #64748b; }
+  .cmp-src {
+    display: inline-block; padding: 2px 8px; border-radius: 14px;
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+  }
+  .cmp-src.batch { background: #eff6ff; color: #1d4ed8; }
+  .cmp-src.baseline { background: #f5f3ff; color: #6d28d9; }
+  .cmp-pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
+  .cmp-pill.wet { background: #eff6ff; color: #1d4ed8; }
+  .cmp-pill.dry { background: #fffbeb; color: #b45309; }
+
+  .cmp-empty { text-align: center; padding: 48px 20px; color: #94a3b8; }
+  .cmp-empty b { display: block; color: #475569; font-size: 15px; margin: 8px 0 4px; }
+</style>
+
+{{-- ── Filters ── --}}
+<form class="cmp-filters" method="GET" action="{{ route($cmpRoute) }}">
+  <div class="fld">
+    <label for="cmpYear">Year</label>
+    <select name="year" id="cmpYear">
+      <option value="all">All years</option>
+      @foreach($options['years'] as $y)
+        <option value="{{ $y }}" {{ (string) $f['year'] === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
+      @endforeach
+    </select>
+  </div>
+  <div class="fld">
+    <label for="cmpSeason">Season</label>
+    <select name="season" id="cmpSeason">
+      <option value="">All seasons</option>
+      <option value="wet" {{ $f['season'] === 'wet' ? 'selected' : '' }}>Wet</option>
+      <option value="dry" {{ $f['season'] === 'dry' ? 'selected' : '' }}>Dry</option>
+    </select>
+  </div>
+  <div class="fld">
+    <label for="cmpCrop">Crop</label>
+    <select name="crop" id="cmpCrop">
+      <option value="">All crops</option>
+      @foreach($options['crops'] as $c)
+        <option value="{{ $c }}" {{ $f['crop'] === $c ? 'selected' : '' }}>{{ $c }}</option>
+      @endforeach
+    </select>
+  </div>
+  @if($cmpIsAdmin && count($options['farmers']))
+    <div class="fld">
+      <label for="cmpFarmer">Farmer</label>
+      <select name="farmer" id="cmpFarmer">
+        <option value="">All farmers</option>
+        @foreach($options['farmers'] as $name)
+          <option value="{{ $name }}" {{ $f['farmer'] === $name ? 'selected' : '' }}>{{ $name }}</option>
+        @endforeach
+      </select>
+    </div>
+  @endif
+  <div class="fld">
+    <label for="cmpGroup">Group chart by</label>
+    <select name="group_by" id="cmpGroup">
+      <option value="crop" {{ $group_by === 'crop' ? 'selected' : '' }}>Crop</option>
+      <option value="period" {{ $group_by === 'period' ? 'selected' : '' }}>Year + season</option>
+    </select>
+  </div>
+  <button type="submit" class="cmp-btn">
+    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+    Apply
+  </button>
+  @php
+    $hasCmpFilters = in_array($f['year'] ?? '', ['', 'all'], true) === false
+        || ($f['season'] ?? '') !== ''
+        || ($f['crop'] ?? '') !== ''
+        || ($f['farmer'] ?? '') !== '';
+  @endphp
+  @if($hasCmpFilters)
+    <a class="cmp-btn ghost" href="{{ route($cmpRoute) }}">Reset</a>
+  @endif
+</form>
+
+{{-- ── KPI cards ── --}}
+<div class="cmp-kpis">
+  <div class="cmp-kpi">
+    <div class="k">Estimated Yield</div>
+    <div class="v">{{ number_format($kpis['total_estimate_mt'], 2) }} <span style="font-size:13px;font-weight:700;color:#94a3b8;">MT</span></div>
+    <div class="s">Captured at planting{{ $kpis['baseline_pairs'] ? ' · ' . $kpis['baseline_pairs'] . ' baseline' : '' }}</div>
+  </div>
+  <div class="cmp-kpi">
+    <div class="k">Actual Yield</div>
+    <div class="v pos">{{ number_format($kpis['total_actual_mt'], 2) }} <span style="font-size:13px;font-weight:700;color:#94a3b8;">MT</span></div>
+    <div class="s">From filed harvest reports</div>
+  </div>
+  <div class="cmp-kpi">
+    <div class="k">Variance</div>
+    <div class="v {{ $kpis['variance_mt'] > 0.005 ? 'pos' : ($kpis['variance_mt'] < -0.005 ? 'neg' : '') }}">
+      {{ $kpis['variance_mt'] >= 0 ? '+' : '' }}{{ number_format($kpis['variance_mt'], 2) }} <span style="font-size:13px;font-weight:700;color:#94a3b8;">MT</span>
+    </div>
+    <div class="s">Actual minus estimate</div>
+  </div>
+  <div class="cmp-kpi">
+    <div class="k">Estimate Accuracy</div>
+    <div class="v {{ $kpis['accuracy_pct'] === null ? '' : ($kpis['accuracy_pct'] >= 100 ? 'pos' : 'neg') }}">
+      {{ $kpis['accuracy_pct'] === null ? '—' : $kpis['accuracy_pct'] . '%' }}
+    </div>
+    <div class="s">Actual ÷ estimated</div>
+  </div>
+  <div class="cmp-kpi">
+    <div class="k">Harvest Pairs</div>
+    <div class="v">{{ $kpis['pairs'] }}</div>
+    <div class="s">{{ $kpis['over_count'] }} over · {{ $kpis['under_count'] }} under{{ $kpis['on_count'] ? ' · ' . $kpis['on_count'] . ' on target' : '' }}</div>
+  </div>
+</div>
+
+{{-- ── Chart ── --}}
+<div class="cmp-grid">
+  <div class="cmp-card">
+    <div class="cmp-card-head">
+      <div>
+        <p class="cmp-card-title">Estimate vs Actual Yield</p>
+        <p class="cmp-card-sub">
+          {{ $group_by === 'crop' ? 'Grouped by crop' : 'Grouped by year and season' }} · metric tons
+          @if($f['year'] !== '' && $f['year'] !== 'all') · {{ $f['year'] }} @endif
+          @if($f['season'] !== '') · {{ ucfirst($f['season']) }} season @endif
+        </p>
+      </div>
+      <div class="cmp-legend">
+        <span><span class="sw" style="background:#93c5fd;"></span>Estimate</span>
+        <span><span class="sw" style="background:#16a34a;"></span>Actual</span>
+      </div>
+    </div>
+    <div class="cmp-chart">
+      @if($kpis['pairs'] > 0)
+        <canvas id="cmpChart" aria-label="Grouped bar chart comparing estimated and actual yield in metric tons" role="img"></canvas>
+      @else
+        <div class="cmp-empty">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 9h4v4H7zM14 6h3v7h-3z"/></svg>
+          <b>No harvest pairs match these filters</b>
+          Widen the filters above, or wait for farmers to file harvest reports.
+        </div>
+      @endif
+    </div>
+  </div>
+</div>
+
+{{-- ── Detail table ── --}}
+<div class="cmp-card">
+  <div class="cmp-card-head">
+    <div>
+      <p class="cmp-card-title">Comparison Detail</p>
+      <p class="cmp-card-sub">Every pair behind the chart — newest harvest first.</p>
+    </div>
+  </div>
+  @if(count($rows))
+    <div class="cmp-table-wrap">
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            @if($cmpIsAdmin)<th>Farmer</th>@endif
+            <th>Crop</th>
+            <th>Batch</th>
+            <th>Season</th>
+            <th>Harvest Date</th>
+            <th class="num">Area (ha)</th>
+            <th class="num">Estimate (MT)</th>
+            <th class="num">Actual (MT)</th>
+            <th class="num">Variance</th>
+            <th>Estimate Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          @php $rowsDesc = array_reverse($rows); @endphp
+          @foreach($rowsDesc as $row)
+            @php
+              $var = $row['actual_mt'] - $row['estimate_mt'];
+              $varClass = abs($var) < 0.005 ? 'flat' : ($var > 0 ? 'up' : 'down');
+              $varPct = $row['estimate_mt'] > 0 ? round(($var / $row['estimate_mt']) * 100, 1) : null;
+            @endphp
+            <tr>
+              @if($cmpIsAdmin)<td style="font-weight:600;color:#334155;">{{ $row['farmer'] }}</td>@endif
+              <td style="font-weight:700;color:#1a2b1e;">{{ $row['crop'] }}</td>
+              <td style="color:#64748b;">{{ $row['batch'] ?? '—' }}</td>
+              <td><span class="cmp-pill {{ $row['season'] }}">{{ ucfirst($row['season'] ?? '—') }}</span></td>
+              <td>{{ $row['harvest_date'] ? \Illuminate\Support\Carbon::parse($row['harvest_date'])->format('M d, Y') : '—' }}</td>
+              <td class="num">{{ rtrim(rtrim(number_format($row['land_area'], 2, '.', ''), '0'), '.') }}</td>
+              <td class="num">{{ number_format($row['estimate_mt'], 2) }}</td>
+              <td class="num" style="font-weight:700;color:#14532d;">{{ number_format($row['actual_mt'], 2) }}</td>
+              <td class="num">
+                <span class="cmp-var {{ $varClass }}">
+                  {{ $var >= 0 ? '+' : '' }}{{ number_format($var, 2) }}{{ $varPct !== null ? ' (' . ($varPct >= 0 ? '+' : '') . $varPct . '%)' : '' }}
+                </span>
+              </td>
+              <td>
+                <span class="cmp-src {{ $row['estimate_source'] }}">{{ $row['estimate_source'] === 'batch' ? 'Planting estimate' : 'Baseline' }}</span>
+              </td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+  @else
+    <div class="cmp-empty">
+      <b>Nothing to compare yet</b>
+      Pairs appear once harvest reports exist for the selected filters.
+    </div>
+  @endif
+</div>
+
+@if($kpis['pairs'] > 0)
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!window.Chart) return;
+    var canvas = document.getElementById('cmpChart');
+    if (!canvas) return;
+
+    var labels = @js($chart['labels']);
+    var estimate = @js($chart['estimate']);
+    var actual = @js($chart['actual']);
+
+    new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Estimate',
+            data: estimate,
+            backgroundColor: 'rgba(147, 197, 253, 0.85)',
+            hoverBackgroundColor: 'rgba(96, 165, 250, 1)',
+            borderColor: 'rgba(59, 130, 246, 0.9)',
+            borderWidth: 1,
+            borderRadius: 5,
+            barPercentage: 0.7,
+            categoryPercentage: 0.7
+          },
+          {
+            label: 'Actual',
+            data: actual,
+            backgroundColor: 'rgba(22, 163, 74, 0.85)',
+            hoverBackgroundColor: 'rgba(21, 128, 61, 1)',
+            borderColor: 'rgba(21, 128, 61, 0.9)',
+            borderWidth: 1,
+            borderRadius: 5,
+            barPercentage: 0.7,
+            categoryPercentage: 0.7
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                var pairs = @js($chart['pairs']);
+                var extra = pairs && pairs[ctx.dataIndex] !== undefined ? ' · ' + pairs[ctx.dataIndex] + ' harvest pair' + (pairs[ctx.dataIndex] === 1 ? '' : 's') : '';
+                return ' ' + ctx.dataset.label + ': ' + Number(ctx.parsed.y).toFixed(3) + ' MT' + extra;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#64748b', font: { size: 11 } },
+            grid: { color: '#f1f5f9' },
+            border: { display: false },
+            title: { display: true, text: 'Metric tons (MT)', color: '#94a3b8', font: { size: 11, weight: '600' } }
+          },
+          x: {
+            ticks: { color: '#64748b', font: { size: 11 } },
+            grid: { display: false },
+            border: { display: false }
+          }
+        }
+      }
+    });
+  });
+</script>
+@endif

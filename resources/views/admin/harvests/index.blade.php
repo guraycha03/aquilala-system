@@ -5,11 +5,12 @@
 @section('content')
 @include('partials.admin-tabs', [
   'tabs' => [
-    ['key' => 'demand',   'label' => 'Demand Trends',       'url' => route('admin.quotations.index')],
-    ['key' => 'harvests', 'label' => 'Harvest Performance',  'url' => route('admin.harvests.index')],
+    ['key' => 'overview', 'label' => 'Overview',             'url' => route('admin.harvests.index')],
+    ['key' => 'reports',  'label' => 'All Harvest Reports',  'url' => route('admin.harvests.reports')],
+    ['key' => 'compare',  'label' => 'Estimate vs Harvest',   'url' => route('admin.harvests.compare')],
     ['key' => 'ai',       'label' => 'AI Insights',          'url' => route('admin.harvests.ai')],
   ],
-  'activeTab' => 'harvests',
+  'activeTab' => 'overview',
 ])
 @php
   $periods = $context['periods'] ?? [];
@@ -164,11 +165,46 @@
       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       All Harvest Reports
     </a>
+    <a href="{{ route('admin.harvests.compare') }}" class="btn-nav" style="background: #0284c7; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);" title="Compare planting estimates against reported yield">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Estimate vs Harvest
+    </a>
     <a href="{{ route('admin.harvests.ai') }}" class="btn-nav ghost" title="Explain this harvest data with AI">
       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
       AI Insights
     </a>
   </div>
+</div>
+
+{{-- ── Harvest hub: the section's sub-pages at a glance ── --}}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 24px;">
+  <a href="{{ route('admin.harvests.reports') }}" style="text-decoration: none; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px 18px; display: flex; gap: 13px; align-items: center; transition: all .15s ease;">
+    <span style="width: 40px; height: 40px; border-radius: 11px; background: #f0fdf4; color: #16a34a; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="19" height="19" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </span>
+    <span>
+      <span style="display: block; font-size: 14px; font-weight: 700; color: #1a2b1e;">All Harvest Reports</span>
+      <span style="display: block; font-size: 12px; color: #94a3b8; margin-top: 2px;">Filter, sort and export every report</span>
+    </span>
+  </a>
+  <a href="{{ route('admin.harvests.compare') }}" style="text-decoration: none; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px 18px; display: flex; gap: 13px; align-items: center; transition: all .15s ease;">
+    <span style="width: 40px; height: 40px; border-radius: 11px; background: #f0f9ff; color: #0284c7; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="19" height="19" stroke="currentColor" stroke-width="1.8" fill="none"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+    </span>
+    <span>
+      <span style="display: block; font-size: 14px; font-weight: 700; color: #1a2b1e;">Estimate vs Harvest</span>
+      <span style="display: block; font-size: 12px; color: #94a3b8; margin-top: 2px;">Yield estimate against actual harvest</span>
+    </span>
+  </a>
+  <a href="{{ route('admin.harvests.ai') }}" style="text-decoration: none; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px 18px; display: flex; gap: 13px; align-items: center; transition: all .15s ease;">
+    <span style="width: 40px; height: 40px; border-radius: 11px; background: #f5f3ff; color: #6d28d9; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="19" height="19" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
+    </span>
+    <span>
+      <span style="display: block; font-size: 14px; font-weight: 700; color: #1a2b1e;">AI Harvest Insights</span>
+      <span style="display: block; font-size: 12px; color: #94a3b8; margin-top: 2px;">Ask questions across the harvest data</span>
+    </span>
+  </a>
 </div>
 
 <!-- System-wide metrics -->

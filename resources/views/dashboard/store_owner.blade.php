@@ -206,9 +206,6 @@
       <x-kpi-card title="Demand Signals" value="{{ $demandQuotationCount }}" trendValue="{{ $computedQuotationCount }} estimate-ready" trendDirection="{{ $demandQuotationCount > 0 ? 'up' : 'neutral' }}" trendLabel="{{ $viewedQuotationCount }} viewed by you" accent="#7c3aed" link="{{ route('store.quotations.index') }}">
         <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Average Rating" value="{{ $averageRating ?? '—' }}" trendValue="{{ $totalReviews }} farmer reviews" trendDirection="{{ $totalReviews > 0 ? 'up' : 'neutral' }}" trendLabel="{{ $averageRating !== null ? 'Across ' . $ratedProducts->count() . ' products' : 'Waiting for first review' }}" accent="#0ea5e9" link="{{ route('store.storefront.index') }}">
-        <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></x-slot:icon>
-      </x-kpi-card>
     </section>
 
     <!-- 3. MY PRODUCTS -->

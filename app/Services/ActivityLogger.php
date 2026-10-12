@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\ActivityLog;
-use App\Models\ProductReview;
+use App\Models\AssociationEvent;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
@@ -206,6 +206,46 @@ class ActivityLogger
         );
     }
 
+    /**
+     * An admin approved a farmer's planting request. The row belongs to the
+     * farmer (notification recipient); the admin is the actor.
+     */
+    public static function cropConfirmed($farmerCrop): ActivityLog
+    {
+        $farmer = $farmerCrop->user ?? \App\Models\User::find($farmerCrop->user_id);
+
+        return self::log(
+            ActivityLog::TYPE_CROP_CONFIRMED,
+            "Confirmed planting of {$farmerCrop->crop?->name} ({$farmerCrop->batch_name}) — {$farmerCrop->land_area} {$farmerCrop->land_area_unit}",
+            $farmerCrop,
+            [
+                'crop_name'  => $farmerCrop->crop?->name,
+                'batch_name' => $farmerCrop->batch_name,
+                'land_area'  => $farmerCrop->land_area,
+                'season'     => $farmerCrop->season,
+            ],
+            $farmer
+        );
+    }
+
+    public static function cropRejected($farmerCrop, ?string $remarks): ActivityLog
+    {
+        $farmer = $farmerCrop->user ?? \App\Models\User::find($farmerCrop->user_id);
+
+        return self::log(
+            ActivityLog::TYPE_CROP_REJECTED,
+            "Rejected planting of {$farmerCrop->crop?->name} ({$farmerCrop->batch_name})"
+                . ($remarks ? " — {$remarks}" : ''),
+            $farmerCrop,
+            [
+                'crop_name' => $farmerCrop->crop?->name,
+                'batch_name' => $farmerCrop->batch_name,
+                'remarks'   => $remarks,
+            ],
+            $farmer
+        );
+    }
+
     // ── Harvest report shortcuts ─────────────────────────────────
 
     public static function harvestReportCreated($report): ActivityLog
@@ -268,6 +308,48 @@ class ActivityLogger
                 'severity'   => $event->severity,
                 'start_date' => $event->start_date->format('Y-m-d'),
                 'end_date'   => $event->end_date?->format('Y-m-d'),
+            ]
+        );
+    }
+
+    // ── Association calendar shortcuts ───────────────────────────
+
+    public static function eventCreated(AssociationEvent $event): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_EVENT_CREATED,
+            "Added calendar event \"{$event->title}\" for {$event->event_date->format('M d, Y')}",
+            $event,
+            [
+                'event_type' => $event->event_type,
+                'event_date' => $event->event_date->toDateString(),
+                'start_time' => $event->start_time?->format('H:i:s'),
+            ]
+        );
+    }
+
+    public static function eventUpdated(AssociationEvent $event): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_EVENT_UPDATED,
+            "Updated calendar event \"{$event->title}\" ({$event->event_date->format('M d, Y')})",
+            $event,
+            [
+                'event_type' => $event->event_type,
+                'event_date' => $event->event_date->toDateString(),
+            ]
+        );
+    }
+
+    public static function eventDeleted(AssociationEvent $event): ActivityLog
+    {
+        return self::log(
+            ActivityLog::TYPE_EVENT_DELETED,
+            "Removed calendar event \"{$event->title}\" ({$event->event_date->format('M d, Y')})",
+            $event,
+            [
+                'event_type' => $event->event_type,
+                'event_date' => $event->event_date->toDateString(),
             ]
         );
     }
@@ -400,103 +482,6 @@ class ActivityLogger
             "Removed input formula: {$formula->crop_type} (" . ucfirst($formula->season) . " season)" . self::formulaStageSuffix($formula) . " for " . ($formula->product?->name ?? 'a product'),
             $formula,
             self::formulaMeta($formula)
-        );
-    }
-
-    // ── Review shortcuts (for farmers) ───────────────────────────
-
-    public static function reviewCreated($review): ActivityLog
-    {
-        return self::log(
-            ActivityLog::TYPE_REVIEW_CREATED,
-            "Reviewed {$review->product?->name} — {$review->rating} star" . ($review->rating !== 1 ? 's' : ''),
-            $review,
-            ['product_name' => $review->product?->name, 'rating' => $review->rating]
-        );
-    }
-
-    public static function reviewDeleted($review): ActivityLog
-    {
-        return self::log(
-            ActivityLog::TYPE_REVIEW_DELETED,
-            "Removed review for {$review->product?->name}",
-            $review,
-            ['product_name' => $review->product?->name, 'rating' => $review->rating]
-        );
-    }
-
-    // ── Review moderation shortcuts (for admins) ──────────────────
-
-    public static function reviewApproved($review): ActivityLog
-    {
-        return self::log(
-            ActivityLog::TYPE_REVIEW_APPROVED,
-            "Approved review for {$review->product?->name} by {$review->farmer?->name}",
-            $review,
-            ['product_name' => $review->product?->name, 'rating' => $review->rating, 'reviewer' => $review->farmer?->name]
-        );
-    }
-
-    public static function reviewRejected($review): ActivityLog
-    {
-        return self::log(
-            ActivityLog::TYPE_REVIEW_REJECTED,
-            "Disapproved review for {$review->product?->name} by {$review->farmer?->name}",
-            $review,
-            ['product_name' => $review->product?->name, 'rating' => $review->rating, 'reviewer' => $review->farmer?->name]
-        );
-    }
-
-    // ── Store-owner-facing review notifications ───────────────────
-    // These rows are written with user_id = the affected store owner so they
-    // show up in the store owner's activity history and notification bell.
-
-    private static function reviewTargetMeta($review, string $actor, string $status): array
-    {
-        return [
-            'review_id'    => $review->id,
-            'product_id'   => $review->product_id,
-            'product_name' => $review->product?->name,
-            'reviewer'     => $review->farmer?->name,
-            'actor'        => $actor,
-            'rating'       => $review->rating,
-            'comment'      => $review->comment,
-            'status'       => $status,
-        ];
-    }
-
-    public static function reviewApprovedForStore($review, User $storeOwner, $admin): ActivityLog
-    {
-        return self::log(
-            ActivityLog::TYPE_REVIEW_APPROVED,
-            "Review from {$review->farmer?->name} ({$review->rating}★) on \"{$review->product?->name}\" was approved and is now public",
-            $review,
-            self::reviewTargetMeta($review, $admin?->name ?? 'Admin', ProductReview::STATUS_APPROVED),
-            $storeOwner,
-            $admin instanceof User ? $admin : null
-        );
-    }
-
-    public static function reviewRejectedForStore($review, User $storeOwner, $admin): ActivityLog
-    {
-        return self::log(
-            ActivityLog::TYPE_REVIEW_REJECTED,
-            "Review from {$review->farmer?->name} ({$review->rating}★) on \"{$review->product?->name}\" was disapproved and is hidden",
-            $review,
-            self::reviewTargetMeta($review, $admin?->name ?? 'Admin', ProductReview::STATUS_REJECTED),
-            $storeOwner,
-            $admin instanceof User ? $admin : null
-        );
-    }
-
-    public static function reviewDeletedForStore($review, User $storeOwner): ActivityLog
-    {
-        return self::log(
-            ActivityLog::TYPE_REVIEW_DELETED,
-            "Review from {$review->farmer?->name} on \"{$review->product?->name}\" was removed by the farmer",
-            $review,
-            self::reviewTargetMeta($review, $review->farmer?->name ?? 'Farmer', 'deleted'),
-            $storeOwner
         );
     }
 }

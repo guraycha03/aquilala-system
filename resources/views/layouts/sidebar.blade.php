@@ -644,10 +644,7 @@
   @php
     $notifBellUrl = null;
     $notifUnreadCount = 0;
-    if (auth()->check() && auth()->user()->role === 'store_owner') {
-        $notifBellUrl = route('store.notifications.index');
-        $notifUnreadCount = \App\Models\ActivityLog::forUser(auth()->id())->reviewNotifications()->unread()->count();
-    } elseif (auth()->check() && auth()->user()->role === 'farmer') {
+    if (auth()->check() && auth()->user()->role === 'farmer') {
         $notifBellUrl = route('farmer.notifications.index');
         $notifUnreadCount = \App\Models\ActivityLog::forUser(auth()->id())->farmerNotifications()->unread()->count();
     }
@@ -777,6 +774,18 @@
             </a>
           </li>
           <li>
+            <a href="{{ route('farmer.harvests.compare') }}" class="{{ request()->routeIs('farmer.harvests.compare') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+              Estimate vs Harvest
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('farmer.calendar.index') }}" class="{{ request()->routeIs('farmer.calendar.*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Calendar
+            </a>
+          </li>
+          <li>
             <a href="{{ route('farmer.recommendations.index') }}" class="{{ request()->routeIs('farmer.recommendations.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               Recommendations
@@ -801,9 +810,9 @@
             </a>
           </li>
           <li>
-            <a href="{{ route('farmer.reviews.index') }}" class="{{ request()->routeIs('farmer.reviews.index') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              Top Rated Products
+            <a href="{{ route('farmer.top-quoted.index') }}" class="{{ request()->routeIs('farmer.top-quoted.index') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Top Quoted Products
             </a>
           </li>
           <li>
@@ -951,14 +960,28 @@
           </li>
           @yield('sidebar-tabs-nav')
           <li>
-            <a href="{{ route('admin.operations.formulas') }}" class="{{ request()->is('admin/operations*') ? 'active' : '' }}">
+            <a href="{{ route('admin.operations.formulas') }}" class="{{ request()->is('admin/operations*') || request()->routeIs('admin.plantings.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
               Crops &amp; Inputs
             </a>
           </li>
           @yield('sidebar-tabs-nav')
           <li>
-            <a href="{{ route('admin.quotations.index') }}" class="{{ request()->is('admin/analytics*') || request()->is('admin/quotations*') || request()->routeIs('admin.harvests.index') ? 'active' : '' }}">
+            <a href="{{ route('admin.harvests.index') }}" class="{{ request()->routeIs('admin.harvests.*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M12 10C9 10 6 9 6 5c3 0 6 2 6 5"/><path d="M12 14c3 0 6-1 6-5-3 0-6 2-6 5"/><path d="M3 20h18"/><path d="M3 12l4-4 4 4 5-5 5 5"/></svg>
+              Harvest
+            </a>
+          </li>
+          @yield('sidebar-tabs-nav')
+          <li>
+            <a href="{{ route('admin.calendar.index') }}" class="{{ request()->routeIs('admin.calendar.*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Calendar
+            </a>
+          </li>
+          @yield('sidebar-tabs-nav')
+          <li>
+            <a href="{{ route('admin.quotations.index') }}" class="{{ request()->is('admin/analytics*') || request()->is('admin/quotations*') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
               Analytics
             </a>
