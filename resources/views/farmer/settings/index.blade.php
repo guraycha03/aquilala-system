@@ -18,6 +18,13 @@
       <p style="font-size: 12px; color: #64748b; margin: 0 0 16px;">Choose one of three colors for your navigation sidebar. It applies everywhere you are signed in.</p>
 
       @include('partials.sidebar-theme-picker')
+
+      <hr style="border:none;border-top:1px solid #eef1f4;margin:22px 0 18px;">
+
+      <h2 style="font-size: 15px; font-weight: 800; color: #1e293b; margin: 0 0 4px;">Display theme</h2>
+      <p style="font-size: 12px; color: #64748b; margin: 0 0 16px;">Switch the whole system between light and dark. Saved to your account and applied on every page.</p>
+
+      @include('partials.theme-mode-picker')
     </div>
   </div>
 @endsection

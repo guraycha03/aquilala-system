@@ -139,10 +139,33 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
             return response()->json(['ok' => false, 'message' => 'Invalid theme.'], 422);
         }
 
+        // Dark mode locks the side menu to the single default color, so a color
+        // change is only accepted while the account is in light mode.
+        if ($request->user()->theme_mode === 'dark') {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Side menu colors are locked in dark mode.',
+            ], 422);
+        }
+
         $request->user()->update(['sidebar_theme' => $theme]);
 
         return response()->json(['ok' => true, 'theme' => $theme]);
     })->name('settings.ui');
+
+    // Display theme (light / dark) — every signed-in role may choose, and the
+    // choice is saved to the account so it stays consistent on every page.
+    Route::post('/settings/theme', function (Request $request) {
+        $mode = (string) $request->input('mode');
+
+        if (! in_array($mode, ['light', 'dark'], true)) {
+            return response()->json(['ok' => false, 'message' => 'Invalid display theme.'], 422);
+        }
+
+        $request->user()->update(['theme_mode' => $mode]);
+
+        return response()->json(['ok' => true, 'mode' => $mode]);
+    })->name('settings.theme');
 
     // Save / unsave a product for later — every signed-in role may keep their
     // own list. There is no saved-products page yet; the toggle just syncs the

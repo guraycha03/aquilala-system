@@ -170,6 +170,7 @@
     font-size: 12.5px; color: #64748b; font-weight: 600; text-align: center;
     background: rgba(255,255,255,0.78); border-radius: 10px; padding: 10px;
   }
+  .chart-empty[hidden] { display: none; }
 
   @media (min-width: 981px) {
   }
@@ -345,8 +346,14 @@
         harvestEmptyEl.hidden = yTotal !== 0;
       }
 
+      var isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
       var fillColors = data.map(function (d, i) {
-        return 'rgba(22, 163, 74, ' + (0.28 + 0.65 * Math.min(1, i / (data.length - 1 || 1))) + ')';
+        var t = Math.min(1, i / (data.length - 1 || 1));
+        if (isDarkTheme) {
+          // near-white with a green tint so bars stay crisp on the dark card
+          return 'rgba(220, 252, 231, ' + (0.62 + 0.38 * t).toFixed(2) + ')';
+        }
+        return 'rgba(22, 163, 74, ' + (0.28 + 0.65 * t) + ')';
       });
 
       if (harvestChart) harvestChart.destroy();
@@ -358,7 +365,7 @@
             label: 'Total yield (MT)',
             data: data.map(function (d) { return d.yield; }),
             backgroundColor: fillColors,
-            hoverBackgroundColor: 'rgba(22, 163, 74, 0.92)',
+            hoverBackgroundColor: isDarkTheme ? 'rgba(240, 253, 244, 1)' : 'rgba(22, 163, 74, 0.92)',
             borderRadius: 5,
             barPercentage: periodKey === 'month' || periodKey === 'days' ? 0.7 : 0.6,
             categoryPercentage: 0.6
@@ -381,13 +388,13 @@
           scales: {
             x: {
               grid: { display: false },
-              ticks: { color: '#334155', font: { weight: '600', size: 12 }, maxRotation: 0, autoSkipPadding: 6, maxTicksLimit: periodKey === 'days' ? 10 : 14 },
+              ticks: { color: isDarkTheme ? '#cbd5e1' : '#334155', font: { weight: '600', size: 12 }, maxRotation: 0, autoSkipPadding: 6, maxTicksLimit: periodKey === 'days' ? 10 : 14 },
               border: { display: false }
             },
             y: {
               beginAtZero: true,
-              ticks: { color: '#334155', font: { weight: '600', size: 12 }, maxTicksLimit: 5 },
-              grid: { color: 'rgba(0,0,0,0.08)' },
+              ticks: { color: isDarkTheme ? '#cbd5e1' : '#334155', font: { weight: '600', size: 12 }, maxTicksLimit: 5 },
+              grid: { color: isDarkTheme ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)' },
               border: { display: false }
             }
           }

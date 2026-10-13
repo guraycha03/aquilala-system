@@ -1,6 +1,7 @@
 
 
-we are questioned by panels on why we have rating on product when we dont even have ordering and anyone could just leave review without confirmation they even bought that product and could use to boost or comment negatively on product, so i am now between decision of removing the rating on product entirely or find a safe and reliable way to link a person that actually bought product and review even when we dont have ordering, but unfortunately, i really couldnt think and find a way as a solution to keep the product review, before we change anything in the system, i just need your side or take on this, is removing the product review the safest and better choice? its what i am considering right now
+the container harvest report from admin/ dashboard overview page has a very fade, blurry like covered in overlay bar/chart, the inside of the container is like covered in a fuzzy overlay icant see the graph well, please fix it, could it be from the empty state (placeholder style)
+
 
 
 

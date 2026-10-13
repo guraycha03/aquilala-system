@@ -46,6 +46,15 @@
           </div>
 
           <div class="set-section">
+            <div class="set-section-title">Display Theme</div>
+            <p style="font-size:12px;color:#64748b;margin:-8px 0 14px 0;max-width:760px;">
+              Switch the whole system between light and dark. Your choice is
+              saved to your account and applies on every page you open.
+            </p>
+            @include('partials.theme-mode-picker')
+          </div>
+
+          <div class="set-section">
             <div class="set-section-title">Harvest Report Summary Display</div>
             <p style="font-size:12px;color:#64748b;margin:-8px 0 14px 0;max-width:760px;">
               Controls how actual yields and expenses are presented across the dashboard.

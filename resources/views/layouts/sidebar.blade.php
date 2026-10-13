@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="{{ optional(auth()->user())->theme_mode === 'dark' ? 'dark' : 'light' }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,6 +16,9 @@
   {{-- Served from the app (not unpkg) so a CDN outage can never stall the UI.
        Deferred: the layout re-runs createIcons() on DOMContentLoaded. --}}
   <script src="{{ asset('js/lucide.min.js') }}" defer></script>
+  {{-- Display theme: every rule is scoped to [data-theme="dark"], so this file
+       costs nothing while the user is in light mode. --}}
+  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scrollbar-width: none; -ms-overflow-style: none; }
@@ -549,7 +552,15 @@
     }
   </style>
 </head>
-@php $stActive = in_array((string) optional(auth()->user())->sidebar_theme, array_keys(config('sidebar.themes')), true) ? auth()->user()->sidebar_theme : config('sidebar.default'); @endphp
+@php
+  // Side menu color: light mode honors the user's saved choice; dark mode always
+  // uses the single default color so it stays consistent against the dark pages.
+  $stSaved = (string) optional(auth()->user())->sidebar_theme;
+  $stActive = in_array($stSaved, array_keys(config('sidebar.themes')), true) ? $stSaved : config('sidebar.default');
+  if ((string) optional(auth()->user())->theme_mode === 'dark') {
+      $stActive = config('sidebar.default');
+  }
+@endphp
 @php
   $adminNav = config('admin-nav') ?? [];
   $activeAdminSection = null;

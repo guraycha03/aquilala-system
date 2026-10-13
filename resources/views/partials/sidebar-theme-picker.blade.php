@@ -26,7 +26,15 @@
     color: #ffffff; display: none; align-items: center; justify-content: center; flex-shrink: 0;
   }
   .stp-swatch.active .stp-check { display: inline-flex; }
+  .stp-swatch[aria-disabled="true"] {
+    opacity: 0.45; cursor: not-allowed; transform: none !important; box-shadow: none !important;
+  }
+  .stp-swatch[aria-disabled="true"]:hover { transform: none; box-shadow: none; }
   .stp-hint { font-size: 11px; color: #94a3b8; margin: 10px 2px 0; }
+  .stp-darkonly {
+    display: none; margin: 10px 2px 0; font-size: 11px; font-weight: 600; color: #94a3b8;
+  }
+  html[data-theme="dark"] .stp-darkonly { display: block; }
   .stp-msg {
     margin-top: 12px; font-size: 12px; font-weight: 600; color: #15803d;
     opacity: 0; transform: translateY(2px); transition: opacity .2s ease, transform .2s ease;
@@ -53,6 +61,7 @@
   @endforeach
 </div>
 <p class="stp-hint">Click a color to apply instantly — your choice is saved to your account automatically.</p>
+<p class="stp-darkonly">In dark mode the side menu always uses the default color. Switch to Light mode to pick a color.</p>
 <p class="stp-msg" id="stpMsg" role="status"></p>
 
 <script>
@@ -62,6 +71,25 @@
     var swatches = Array.prototype.slice.call(document.querySelectorAll('.stp-swatch'));
     var msg = document.getElementById('stpMsg');
     var msgTimer = null;
+    var pickerEnabled = true;
+
+    function isDarkMode() {
+      return document.documentElement && document.documentElement.getAttribute('data-theme') === 'dark';
+    }
+
+    function applyPickerAvailability() {
+      pickerEnabled = !isDarkMode();
+      swatches.forEach(function (s) {
+        s.setAttribute('aria-disabled', pickerEnabled ? 'false' : 'true');
+      });
+    }
+
+    applyPickerAvailability();
+    if ('MutationObserver' in window && document.documentElement) {
+      new MutationObserver(applyPickerAvailability).observe(document.documentElement, {
+        attributes: true, attributeFilter: ['data-theme']
+      });
+    }
 
     function flash(text, isError) {
       if (!msg) return;
@@ -82,6 +110,10 @@
 
     swatches.forEach(function (s) {
       s.addEventListener('click', function () {
+        if (!pickerEnabled) {
+          flash('Side menu colors are locked in dark mode — switch to Light first.', true);
+          return;
+        }
         var theme = s.getAttribute('data-stp-theme');
         if (document.body) document.body.setAttribute('data-sidebar-theme', theme);
         markActive(theme);
