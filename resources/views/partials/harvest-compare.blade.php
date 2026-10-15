@@ -13,28 +13,18 @@
   $f = $filters ?? ['year' => '', 'season' => '', 'crop' => '', 'farmer' => ''];
 @endphp
 <style>
-  .cmp-filters {
-    background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
-    padding: 14px 18px; margin-bottom: 18px;
-    display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
-  }
-  .cmp-filters .fld { display: flex; flex-direction: column; gap: 5px; }
-  .cmp-filters label { font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+  /* Filter bar + table base live in the shared .table-toolbar / .data-table
+     rules (layouts.sidebar) — this form dresses exactly like every other
+     filter bar in the app and auto-applies when a select changes. */
+  .cmp-filters { align-items: center; }
   .cmp-filters select {
-    height: 38px; min-width: 132px; padding: 0 10px; border: 1.5px solid #e2e8f0;
-    border-radius: 9px; font-size: 13px; color: #1e293b; background: #fff;
-    font-family: inherit; outline: none;
+    height: 42px; min-width: 140px; padding: 0 13px; border: 1.5px solid #e2e8f0;
+    border-radius: 10px; font-size: 13px; font-weight: 500; color: #1e293b;
+    background: #ffffff; font-family: inherit; outline: none; cursor: pointer;
+    transition: all .2s ease; box-sizing: border-box;
   }
-  .cmp-filters select:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.10); }
-  .cmp-btn {
-    appearance: none; height: 38px; padding: 0 18px; border: none; border-radius: 9px;
-    background: #16a34a; color: #fff; font-size: 12.5px; font-weight: 700; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 7px; text-decoration: none;
-    box-shadow: 0 3px 8px rgba(22,163,74,.25);
-  }
-  .cmp-btn:hover { background: #15803d; }
-  .cmp-btn.ghost { background: #f8fafc; color: #475569; border: 1.5px solid #e2e8f0; box-shadow: none; }
-  .cmp-btn.ghost:hover { background: #f1f5f9; }
+  .cmp-filters select:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.08); }
+  .cmp-filters select:hover { border-color: #cbd5e1; }
 
   .cmp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 14px; margin-bottom: 18px; }
   .cmp-kpi { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 18px; }
@@ -55,15 +45,8 @@
   .cmp-legend .sw { width: 11px; height: 11px; border-radius: 3px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
 
   .cmp-table-wrap { overflow-x: auto; }
-  .cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 780px; }
-  .cmp-table thead th {
-    text-align: left; padding: 11px 14px; font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .05em; color: #64748b;
-    background: #f8fafc; border-bottom: 1px solid #e5e7eb; white-space: nowrap;
-  }
-  .cmp-table tbody td { padding: 11px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-  .cmp-table tbody tr:last-child td { border-bottom: none; }
-  .cmp-table tbody tr:hover { background: #fafcfb; }
+  /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
+  .cmp-table { min-width: 780px; }
   .cmp-table .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
   .cmp-var { display: inline-flex; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .cmp-var.up { background: #ecfdf5; color: #15803d; }
@@ -83,56 +66,37 @@
   .cmp-empty b { display: block; color: #475569; font-size: 15px; margin: 8px 0 4px; }
 </style>
 
-{{-- ── Filters ── --}}
-<form class="cmp-filters" method="GET" action="{{ route($cmpRoute) }}">
-  <div class="fld">
-    <label for="cmpYear">Year</label>
-    <select name="year" id="cmpYear">
-      <option value="all">All years</option>
-      @foreach($options['years'] as $y)
-        <option value="{{ $y }}" {{ (string) $f['year'] === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
-      @endforeach
-    </select>
-  </div>
-  <div class="fld">
-    <label for="cmpSeason">Season</label>
-    <select name="season" id="cmpSeason">
-      <option value="">All seasons</option>
-      <option value="wet" {{ $f['season'] === 'wet' ? 'selected' : '' }}>Wet</option>
-      <option value="dry" {{ $f['season'] === 'dry' ? 'selected' : '' }}>Dry</option>
-    </select>
-  </div>
-  <div class="fld">
-    <label for="cmpCrop">Crop</label>
-    <select name="crop" id="cmpCrop">
-      <option value="">All crops</option>
-      @foreach($options['crops'] as $c)
-        <option value="{{ $c }}" {{ $f['crop'] === $c ? 'selected' : '' }}>{{ $c }}</option>
-      @endforeach
-    </select>
-  </div>
+{{-- ── Filters (shared .table-toolbar design — auto-applies on change) ── --}}
+<form class="table-toolbar cmp-filters" method="GET" action="{{ route($cmpRoute) }}">
+  <select name="year" aria-label="Year" onchange="this.form.submit()">
+    <option value="all">All years</option>
+    @foreach($options['years'] as $y)
+      <option value="{{ $y }}" {{ (string) $f['year'] === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
+    @endforeach
+  </select>
+  <select name="season" aria-label="Season" onchange="this.form.submit()">
+    <option value="">All seasons</option>
+    <option value="wet" {{ $f['season'] === 'wet' ? 'selected' : '' }}>Wet</option>
+    <option value="dry" {{ $f['season'] === 'dry' ? 'selected' : '' }}>Dry</option>
+  </select>
+  <select name="crop" aria-label="Crop" onchange="this.form.submit()">
+    <option value="">All crops</option>
+    @foreach($options['crops'] as $c)
+      <option value="{{ $c }}" {{ $f['crop'] === $c ? 'selected' : '' }}>{{ $c }}</option>
+    @endforeach
+  </select>
   @if($cmpIsAdmin && count($options['farmers']))
-    <div class="fld">
-      <label for="cmpFarmer">Farmer</label>
-      <select name="farmer" id="cmpFarmer">
-        <option value="">All farmers</option>
-        @foreach($options['farmers'] as $name)
-          <option value="{{ $name }}" {{ $f['farmer'] === $name ? 'selected' : '' }}>{{ $name }}</option>
-        @endforeach
-      </select>
-    </div>
-  @endif
-  <div class="fld">
-    <label for="cmpGroup">Group chart by</label>
-    <select name="group_by" id="cmpGroup">
-      <option value="crop" {{ $group_by === 'crop' ? 'selected' : '' }}>Crop</option>
-      <option value="period" {{ $group_by === 'period' ? 'selected' : '' }}>Year + season</option>
+    <select name="farmer" aria-label="Farmer" onchange="this.form.submit()">
+      <option value="">All farmers</option>
+      @foreach($options['farmers'] as $name)
+        <option value="{{ $name }}" {{ $f['farmer'] === $name ? 'selected' : '' }}>{{ $name }}</option>
+      @endforeach
     </select>
-  </div>
-  <button type="submit" class="cmp-btn">
-    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-    Apply
-  </button>
+  @endif
+  <select name="group_by" aria-label="Group chart by" onchange="this.form.submit()">
+    <option value="crop" {{ $group_by === 'crop' ? 'selected' : '' }}>Chart by crop</option>
+    <option value="period" {{ $group_by === 'period' ? 'selected' : '' }}>Chart by year + season</option>
+  </select>
   @php
     $hasCmpFilters = in_array($f['year'] ?? '', ['', 'all'], true) === false
         || ($f['season'] ?? '') !== ''
@@ -140,7 +104,10 @@
         || ($f['farmer'] ?? '') !== '';
   @endphp
   @if($hasCmpFilters)
-    <a class="cmp-btn ghost" href="{{ route($cmpRoute) }}">Reset</a>
+    <a class="btn-clear" href="{{ route($cmpRoute) }}">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      Clear
+    </a>
   @endif
 </form>
 
@@ -209,6 +176,13 @@
 </div>
 
 {{-- ── Detail table ── --}}
+<x-table-toolbar
+    uid="cmpDetail"
+    work-table="cmpTable"
+    per-page="10"
+    noun="pairs"
+    search-placeholder="Search crop, batch, or farmer…"
+  />
 <div class="cmp-card">
   <div class="cmp-card-head">
     <div>
@@ -217,8 +191,8 @@
     </div>
   </div>
   @if(count($rows))
-    <div class="cmp-table-wrap">
-      <table class="cmp-table">
+    <div class="cmp-table-wrap table-scroll">
+      <table id="cmpTable" class="cmp-table data-table">
         <thead>
           <tr>
             @if($cmpIsAdmin)<th>Farmer</th>@endif

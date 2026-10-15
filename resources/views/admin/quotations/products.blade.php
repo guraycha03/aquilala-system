@@ -4,12 +4,9 @@
 
 @section('content')
 <style>
+  /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
+  .table-scroll { overflow-x: auto; }
   .data-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 20px; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th { background: #fafbfa; padding: 14px 16px; font-weight: 600; color: #4a574e; border-bottom: 1px solid #e2e8f0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
-  td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; color: #3d4a41; }
-  tbody tr:last-child td { border-bottom: 0; }
-  tbody tr:hover { background: #fafbfa; }
 
   .badge {
     display: inline-flex; align-items: center; gap: 5px;
@@ -142,13 +139,27 @@
     </div>
   </div>
 
+  <x-table-toolbar
+      uid="admin-products"
+      work-table="adminProductsTable"
+      per-page="10"
+      noun="products"
+      search-placeholder="Search product, category, or crop…"
+      :sorts="[
+          ['key' => 'estimates', 'dir' => -1, 'type' => 'num', 'label' => 'Estimates (highest)'],
+          ['key' => 'estimates', 'dir' => 1, 'type' => 'num', 'label' => 'Estimates (lowest)'],
+          ['key' => 'value', 'dir' => -1, 'type' => 'num', 'label' => 'Value (highest)'],
+          ['key' => 'product', 'dir' => 1, 'type' => 'str', 'label' => 'Product (A–Z)'],
+      ]"
+    />
+
   <div class="data-table-container">
     <div style="padding: 20px; border-bottom: 1px solid #e2e8f0;">
       <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Ranked Breakdown</h2>
       <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">All {{ $summary['total'] }} product(s), highest demand first.</p>
     </div>
-    <div style="overflow-x: auto;">
-      <table>
+    <div class="table-scroll">
+      <table id="adminProductsTable" class="data-table">
         <thead>
           <tr>
             <th style="width: 52px;">#</th>
@@ -162,7 +173,9 @@
         </thead>
         <tbody>
           @foreach($products as $i => $prod)
-            <tr>
+            <tr data-product="{{ strtolower($prod['display_name'] ?? $prod['name']) }}"
+                data-estimates="{{ $prod['quotation_count'] }}"
+                data-value="{{ $prod['total_value'] }}">
               <td><span class="rank{{ $i < 3 ? ' top' : '' }}">{{ $i + 1 }}</span></td>
               <td class="cell-strong">{{ $prod['display_name'] ?? $prod['name'] }}</td>
               <td><span class="badge" style="background: #e0f2fe; color: #0284c7;">{{ $prod['category'] }}</span></td>

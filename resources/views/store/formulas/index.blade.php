@@ -159,17 +159,9 @@
     overflow: hidden;
   }
   .table-scroll { overflow-x: auto; }
-  table.formula-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 960px; }
-  .formula-table thead th {
-    background: #fafcfa; padding: 13px 14px; font-weight: 700;
-    color: #4a574e; border-bottom: 1px solid #e2e8f0; text-align: left;
-    font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em;
-    white-space: nowrap; user-select: none;
-  }
-  .formula-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: #3d4a41; vertical-align: middle; }
-  .formula-table tbody tr { transition: background 0.15s; }
-  .formula-table tbody tr:hover { background: #f8fdf9; }
-  .formula-table tbody tr:last-child td { border-bottom: none; }
+  /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
+  .formula-table { min-width: 960px; }
+  .formula-table thead th { user-select: none; }
   .formula-table tbody tr.card-hide { display: none; }
   .prod-cell { font-weight: 600; color: #1e2922; }
   .prod-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
@@ -361,7 +353,7 @@
   <!-- Formula Table -->
   <div class="formula-table-card">
     <div class="table-scroll">
-      <table class="formula-table" id="formulaTable">
+      <table class="formula-table data-table" id="formulaTable">
         <thead>
           <tr>
             <th>Product</th>

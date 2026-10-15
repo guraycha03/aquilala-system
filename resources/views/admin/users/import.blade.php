@@ -824,8 +824,22 @@
                 </div>
               </div>
 
-              <div class="import-table-wrap" id="ocrTableWrap">
-                <table class="import-table">
+              {{-- Shared search + 10-per-page pagination for the OCR review
+                   grid. The "Edit rows" flow appends rows at runtime, so the
+                   script below calls TableToolbarRefresh to keep pages honest.
+                   The wrapper div is where the engine parks the bottom bar —
+                   directly under the grid, above the import actions. --}}
+              <div class="ocr-grid">
+              <x-table-toolbar
+                  uid="ocrImport"
+                  work-table="ocrImportTable"
+                  per-page="10"
+                  noun="rows"
+                  search-placeholder="Search name, email, or phone…"
+              />
+
+              <div class="import-table-wrap table-scroll" id="ocrTableWrap">
+                <table class="import-table" id="ocrImportTable">
                   <thead>
                     <tr>
                       <th>Approve</th>
@@ -911,6 +925,7 @@
                   </tbody>
                 </table>
               </div>
+              </div>
 
               {{-- Row appended by "Add row"; the script fills in the row number
                    and the field indexes before it joins the table. --}}
@@ -986,8 +1001,17 @@
               </div>
             </div>
 
-            <div class="import-table-wrap">
-              <table class="import-table">
+            <div class="csv-preview-grid">
+            <x-table-toolbar
+                uid="csvPreview"
+                work-table="csvPreviewTable"
+                per-page="10"
+                noun="rows"
+                search-placeholder="Search name, email, or phone…"
+            />
+
+            <div class="import-table-wrap table-scroll">
+              <table class="import-table" id="csvPreviewTable">
                 <thead>
                   <tr>
                     <th>#</th>
@@ -1030,8 +1054,9 @@
                   @empty
                     <tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;">No rows to show.</td></tr>
                   @endforelse
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+            </div>
             </div>
 
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
@@ -1179,6 +1204,7 @@
               if (ocrSnapshot.values[i] !== undefined) el.value = ocrSnapshot.values[i];
             });
             ocrSnapshot = null;
+            if (window.TableToolbarRefresh) TableToolbarRefresh('ocrImportTable');
           }
           setOcrEditing(false);
         });
@@ -1204,6 +1230,10 @@
 
           ocrBody.appendChild(tr);
           refreshOcrImportBtn();
+
+          // The new row lands at the end of the tbody — jump the shared
+          // pagination to the last page so the merchant sees what they added.
+          if (window.TableToolbarRefresh) TableToolbarRefresh('ocrImportTable', { lastPage: true });
 
           var added = tr.querySelector('[data-ocr-cell]');
           if (added) added.focus();

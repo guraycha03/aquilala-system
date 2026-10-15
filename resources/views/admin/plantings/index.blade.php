@@ -14,31 +14,9 @@
   .stat-value { font-size: 26px; font-weight: 800; color: #143d23; line-height: 1; }
   .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 500; }
 
-  .pr-filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
-  .pr-filter {
-    display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
-    border-radius: 20px; font-size: 12.5px; font-weight: 700; text-decoration: none;
-    background: #f8fafc; border: 1.5px solid #e2e8f0; color: #475569;
-    transition: all .15s ease;
-  }
-  .pr-filter:hover { background: #f1f5f9; border-color: #cbd5e1; color: #0f172a; }
-  .pr-filter.active { background: #ecfdf5; border-color: #16a34a; color: #15803d; }
-  .pr-filter .count {
-    background: rgba(15, 23, 42, .08); border-radius: 10px; padding: 1px 7px;
-    font-size: 11px; font-variant-numeric: tabular-nums;
-  }
-  .pr-filter.active .count { background: rgba(22, 163, 74, .15); }
-
+  /* Filter pills removed — status filtering lives on the KPI cards above,
+     exactly like the Users page. Table base style = shared .data-table rules. */
   .pr-table-wrap { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; }
-  .pr-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  .pr-table thead th {
-    text-align: left; padding: 12px 16px; font-size: 11.5px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .05em; color: #64748b;
-    background: #f8fafc; border-bottom: 1px solid #e5e7eb; white-space: nowrap;
-  }
-  .pr-table tbody td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-  .pr-table tbody tr:last-child td { border-bottom: none; }
-  .pr-table tbody tr:hover { background: #fafcfb; }
 
   .pr-crop { display: flex; align-items: center; gap: 10px; }
   .pr-crop-ic {
@@ -161,18 +139,24 @@
   </a>
 </div>
 
-<div class="pr-filters">
-  @foreach (['pending' => 'Pending', 'confirmed' => 'Confirmed', 'rejected' => 'Rejected', 'all' => 'All'] as $key => $label)
-    <a class="pr-filter {{ $status === $key ? 'active' : '' }}" href="{{ route('admin.plantings.index', ['status' => $key]) }}">
-      {{ $label }}
-      <span class="count">{{ $key === 'all' ? $stats['total'] : ($stats[$key] ?? 0) }}</span>
-    </a>
-  @endforeach
-</div>
+<x-table-toolbar
+    uid="plantings"
+    work-table="plantingsTable"
+    per-page="10"
+    noun="plantings"
+    search-placeholder="Search crop, batch, or farmer…"
+    :sorts="[
+        ['key' => 'crop', 'dir' => 1, 'type' => 'str', 'label' => 'Crop (A–Z)'],
+        ['key' => 'crop', 'dir' => -1, 'type' => 'str', 'label' => 'Crop (Z–A)'],
+        ['key' => 'planted', 'dir' => -1, 'type' => 'date', 'label' => 'Planted (newest)'],
+        ['key' => 'planted', 'dir' => 1, 'type' => 'date', 'label' => 'Planted (oldest)'],
+        ['key' => 'farmer', 'dir' => 1, 'type' => 'str', 'label' => 'Farmer (A–Z)'],
+    ]"
+  />
 
 <div class="pr-table-wrap">
   @if($crops->count())
-    <table class="pr-table">
+    <table id="plantingsTable" class="pr-table data-table">
       <thead>
         <tr>
           <th>Crop Batch</th>
@@ -186,7 +170,9 @@
       </thead>
       <tbody>
         @foreach($crops as $crop)
-          <tr>
+          <tr data-crop="{{ strtolower($crop->crop?->name ?? '') }}"
+              data-farmer="{{ strtolower($crop->user?->name ?? '') }}"
+              data-planted="{{ $crop->planting_date?->format('Y-m-d') ?? '' }}">
             <td>
               <div class="pr-crop">
                 <span class="pr-crop-ic">
@@ -261,11 +247,7 @@
   @endif
 </div>
 
-@if($crops->hasPages())
-  <div style="margin-top: 16px;">
-    {{ $crops->withQueryString()->links('partials.pagination') }}
-  </div>
-@endif
+{{-- Pagination is handled inside .pr-table-wrap by the shared table toolbar. --}}
 
 {{-- ── Reject modal (optional remarks) ── --}}
 <div class="pr-modal-overlay" id="rejectModal" role="dialog" aria-modal="true" aria-labelledby="rejectTitle">

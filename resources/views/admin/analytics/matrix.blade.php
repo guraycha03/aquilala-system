@@ -78,14 +78,7 @@
     .mx-season-title.wet { background: #eef2f6; color: #62829b; }
     .mx-season-title.dry { background: #f6f0e6; color: #a57f43; }
 
-    .mx-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .mx-table th {
-      padding: 9px 12px; color: #94a3b8; font-size: 10px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.08em; background: #fafbfa;
-      border-bottom: 1px solid #eef1ef;
-    }
-    .mx-table td { padding: 12px; color: #334155; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-    .mx-table tr:last-child td { border-bottom: none; }
+    /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
     .mx-table td.product { font-weight: 600; }
     .mx-table td.rate { white-space: nowrap; }
     .mx-table .rate-pill {
@@ -164,8 +157,16 @@
               </div>
 
               @foreach($seasons as $season => $seasonFormulas)
-                <div class="mx-season-title {{ $season }}">{{ $season }} season</div>
-                <table class="mx-table">
+                <div class="mx-season">
+                  <x-table-toolbar
+                      uid="mx-{{ $loop->parent->index }}-{{ $loop->index }}"
+                      work-table="mxTable-{{ $loop->parent->index }}-{{ $loop->index }}"
+                      per-page="10"
+                      noun="rules"
+                      :search="false"
+                    />
+                  <div class="mx-season-title {{ $season }}">{{ $season }} season</div>
+                  <table class="mx-table data-table" id="mxTable-{{ $loop->parent->index }}-{{ $loop->index }}">
                   <thead>
                     <tr>
                       <th style="width:32%;">Product</th>
@@ -198,6 +199,7 @@
                     @endforeach
                   </tbody>
                 </table>
+                </div>
               @endforeach
             </div>
           @endforeach

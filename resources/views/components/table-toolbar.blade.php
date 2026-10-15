@@ -9,24 +9,31 @@
     'noun' => 'items',
     'empty' => '',
     'collapseFilters' => true,
+    'search' => true,
 ])
 
 @php
     $filters = is_array($filters) ? collect($filters) : $filters;
     $sorts = is_array($sorts) ? collect($sorts) : $sorts;
+    // No visible controls at all → hide the toolbar shell but keep it in the DOM
+    // so the engine still drives the shared bottom pagination bar for the table.
+    $hideShell = !$search && !count($filters) && !count($sorts);
 @endphp
 
 <div class="ctl-toolbar table-toolbar"
+     @if($hideShell) style="display:none;" @endif
      data-ttb="{{ $uid }}"
      data-ttb-works="{{ $workTable }}"
      data-ttb-count="{{ $count }}"
      data-ttb-perpage="{{ (int) $perPage }}"
      data-ttb-noun="{{ $noun }}"
      data-ttb-empty="{{ $empty }}">
+    @if($search)
     <div class="ctl-search">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="{{ $uid }}Search" placeholder="{{ $searchPlaceholder }}" autocomplete="off">
     </div>
+    @endif
 
     @if(count($filters) || count($sorts))
     <button type="button" class="btn-filter" data-ttb-filter-toggle aria-expanded="false" aria-label="Show filter options" title="Filters &amp; sort">
@@ -381,12 +388,36 @@
             if (document.getElementById(tableId)) { render(); return; }
             if (tries < 60) { tries++; setTimeout(poll, 50); }
         })();
+
+        // Pages that add/remove rows at runtime (import editors) call
+        // TableToolbarRefresh(tableId) so counts and pages stay truthful.
+        window.TableToolbarEngines = window.TableToolbarEngines || {};
+        window.TableToolbarEngines[tableId] = {
+            render: render,
+            goToLastPage: function () {
+                var t = resolveTable();
+                if (!t || perPage <= 0) return;
+                var pages = Math.max(1, Math.ceil(t.querySelectorAll('tr').length / perPage));
+                state.page = pages;
+                render();
+            }
+        };
     }
 
     function run() {
         document.querySelectorAll('.ctl-toolbar.table-toolbar').forEach(initToolbar);
         if (window.TableToolbarPending) window.TableToolbarPending();
     }
+
+    // Re-render a work table's toolbar after rows were added/removed in the DOM.
+    // opts.lastPage jumps to the final page first (new rows land at the end).
+    window.TableToolbarRefresh = function (tableId, opts) {
+        var eng = window.TableToolbarEngines && window.TableToolbarEngines[tableId];
+        if (!eng) return;
+        if (opts && opts.lastPage) eng.goToLastPage();
+        else eng.render();
+    };
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', run);
     } else {

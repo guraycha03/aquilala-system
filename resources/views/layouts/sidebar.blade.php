@@ -367,6 +367,30 @@
     .btn-clear:hover { border-color: #a3d4ad; background: #eaf6ee; box-shadow: 0 2px 8px rgba(22,101,52,0.10); }
     .btn-clear[hidden] { display: none; }
     .ttb-sort { min-width: 210px; }
+
+    /* -- Shared data table: the ONE canonical style every list table uses -- */
+    .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .data-table thead tr { background: #fafbfa; }
+    .data-table th { padding: 13px 20px; color: #94a3b8; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+    .data-table td { padding: 14px 20px; color: #334155; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .data-table tbody tr { transition: background 0.15s ease; }
+    .data-table tbody tr:hover { background: #fafbfa; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+
+    /* -- Shared pagination controls: used by client toolbars AND the server
+          pagination partial, so every table pages the same way (green theme) -- */
+    .pagination-info { font-size: 13px; color: #64748b; font-weight: 500; }
+    .pagination-controls { display: flex; align-items: center; gap: 6px; }
+    .page-btn {
+      min-width: 34px; height: 34px; padding: 0 10px; border: 1.5px solid #e2e8f0;
+      border-radius: 8px; background: #ffffff; color: #475569; font-size: 13px;
+      font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
+      display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+    }
+    .page-btn:hover:not(:disabled):not(.active):not(.disabled) { border-color: #16a34a; color: #16a34a; }
+    .page-btn:disabled, .page-btn.disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+    .page-btn.active { background: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700; }
+    .page-ellipsis { color: #94a3b8; font-size: 13px; padding: 0 2px; }
     .btn-filter {
       position: relative; width: 42px; height: 42px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
@@ -388,18 +412,6 @@
       display: flex; align-items: center; gap: 10px;
       padding: 4px 0; flex-wrap: wrap; margin-left: auto;
     }
-    .ttb-pagination .pagination-info { font-size: 13px; color: #64748b; font-weight: 500; }
-    .ttb-pagination .pagination-controls { display: flex; align-items: center; gap: 6px; }
-    .ttb-pagination .page-btn {
-      min-width: 34px; height: 34px; padding: 0 10px; border: 1.5px solid #e2e8f0;
-      border-radius: 8px; background: #ffffff; color: #475569; font-size: 13px;
-      font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-    .ttb-pagination .page-btn:hover:not(:disabled) { border-color: #16a34a; color: #16a34a; }
-    .ttb-pagination .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .ttb-pagination .page-btn.active { background: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700; }
-    .ttb-pagination .page-ellipsis { color: #94a3b8; font-size: 13px; padding: 0 2px; }
 
     /* -- Bottom-of-table pagination bar (client-side tables) -- */
     .ttb-bottom-bar {
@@ -407,18 +419,6 @@
       gap: 12px; padding: 14px 20px; border-top: 1px solid #f1f5f9;
       background: #fafdfb; flex-wrap: wrap;
     }
-    .ttb-bottom-bar .pagination-info { font-size: 13px; color: #64748b; font-weight: 500; }
-    .ttb-bottom-bar .pagination-controls { display: flex; align-items: center; gap: 6px; }
-    .ttb-bottom-bar .page-btn {
-      min-width: 34px; height: 34px; padding: 0 10px; border: 1.5px solid #e2e8f0;
-      border-radius: 8px; background: #ffffff; color: #475569; font-size: 13px;
-      font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-    .ttb-bottom-bar .page-btn:hover:not(:disabled) { border-color: #16a34a; color: #16a34a; }
-    .ttb-bottom-bar .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .ttb-bottom-bar .page-btn.active { background: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700; }
-    .ttb-bottom-bar .page-ellipsis { color: #94a3b8; font-size: 13px; padding: 0 2px; }
 
     /* -- Smooth page navigation: fade in fresh pages, softly fade out clicks -- */
     body { animation: aqua-page-in .28s ease; transition: opacity .18s ease; }

@@ -1,6 +1,12 @@
 @php
     $tmpSaved = (string) optional(auth()->user())->theme_mode;
     $tmpCurrent = in_array($tmpSaved, ['light', 'dark'], true) ? $tmpSaved : 'light';
+    // Side menu colors are a light-mode-only choice: dark always shows the
+    // default (dark green), light restores whatever the user last picked.
+    $tmpSbKeys = array_keys(config('sidebar.themes'));
+    $tmpSbSaved = (string) optional(auth()->user())->sidebar_theme;
+    $tmpSbLight = in_array($tmpSbSaved, $tmpSbKeys, true) ? $tmpSbSaved : config('sidebar.default');
+    $tmpSbDefault = config('sidebar.default');
 @endphp
 
 <style>
@@ -84,6 +90,26 @@
     var msg = document.getElementById('tmpMsg');
     var msgTimer = null;
 
+    var SIDEBAR_DEFAULT = @json($tmpSbDefault);
+    var SIDEBAR_LIGHT = @json($tmpSbLight);
+    var SIDEBAR_KEYS = @json($tmpSbKeys);
+
+    // The light-mode color the account may return to. The sidebar-theme picker
+    // refreshes this when the user picks a new color on this same page.
+    if (!window.__aqLightSidebarTheme || SIDEBAR_KEYS.indexOf(window.__aqLightSidebarTheme) === -1) {
+      window.__aqLightSidebarTheme = SIDEBAR_LIGHT;
+    }
+
+    // Switching modes swaps the side menu/header background live: dark = the
+    // single default (dark green), light = the last saved light-mode color.
+    function applySidebarForMode(mode) {
+      var body = document.body;
+      if (!body) return;
+      var key = mode === 'dark' ? SIDEBAR_DEFAULT : window.__aqLightSidebarTheme;
+      if (SIDEBAR_KEYS.indexOf(key) === -1) key = SIDEBAR_DEFAULT;
+      body.setAttribute('data-sidebar-theme', key);
+    }
+
     function flash(text, isError) {
       if (!msg) return;
       msg.textContent = text;
@@ -105,6 +131,7 @@
       c.addEventListener('click', function () {
         var mode = c.getAttribute('data-tmp-mode');
         if (document.documentElement) document.documentElement.setAttribute('data-theme', mode);
+        applySidebarForMode(mode);
         markActive(mode);
 
         fetch('{{ route('settings.theme') }}', {

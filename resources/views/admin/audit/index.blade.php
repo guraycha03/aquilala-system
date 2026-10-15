@@ -43,27 +43,18 @@
     .audit-kpi .ak-value { font-size: 24px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; }
     .audit-kpi .ak-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
 
-    .audit-filters {
-      display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-      margin-bottom: 16px;
-    }
-    .audit-filters input[type="search"],
+    /* Server-side filters — dressed in the shared .table-toolbar design so every
+       filter bar in the app looks and behaves the same (auto-applies on change). */
+    .audit-filters { margin-bottom: 16px; }
+    .audit-filters .ctl-search svg { stroke: #94a3b8; }
     .audit-filters select {
-      background: #f6f8f7; border: 1px solid #e6ebe8; border-radius: 10px;
-      padding: 9px 12px; font-size: 13px; color: #334155; outline: none;
+      height: 42px; padding: 0 13px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+      background: #ffffff; color: #1e293b; font-size: 13px; font-weight: 500;
+      font-family: inherit; outline: none; cursor: pointer; max-width: 230px;
+      transition: all .2s ease; box-sizing: border-box;
     }
-    .audit-filters input[type="search"] { min-width: 220px; flex: 1; max-width: 340px; }
-    .audit-filters input[type="search"]:focus,
-    .audit-filters select:focus { border-color: #143d23; box-shadow: 0 0 0 2px #dcfce7; }
-    .audit-filters button,
-    .audit-filters a {
-      font-size: 13px; padding: 9px 14px; border-radius: 10px; text-decoration: none;
-      border: 1px solid #e6ebe8; background: #ffffff; color: #374151; cursor: pointer;
-    }
-    .audit-filters button { background: #143d23; border-color: #143d23; color: #ffffff; font-weight: 600; }
-    .audit-filters button:hover { background: #1b5230; }
-    .audit-filters a.clear { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
-    .audit-filters a.clear:hover { background: #fee2e2; }
+    .audit-filters select:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.08); }
+    .audit-filters select:hover { border-color: #cbd5e1; }
 
     .audit-panel {
       background: rgba(255,255,255,0.86); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
@@ -72,13 +63,7 @@
       position: relative;
     }
 
-    .audit-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .audit-table thead tr { background: #fafbfa; }
-    .audit-table th { padding: 13px 20px; color: #94a3b8; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-    .audit-table td { padding: 14px 20px; color: #334155; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-    .audit-table tbody tr { transition: background 0.15s ease; }
-    .audit-table tbody tr:hover { background: #fafbfa; }
-    .audit-table tbody tr:last-child td { border-bottom: none; }
+    /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
     .audit-ts { font-size: 12px; color: #64748b; font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .audit-actor { display: flex; align-items: center; gap: 10px; }
     .audit-avatar {
@@ -102,14 +87,13 @@
     .audit-module { font-size: 12px; color: #94a3b8; white-space: nowrap; }
     .audit-ip { font-size: 12px; color: #64748b; font-family: ui-monospace, monospace; white-space: nowrap; }
 
-    .audit-footer {
-      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
-      padding: 14px 20px; border-top: 1px solid #eef1ef;
-    }
-    .audit-footer .rows-info { font-size: 12px; color: #94a3b8; }
-
     .audit-empty { text-align: center; padding: 48px 20px; color: #94a3b8; }
     .audit-empty h3 { margin: 0 0 6px; color: #64748b; font-size: 15px; }
+
+    .audit-bar {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 14px 20px; border-top: 1px solid #f1f5f9; background: #fafdfb;
+    }
 
     @media (max-width: 768px) {
       .audit-table th:nth-child(4), .audit-table td:nth-child(4),
@@ -156,23 +140,26 @@
         </div>
       </div>
 
-      <!-- Server-side filters (search, category, date range, user) -->
-      <form method="GET" class="audit-filters">
-        <input type="search" name="q" value="{{ $search }}" placeholder="Search description, event, or user…">
-        <select name="cat">
+      <!-- Server-side filters — same look/behaviour as the shared table toolbar -->
+      <form method="GET" class="table-toolbar audit-filters" id="auditFilters">
+        <div class="ctl-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" name="q" value="{{ $search }}" placeholder="Search description, event, or user…" autocomplete="off">
+        </div>
+        <select name="cat" onchange="this.form.submit()">
           <option value="">All event types</option>
           @foreach($categories as $key => $label)
             <option value="{{ $key }}" {{ $category === $key ? 'selected' : '' }}>{{ $label }}</option>
           @endforeach
         </select>
-        <select name="period">
+        <select name="period" onchange="this.form.submit()">
           <option value="all" {{ $period === 'all' ? 'selected' : '' }}>All dates</option>
           <option value="today" {{ $period === 'today' ? 'selected' : '' }}>Today</option>
           <option value="7days" {{ $period === '7days' ? 'selected' : '' }}>Last 7 days</option>
           <option value="30days" {{ $period === '30days' ? 'selected' : '' }}>Last 30 days</option>
           <option value="month" {{ $period === 'month' ? 'selected' : '' }}>This month</option>
         </select>
-        <select name="user_id">
+        <select name="user_id" onchange="this.form.submit()">
           <option value="">All users</option>
           @foreach($users as $u)
             <option value="{{ $u->id }}" {{ $userId == $u->id ? 'selected' : '' }}>
@@ -180,16 +167,18 @@
             </option>
           @endforeach
         </select>
-        <button type="submit">Apply</button>
         @if($search !== '' || $category !== '' || $period !== 'all' || $userId !== '')
-          <a href="{{ route('admin.audit.index') }}" class="clear">Clear</a>
+          <a href="{{ route('admin.audit.index') }}" class="btn-clear">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Clear
+          </a>
         @endif
       </form>
 
       <div class="audit-panel">
         <div class="app-scroll-wrap" style="--sb-bottom: 18px;">
           <div class="app-scroll">
-            <table id="auditTable" class="audit-table">
+            <table id="auditTable" class="audit-table data-table">
             <thead>
               <tr>
                 <th>Timestamp</th>
@@ -267,16 +256,10 @@
         </div>
 
         @if($activities->hasPages())
-          <div class="audit-footer">
-            <span class="rows-info">
-              Showing {{ number_format($activities->firstItem()) }}–{{ number_format($activities->lastItem()) }}
-              of {{ number_format($activities->total()) }} records
-            </span>
-            {{ $activities->withQueryString()->links('partials.pagination') }}
-          </div>
+          {{ $activities->withQueryString()->links('partials.pagination') }}
         @elseif($activities->total() > 0)
-          <div class="audit-footer">
-            <span class="rows-info">Showing all {{ number_format($activities->total()) }} records</span>
+          <div class="audit-bar">
+            <span class="pagination-info">Showing all {{ number_format($activities->total()) }} records</span>
           </div>
         @endif
       </div>

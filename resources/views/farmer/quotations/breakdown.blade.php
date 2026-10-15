@@ -54,16 +54,7 @@
     display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
   }
 
-  .items-table { width: 100%; border-collapse: collapse; font-size: 16px; }
-  .items-table th {
-    padding: 13px 16px; font-weight: 600;
-    color: #6b7c6e; border-bottom: 1px solid #f0f2f1; text-align: left;
-    font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em;
-    background: #fafdfb;
-  }
-  .items-table td { padding: 14px 16px; border-bottom: 1px solid #f5f7f6; color: #374138; }
-  .items-table tbody tr { transition: background 0.15s; }
-  .items-table tbody tr:hover td { background: #f8faf9; }
+  /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
 
   .calc-line {
     font-size: 16px; color: #3d4f42;
@@ -175,9 +166,16 @@
   </div>
 
   @if($quotation->items->count() > 0)
+    <x-table-toolbar
+        uid="breakdown"
+        work-table="breakdownTable"
+        per-page="10"
+        noun="items"
+        search-placeholder="Search product or store…"
+      />
     <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
       <div class="app-scroll">
-        <table class="items-table">
+        <table class="items-table data-table" id="breakdownTable">
           <thead>
             <tr>
               <th>Product</th>

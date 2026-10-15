@@ -40,13 +40,7 @@
     .exp-panel .panel-head { padding: 16px 20px; border-bottom: 1px solid rgba(0,0,0,0.05); }
     .exp-panel .panel-head h3 { font-size: 14px; font-weight: 700; color: #1e293b; margin: 0; letter-spacing: 0.03em; }
     .exp-panel .panel-head p { font-size: 12px; color: #64748b; margin: 2px 0 0 0; }
-    .exp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .exp-table th {
-      background: #fafbfa; padding: 10px 18px; color: #94a3b8; font-size: 10.5px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.08em; text-align: left; border-bottom: 1px solid #eef1ef;
-    }
-    .exp-table td { padding: 12px 18px; border-bottom: 1px solid #f1f5f9; color: #334155; }
-    .exp-table tr:last-child td { border-bottom: none; }
+    /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
     .exp-table td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
     .exp-table td.crop { font-weight: 600; color: #1e293b; text-transform: capitalize; }
     .diff-ok { color: #16a34a; }
@@ -112,7 +106,14 @@
               <h3>By Crop</h3>
               <p>Budget vs actual across crop types</p>
             </div>
-            <table class="exp-table">
+            <x-table-toolbar
+                uid="exp-crops"
+                work-table="expCropTable"
+                per-page="10"
+                noun="crops"
+                :search="false"
+              />
+            <table class="exp-table data-table" id="expCropTable">
               <thead>
                 <tr>
                   <th>Crop</th>
@@ -142,7 +143,8 @@
               <h3>By Season</h3>
               <p>Budget vs actual per cropping season</p>
             </div>
-            <table class="exp-table">
+            {{-- By Season can never exceed two rows (wet/dry) — no pagination needed. --}}
+            <table class="exp-table data-table">
               <thead>
                 <tr>
                   <th>Season</th>

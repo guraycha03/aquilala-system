@@ -79,16 +79,7 @@
     gap: 12px;
   }
 
-  .quote-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .quote-table th {
-    padding: 13px 16px; font-weight: 600;
-    color: #6b7c6e; border-bottom: 1px solid #f0f2f1; text-align: left;
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-    background: #fafdfb;
-  }
-  .quote-table td { padding: 14px 16px; border-bottom: 1px solid #f5f7f6; color: #374138; }
-  .quote-table tbody tr { transition: background 0.15s; }
-  .quote-table tbody tr:hover td { background: #f8faf9; }
+  /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
 
   /* Status badges */
   .status-badge {
@@ -270,7 +261,7 @@
   @if($quotations->count() > 0)
     <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
       <div class="app-scroll">
-        <table id="quotesTable" class="quote-table">
+        <table id="quotesTable" class="quote-table data-table">
         <thead>
           <tr>
             <th>Reference</th>

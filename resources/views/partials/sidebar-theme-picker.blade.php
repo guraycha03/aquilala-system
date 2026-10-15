@@ -2,6 +2,7 @@
     $stpThemes = config('sidebar.themes');
     $stpSaved = (string) auth()->user()->sidebar_theme;
     $stpCurrent = array_key_exists($stpSaved, $stpThemes) ? $stpSaved : config('sidebar.default');
+    $stpDefault = config('sidebar.default');
 @endphp
 
 <style>
@@ -73,15 +74,25 @@
     var msgTimer = null;
     var pickerEnabled = true;
 
+    var SIDEBAR_DEFAULT = @json($stpDefault);
+    var SIDEBAR_SAVED = @json($stpCurrent);
+
+    // The light-mode color to restore when the user leaves dark mode. The
+    // display-theme picker reads this when toggling modes on this page.
+    if (!window.__aqLightSidebarTheme) window.__aqLightSidebarTheme = SIDEBAR_SAVED;
+
     function isDarkMode() {
       return document.documentElement && document.documentElement.getAttribute('data-theme') === 'dark';
     }
 
+    // Dark mode always shows the default color, so the active swatch follows
+    // the mode: default while dark, the saved light choice while light.
     function applyPickerAvailability() {
       pickerEnabled = !isDarkMode();
       swatches.forEach(function (s) {
         s.setAttribute('aria-disabled', pickerEnabled ? 'false' : 'true');
       });
+      markActive(pickerEnabled ? window.__aqLightSidebarTheme : SIDEBAR_DEFAULT);
     }
 
     applyPickerAvailability();
@@ -116,6 +127,7 @@
         }
         var theme = s.getAttribute('data-stp-theme');
         if (document.body) document.body.setAttribute('data-sidebar-theme', theme);
+        window.__aqLightSidebarTheme = theme;
         markActive(theme);
 
         fetch('{{ route('settings.ui') }}', {

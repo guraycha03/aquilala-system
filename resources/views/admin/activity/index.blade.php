@@ -50,34 +50,7 @@
     border-radius: 50%;
     background: #16a34a;
   }
-  .filter-bar {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-  }
-  .filter-bar select, .filter-bar a {
-    font-size: 13px;
-    padding: 7px 12px;
-    border-radius: 8px;
-    border: 1px solid #d1d5db;
-    background: white;
-    color: #374151;
-    text-decoration: none;
-    transition: all 0.15s;
-  }
-  .filter-bar select:focus {
-    outline: none;
-    border-color: #143d23;
-    box-shadow: 0 0 0 2px #dcfce7;
-  }
-  .filter-bar a:hover { background: #f0fdf4; border-color: #143d23; }
-  .filter-bar .clear-btn {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #dc2626;
-  }
-  .filter-bar .clear-btn:hover { background: #fee2e2; }
+  /* Filter bar uses the shared .table-toolbar design (layouts.sidebar). */
 </style>
 
 <div class="header-panel" style="margin-bottom: 10px;">
@@ -85,9 +58,10 @@
   <p style="color: #606d64; font-size: 14px; margin: 0;">All user actions across the system — quotations, crops, products, and more.</p>
 </div>
 
-<!-- Filters -->
-<form method="GET" class="filter-bar">
-  <select name="user_id" onchange="this.form.submit()">
+<!-- Filters (shared .table-toolbar design — auto-applies on change) -->
+<form method="GET" class="table-toolbar">
+  <select name="user_id" aria-label="User" onchange="this.form.submit()"
+          style="height:42px;min-width:200px;padding:0 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:500;color:#1e293b;background:#ffffff;font-family:inherit;outline:none;cursor:pointer;transition:all .2s ease;box-sizing:border-box;">
     <option value="">All Users</option>
     @foreach($users as $u)
       <option value="{{ $u->id }}" {{ $userFilter == $u->id ? 'selected' : '' }}>
@@ -96,7 +70,8 @@
     @endforeach
   </select>
 
-  <select name="type" onchange="this.form.submit()">
+  <select name="type" aria-label="Activity type" onchange="this.form.submit()"
+          style="height:42px;min-width:200px;padding:0 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:500;color:#1e293b;background:#ffffff;font-family:inherit;outline:none;cursor:pointer;transition:all .2s ease;box-sizing:border-box;">
     <option value="">All Activity Types</option>
     @foreach($activityTypes as $type)
       <option value="{{ $type }}" {{ $typeFilter === $type ? 'selected' : '' }}>
@@ -106,7 +81,10 @@
   </select>
 
   @if($userFilter || $typeFilter)
-    <a href="{{ route('admin.activity.index') }}" class="clear-btn">Clear Filters</a>
+    <a href="{{ route('admin.activity.index') }}" class="btn-clear">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      Clear
+    </a>
   @endif
 </form>
 

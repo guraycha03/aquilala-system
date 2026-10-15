@@ -11,19 +11,21 @@
     .ael-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .ael-head h2 { font-size: 16px; font-weight: 800; color: #1e2922; margin: 0; }
     .ael-count { font-size: 12px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 20px; }
-    .ael-card { display: flex; gap: 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px 18px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
+    .ael-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px 18px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
     .ael-card.is-past { opacity: .72; }
-    .ael-date { flex-shrink: 0; width: 74px; text-align: center; border-right: 2px solid #f1f5f9; padding-right: 14px; }
-    .ael-date .dow { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: .05em; }
-    .ael-date .dnum { font-size: 24px; font-weight: 800; color: #1a2b1e; line-height: 1.1; }
-    .ael-date .mon { font-size: 11.5px; font-weight: 700; color: #64748b; }
+    /* Top row: date sits above the content on the left, edit/remove opposite it. */
+    .ael-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .ael-date { display: inline-flex; align-items: baseline; gap: 5px; }
+    .ael-date .dow { font-size: 12.5px; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: .05em; }
+    .ael-date .dnum { font-size: 19px; font-weight: 800; color: #1a2b1e; line-height: 1.1; }
+    .ael-date .mon { font-size: 13px; font-weight: 700; color: #475569; }
     .ael-body { flex: 1; min-width: 0; }
     .ael-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
-    .ael-type { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; padding: 2px 9px; border-radius: 20px; }
+    .ael-type { display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 800; padding: 7px 15px; border-radius: 20px; }
     .ael-title { font-size: 15.5px; font-weight: 700; color: #1a2b1e; }
     .ael-meta { font-size: 13px; color: #64748b; margin-top: 2px; }
     .ael-desc { font-size: 13.5px; color: #475569; margin-top: 6px; line-height: 1.55; white-space: pre-line; }
-    .ael-actions { display: flex; gap: 8px; align-items: flex-start; }
+    .ael-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; }
     .ael-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 7px 13px; border-radius: 9px; border: 1.5px solid #e2e8f0; background: #f8fafc; color: #475569; cursor: pointer; }
     .ael-btn:hover { background: #f1f5f9; }
     .ael-btn.danger { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
@@ -41,10 +43,32 @@
     @else
         @foreach($upcoming as $ev)
             <div class="ael-card">
-                <div class="ael-date">
-                    <div class="dow">{{ $ev->event_date->format('D') }}</div>
-                    <div class="dnum">{{ $ev->event_date->format('j') }}</div>
-                    <div class="mon">{{ $ev->event_date->format('M') }}</div>
+                <div class="ael-card-head">
+                    <div class="ael-date">
+                        <span class="dow">{{ $ev->event_date->format('D') }},</span>
+                        <span class="dnum">{{ $ev->event_date->format('j') }}</span>
+                        <span class="mon">{{ $ev->event_date->format('M') }}</span>
+                    </div>
+                    @if($isAdmin)
+                        <div class="ael-actions">
+                            <button type="button" class="ael-btn js-open-event-modal"
+                                    data-mode="edit"
+                                    data-id="{{ $ev->id }}"
+                                    data-title="{{ $ev->title }}"
+                                    data-type="{{ $ev->event_type }}"
+                                    data-date="{{ $ev->event_date->toDateString() }}"
+                                    data-start="{{ $ev->start_time?->format('H:i') }}"
+                                    data-end="{{ $ev->end_time?->format('H:i') }}"
+                                    data-location="{{ $ev->location }}"
+                                    data-description="{{ $ev->description }}">Edit</button>
+                            <form method="POST" action="{{ route('admin.calendar.events.destroy', $ev) }}"
+                                  onsubmit="return confirm('Remove this event from the calendar?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="ael-btn danger">Delete</button>
+                            </form>
+                        </div>
+                    @endif
                 </div>
                 <div class="ael-body">
                     <div class="ael-top">
@@ -64,26 +88,6 @@
                     </div>
                     @if($ev->description)<div class="ael-desc">{{ $ev->description }}</div>@endif
                 </div>
-                @if($isAdmin)
-                    <div class="ael-actions">
-                        <button type="button" class="ael-btn js-open-event-modal"
-                                data-mode="edit"
-                                data-id="{{ $ev->id }}"
-                                data-title="{{ $ev->title }}"
-                                data-type="{{ $ev->event_type }}"
-                                data-date="{{ $ev->event_date->toDateString() }}"
-                                data-start="{{ $ev->start_time?->format('H:i') }}"
-                                data-end="{{ $ev->end_time?->format('H:i') }}"
-                                data-location="{{ $ev->location }}"
-                                data-description="{{ $ev->description }}">Edit</button>
-                        <form method="POST" action="{{ route('admin.calendar.events.destroy', $ev) }}"
-                              onsubmit="return confirm('Remove this event from the calendar?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="ael-btn danger">Delete</button>
-                        </form>
-                    </div>
-                @endif
             </div>
         @endforeach
     @endif
@@ -100,10 +104,32 @@
     @else
         @foreach($past as $ev)
             <div class="ael-card is-past">
-                <div class="ael-date">
-                    <div class="dow">{{ $ev->event_date->format('D') }}</div>
-                    <div class="dnum">{{ $ev->event_date->format('j') }}</div>
-                    <div class="mon">{{ $ev->event_date->format('M') }}</div>
+                <div class="ael-card-head">
+                    <div class="ael-date">
+                        <span class="dow">{{ $ev->event_date->format('D') }},</span>
+                        <span class="dnum">{{ $ev->event_date->format('j') }}</span>
+                        <span class="mon">{{ $ev->event_date->format('M') }}</span>
+                    </div>
+                    @if($isAdmin)
+                        <div class="ael-actions">
+                            <button type="button" class="ael-btn js-open-event-modal"
+                                    data-mode="edit"
+                                    data-id="{{ $ev->id }}"
+                                    data-title="{{ $ev->title }}"
+                                    data-type="{{ $ev->event_type }}"
+                                    data-date="{{ $ev->event_date->toDateString() }}"
+                                    data-start="{{ $ev->start_time?->format('H:i') }}"
+                                    data-end="{{ $ev->end_time?->format('H:i') }}"
+                                    data-location="{{ $ev->location }}"
+                                    data-description="{{ $ev->description }}">Edit</button>
+                            <form method="POST" action="{{ route('admin.calendar.events.destroy', $ev) }}"
+                                  onsubmit="return confirm('Remove this event from the calendar?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="ael-btn danger">Delete</button>
+                            </form>
+                        </div>
+                    @endif
                 </div>
                 <div class="ael-body">
                     <div class="ael-top">
@@ -120,26 +146,6 @@
                     </div>
                     @if($ev->description)<div class="ael-desc">{{ $ev->description }}</div>@endif
                 </div>
-                @if($isAdmin)
-                    <div class="ael-actions">
-                        <button type="button" class="ael-btn js-open-event-modal"
-                                data-mode="edit"
-                                data-id="{{ $ev->id }}"
-                                data-title="{{ $ev->title }}"
-                                data-type="{{ $ev->event_type }}"
-                                data-date="{{ $ev->event_date->toDateString() }}"
-                                data-start="{{ $ev->start_time?->format('H:i') }}"
-                                data-end="{{ $ev->end_time?->format('H:i') }}"
-                                data-location="{{ $ev->location }}"
-                                data-description="{{ $ev->description }}">Edit</button>
-                        <form method="POST" action="{{ route('admin.calendar.events.destroy', $ev) }}"
-                              onsubmit="return confirm('Remove this event from the calendar?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="ael-btn danger">Delete</button>
-                        </form>
-                    </div>
-                @endif
             </div>
         @endforeach
         <div style="margin-top: 14px;">{{ $past->links('partials.pagination') }}</div>

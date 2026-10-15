@@ -4,55 +4,11 @@
 
 @section('content')
 <style>
-  .filter-bar {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .filter-search {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 14px;
-    height: 42px;
-    background: #f8fafc;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
-    min-width: 200px;
-    transition: all 0.2s ease;
-  }
-  .filter-search:focus-within {
-    border-color: #16a34a;
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.08);
-  }
-  .filter-search svg { flex-shrink: 0; color: #94a3b8; }
-  .filter-search input {
-    border: none; outline: none; background: transparent;
-    font-size: 13px; color: #0f172a; width: 100%; font-family: inherit; font-weight: 500;
-  }
-  .filter-search input::placeholder { color: #94a3b8; }
-  .filter-select { min-width: 160px; height: 42px; }
-  .result-count {
-    font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap;
-    background: #f1f5f9; padding: 4px 10px; border-radius: 20px;
-  }
+  /* Old .filter-bar styles removed — filtering now uses the shared table toolbar.
+     Table base style lives in the shared .data-table rules (layouts.sidebar). */
 
   .data-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 20px; }
   .table-head { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th { background: #fafbfa; padding: 14px 16px; font-weight: 600; color: #4a574e; border-bottom: 1px solid #e2e8f0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
-  td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; color: #3d4a41; }
-  tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover td { background: #fafbfa; }
 
   .avatar {
     width: 28px; height: 28px;
@@ -131,7 +87,7 @@
   </div>
   <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
       <div class="app-scroll">
-        <table id="adminHarvestsTable">
+        <table id="adminHarvestsTable" class="data-table">
           <thead>
             <tr>
               <th>Farmer</th>

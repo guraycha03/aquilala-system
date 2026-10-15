@@ -116,16 +116,7 @@
   }
   .filter-select:focus { border-color: #14532d; }
 
-  /* Table */
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th {
-    background: #f8fafc; padding: 12px 16px; font-weight: 600; color: #475569;
-    border-bottom: 1px solid #e2e8f0; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; text-align: left; white-space: nowrap;
-  }
-  td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
-  tr:last-child td { border-bottom: none; }
-  tbody tr { transition: background .15s; }
-  tbody tr:hover { background: #f8fafc; }
+  /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
 
   .prod-cell { display: flex; align-items: center; gap: 12px; min-width: 220px; }
   .prod-thumb {
@@ -423,7 +414,7 @@
   <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
     <div class="app-scroll">
     @if($products->count() > 0)
-    <table id="inventoryTable">
+    <table id="inventoryTable" class="data-table">
       <thead>
         <tr>
           <th>Product</th>

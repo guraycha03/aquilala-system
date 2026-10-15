@@ -14,15 +14,7 @@
   @include('partials.settings-styles')
 
   <style>
-    .wx-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .wx-table thead tr { background: #fafbfa; }
-    .wx-table th {
-      padding: 12px 16px; color: #94a3b8; font-size: 10px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid #eef1ef;
-    }
-    .wx-table td { padding: 13px 16px; color: #334155; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
-    .wx-table tbody tr:last-child td { border-bottom: none; }
-    .wx-table tbody tr:hover { background: #fafbfa; }
+    /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
     .wx-empty { padding: 34px 20px; text-align: center; color: #64748b; font-size: 13.5px; }
 
     .wx-badge {
@@ -193,8 +185,30 @@
 
           <div class="set-section" style="max-width:1100px;">
             <div class="set-section-title">Logged events</div>
+
+            @php
+              $wxTypeOptions    = collect($types)->map(fn ($label, $key) => [(string) $key, $label])->values()->all();
+              $wxSeverityOptions = collect($severities)->map(fn ($label, $key) => [(string) $key, $label])->values()->all();
+            @endphp
+            <x-table-toolbar
+                uid="wx"
+                work-table="wxTable"
+                per-page="10"
+                noun="events"
+                search-placeholder="Search events, notes, or who logged them…"
+                :filters="[
+                    ['key' => 'event_type', 'label' => 'All types', 'options' => $wxTypeOptions],
+                    ['key' => 'severity', 'label' => 'Any severity', 'options' => $wxSeverityOptions],
+                ]"
+                :sorts="[
+                    ['key' => 'date', 'dir' => -1, 'type' => 'date', 'label' => 'Date (newest)'],
+                    ['key' => 'date', 'dir' => 1, 'type' => 'date', 'label' => 'Date (oldest)'],
+                    ['key' => 'severity', 'dir' => 1, 'type' => 'str', 'label' => 'Severity (A–Z)'],
+                ]"
+              />
+
             <div class="set-card" style="padding:0;overflow-x:auto;">
-              <table class="wx-table" id="wxTable">
+              <table class="wx-table data-table" id="wxTable">
                 <thead>
                   <tr>
                     <th>Event</th>
@@ -207,7 +221,10 @@
                 </thead>
                 <tbody>
                   @forelse($events as $event)
-                    <tr data-id="{{ $event->id }}">
+                    <tr data-id="{{ $event->id }}"
+                        data-event_type="{{ $event->event_type }}"
+                        data-severity="{{ $event->severity }}"
+                        data-date="{{ $event->start_date }}">
                       <td>
                         <div class="wx-title">{{ $event->title }}</div>
                         @if($event->notes)<div class="wx-notes">{{ $event->notes }}</div>@endif
@@ -302,7 +319,10 @@
       }
 
       function rowHtml(ev) {
-        return '<tr data-id="' + ev.id + '">' +
+        return '<tr data-id="' + esc(ev.id) + '"' +
+          ' data-event_type="' + esc(ev.event_type) + '"' +
+          ' data-severity="' + esc(ev.severity) + '"' +
+          ' data-date="' + esc(ev.start_date) + '">' +
           '<td><div class="wx-title">' + esc(ev.title) + '</div>' +
           (ev.notes ? '<div class="wx-notes">' + esc(ev.notes) + '</div>' : '') + '</td>' +
           '<td>' + esc(ev.type_label) + '</td>' +

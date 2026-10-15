@@ -162,7 +162,7 @@ class DarkModeTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard.farmer'))
             ->assertOk()
-            ->assertSee('data-sidebar-theme="'.$default.'"', false)
-            ->assertDontSee('data-sidebar-theme="khaki"', false);
+            ->assertSee('<body data-sidebar-theme="'.$default.'"', false)
+            ->assertDontSee('<body data-sidebar-theme="khaki"', false);
     }
 }

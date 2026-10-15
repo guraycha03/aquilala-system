@@ -275,7 +275,6 @@ html[data-theme="dark"] { color-scheme: dark; }
 /* Base surfaces */
 [data-theme="dark"] body { background: #0b1220 !important; color: #cbd5e1 !important; }
 [data-theme="dark"] .main-content { background: #0b1220 !important; color: #cbd5e1 !important; }
-[data-theme="dark"] .mobile-header { background: #0d2818; }
 [data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3,
 [data-theme="dark"] h4, [data-theme="dark"] h5, [data-theme="dark"] h6 { color: #d6f5e3 !important; }
 [data-theme="dark"] a { color: #6ee7a0; }

@@ -78,16 +78,9 @@
         background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; overflow-x: auto;
         box-shadow: 0 1px 4px rgba(0,0,0,0.04); margin-bottom: 24px;
     }
-    .crop-table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 880px; }
-    .crop-table th {
-        padding: 12px 16px; font-weight: 600; color: #6b7c6e; border-bottom: 1px solid #f0f2f1;
-        text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-        background: #fafdfb; white-space: nowrap;
-    }
-    .crop-table td { padding: 13px 16px; border-bottom: 1px solid #f5f7f6; color: #374138; vertical-align: middle; }
-    .crop-table tbody tr { transition: background 0.15s; cursor: pointer; }
-    .crop-table tbody tr:hover td { background: #f8faf9; }
-    .crop-table tbody tr:last-child td { border-bottom: none; }
+    /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
+    .crop-table { min-width: 880px; }
+    .crop-table tbody tr { cursor: pointer; }
     .crop-name-cell { display: flex; align-items: center; gap: 10px; }
     .crop-name-ic { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .crop-name-ic svg { width: 18px; height: 18px; }
@@ -552,7 +545,7 @@
 <!-- ── Crop Batches Table ── -->
 @if($crops->count() > 0)
 <div class="crop-table-card">
-    <table class="crop-table" id="cropsTable">
+    <table class="crop-table data-table" id="cropsTable">
         <thead>
             <tr>
                 <th>Crop Batch</th>

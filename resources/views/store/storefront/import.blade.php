@@ -372,8 +372,22 @@
                      merchant has collapsed, so hidden values are still saved. --}}
                 <div id="hiddenMirrors" style="display:none"></div>
 
+                {{-- Shared search / row-status filter / pagination for the review
+                     grid. Replaces the old "show only errors" checkbox. --}}
+                <x-table-toolbar
+                    uid="storeImportReview"
+                    work-table="reviewTable"
+                    per-page="10"
+                    noun="rows"
+                    search-placeholder="Search product names, SKUs, or issues…"
+                    :filters="[[
+                        'key' => 'valid',
+                        'label' => 'All rows',
+                        'options' => [['0', 'Needs review'], ['1', 'Ready']],
+                    ]]"
+                />
+
                 <div class="filter-bar">
-                    <label><input type="checkbox" id="showOnlyErrors"> Show only rows with problems</label>
                     <label><input type="checkbox" id="tickAll"> Tick every row</label>
                     <label><input type="checkbox" id="untickBad"> Untick rows with problems</label>
                     @foreach (\App\Support\ProductFields::toggleGroups() as $key => $label)
@@ -383,6 +397,10 @@
                     @endforeach
                 </div>
 
+                {{-- The wrapper keeps the shared pagination bar (appended to the
+                     table's closest .table-scroll parent) above the submit
+                     buttons instead of after them. --}}
+                <div class="import-grid">
                 <div class="table-scroll">
                     <table class="review" id="reviewTable">
                         <thead>
@@ -415,6 +433,7 @@
                                     data-valid="{{ $hasErrors ? '0' : '1' }}"
                                     data-has-fert="{{ $hasFert ? '1' : '0' }}"
                                     data-has-reg="{{ $hasReg ? '1' : '0' }}"
+                                    data-search="{{ trim(collect($row['data'])->filter()->map(fn ($v) => is_scalar($v) ? $v : '')->implode(' ') . ' ' . implode(' ', $row['errors'])) }}"
                                     class="{{ $hasErrors ? 'is-bad' : '' }} {{ empty($row['include']) ? 'is-off' : '' }}">
                                     <td>
                                         <input type="hidden" name="rows[{{ $index }}][__include]" value="0">
@@ -480,6 +499,7 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
                 </div>
 
                 <div class="btn-row">
@@ -589,7 +609,6 @@
 
     if (table) {
         var body = table.tBodies[0];
-        var onlyErrors = document.getElementById('showOnlyErrors');
         var tickAll = document.getElementById('tickAll');
         var untickBad = document.getElementById('untickBad');
 
@@ -613,14 +632,6 @@
                 cell.appendChild(span);
             }
         };
-
-        if (onlyErrors) {
-            onlyErrors.addEventListener('change', function () {
-                rowsOf().forEach(function (row) {
-                    row.style.display = onlyErrors.checked && row.dataset.valid === '1' ? 'none' : '';
-                });
-            });
-        }
 
         if (tickAll) {
             tickAll.addEventListener('change', function () {

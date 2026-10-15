@@ -18,9 +18,7 @@
   .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 500; }
 
   .data-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 20px; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th { background: #fafbfa; padding: 14px 16px; font-weight: 600; color: #4a574e; border-bottom: 1px solid #e2e8f0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
-  td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; color: #3d4a41; }
+  /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
 
   .badge {
     display: inline-flex;
@@ -181,6 +179,19 @@
   @endif
 </div>
 
+  <x-table-toolbar
+      uid="admin-crops"
+      work-table="adminCropTable"
+      per-page="10"
+      noun="crops"
+      search-placeholder="Search crops…"
+      :sorts="[
+          ['key' => 'estimates', 'dir' => -1, 'type' => 'num', 'label' => 'Estimates (highest)'],
+          ['key' => 'planted_area', 'dir' => -1, 'type' => 'num', 'label' => 'Planted area (largest)'],
+          ['key' => 'crop', 'dir' => 1, 'type' => 'str', 'label' => 'Crop (A–Z)'],
+      ]"
+    />
+
 <div class="data-table-container" style="margin-bottom: 24px;">
   <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
     <div>
@@ -222,8 +233,8 @@
       <span class="chart-hint" id="cropReadoutHint">Hover or click a bar to see the full breakdown.</span>
     </div>
     <p style="margin: 0; padding: 0 20px 12px; font-size: 12px; color: #94a3b8;" id="cropChartNote"></p>
-    <div class="chart-scroll">
-      <table>
+    <div class="chart-scroll table-scroll">
+      <table id="adminCropTable" class="data-table">
         <thead>
           <tr>
             <th>Crop</th>
@@ -238,7 +249,9 @@
         </thead>
         <tbody>
           @foreach($cropRows as $crop)
-            <tr>
+            <tr data-crop="{{ strtolower($crop['crop']) }}"
+                data-estimates="{{ $crop['estimates'] }}"
+                data-planted_area="{{ $crop['planted_area'] }}">
               <td class="cell-strong cap">{{ $crop['crop'] }}</td>
               <td class="num">{{ $crop['estimates'] }}</td>
               <td class="num">{{ number_format($crop['quoted_area'], 1) }} ha</td>

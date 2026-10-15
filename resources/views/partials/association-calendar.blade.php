@@ -78,8 +78,8 @@
     .cal-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
     .cal-more { font-size: 10px; font-weight: 800; color: #94a3b8; }
 
-    .cal-legend { display: flex; flex-wrap: wrap; gap: 14px; padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e5e7eb; }
-    .cal-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #64748b; }
+    .cal-legend { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e5e7eb; }
+    .cal-legend-item { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: #475569; background: #f1f5f9; border-radius: 20px; padding: 7px 15px; }
     .cal-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
     .cal-pop { position: absolute; z-index: 60; display: none; width: 300px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 14px 34px rgba(15,23,42,.18); overflow: hidden; }

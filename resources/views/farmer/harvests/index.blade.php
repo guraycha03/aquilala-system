@@ -62,64 +62,6 @@
   .stat-card.amber .stat-value  { color: #92400e; }
   .stat-card.violet .stat-value { color: #5b21b6; }
 
-  /* Filter bar */
-  .filter-bar {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .filter-search {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 14px;
-    height: 42px;
-    background: #f8fafc;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 10px;
-    min-width: 200px;
-    transition: all 0.2s ease;
-  }
-  .filter-search:focus-within {
-    border-color: #16a34a;
-    background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.08);
-  }
-  .filter-search svg { flex-shrink: 0; color: #94a3b8; }
-  .filter-search input {
-    border: none; outline: none; background: transparent;
-    font-size: 13px; color: #0f172a; width: 100%; font-family: inherit; font-weight: 500;
-  }
-  .filter-search input::placeholder { color: #94a3b8; }
-  .filter-select { min-width: 160px; height: 42px; }
-  .btn-apply {
-    appearance: none; -webkit-appearance: none; height: 42px; padding: 0 20px;
-    font-size: 13px; font-weight: 700; border-radius: 10px; border: none;
-    background: #16a34a; color: #ffffff; cursor: pointer;
-    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
-    transition: all 0.2s ease;
-  }
-  .btn-apply:hover { background: #15803d; transform: translateY(-1px); }
-  .btn-clear {
-    height: 42px; padding: 0 14px; border-radius: 10px;
-    background: #f3faf4; border: 1.5px solid #bfe3c7; color: #166534;
-    font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
-    display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;
-  }
-  .btn-clear:hover { background: #eaf6ee; border-color: #a3d4ad; }
-  .result-count {
-    font-size: 12px; color: #64748b; font-weight: 600; white-space: nowrap;
-    background: #f1f5f9; padding: 4px 10px; border-radius: 20px;
-  }
-
   /* Table card */
   .table-card {
     background: #ffffff;
@@ -140,17 +82,7 @@
   .table-header h2 { font-size: 16px; font-weight: 700; color: #1e2922; margin: 0; }
   .table-header p { font-size: 13px; color: #64748b; margin: 4px 0 0 0; }
 
-  .harvest-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .harvest-table th {
-    padding: 13px 16px; font-weight: 600;
-    color: #6b7c6e; border-bottom: 1px solid #f0f2f1; text-align: left;
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-    background: #fafdfb;
-  }
-  .harvest-table td { padding: 14px 16px; border-bottom: 1px solid #f5f7f6; color: #374138; }
-  .harvest-table tbody tr { transition: background 0.15s; }
-  .harvest-table tbody tr:hover td { background: #f8faf9; }
-  .harvest-table tbody tr:last-child td { border-bottom: none; }
+  /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
 
   .season-badge {
     display: inline-flex; align-items: center; gap: 6px;
@@ -319,7 +251,7 @@
   </div>
     <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
       <div class="app-scroll">
-        <table class="harvest-table" id="harvestsTable">
+        <table class="harvest-table data-table" id="harvestsTable">
           <thead>
             <tr>
               <th>Crop</th>

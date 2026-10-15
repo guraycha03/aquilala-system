@@ -21,12 +21,13 @@ class AdminPlantingController extends Controller
             $status = 'pending';
         }
 
+        // Full set for the shared client-side toolbar (search / sort / 10-per-page
+        // pagination), matching every other list table in the app.
         $crops = FarmerCrop::with(['crop', 'user', 'confirmedBy'])
             ->when($status !== 'all', fn ($q) => $q->where('confirmation_status', $status))
             ->orderByDesc('planting_date')
             ->orderByDesc('id')
-            ->paginate(15)
-            ->withQueryString();
+            ->get();
 
         $stats = [
             'pending' => FarmerCrop::pendingConfirmation()->count(),

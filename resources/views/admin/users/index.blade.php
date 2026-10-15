@@ -99,13 +99,7 @@
       padding: 8px 12px; font-size: 13px; color: #334155; outline: none; cursor: pointer;
     }
 
-    .users-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .users-table thead tr { background: #fafbfa; }
-    .users-table th { padding: 13px 20px; color: #94a3b8; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-    .users-table td { padding: 14px 20px; color: #334155; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-    .users-table tbody tr { transition: background 0.15s ease; }
-    .users-table tbody tr:hover { background: #fafbfa; }
-    .users-table tbody tr:last-child td { border-bottom: none; }
+    /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
     .user-cell { display: flex; align-items: center; gap: 11px; min-width: 0; }
     .user-avatar {
       width: 36px; height: 36px; border-radius: 10px; background: rgb(172, 242, 121); color: #14532d;
@@ -300,7 +294,7 @@
           <div class="app-scroll-wrap" style="--sb-bottom: 18px;">
           <div class="app-scroll" id="usersScroll">
           @if($users->isNotEmpty())
-            <table id="usersTable" class="users-table">
+            <table id="usersTable" class="users-table data-table">
               <thead>
                 <tr>
                   <th>User Account</th>

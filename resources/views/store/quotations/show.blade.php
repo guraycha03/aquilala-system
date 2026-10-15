@@ -40,16 +40,7 @@
   .info-item label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #879a8c; font-weight: 600; display: block; margin-bottom: 4px; }
   .info-item .value { font-size: 15px; font-weight: 700; color: #1a2b1e; }
 
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th {
-    padding: 13px 16px; font-weight: 600; color: #6b7c6e;
-    border-bottom: 1px solid #f0f2f1; text-align: left;
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-    background: #fafdfb;
-  }
-  td { padding: 14px 16px; border-bottom: 1px solid #f5f7f6; color: #374138; }
-  tbody tr { transition: background 0.15s; }
-  tbody tr:hover td { background: #f8faf9; }
+  /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
   tr.yours td { background: #f0fdf4; }
   tr.yours td:first-child { box-shadow: inset 3px 0 0 #16a34a; }
 
@@ -152,6 +143,13 @@
 </div>
 
 <!-- Your Products in This Quotation -->
+<x-table-toolbar
+    uid="storeShowMine"
+    work-table="storeShowMineTable"
+    per-page="10"
+    noun="products"
+    search-placeholder="Search your products…"
+  />
 <div class="detail-card">
   <div class="detail-card-header">
     <div>
@@ -161,7 +159,7 @@
   </div>
   <div style="padding: 0;">
     @if($storeItems->count() > 0)
-      <table>
+      <table id="storeShowMineTable" class="data-table">
         <thead>
           <tr>
             <th>Product</th>
@@ -205,6 +203,13 @@
 </div>
 
 <!-- Full Quotation Breakdown -->
+<x-table-toolbar
+    uid="storeShowAll"
+    work-table="storeShowAllTable"
+    per-page="10"
+    noun="items"
+    search-placeholder="Search product or store…"
+  />
 <div class="detail-card">
   <div class="detail-card-header">
     <h2 style="font-size: 16px; font-weight: 700; color: #1a2b1e; margin: 0;">Full Cost Breakdown</h2>
@@ -215,7 +220,7 @@
   </div>
   <div style="padding: 0;">
     @if($quotation->items->count() > 0)
-      <table>
+      <table id="storeShowAllTable" class="data-table">
         <thead>
           <tr>
             <th>Product</th>

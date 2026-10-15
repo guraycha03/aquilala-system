@@ -195,16 +195,7 @@
     overflow: hidden;
   }
 
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th {
-    padding: 13px 16px; font-weight: 600; color: #6b7c6e;
-    border-bottom: 1px solid #f0f2f1; text-align: left;
-    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
-    background: #fafdfb;
-  }
-  td { padding: 14px 16px; border-bottom: 1px solid #f5f7f6; color: #374138; }
-  tbody tr { transition: background 0.15s; }
-  tbody tr:hover td { background: #f8faf9; }
+  /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
 
   .action-btn {
     background: linear-gradient(135deg, #143d23 0%, #1a5230 100%);
@@ -411,7 +402,7 @@
   </div>
   <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
     <div class="app-scroll">
-      <table id="storeQuotesTable">
+      <table id="storeQuotesTable" class="data-table">
       <thead>
         <tr>
           <th>Reference</th>
