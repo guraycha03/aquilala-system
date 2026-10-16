@@ -460,7 +460,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
             SettingsHelper::set('yield_zero_dash', ($data['yield_zero_dash'] ?? false) ? '1' : '0');
 
             return response()->json(['ok' => true, 'preview' => SettingsHelper::formatYield(2.45)]);
-        })->name('settings.interface');
+        })->name('settings.interface.update');
         // Weather Log — a dated journal of typhoons, floods, droughts and the
         // like. Separate from the preference closures above because it owns rows
         // in weather_logs that the harvest AI analysis reads.

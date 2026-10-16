@@ -1,4 +1,6 @@
 
+ssh root@72.62.246.107
+
 
 the container harvest report from admin/ dashboard overview page has a very fade, blurry like covered in overlay bar/chart, the inside of the container is like covered in a fuzzy overlay icant see the graph well, please fix it, could it be from the empty state (placeholder style)
 

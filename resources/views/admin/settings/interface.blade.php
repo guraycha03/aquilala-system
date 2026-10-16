@@ -4,7 +4,7 @@
 
 @section('content')
   @php
-    // Live interface settings (persisted via admin.settings.interface)
+    // Live interface settings (persisted via admin.settings.interface.update)
     $curUnit = \App\Helpers\SettingsHelper::yieldUnit();
     $curDec  = \App\Helpers\SettingsHelper::yieldDecimals();
     $curSep  = \App\Helpers\SettingsHelper::yieldSeparator();
@@ -209,7 +209,7 @@
           yield_number_separator: document.querySelector('select[name=yield_number_separator]').value,
           yield_zero_dash: document.querySelector('input[name=yield_zero_dash]').checked
         };
-        fetch('{{ route("admin.settings.interface") }}', {
+        fetch('{{ route("admin.settings.interface.update") }}', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken() },
           body: JSON.stringify(payload)
