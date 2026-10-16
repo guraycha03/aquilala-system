@@ -5,3 +5,5 @@ the container harvest report from admin/ dashboard overview page has a very fade
 
 
 
+Can you update or make the setup of our system ready to be a Progressive WEb application, we're its kinda like an app online and can be donwloaeded and access fromd evice homepage. do not remove anything, or change feature of the system, you just have to make the system a wpa so its can act like an app (webapp)
+

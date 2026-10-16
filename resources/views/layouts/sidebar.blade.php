@@ -6,6 +6,20 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>@yield('title') | Aquilala</title>
   <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+  {{-- PWA: installable from the browser ("Add to Home Screen" / install
+       prompt) so Aquilala opens like a native app. The manifest describes
+       the app and its home-screen icons; js/pwa-register.js registers the
+       service worker (offline fallback + fast repeat launches) and clears
+       cached pages on logout. --}}
+  <link rel="manifest" href="{{ asset('manifest.json') }}">
+  <meta name="theme-color" content="#f3f6f4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Aquilala">
+  <link rel="apple-touch-icon" href="{{ asset('images/pwa/apple-touch-icon.png') }}">
+  <script src="{{ asset('js/pwa-register.js') }}" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   {{-- Render-blocking only hurts here: a slow/blocked CDN would hold the whole
@@ -661,11 +675,22 @@
 <body data-sidebar-theme="{{ $stActive }}">
 
   @php
+    // Desktop notification bell: every role gets one, each pointing at its
+    // own notifications page with an unread badge from that role's scope.
     $notifBellUrl = null;
     $notifUnreadCount = 0;
-    if (auth()->check() && auth()->user()->role === 'farmer') {
-        $notifBellUrl = route('farmer.notifications.index');
-        $notifUnreadCount = \App\Models\ActivityLog::forUser(auth()->id())->farmerNotifications()->unread()->count();
+    if (auth()->check()) {
+        $notifRole = auth()->user()->role;
+        if ($notifRole === 'farmer') {
+            $notifBellUrl = route('farmer.notifications.index');
+            $notifUnreadCount = \App\Models\ActivityLog::forUser(auth()->id())->farmerNotifications()->unread()->count();
+        } elseif ($notifRole === 'store_owner') {
+            $notifBellUrl = route('store.notifications.index');
+            $notifUnreadCount = \App\Models\ActivityLog::forUser(auth()->id())->storeNotifications()->unread()->count();
+        } elseif ($notifRole === 'admin') {
+            $notifBellUrl = route('admin.notifications.index');
+            $notifUnreadCount = \App\Models\ActivityLog::forUser(auth()->id())->adminNotifications()->unread()->count();
+        }
     }
   @endphp
 
@@ -918,12 +943,6 @@
             <a href="{{ route('store.storefront.index') }}" class="{{ request()->routeIs('store.storefront.index') ? 'active' : '' }}">
               <img src="{{ asset('images/store-%23b9cfc0.png') }}" alt="" />
               My Store
-            </a>
-          </li>
-          <li>
-            <a href="{{ route('store.products.trash') }}" class="{{ request()->routeIs('store.products.trash') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
-              Archive
             </a>
           </li>
 <li>

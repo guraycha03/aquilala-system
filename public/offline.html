@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>You're offline | Aquilala</title>
+    <link rel="icon" type="image/png" href="/images/logo.png">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: #f3f6f4;
+            color: #2c3530;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+        .card { max-width: 420px; width: 100%; }
+        img { width: 96px; height: 96px; margin-bottom: 22px; }
+        h1 { font-size: 22px; font-weight: 700; margin-bottom: 10px; color: #143d23; }
+        p { font-size: 14.5px; line-height: 1.65; color: #64748b; margin-bottom: 26px; }
+        button {
+            font: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            background: #143d23;
+            color: #fff;
+            border: none;
+            border-radius: 11px;
+            padding: 13px 26px;
+            cursor: pointer;
+        }
+        button:hover { background: #0f2f1b; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <img src="/images/logo.png" alt="Aquilala">
+        <h1>You're offline</h1>
+        <p>
+            No internet connection right now. Pages you already visited are still
+            available — reconnect to continue working in Aquilala.
+        </p>
+        <button onclick="location.reload()">Try again</button>
+    </div>
+</body>
+</html>

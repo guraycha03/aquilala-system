@@ -53,16 +53,6 @@
     font-size: 12px; font-weight: 500; color: #40632d;
   }
   .hero-meta svg { width: 14px; height: 14px; stroke: #16a34a; flex-shrink: 0; }
-  .btn-hero {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: #ffffff; border: 1px solid rgba(20,61,35,0.10);
-    color: #14532d; padding: 11px 20px; border-radius: 12px; font-size: 13px; font-weight: 700;
-    text-decoration: none; transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(20,61,35,0.08);
-  }
-  .btn-hero:hover { background: #f0fdf4; transform: translateY(-1px); }
-  .btn-hero svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-  .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
   /* ── Panels ─────────────────────────────────────────────────── */
   .dash-panel {
@@ -174,16 +164,6 @@
               @endif
             </div>
           @endif
-        </div>
-        <div class="hero-actions">
-          <a href="{{ route('store.storefront.index') }}" class="btn-hero">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M3 9l1-5h16l1 5"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 13v7h14v-7"/></svg>
-            Storefront
-          </a>
-          <a href="{{ route('store.inventory.index') }}" class="btn-hero">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-            {{ $productCount }} Products
-          </a>
         </div>
       </div>
     </section>

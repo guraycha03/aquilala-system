@@ -88,7 +88,7 @@
     <div class="nf-header">
       <div>
         <h1>Notifications</h1>
-        <p>Updates on your cost quotations and product reviews.</p>
+        <p>{{ $subtitle }}</p>
       </div>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <span class="nf-unread-pill">
@@ -96,7 +96,7 @@
           <b>{{ $unreadCount }}</b> unread
         </span>
         @if($unreadCount > 0)
-          <form method="POST" action="{{ route('farmer.notifications.read-all') }}">
+          <form method="POST" action="{{ route($routePrefix . '.read-all') }}">
             @csrf
             <button type="submit" class="btn-markread">Mark all as read</button>
           </form>
@@ -111,7 +111,7 @@
             <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </div>
           <h3>No Notifications Yet</h3>
-          <p>There's nothing here right now. Updates on your cost quotations, product reviews, and other platform activity will appear here.</p>
+          <p>{{ $emptyText }}</p>
         </div>
       @else
         <div class="nf-list">
@@ -127,11 +127,15 @@
                   <span>{{ optional($notification->created_at)->diffForHumans() }}</span>
                   <span>&middot;</span>
                   <span>{{ optional($notification->created_at)->format('M d, Y \a\t g:i A') }}</span>
+                  @if($notification->actor_name && $notification->actor_name !== ($notification->user?->name ?? ''))
+                    <span>&middot;</span>
+                    <span>{{ $notification->actor_name }}</span>
+                  @endif
                 </div>
               </div>
               <div class="nf-right">
                 @if(!$notification->read_at)
-                  <form method="POST" action="{{ route('farmer.notifications.read', $notification->id) }}">
+                  <form method="POST" action="{{ route($routePrefix . '.read', $notification->id) }}">
                     @csrf
                     <button type="submit" class="nf-dismiss" title="Mark as read">
                       <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>

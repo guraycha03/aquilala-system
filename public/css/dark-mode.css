@@ -236,7 +236,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] [style*="color: #78350f" i] { color: #fcd34d !important }
 [data-theme="dark"] [style*="color: #7f1d1d" i] { color: #fca5a5 !important }
 [data-theme="dark"] [style*="color: #879a8c" i] { color: #e2e8f0 !important }
-[data-theme="dark"] [style*="color: #87a992" i] { color: #a7f3d0 !important }
 [data-theme="dark"] [style*="color: #8a5a00" i] { color: #fcd34d !important }
 [data-theme="dark"] [style*="color: #8a968e" i] { color: #e2e8f0 !important }
 [data-theme="dark"] [style*="color: #92400e" i] { color: #fcd34d !important }
@@ -1299,9 +1298,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .record-card { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
 [data-theme="dark"] .record-head .rec-icon { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a7f3d0 !important }
 [data-theme="dark"] .record-head b { color: #a7f3d0 !important }
-[data-theme="dark"] .related-card { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
-[data-theme="dark"] .related-card .related-price { color: #a7f3d0 !important }
-[data-theme="dark"] .related-card h4 { color: #a7f3d0 !important }
 [data-theme="dark"] .req-card { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #166534 !important }
 [data-theme="dark"] .req-card b { color: #a7f3d0 !important }
 [data-theme="dark"] .req-card code { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a7f3d0 !important }

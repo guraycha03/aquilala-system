@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -122,5 +123,58 @@ class StoreOwnerActivityController extends Controller
             'totalProducts',
             'totalUpdated'
         ));
+    }
+
+    /**
+     * Store owner's notifications — cost estimates that involve this
+     * store's products (demand signals), newest first.
+     */
+    public function notifications(): View
+    {
+        $notifications = ActivityLog::forUser(Auth::id())
+            ->storeNotifications()
+            ->with(['user', 'actor'])
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
+        $unreadCount = ActivityLog::forUser(Auth::id())
+            ->storeNotifications()
+            ->unread()
+            ->count();
+
+        return view('notifications.index', [
+            'notifications' => $notifications,
+            'unreadCount'   => $unreadCount,
+            'routePrefix'   => 'store.notifications',
+            'subtitle'      => 'Demand signals for your store — cost estimates that include your products.',
+            'emptyText'     => "There's nothing here right now. When a farmer generates a cost estimate that includes your products, it will appear here.",
+        ]);
+    }
+
+    /**
+     * Mark every unread store notification as read.
+     */
+    public function markAllRead(): RedirectResponse
+    {
+        ActivityLog::forUser(Auth::id())
+            ->storeNotifications()
+            ->unread()
+            ->update(['read_at' => now()]);
+
+        return back()->with('success', 'All notifications marked as read.');
+    }
+
+    /**
+     * Mark a single notification as read. Only rows owned by this store
+     * owner can be marked.
+     */
+    public function markRead(ActivityLog $activityLog): RedirectResponse
+    {
+        abort_unless($activityLog->user_id === Auth::id(), 403);
+
+        $activityLog->forceFill(['read_at' => now()])->save();
+
+        return back();
     }
 }

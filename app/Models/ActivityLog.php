@@ -197,6 +197,34 @@ class ActivityLog extends Model
         ]);
     }
 
+    /**
+     * Store-owner notifications: cost estimates that involve this store's
+     * products (demand signals). QuotationController fans one recipient row
+     * out to every involved store when an estimate is created or deleted.
+     */
+    public function scopeStoreNotifications($query)
+    {
+        return $query->whereIn('type', [
+            self::TYPE_QUOTATION_CREATED,
+            self::TYPE_QUOTATION_DELETED,
+        ]);
+    }
+
+    /**
+     * Admin notifications: association-wide events an admin acts on — new
+     * cost estimates, planting requests awaiting confirmation and new
+     * harvest reports. ActivityLogger fans one recipient row out to every
+     * admin account for each event.
+     */
+    public function scopeAdminNotifications($query)
+    {
+        return $query->whereIn('type', [
+            self::TYPE_QUOTATION_CREATED,
+            self::TYPE_CROP_PLANTED,
+            self::TYPE_HARVEST_CREATED,
+        ]);
+    }
+
     // ── Accessors ─────────────────────────────────────────────────
     public function getIconAttribute(): string
     {

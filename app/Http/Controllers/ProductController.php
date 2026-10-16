@@ -759,6 +759,7 @@ class ProductController extends Controller
         ]);
 
         $relatedProducts = Product::active()
+            ->with(['mainImage', 'images', 'category'])
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->take(4)

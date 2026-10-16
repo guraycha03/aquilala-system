@@ -102,19 +102,14 @@
     .npk-k { background: #fefce8; color: #ca8a04; }
     .desc-text { color: #3d4a41; font-size: 14px; line-height: 1.8; margin: 0; }
 
-    /* Recommended products list */
+    /* Recommended products list — shared catalog product cards. */
     .recommended-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 12px; }
-    .related-card { background: #fbfcfd; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; transition: box-shadow 0.2s; }
-    .related-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .related-card h4 { font-size: 14px; font-weight: 600; color: #1e2922; margin-bottom: 4px; }
-    .related-card .related-price { font-size: 16px; font-weight: 700; color: #143d23; }
 
     @media (max-width: 768px) {
         .detail-hero { grid-template-columns: 1fr; }
     }
     @media (max-width: 640px) {
         .recommended-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .related-card { padding: 12px; }
         .product-image-panel { min-height: 220px; }
         .product-detail-container { padding: 16px; }
     }
@@ -546,22 +541,10 @@
         <h2 style="font-size: 16px; font-weight: 700; color: #1e2922; margin-bottom: 16px;">Recommended Products in {{ $product->category_display_name }}</h2>
     <div class="recommended-grid">
         @foreach($relatedProducts as $related)
-        <a href="{{ route(auth()->user()->role === 'store_owner' ? 'store.products.show' : 'farmer.products.show', $related->id) }}" style="text-decoration: none; color: inherit;">
-            <div class="related-card">
-                <h4>{{ $related->display_name }}</h4>
-                <div class="related-price">₱{{ number_format($related->price, 2) }}</div>
-                <div style="font-size: 12px; color: #87a992; margin-top: 4px;">
-                    <span class="badge {{ $related->is_low_stock ? 'badge-red' : 'badge-green' }}" style="font-size: 10px;">
-                        @if($related->is_low_stock)
-                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" style="vertical-align: middle;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Low Stock
-                        @else
-                            <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2" style="vertical-align: middle;"><polyline points="20 6 9 17 4 12"/></svg> In Stock
-                        @endif
-                    </span>
-                    {{ $related->stock_quantity }} {{ $related->stock_unit ?? 'pieces' }}
-                </div>
-            </div>
-        </a>
+        <x-product-card
+            :product="$related"
+            href="{{ route(auth()->user()->role === 'store_owner' ? 'store.products.show' : 'farmer.products.show', $related->id) }}"
+            image-height="150px" />
         @endforeach
     </div>
 </div>

@@ -4,6 +4,7 @@ use App\Helpers\SeasonHelper;
 use App\Helpers\SettingsHelper;
 use App\Http\Controllers\AccountActivationController;
 use App\Http\Controllers\AdminAuditController;
+use App\Http\Controllers\AdminNotificationController;
 use App\Http\Controllers\AdminPlantingController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminUserImportController;
@@ -291,6 +292,11 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // Activity history
         Route::get('/activity', [StoreOwnerActivityController::class, 'index'])->name('activity.index');
 
+        // Notifications — cost estimates that involve this store's products
+        Route::get('/notifications', [StoreOwnerActivityController::class, 'notifications'])->name('notifications.index');
+        Route::post('/notifications/read-all', [StoreOwnerActivityController::class, 'markAllRead'])->name('notifications.read-all');
+        Route::post('/notifications/{activityLog}/read', [StoreOwnerActivityController::class, 'markRead'])->name('notifications.read');
+
         // Settings (UI preferences)
         Route::get('/settings', function () {
             return view('store.settings.index');
@@ -416,6 +422,11 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/quotations', [QuotationController::class, 'adminIndex'])->name('quotations.index');
         Route::get('/quotations/products', [QuotationController::class, 'adminProducts'])->name('quotations.products');
         Route::get('/activity', [QuotationController::class, 'adminActivity'])->name('activity.index');
+
+        // Notifications — association-wide events for admins
+        Route::get('/notifications', [AdminNotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllRead'])->name('notifications.read-all');
+        Route::post('/notifications/{activityLog}/read', [AdminNotificationController::class, 'markRead'])->name('notifications.read');
         Route::get('/analytics', function () {
             // Grouped under the new "Analytics" category — the Demand Trends tab
             // lives on /admin/quotations. Keep this URL redirecting so older

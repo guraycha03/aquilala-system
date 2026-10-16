@@ -1,0 +1,56 @@
+{
+    "id": "/",
+    "name": "Aquilala Irrigators Association Inc.",
+    "short_name": "Aquilala",
+    "description": "Farm management for Aquilala Irrigators Association members — marketplace, cost quotations, planting and harvest tracking.",
+    "lang": "en",
+    "dir": "ltr",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "display_override": ["standalone", "minimal-ui"],
+    "orientation": "any",
+    "background_color": "#f3f6f4",
+    "theme_color": "#143d23",
+    "categories": ["business", "productivity", "utilities"],
+    "icons": [
+        {
+            "src": "/images/pwa/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/images/pwa/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/images/pwa/icon-192-maskable.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/images/pwa/icon-512-maskable.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "short_name": "Dashboard",
+            "url": "/dashboard",
+            "description": "Open your role's dashboard"
+        },
+        {
+            "name": "Log in",
+            "short_name": "Log in",
+            "url": "/login",
+            "description": "Sign in to Aquilala"
+        }
+    ]
+}

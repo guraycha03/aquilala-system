@@ -10,12 +10,14 @@ use Illuminate\View\View;
 class FarmerNotificationController extends Controller
 {
     /**
-     * Farmer's notifications — quotation events, newest first.
+     * Farmer's notifications — quotation events, newest first. Rendered by
+     * the shared notifications view every role uses.
      */
     public function index(): View
     {
         $notifications = ActivityLog::forUser(Auth::id())
             ->farmerNotifications()
+            ->with(['user', 'actor'])
             ->latest()
             ->paginate(12)
             ->withQueryString();
@@ -25,7 +27,13 @@ class FarmerNotificationController extends Controller
             ->unread()
             ->count();
 
-        return view('farmer.notifications.index', compact('notifications', 'unreadCount'));
+        return view('notifications.index', [
+            'notifications' => $notifications,
+            'unreadCount'   => $unreadCount,
+            'routePrefix'   => 'farmer.notifications',
+            'subtitle'      => 'Updates on your cost quotations and planting decisions.',
+            'emptyText'     => "There's nothing here right now. Updates on your cost quotations, planting decisions and other platform activity will appear here.",
+        ]);
     }
 
     /**

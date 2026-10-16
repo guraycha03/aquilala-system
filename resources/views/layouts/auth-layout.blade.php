@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title') | Aquilala</title>
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    {{-- PWA: same install/offline support as the main app layout — see the
+         comment block in layouts/sidebar.blade.php. --}}
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="theme-color" content="#f3f6f4" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0b1220" media="(prefers-color-scheme: dark)">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Aquilala">
+    <link rel="apple-touch-icon" href="{{ asset('images/pwa/apple-touch-icon.png') }}">
+    <script src="{{ asset('js/pwa-register.js') }}" defer></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scrollbar-width: none; -ms-overflow-style: none; }
