@@ -208,8 +208,8 @@ const SKIP_SELECTOR = new Set(['body', 'html', '*', ':root', 'html, body', 'body
 const classRules = new Map();   // key -> { at, sel, decls }
 const attrRules = new Map();    // raw substring -> merged decls
 
-function addClass(key, at, sel, decls) {
-    const cur = classRules.get(key) || { at, sel, decls: {} };
+function addClass(key, at, sel, decls, selParts) {
+    const cur = classRules.get(key) || { at, sel, decls: {}, selParts };
     Object.assign(cur.decls, decls);
     classRules.set(key, cur);
 }
@@ -256,7 +256,7 @@ function scan(src) {
                 const mapped = mapDecl(prop, value);
                 if (mapped) { Object.assign(merged, mapped); any = true; }
             }
-            if (any) addClass(JSON.stringify(rule.at) + '|' + parts.join(','), rule.at, parts.join(', '), merged);
+            if (any) addClass(JSON.stringify(rule.at) + '|' + parts.join(','), rule.at, parts.join(', '), merged, parts);
         }
     }
 }
@@ -368,9 +368,14 @@ for (const [raw, decls] of [...attrRules.entries()].sort()) {
     lines.push(`[data-theme="dark"] [style*="${raw.replace(/"/g, '\\"')}" i] { ${body} }\n`);
 }
 lines.push('\n/* ── Generated: class rules from view <style> blocks ───────────────── */\n');
-for (const { at, sel, decls } of [...classRules.values()].sort((a, b) => a.sel.localeCompare(b.sel))) {
+for (const { at, sel, decls, selParts } of [...classRules.values()].sort((a, b) => a.sel.localeCompare(b.sel))) {
     const body = Object.entries(decls).map(([p, v]) => `${p}: ${v} !important`).join('; ');
-    let out = `[data-theme="dark"] ${sel} { ${body} }`;
+    // Scope EVERY selector in the list, not just the first — otherwise the
+    // unprefixed tail (e.g. ".cf-select" in "[data-theme="dark"] .cf-input,
+    // .cf-select") applies in light mode too.
+    const scoped = (selParts && selParts.length ? selParts : [sel])
+        .map(p => `[data-theme="dark"] ${p}`).join(', ');
+    let out = `${scoped} { ${body} }`;
     for (let k = at.length - 1; k >= 0; k--) out = `${at[k]} { ${out} }`;
     lines.push(out + '\n');
 }

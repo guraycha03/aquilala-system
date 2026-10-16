@@ -11,37 +11,31 @@ export default async function run(page, ui) {
 
   await page.goto('http://127.0.0.1:8000/farmer/products/browse', { waitUntil: 'load', timeout: 40000 });
   await page.waitForSelector('[data-cf-root]', { timeout: 15000 });
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(1000);
 
-  out.state = await page.evaluate(() => {
+  const read = () => page.evaluate(() => {
     const info = (el) => {
       if (!el) return null;
       const cs = getComputedStyle(el);
-      return {
-        cls: el.className,
-        bg: cs.backgroundColor,
-        color: cs.color,
-        border: cs.borderColor,
-        appearance: cs.appearance,
-        scheme: cs.colorScheme,
-        inline: el.getAttribute('style'),
-      };
+      return { bg: cs.backgroundColor, color: cs.color, border: cs.borderColor };
     };
-    const sels = [...document.querySelectorAll('.cf-select')];
-    const inputs = [...document.querySelectorAll('.cf-input')];
     return {
       theme: document.documentElement.getAttribute('data-theme'),
-      htmlScheme: getComputedStyle(document.documentElement).colorScheme,
-      bodyScheme: getComputedStyle(document.body).colorScheme,
-      darkCssLoaded: [...document.styleSheets].some(s => (s.href || '').includes('dark-mode')),
       bar: info(document.querySelector('.cf-bar')),
-      selects: sels.map(s => ({ id: s.id, ...info(s) })),
-      searchInput: info(document.querySelector('[data-cf-search-input]')),
-      priceInput: info(document.querySelector('[data-cf-price]')),
-      // any other select-like dropdowns on the page
-      otherSelects: [...document.querySelectorAll('select')].filter(s => !s.classList.contains('cf-select')).map(s => ({ id: s.id, cls: s.className, ...info(s) })),
+      selects: [...document.querySelectorAll('.cf-select')].map(s => info(s)),
+      search: info(document.querySelector('[data-cf-search-input]')),
+      price: info(document.querySelector('[data-cf-price]')),
     };
   });
+
+  out.light = await read();
   await page.screenshot({ path: 'tmp_browse_light.png', fullPage: false });
+
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+  await page.waitForTimeout(300);
+  out.dark = await read();
+
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+  out.restored = (await read()).theme;
   return out;
 }
