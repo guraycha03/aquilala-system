@@ -9,6 +9,10 @@
 
     var url = link.getAttribute('href');
     if (!url || url === '#') return;
+    // Re-entry guard: after a Turbo visit an older copy of this handler may
+    // still be bound — only the first fire for a click should fetch/push.
+    if (container.dataset.pagiBusy) return;
+    container.dataset.pagiBusy = '1';
 
     e.preventDefault();
 
@@ -29,6 +33,7 @@
         // Replace the content
         container.innerHTML = incoming.innerHTML;
         container.style.opacity = '1';
+        delete container.dataset.pagiBusy;
 
         // Update the browser URL without reload
         history.pushState({ turbolinks: true }, '', url);
@@ -40,6 +45,7 @@
       })
       .catch(function () {
         // Fallback: full navigation on error
+        delete container.dataset.pagiBusy;
         window.location.href = url;
       });
   });

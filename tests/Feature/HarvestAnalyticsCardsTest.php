@@ -95,7 +95,9 @@ class HarvestAnalyticsCardsTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
 
         $response->assertOk()
-            ->assertSee('cdn.jsdelivr.net/npm/chart.js', false)
+            // Chart.js is vendored locally (no CDN requests on page load).
+            ->assertSee('js/chart.umd.min.js', false)
+            ->assertDontSee('cdn.jsdelivr.net', false)
             // periodsChart renders inside the Full view dialog now.
             ->assertSee('id="periodsChart"', false)
             ->assertSee('id="latestChart"', false);

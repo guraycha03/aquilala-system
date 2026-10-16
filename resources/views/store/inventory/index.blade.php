@@ -535,8 +535,13 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script src="{{ asset('js/chart.umd.min.js') }}"></script>
 <script>
+  // DOMContentLoaded (not top-level): on Turbo visits this script re-runs
+  // before the <script src> chart library above finished activating, and
+  // queued init runs after every pending script has loaded. Handlers
+  // reachable from inline onclick attrs are exported to window below.
+  document.addEventListener('DOMContentLoaded', function () {
   // ---- Charts (re-rendered each time the Overview tab is shown) ----
   const healthy = {{ $healthyCount }};
   const low = {{ $lowStockCount }};
@@ -556,6 +561,7 @@
 
     const healthNode = document.getElementById('stockHealthChart');
     if (healthNode) {
+      if (window.aqDestroyChart) aqDestroyChart(healthNode);
       inventoryCharts.push(new Chart(healthNode.getContext('2d'), {
         type: 'doughnut',
         data: {
@@ -590,6 +596,7 @@
 
     const levelNode = document.getElementById('stockLevelChart');
     if (levelNode && barLabels.length > 0) {
+      if (window.aqDestroyChart) aqDestroyChart(levelNode);
       inventoryCharts.push(new Chart(levelNode.getContext('2d'), {
         type: 'bar',
         data: {
@@ -688,6 +695,12 @@
   }
   document.getElementById('adjustModal').addEventListener('click', function (e) {
     if (e.target === this) closeEdit();
+  });
+  // Inline onclick attributes (switchInvTab / openEdit / closeEdit) resolve
+  // against window, so export them from this init closure.
+  window.switchInvTab = switchInvTab;
+  window.openEdit = openEdit;
+  window.closeEdit = closeEdit;
   });
 </script>
 

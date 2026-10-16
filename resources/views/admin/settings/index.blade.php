@@ -242,10 +242,10 @@
         if (window.L) { callback(); return; }
         var link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        link.href = '{{ asset('css/leaflet.css') }}';
         document.head.appendChild(link);
         var s = document.createElement('script');
-        s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        s.src = '{{ asset('js/leaflet.js') }}';
         s.onload = callback;
         s.onerror = function () {
           document.getElementById('mapFallback').innerHTML =

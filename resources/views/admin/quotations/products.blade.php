@@ -197,7 +197,7 @@
   </div>
 @endif
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="{{ asset('js/chart.umd.min.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     if (!window.Chart) return;
@@ -291,6 +291,7 @@
       var slot = Math.max(MIN_SLOT, Math.floor(scroll.clientWidth / products.length));
       track.style.width = slot * products.length + 'px';
       if (chart) chart.destroy();
+      if (window.aqDestroyChart) aqDestroyChart(canvas);
       chart = new Chart(canvas, {
         type: 'bar',
         data: {

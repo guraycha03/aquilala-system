@@ -272,7 +272,7 @@
   @endif
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="{{ asset('js/chart.umd.min.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     if (!window.Chart) return;
@@ -371,6 +371,7 @@
         var slot = Math.max(MIN_SLOT, Math.floor(productScroll.clientWidth / products.length));
         productTrack.style.width = slot * products.length + 'px';
         if (productChart) productChart.destroy();
+        if (window.aqDestroyChart) aqDestroyChart(productCanvas);
 
         productChart = new Chart(productCanvas, {
           type: 'bar',
@@ -585,6 +586,7 @@
         cropTrack.style.width = slot * rows.length + 'px';
 
         if (cropChart) cropChart.destroy();
+        if (window.aqDestroyChart) aqDestroyChart(cropCanvas);
         cropChart = new Chart(cropCanvas, {
           type: 'bar',
           data: {

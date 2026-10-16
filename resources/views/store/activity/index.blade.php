@@ -4,11 +4,11 @@
 
 @section('content')
 <!-- Load AlpineJS -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
 
 <!-- Load Flatpickr CSS & JS for custom datepicker popups -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<link rel="stylesheet" href="{{ asset('css/flatpickr.min.css') }}">
+<script src="{{ asset('js/flatpickr.min.js') }}"></script>
 
 <style>
   /* Base Layout & Page Header */
@@ -63,7 +63,14 @@
   .stat-pill.slate .stat-lbl { color: #475569; }
 
   /* Smart Filter Toolbar */
+  /* position/z-index: in dark mode the generated dark-mode.css gives this bar and
+     .timeline-card a frost backdrop-filter, and backdrop-filter forces a stacking
+     context — the later-in-tree timeline then painted above the bar's dropdown
+     menus (z 600 stays inside the bar's own context), making them unclickable.
+     A positioned z above the timeline keeps the open menus on top in both themes. */
   .activity-filter-bar {
+    position: relative;
+    z-index: 20;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 14px;

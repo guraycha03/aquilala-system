@@ -287,7 +287,7 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="{{ asset('js/chart.umd.min.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     function setGreeting() {
@@ -297,7 +297,7 @@
       el.textContent = h < 12 ? 'Good morning' : (h < 18 ? 'Good afternoon' : 'Good evening');
     }
     setGreeting();
-    setInterval(setGreeting, 60000);
+    if (!window.__aqGreetTimer) window.__aqGreetTimer = setInterval(setGreeting, 60000);
 
     var revealEls = document.querySelectorAll('[data-reveal]');
     if ('IntersectionObserver' in window) {
@@ -357,6 +357,7 @@
       });
 
       if (harvestChart) harvestChart.destroy();
+      if (window.aqDestroyChart) aqDestroyChart(harvestCanvas);
       harvestChart = new Chart(harvestCanvas, {
         type: 'bar',
         data: {

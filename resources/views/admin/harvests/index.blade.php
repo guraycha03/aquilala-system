@@ -359,7 +359,7 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="{{ asset('js/chart.umd.min.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     var hasChart = !!window.Chart;
@@ -456,6 +456,7 @@
       if (periodsChart || !hasChart) return;
       var periodsCanvas = document.getElementById('periodsChart');
       if (!periodsCanvas || !periodLabels.length) return;
+      if (window.aqDestroyChart) aqDestroyChart(periodsCanvas);
 
       periodsChart = new Chart(periodsCanvas, {
         type: 'line',
@@ -519,6 +520,7 @@
     ] : []);
 
     if (hasChart && cmpCanvas && cmpLabels.length === 2) {
+      if (window.aqDestroyChart) aqDestroyChart(cmpCanvas);
       new Chart(cmpCanvas, {
         type: 'bar',
         data: {

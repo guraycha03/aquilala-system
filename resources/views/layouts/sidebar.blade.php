@@ -16,6 +16,81 @@
   {{-- Served from the app (not unpkg) so a CDN outage can never stall the UI.
        Deferred: the layout re-runs createIcons() on DOMContentLoaded. --}}
   <script src="{{ asset('js/lucide.min.js') }}" defer></script>
+  {{-- App-like navigation: Turbo swaps page bodies on link clicks (no white
+       screen), keeps a slim progress bar and instant back/forward, and with
+       the meta below it prefetches links on hover so pages open instantly. --}}
+  <meta name="turbo-prefetch" content="true">
+  {{-- Bootstrap must run before any body script: Turbo re-evaluates body
+       scripts on every visit, but DOMContentLoaded fires only once per
+       session. Queue DOMContentLoaded registrations and drain them on the
+       first load and after every Turbo visit, so page init code keeps
+       working unchanged. --}}
+  <script>
+    if (!window.__aqBoot) {
+      window.__aqBoot = true;
+      window.__aqDCQueue = [];
+      var aqNativeDC = document.addEventListener.bind(document);
+      document.addEventListener = function (type, fn, opts) {
+        if (type === 'DOMContentLoaded' && typeof fn === 'function') {
+          window.__aqDCQueue.push(fn);
+          return;
+        }
+        return aqNativeDC(type, fn, opts);
+      };
+      // Cached Turbo snapshots restore the original DOM nodes, so a canvas can
+      // come back still bound to its previous Chart instance and Chart.js throws
+      // "Canvas is already in use" when the page init re-runs. Destroy the
+      // leftover instance first (same element lookup the Chart constructor does).
+      window.aqDestroyChart = function (target) {
+        try {
+          if (window.Chart && Chart.getChart) {
+            var prev = Chart.getChart(target);
+            if (prev) prev.destroy();
+          }
+        } catch (e) {}
+      };
+      window.__aqDrainDC = function (force) {
+        var q = window.__aqDCQueue;
+        if (!q.length) return;
+        // On Turbo visits body <script src> elements are activated asynchronously,
+        // so a queued init can run before its sibling library finishes loading
+        // (e.g. flatpickr init skipped because typeof flatpickr === 'undefined').
+        // Wait for every not-yet-loaded script to settle (load/error/15s timeout)
+        // unless this is the real DOMContentLoaded, where the parser guarantees
+        // all sync/defer scripts already executed.
+        if (!force) {
+          var pending = [];
+          try {
+            pending = [].slice.call(document.querySelectorAll('script[src]')).filter(function (s) {
+              if (s.dataset.aqReady) return false;
+              var done = performance.getEntriesByType('resource').some(function (e) { return e.name === s.src; });
+              if (done) { s.dataset.aqReady = '1'; return false; }
+              return true;
+            });
+          } catch (e) { pending = []; }
+          if (pending.length) {
+            pending.forEach(function (s) {
+              if (s.dataset.aqWait) return;
+              s.dataset.aqWait = '1';
+              var settle = function () { s.dataset.aqReady = '1'; window.__aqDrainDC(false); };
+              s.addEventListener('load', settle);
+              s.addEventListener('error', settle);
+              setTimeout(settle, 15000);
+            });
+            return;
+          }
+        }
+        var fns = window.__aqDCQueue.splice(0);
+        for (var i = 0; i < fns.length; i++) {
+          try { fns[i](); } catch (e) { console.error('[aq:init]', e); }
+        }
+      };
+      aqNativeDC('DOMContentLoaded', function () { window.__aqDrainDC(true); });
+      aqNativeDC('turbo:load', function () { window.__aqDrainDC(false); });
+    }
+  </script>
+  <script src="{{ asset('js/turbo.min.js') }}" defer></script>
+  <script src="{{ asset('js/alpine.min.js') }}" defer></script>
   {{-- Display theme: every rule is scoped to [data-theme="dark"], so this file
        costs nothing while the user is in light mode. --}}
   <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}">
@@ -343,7 +418,12 @@
     .ncb-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ncb-select-arrow { transition: transform 0.2s ease; color: #64748b; flex-shrink: 0; }
     .ncb-select-arrow.rotate { transform: rotate(180deg); }
-    .ncb-select-menu {
+    {{-- Scoped to the table-toolbar only: its menus have no inline style and the
+         toolbar engine shows them by setting style.display directly, so this rule
+         is their initial hidden state. A GLOBAL display:none would break Alpine
+         x-show dropdowns (activity filters): x-show clears the inline style on
+         open, falling back to this class rule and leaving the menu invisible. --}}
+    .ttb-filters .ncb-select-menu {
       display: none;
       position: absolute; top: calc(100% + 4px); left: 0; right: 0;
       background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px;
@@ -420,24 +500,12 @@
       background: #fafdfb; flex-wrap: wrap;
     }
 
-    /* -- Smooth page navigation: fade in fresh pages, softly fade out clicks -- */
+    /* -- Smooth page navigation: every swapped-in body fades in gently -- */
     body { animation: aqua-page-in .28s ease; transition: opacity .18s ease; }
     @keyframes aqua-page-in {
       from { opacity: 0; transform: translateY(4px); }
       to   { opacity: 1; transform: none; }
     }
-    body.aqua-leaving { opacity: .6; }
-
-    /* Themed top progress bar shown while a page is loading */
-    #aqua-progress {
-      position: fixed; top: 0; left: 0; height: 3px; width: 0;
-      background: linear-gradient(90deg, #6aeb2f, #2f9e54);
-      box-shadow: 0 0 8px rgba(52, 129, 16, 0.55);
-      z-index: 9999; border-radius: 0 3px 3px 0;
-      opacity: 0; pointer-events: none;
-      transition: width .18s ease, opacity .25s ease;
-    }
-    #aqua-progress.active { opacity: 1; }
 
     /* ------------------------------------------------------------
        Sidebar themes — switch the side menu color per user.
@@ -966,7 +1034,9 @@
         </a>
       </div>
 
-      <form method="POST" action="{{ route('logout') }}">
+      {{-- Logout lands on the auth layout (different <head>), so bypass Turbo
+           and do a full page load — same for any jump out of the app shell. --}}
+      <form method="POST" action="{{ route('logout') }}" data-turbo="false">
         @csrf
         <button type="submit" class="logout-btn">
           <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
@@ -1088,8 +1158,10 @@
         timeEl.textContent = new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(now);
       }
     }
-updateLiveTime();
-    setInterval(updateLiveTime, 1000);
+    updateLiveTime();
+    // Started once for the whole session — the interval's own closure re-
+    // queries the clock elements on every tick, so it survives body swaps.
+    if (!window.__aqClock) window.__aqClock = setInterval(updateLiveTime, 1000);
 
     // Auto-scroll the active nav link into the center of the scrollable sidebar
     function centerActiveNav() {
@@ -1280,11 +1352,17 @@ updateLiveTime();
   <script>
     (function () {
       'use strict';
-      var overlay = document.getElementById('aqnOverlay');
-      var icon = document.getElementById('aqnIcon');
-      var titleEl = document.getElementById('aqnTitle');
-      var msgEl = document.getElementById('aqnMsg');
-      var actionsEl = document.getElementById('aqnActions');
+      // Turbo replaces the body on every visit, so element references are
+      // resolved lazily instead of being captured once. The first instance
+      // owns the document-level listeners (registered once) and stays the
+      // public AquiNotice API for the whole session.
+      if (window.__aqAqui) { window.AquiNotice = window.__aqAqui; return; }
+
+      function overlay() { return document.getElementById('aqnOverlay'); }
+      function icon() { return document.getElementById('aqnIcon'); }
+      function titleEl() { return document.getElementById('aqnTitle'); }
+      function msgEl() { return document.getElementById('aqnMsg'); }
+      function actionsEl() { return document.getElementById('aqnActions'); }
       var resolver = null;
       var hideTimer = null;
 
@@ -1301,20 +1379,26 @@ updateLiveTime();
       }
 
       function dismiss() {
-        overlay.classList.remove('open');
+        var ov = overlay();
+        if (ov) ov.classList.remove('open');
         document.body.classList.remove('aqn-lock');
         clearTimeout(hideTimer);
-        hideTimer = setTimeout(function () { overlay.setAttribute('aria-hidden', 'true'); }, 200);
+        hideTimer = setTimeout(function () {
+          var o = overlay();
+          if (o) o.setAttribute('aria-hidden', 'true');
+        }, 200);
       }
 
       function open(options) {
+        var ov = overlay(), ic = icon(), ti = titleEl(), me = msgEl(), ae = actionsEl();
+        if (!ov || !ic || !ti || !me || !ae) return;
         var tone = options.tone || (options.danger ? 'danger' : 'help');
-        icon.className = 'aqn-icon ' + tone;
-        icon.innerHTML = ICONS[tone] || ICONS.help;
-        titleEl.textContent = options.title || '';
-        titleEl.style.display = options.title ? '' : 'none';
-        msgEl.textContent = options.message || '';
-        actionsEl.innerHTML = '';
+        ic.className = 'aqn-icon ' + tone;
+        ic.innerHTML = ICONS[tone] || ICONS.help;
+        ti.textContent = options.title || '';
+        ti.style.display = options.title ? '' : 'none';
+        me.textContent = options.message || '';
+        ae.innerHTML = '';
 
         var addBtn = function (label, cls, value) {
           var b = document.createElement('button');
@@ -1322,7 +1406,7 @@ updateLiveTime();
           b.className = 'aqn-btn ' + cls;
           b.textContent = label;
           b.addEventListener('click', function () { settle(value); dismiss(); });
-          actionsEl.appendChild(b);
+          ae.appendChild(b);
           return b;
         };
 
@@ -1336,8 +1420,8 @@ updateLiveTime();
         );
         ok.focus();
 
-        overlay.classList.add('open');
-        overlay.setAttribute('aria-hidden', 'false');
+        ov.classList.add('open');
+        ov.setAttribute('aria-hidden', 'false');
         document.body.classList.add('aqn-lock');
       }
 
@@ -1359,17 +1443,13 @@ updateLiveTime();
         });
       }
 
-      window.AquiNotice = { confirm: confirm, notice: notice };
+      window.__aqAqui = { confirm: confirm, notice: notice };
+      window.AquiNotice = window.__aqAqui;
 
-      overlay.addEventListener('click', function (e) {
-        if (e.target === overlay) { settle(false); dismiss(); }
-      });
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { settle(false); dismiss(); }
-      });
-
-      // Clicking buttons/links that carry data-aqui-confirm.
+      // Document-level listeners are registered exactly once for the whole
+      // session (lazy element lookups keep them valid across Turbo visits).
       document.addEventListener('click', function (e) {
+        if (e.target === overlay()) { settle(false); dismiss(); return; }
         var el = e.target.closest ? e.target.closest('[data-aqui-confirm]') : null;
         if (!el || e.defaultPrevented || e.button !== 0) return;
         if (el.tagName === 'FORM') return; // forms are handled on submit
@@ -1391,6 +1471,10 @@ updateLiveTime();
             if (el.form.requestSubmit) el.form.requestSubmit(el); else el.form.submit();
           }
         });
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { settle(false); dismiss(); }
       });
 
       // Forms whose submitter (or the form itself) carries data-aqui-confirm.
@@ -1426,89 +1510,6 @@ updateLiveTime();
   </script>
   @stack('scripts')
 
-  <script>
-    // -- Smooth page navigation layer -----------------------------
-    // 1) Top progress bar while a page loads 2) fade the old page out
-    // on click 3) prefetch internal links on hover/long-press so the
-    // next page is already in the browser cache.
-    (function () {
-      var progress = document.createElement('div');
-      progress.id = 'aqua-progress';
-      document.body.appendChild(progress);
-
-      function isInternalLink(a) {
-        if (!a || !a.href || a.href.indexOf('http') === -1) return false;
-        if (a.hasAttribute('download') || a.target === '_blank') return false;
-        if (a.getAttribute('href') === '#' || /^#/.test(a.getAttribute('href') || '')) return false;
-        try {
-          return a.origin === window.location.origin;
-        } catch (e) {
-          return false;
-        }
-      }
-
-      function startProgress() {
-        progress.classList.add('active');
-        progress.style.width = '0%';
-        // Fake-advance so it feels alive even on slow loads.
-        var width = 0;
-        var tick = setInterval(function () {
-          width = Math.min(92, width + Math.random() * 14);
-          progress.style.width = width + '%';
-        }, 180);
-        window.aquaProgressTick = tick;
-      }
-
-      function finishProgress() {
-        clearInterval(window.aquaProgressTick);
-        progress.style.width = '100%';
-        setTimeout(function () {
-          progress.style.width = '0%';
-          progress.classList.remove('active');
-        }, 260);
-      }
-
-      // Fade the current page slightly as the browser starts navigating.
-      document.addEventListener('click', function (e) {
-        var a = e.target.closest ? e.target.closest('a') : null;
-        if (e.defaultPrevented || e.button !== 0 || !isInternalLink(a)) return;
-        // Let the browser keep default navigation; we only enhance it.
-        document.body.classList.add('aqua-leaving');
-        startProgress();
-      });
-
-      // New page finished loading (also fires on back/forward cache).
-      window.addEventListener('pageshow', function () {
-        document.body.classList.remove('aqua-leaving');
-        finishProgress();
-      });
-      window.addEventListener('load', finishProgress);
-
-      // Prefetch internal pages into the browser's low-priority cache.
-      var prefetched = {};
-      function prefetch(url) {
-        if (prefetched[url]) return;
-        if (window.location.href === url) return;
-        prefetched[url] = true;
-        var link = document.createElement('link');
-        link.rel = 'prefetch';
-        link.href = url;
-        document.head.appendChild(link);
-      }
-
-      // Desktop: hover near a link warms the cache.
-      document.addEventListener('mouseover', function (e) {
-        var a = e.target.closest ? e.target.closest('a') : null;
-        if (isInternalLink(a)) prefetch(a.href);
-      }, { passive: true });
-
-      // Mobile: press-and-hold (or tap) starts fetching a moment early.
-      document.addEventListener('touchstart', function (e) {
-        var a = e.target.closest ? e.target.closest('a') : null;
-        if (isInternalLink(a)) prefetch(a.href);
-      }, { passive: true });
-    })();
-  </script>
 </body>
 </html>
 

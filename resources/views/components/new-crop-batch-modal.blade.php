@@ -16,11 +16,11 @@
 ])
 
 <!-- Load AlpineJS -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
 
 <!-- Load Flatpickr CSS & JS for fully custom datepicker popups -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<link rel="stylesheet" href="{{ asset('css/flatpickr.min.css') }}">
+<script src="{{ asset('js/flatpickr.min.js') }}"></script>
 
 <style>
     .ncb-overlay {

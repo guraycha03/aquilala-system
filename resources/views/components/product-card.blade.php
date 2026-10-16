@@ -305,7 +305,10 @@
     // Lucide already replaced with the official bookmark SVG.
     document.addEventListener('click', function (e) {
       var btn = e.target.closest ? e.target.closest('.pc-save') : null;
-      if (!btn || e.defaultPrevented || e.button !== 0) return;
+      // btn.disabled doubles as a re-entry guard: after a Turbo visit the
+      // previous page's copy of this handler is still bound, so a duplicate
+      // fire must not trigger a second save request.
+      if (!btn || e.defaultPrevented || e.button !== 0 || btn.disabled) return;
 
       var url = btn.getAttribute('data-save-url');
       if (!url) return;

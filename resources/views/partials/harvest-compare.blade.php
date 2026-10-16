@@ -246,12 +246,13 @@
 </div>
 
 @if($kpis['pairs'] > 0)
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="{{ asset('js/chart.umd.min.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     if (!window.Chart) return;
     var canvas = document.getElementById('cmpChart');
     if (!canvas) return;
+    if (window.aqDestroyChart) aqDestroyChart(canvas);
 
     var labels = @js($chart['labels']);
     var estimate = @js($chart['estimate']);
