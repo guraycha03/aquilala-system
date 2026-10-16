@@ -151,7 +151,7 @@
 @if(! $hasData)
   <div class="ai-card" style="margin-top: 14px;">
     <div class="empty-state">
-      <svg viewBox="0 0 24 24" width="42" height="42" stroke="#cbd5e1" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <x-peso-icon :size="42" color="#cbd5e1" :stroke-width="1.5" />
       <h3>No harvest reports yet</h3>
       <p>Once farmers start recording harvests, this page will explain recent versus past performance, yield factors, and the farmers behind the numbers.</p>
       <a href="{{ route('admin.harvests.index') }}" class="ai-ask" style="text-decoration:none;">View Harvest Performance</a>

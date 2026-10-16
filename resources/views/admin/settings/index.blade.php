@@ -87,9 +87,8 @@
                   <label>Currency</label>
                   <select name="currency">
                     <option selected>{{ $defaults['currency'] }}</option>
-                    <option>US Dollar (USD)</option>
                   </select>
-                  <div class="hint">Used for product prices and cost quotations across the platform.</div>
+                  <div class="hint">Philippine Peso (PHP) — fixed across the platform. Used for product prices and cost quotations.</div>
                 </div>
               </div>
               <div class="set-card">

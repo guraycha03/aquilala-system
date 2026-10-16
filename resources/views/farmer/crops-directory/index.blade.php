@@ -326,7 +326,8 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 24px;
+    /* spacing belongs to .cd-controls now that the chips live in its
+       filter-panel — no extra gap when the panel opens */
   }
   .cd-filter-btn {
     padding: 8px 18px;
@@ -610,23 +611,31 @@
     </div>
     @endif
 
-    {{-- ═══ 4. Search + Filter controls ═══ --}}
-    <div class="cd-controls">
+    {{-- ═══ 4. Search + filter choices behind the shared funnel button ═══ --}}
+    <div class="cd-controls" data-fc>
       <div class="cd-search-wrap">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input id="cdSearchInput" type="text" placeholder="Search crops..." class="cd-search" />
       </div>
-    </div>
 
-    <div id="cdCategoryFilters" class="cd-filters">
-      <button class="cd-filter-btn active" data-category="all">All Crops</button>
-      <button class="cd-filter-btn" data-category="grain">Grains</button>
-      <button class="cd-filter-btn" data-category="vegetable">Vegetables</button>
-      <button class="cd-filter-btn" data-category="fruit">Fruits</button>
-      <button class="cd-filter-btn" data-category="root">Root Crops</button>
-      <button class="cd-filter-btn" data-category="herb">Herbs &amp; Spices</button>
-      <button class="cd-filter-btn" data-category="legume">Legumes</button>
-      <button class="cd-filter-btn" data-category="fiber">Fiber &amp; Industrial</button>
+      <button type="button" class="btn-filter" data-fc-toggle aria-expanded="false"
+              aria-label="Show filter options" title="Filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span class="btn-filter-dot" data-fc-dot hidden></span>
+      </button>
+
+      <div class="filter-panel" data-fc-panel hidden>
+        <div id="cdCategoryFilters" class="cd-filters">
+          <button class="cd-filter-btn active" data-category="all">All Crops</button>
+          <button class="cd-filter-btn" data-category="grain">Grains</button>
+          <button class="cd-filter-btn" data-category="vegetable">Vegetables</button>
+          <button class="cd-filter-btn" data-category="fruit">Fruits</button>
+          <button class="cd-filter-btn" data-category="root">Root Crops</button>
+          <button class="cd-filter-btn" data-category="herb">Herbs &amp; Spices</button>
+          <button class="cd-filter-btn" data-category="legume">Legumes</button>
+          <button class="cd-filter-btn" data-category="fiber">Fiber &amp; Industrial</button>
+        </div>
+      </div>
     </div>
 
     {{-- ═══ 5. Full Crop Grid ═══ --}}

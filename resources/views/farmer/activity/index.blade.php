@@ -207,24 +207,9 @@
   .flatpickr-day.today { border-color: #16a34a !important; font-weight: 700 !important; color: #16a34a !important; }
   .flatpickr-day.today.selected { color: #ffffff !important; }
 
-  /* Filter Buttons */
-  .af-btn-toggle {
-    height: 42px;
-    padding: 0 16px;
-    border-radius: 10px;
-    border: none;
-    background: #16a34a;
-    color: #ffffff;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-  .af-btn-toggle:hover { background: #15803d; transform: translateY(-1px); }
+  /* Filter toggle wears the shared .btn-filter look (layouts.sidebar) —
+     only its layout hook remains here so the drawer JS keeps working. */
+  .af-btn-toggle { flex-shrink: 0; }
 
   /* Apply Filters Button - Updated to Green Theme */
   .af-btn-apply {
@@ -398,9 +383,9 @@
         <input type="text" name="q" value="{{ $search ?? '' }}" placeholder="Search activity…" autocomplete="off">
       </div>
 
-      <button type="button" class="af-btn-toggle" id="filterToggleBtn">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-        Filter
+      <button type="button" class="af-btn-toggle btn-filter" id="filterToggleBtn"
+              aria-label="Show filter options" title="Filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
       </button>
 
       <span class="af-result-count">

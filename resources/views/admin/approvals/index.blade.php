@@ -232,15 +232,22 @@
       </section>
 
       <div class="app-panel">
-        <div class="app-toolbar">
+        <div class="app-toolbar" data-fc>
           <div class="app-search">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input id="searchInput" type="text" placeholder="Search farmer, name, or email…">
           </div>
-          <div class="status-seg" id="statusSeg">
-            <button data-status="all" class="active">All <span class="c" id="segAll">0</span></button>
-            <button data-status="pending">Pending <span class="c" id="segPending">0</span></button>
-            <button data-status="approved">Approved <span class="c" id="segApproved">0</span></button>
+          <button type="button" class="btn-filter" data-fc-toggle aria-expanded="false"
+                  aria-label="Show filter options" title="Filters">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <span class="btn-filter-dot" data-fc-dot hidden></span>
+          </button>
+          <div class="filter-panel" data-fc-panel hidden>
+            <div class="status-seg" id="statusSeg">
+              <button data-status="all" class="active">All <span class="c" id="segAll">0</span></button>
+              <button data-status="pending">Pending <span class="c" id="segPending">0</span></button>
+              <button data-status="approved">Approved <span class="c" id="segApproved">0</span></button>
+            </div>
           </div>
         </div>
 

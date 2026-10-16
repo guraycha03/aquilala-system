@@ -188,10 +188,7 @@
   <div class="stat-card violet">
     <div class="stat-icon">
       <!-- Peso Currency / Expense Icon -->
-      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="8" y1="3" x2="8" y2="21" />
-        <path d="M8 3h6.5a4.5 4.5 0 0 1 0 9H8" />
-      </svg>
+      <x-peso-icon />
     </div>
     <div class="stat-label">Total Expenses</div>
     <div class="stat-value">₱{{ number_format($stats['expenses'], 0) }}</div>

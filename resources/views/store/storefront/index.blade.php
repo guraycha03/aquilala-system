@@ -175,36 +175,8 @@
     }
     .catalog-count.show { visibility: visible; }
 
-    /* Custom Filter Dropdowns (ncb-select style) */
-    .ncb-group-inline { position: relative; min-width: 170px; }
-    .ncb-select-trigger {
-        width: 100%; height: 42px; padding: 0 13px; border: 1.5px solid #e2e8f0; border-radius: 10px;
-        font-size: 13px; color: #1e293b; background-color: #ffffff; transition: all 0.2s ease;
-        box-sizing: border-box; font-family: inherit; cursor: pointer;
-        display: flex; justify-content: space-between; align-items: center; user-select: none;
-        text-align: left; gap: 8px;
-    }
-    .ncb-select-trigger.placeholder { color: #94a3b8; }
-    .ncb-select-trigger:hover { border-color: #cbd5e1; }
-    .ncb-select-trigger.active { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); outline: none; }
-    .ncb-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ncb-select-arrow { transition: transform 0.2s ease; color: #64748b; flex-shrink: 0; }
-    .ncb-select-arrow.rotate { transform: rotate(180deg); }
-
-    .ncb-select-menu {
-        display: none;
-        position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-        background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
-        max-height: 220px; overflow-y: auto; z-index: 600; padding: 4px;
-        scrollbar-width: thin;
-    }
-    .ncb-select-option {
-        padding: 8px 12px; font-size: 13px; color: #1e293b; border-radius: 6px;
-        cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
-    }
-    .ncb-select-option:hover { background: #f1f5f9; color: #16a34a; }
-    .ncb-select-option.selected { background: #f0fdf4; color: #16a34a; font-weight: 600; }
+    /* ncb-select dropdown styles come from the shared rules in
+       layouts.sidebar (the filter choices live in the shared filter-panel). */
 
     /* Filter clear button */
     .filter-clear {
@@ -487,13 +459,21 @@
 </div>
 @endif
 
-<!-- Search + Styled Filters -->
-<div class="catalog-toolbar">
+<!-- Search + shared filter-collapse (choices hide behind the funnel button) -->
+<div class="catalog-toolbar" data-fc>
     <div class="catalog-search">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="catalogSearch" placeholder="Search by name, SKU, category, season, stock, or price..." autocomplete="off">
         <span class="catalog-count" id="catalogCount"></span>
     </div>
+
+    <button type="button" class="btn-filter" data-fc-toggle aria-expanded="false"
+            aria-label="Show filter options" title="Filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span class="btn-filter-dot" data-fc-dot hidden></span>
+    </button>
+
+    <div class="filter-panel" data-fc-panel hidden>
 
     <div class="ncb-group-inline" data-filter-key="cat">
         <button type="button" class="ncb-select-trigger placeholder" id="catFilterTrigger" data-default-label="Category" tabindex="0" aria-haspopup="listbox">
@@ -539,6 +519,8 @@
         <svg class="ic-search" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <span id="filterClearLabel">Search</span>
     </button>
+
+    </div>
 </div>
 
 <div class="catalog-tabs">

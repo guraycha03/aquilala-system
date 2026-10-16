@@ -43,18 +43,9 @@
     .audit-kpi .ak-value { font-size: 24px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; }
     .audit-kpi .ak-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
 
-    /* Server-side filters — dressed in the shared .table-toolbar design so every
-       filter bar in the app looks and behaves the same (auto-applies on change). */
+    /* Select styling comes from the shared .table-toolbar select rule in
+       layouts.sidebar — one filter look for every page (dark mode included). */
     .audit-filters { margin-bottom: 16px; }
-    .audit-filters .ctl-search svg { stroke: #94a3b8; }
-    .audit-filters select {
-      height: 42px; padding: 0 13px; border: 1.5px solid #e2e8f0; border-radius: 10px;
-      background: #ffffff; color: #1e293b; font-size: 13px; font-weight: 500;
-      font-family: inherit; outline: none; cursor: pointer; max-width: 230px;
-      transition: all .2s ease; box-sizing: border-box;
-    }
-    .audit-filters select:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.08); }
-    .audit-filters select:hover { border-color: #cbd5e1; }
 
     .audit-panel {
       background: rgba(255,255,255,0.86); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
@@ -140,12 +131,19 @@
         </div>
       </div>
 
-      <!-- Server-side filters — same look/behaviour as the shared table toolbar -->
-      <form method="GET" class="table-toolbar audit-filters" id="auditFilters">
+      <!-- Server-side filters — shared .table-toolbar + .btn-filter collapse -->
+      <form method="GET" class="table-toolbar audit-filters" id="auditFilters"
+            data-fc data-fc-open-when="cat,period,user_id">
         <div class="ctl-search">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="search" name="q" value="{{ $search }}" placeholder="Search description, event, or user…" autocomplete="off">
         </div>
+        <button type="button" class="btn-filter" data-fc-toggle aria-expanded="false"
+                aria-label="Show filter options" title="Filters">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <span class="btn-filter-dot" data-fc-dot hidden></span>
+        </button>
+        <div class="filter-panel" data-fc-panel hidden>
         <select name="cat" onchange="this.form.submit()">
           <option value="">All event types</option>
           @foreach($categories as $key => $label)
@@ -173,6 +171,7 @@
             Clear
           </a>
         @endif
+        </div>
       </form>
 
       <div class="audit-panel">

@@ -94,7 +94,7 @@
         <div class="stat-value">{{ number_format($summary['estimates']) }}</div>
         <div class="stat-label">Product Citations</div>
       </div>
-      <svg viewBox="0 0 24 24" width="24" height="24" stroke="#0284c7" stroke-width="1.5" fill="none"><path d="M14 2H6a2 0 0 0-2 2v16a2 0 0 0 2 2h12a2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <svg viewBox="0 0 24 24" width="24" height="24" stroke="#0284c7" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     </div>
     <div class="stat-card">
       <div>
@@ -108,7 +108,7 @@
         <div class="stat-value">₱{{ number_format($summary['totalValue'], 0) }}</div>
         <div class="stat-label">Total Quoted Value</div>
       </div>
-      <svg viewBox="0 0 24 24" width="24" height="24" stroke="#d97706" stroke-width="1.5" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <x-peso-icon :size="24" color="#d97706" :stroke-width="1.5" />
     </div>
   </div>
 

@@ -58,10 +58,15 @@
   <p style="color: #606d64; font-size: 14px; margin: 0;">All user actions across the system — quotations, crops, products, and more.</p>
 </div>
 
-<!-- Filters (shared .table-toolbar design — auto-applies on change) -->
-<form method="GET" class="table-toolbar">
-  <select name="user_id" aria-label="User" onchange="this.form.submit()"
-          style="height:42px;min-width:200px;padding:0 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:500;color:#1e293b;background:#ffffff;font-family:inherit;outline:none;cursor:pointer;transition:all .2s ease;box-sizing:border-box;">
+<!-- Filters (shared .table-toolbar + .btn-filter collapse — auto-applies on change) -->
+<form method="GET" class="table-toolbar" data-fc data-fc-open-when="user_id,type">
+  <button type="button" class="btn-filter" data-fc-toggle aria-expanded="false"
+          aria-label="Show filter options" title="Filters">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+    <span class="btn-filter-dot" data-fc-dot hidden></span>
+  </button>
+  <div class="filter-panel" data-fc-panel hidden>
+  <select name="user_id" aria-label="User" onchange="this.form.submit()">
     <option value="">All Users</option>
     @foreach($users as $u)
       <option value="{{ $u->id }}" {{ $userFilter == $u->id ? 'selected' : '' }}>
@@ -70,8 +75,7 @@
     @endforeach
   </select>
 
-  <select name="type" aria-label="Activity type" onchange="this.form.submit()"
-          style="height:42px;min-width:200px;padding:0 13px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:500;color:#1e293b;background:#ffffff;font-family:inherit;outline:none;cursor:pointer;transition:all .2s ease;box-sizing:border-box;">
+  <select name="type" aria-label="Activity type" onchange="this.form.submit()">
     <option value="">All Activity Types</option>
     @foreach($activityTypes as $type)
       <option value="{{ $type }}" {{ $typeFilter === $type ? 'selected' : '' }}>
@@ -86,6 +90,7 @@
       Clear
     </a>
   @endif
+  </div>
 </form>
 
 <!-- Activity Timeline -->

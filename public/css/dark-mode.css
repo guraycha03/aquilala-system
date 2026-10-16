@@ -162,7 +162,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] [style*="background:#fff" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background:#fff8ec" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background:#fffbeb" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] [style*="background:#ffffff" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background:linear-gradient(135deg,#eff6ff,#f0f9ff)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background:linear-gradient(135deg,#fffbeb,#fefce8)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="border-bottom: 1px solid #e2e8f0" i] { border-color: #334155 !important }
@@ -419,8 +418,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .audit-avatar { background-color: hsl(95, 82%, 17%) !important; color: #a7f3d0 !important }
 [data-theme="dark"] .audit-bar { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .audit-empty h3 { color: #93c5fd !important }
-[data-theme="dark"] .audit-filters select { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #93c5fd !important }
-[data-theme="dark"] .audit-filters select:hover { border-color: #334155 !important }
 [data-theme="dark"] .audit-ip { color: #93c5fd !important }
 [data-theme="dark"] .audit-kpi { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
 [data-theme="dark"] .audit-kpi .ak-label { color: #93c5fd !important }
@@ -659,8 +656,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .cmp-card-head { border-color: #334155 !important }
 [data-theme="dark"] .cmp-card-title { color: #a7f3d0 !important }
 [data-theme="dark"] .cmp-empty b { color: #93c5fd !important }
-[data-theme="dark"] .cmp-filters select { border-color: #334155 !important; color: #93c5fd !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] .cmp-filters select:hover { border-color: #334155 !important }
 [data-theme="dark"] .cmp-kpi { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
 [data-theme="dark"] .cmp-kpi .k { color: #93c5fd !important }
 [data-theme="dark"] .cmp-kpi .v { color: #a7f3d0 !important }
@@ -1535,6 +1530,8 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .table-header p { color: #93c5fd !important }
 [data-theme="dark"] .table-scroll { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .table-toolbar { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
+[data-theme="dark"] .table-toolbar select { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #93c5fd !important }
+[data-theme="dark"] .table-toolbar select:hover { border-color: #334155 !important }
 @layer utilities { [data-theme="dark"] .text-\[\#1b1b18\] { color: #e2e8f0 !important } }
 @layer utilities { [data-theme="dark"] .text-\[\#706f6c\] { color: #e2e8f0 !important } }
 @layer utilities { [data-theme="dark"] .text-\[\#F53003\], [data-theme="dark"] .text-\[\#f53003\] { color: #fca5a5 !important } }
@@ -1559,7 +1556,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .total-badge .total-label { color: #a7f3d0 !important }
 [data-theme="dark"] .total-badge .total-value { color: #a7f3d0 !important }
 [data-theme="dark"] .ttb-bottom-bar { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] .ttb-filters .ncb-select-menu { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
+[data-theme="dark"] .ttb-filters .ncb-select-menu, [data-theme="dark"] .filter-panel .ncb-select-menu { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
 [data-theme="dark"] .umodal { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .umodal-close { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #93c5fd !important }
 [data-theme="dark"] .umodal-close:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }

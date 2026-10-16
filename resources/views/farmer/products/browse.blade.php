@@ -192,13 +192,6 @@
   <p class="page-subtitle">Find high-quality seeds, fertilizers, and equipment from verified local stores.</p>
 </div>
 
-<x-breadcrumb :items="[['label' => 'Browse Products']]"/>
-
-<div class="page-header">
-  <h1 class="page-title">Farm Supplies Catalog</h1>
-  <p class="page-subtitle">Find high-quality seeds, fertilizers, and equipment from verified local stores.</p>
-</div>
-
 {{-- Shared catalog filter bar: search, category, season, availability, price
      range and sorting, identical on every catalog surface. Reads and writes
      ?search=/?season=/?category=/?min=/?max=/?sort= so a filtered catalog can

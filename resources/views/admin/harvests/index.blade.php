@@ -225,14 +225,14 @@
       <div class="stat-value">{{ $stats['yield'] }}</div>
       <div class="stat-label">Total Yield</div>
     </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#0284c7" stroke-width="1.5" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    <x-peso-icon :size="24" color="#0284c7" :stroke-width="1.5" />
   </div>
   <div class="stat-card">
     <div>
       <div class="stat-value">₱{{ number_format($stats['expenses'], 0) }}</div>
       <div class="stat-label">Total Expenses</div>
     </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#7c3aed" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M8 3h6.5a4.5 4.5 0 0 1 0 9H8"/></svg>
+    <x-peso-icon :size="24" color="#7c3aed" :stroke-width="1.5" />
   </div>
 </div>
 

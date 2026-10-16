@@ -544,7 +544,7 @@
             </div>
             <div class="sum-row">
               <div class="sum-rank" style="background:#eef2f6;color:#62829b;">
-                <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <x-peso-icon />
               </div>
               <div class="sum-mid">
                 <div class="sum-name">Total Expenses</div>

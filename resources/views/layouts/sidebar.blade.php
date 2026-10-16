@@ -20,6 +20,9 @@
   <meta name="apple-mobile-web-app-title" content="Aquilala">
   <link rel="apple-touch-icon" href="{{ asset('images/pwa/apple-touch-icon.png') }}">
   <script src="{{ asset('js/pwa-register.js') }}" defer></script>
+  {{-- Shared filter-collapse engine: pages with a search bar + filter choices
+       hide those choices behind one funnel button (.btn-filter) until asked. --}}
+  <script src="{{ asset('js/filter-collapse.js') }}" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   {{-- Render-blocking only hurts here: a slow/blocked CDN would hold the whole
@@ -432,12 +435,13 @@
     .ncb-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ncb-select-arrow { transition: transform 0.2s ease; color: #64748b; flex-shrink: 0; }
     .ncb-select-arrow.rotate { transform: rotate(180deg); }
-    {{-- Scoped to the table-toolbar only: its menus have no inline style and the
-         toolbar engine shows them by setting style.display directly, so this rule
-         is their initial hidden state. A GLOBAL display:none would break Alpine
-         x-show dropdowns (activity filters): x-show clears the inline style on
-         open, falling back to this class rule and leaving the menu invisible. --}}
-    .ttb-filters .ncb-select-menu {
+    {{-- Scoped to the table-toolbar AND the shared filter-panel: their menus
+         have no inline style and the engines show them by setting
+         style.display directly, so this rule is their initial hidden state.
+         A GLOBAL display:none would break Alpine x-show dropdowns
+         (activity filters): x-show clears the inline style on open,
+         falling back to this class rule and leaving the menu invisible. --}}
+    .ttb-filters .ncb-select-menu, .filter-panel .ncb-select-menu {
       display: none;
       position: absolute; top: calc(100% + 4px); left: 0; right: 0;
       background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px;
@@ -502,6 +506,26 @@
     .btn-filter-dot[hidden] { display: none; }
     .ttb-filters { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1 1 100%; }
     .ttb-filters[hidden] { display: none; }
+
+    /* -- Shared filter-collapse panel: the choices behind EVERY .btn-filter
+          toggle (audit, compare, catalog, storefront, approvals, crops
+          directory). One panel style for all roles; dark-mode.css is
+          regenerated from this block, so dark mode comes along for free. -- */
+    .filter-panel {
+      display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; flex: 1 1 100%;
+    }
+    .filter-panel[hidden] { display: none; }
+
+    /* -- One native <select> look for every toolbar filter — replaces the
+          per-page select CSS each of these pages used to carry. -- */
+    .table-toolbar select {
+      height: 42px; min-width: 140px; padding: 0 13px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+      background: #ffffff; color: #1e293b; font-size: 13px; font-weight: 500;
+      font-family: inherit; outline: none; cursor: pointer; transition: all .2s ease;
+      box-sizing: border-box; max-width: 100%;
+    }
+    .table-toolbar select:hover { border-color: #cbd5e1; }
+    .table-toolbar select:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.08); }
     .ttb-pagination {
       display: flex; align-items: center; gap: 10px;
       padding: 4px 0; flex-wrap: wrap; margin-left: auto;

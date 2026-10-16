@@ -178,7 +178,8 @@
 </style>
 
 <div class="cf-bar" data-cf-root data-cf-uid="{{ $uid }}" data-cf-target="{{ $target }}"
-     data-cf-sync="{{ $syncUrl ? '1' : '0' }}" data-cf-noun="{{ $noun }}">
+     data-cf-sync="{{ $syncUrl ? '1' : '0' }}" data-cf-noun="{{ $noun }}"
+     data-fc data-fc-open-when="category,season,stock,min,max,sort">
 
   <div class="cf-field cf-grow">
     <label for="{{ $cid }}-search">Search</label>
@@ -189,6 +190,16 @@
       <button type="button" class="cf-search-clear" data-cf-search-clear aria-label="Clear search">&times;</button>
     </div>
   </div>
+
+  {{-- One funnel button (shared .btn-filter) hides every filter choice until
+       the user asks for them — same pattern on all list pages. --}}
+  <button type="button" class="btn-filter" data-fc-toggle aria-expanded="false"
+          aria-label="Show filter options" title="Filters &amp; sort">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+    <span class="btn-filter-dot" data-fc-dot hidden></span>
+  </button>
+
+  <div class="filter-panel" data-fc-panel hidden>
 
   @if($catOptions->isNotEmpty())
     <div class="cf-field">
@@ -253,6 +264,7 @@
   @endif
 
   <button type="button" class="cf-reset" data-cf-reset disabled>Clear all</button>
+  </div>
 </div>
 
 <div class="cf-summary" data-cf-summary hidden>

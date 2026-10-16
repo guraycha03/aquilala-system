@@ -13,18 +13,10 @@
   $f = $filters ?? ['year' => '', 'season' => '', 'crop' => '', 'farmer' => ''];
 @endphp
 <style>
-  /* Filter bar + table base live in the shared .table-toolbar / .data-table
-     rules (layouts.sidebar) — this form dresses exactly like every other
-     filter bar in the app and auto-applies when a select changes. */
+  /* Filter bar + table base live in the shared .table-toolbar / .data-table /
+     select rules (layouts.sidebar) — this form dresses exactly like every
+     other filter bar in the app and auto-applies when a select changes. */
   .cmp-filters { align-items: center; }
-  .cmp-filters select {
-    height: 42px; min-width: 140px; padding: 0 13px; border: 1.5px solid #e2e8f0;
-    border-radius: 10px; font-size: 13px; font-weight: 500; color: #1e293b;
-    background: #ffffff; font-family: inherit; outline: none; cursor: pointer;
-    transition: all .2s ease; box-sizing: border-box;
-  }
-  .cmp-filters select:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.08); }
-  .cmp-filters select:hover { border-color: #cbd5e1; }
 
   .cmp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 14px; margin-bottom: 18px; }
   .cmp-kpi { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 18px; }
@@ -66,8 +58,15 @@
   .cmp-empty b { display: block; color: #475569; font-size: 15px; margin: 8px 0 4px; }
 </style>
 
-{{-- ── Filters (shared .table-toolbar design — auto-applies on change) ── --}}
-<form class="table-toolbar cmp-filters" method="GET" action="{{ route($cmpRoute) }}">
+{{-- ── Filters (shared .table-toolbar + .btn-filter collapse — auto-applies on change) ── --}}
+<form class="table-toolbar cmp-filters" method="GET" action="{{ route($cmpRoute) }}"
+      data-fc data-fc-open-when="year,season,crop,farmer,group_by">
+  <button type="button" class="btn-filter" data-fc-toggle aria-expanded="false"
+          aria-label="Show filter options" title="Filters">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+    <span class="btn-filter-dot" data-fc-dot hidden></span>
+  </button>
+  <div class="filter-panel" data-fc-panel hidden>
   <select name="year" aria-label="Year" onchange="this.form.submit()">
     <option value="all">All years</option>
     @foreach($options['years'] as $y)
@@ -109,6 +108,7 @@
       Clear
     </a>
   @endif
+  </div>
 </form>
 
 {{-- ── KPI cards ── --}}

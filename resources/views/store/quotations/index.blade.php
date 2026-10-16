@@ -281,7 +281,7 @@
       <div class="stat-sub">Across <b>{{ $demandProductCount }}</b> of your products</div>
     </div>
     <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(22,163,74,0.1); display: flex; align-items: center; justify-content: center;">
-      <svg viewBox="0 0 24 24" width="24" height="24" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="3" x2="8" y2="21"/><path d="M8 3h6.5a4.5 4.5 0 0 1 0 9H8"/></svg>
+      <x-peso-icon :size="24" color="#16a34a" />
     </div>
   </div>
   <div class="stat-card violet ai-overview">
