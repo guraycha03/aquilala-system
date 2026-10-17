@@ -43,6 +43,7 @@ class ExampleTest extends TestCase
         $response->assertSee('name="keywords" content="Aquilala, Aqui lala, Aquilala Irrigators', false);
         $response->assertSee('name="robots" content="index, follow"', false);
         $response->assertSee('<link rel="canonical" href="' . url('/') . '">', false);
+        $response->assertSee('name="google-site-verification" content="', false);
 
         // Favicons
         $response->assertSee('rel="icon" href="' . asset('favicon.ico') . '"', false);

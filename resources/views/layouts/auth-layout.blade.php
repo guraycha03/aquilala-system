@@ -48,6 +48,10 @@
     <meta name="robots" content="{{ $seoRobots }}">
     <link rel="canonical" href="{{ $seoCanonical }}">
 
+    {{-- Google Search Console ownership verification (permanent — Google
+         re-checks periodically, so never remove this line). --}}
+    <meta name="google-site-verification" content="j0hIuCOLDdacy0xajDuaRgm5ZDVPNlMcBDFcDrrM0DY" />
+
     {{-- Favicons / home-screen icons --}}
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
