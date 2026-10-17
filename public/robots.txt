@@ -1,2 +1,49 @@
+# robots.txt — Aquilala Irrigators Association Inc. (https://aquilala.me)
+# The public landing/login page (root /) is the only indexable page.
+# Everything behind a sign-in is blocked from crawling.
+
 User-agent: *
-Disallow:
+Allow: /
+
+# ── Authenticated app shell / dashboards ────────────────────────────
+Disallow: /dashboard
+Disallow: /farmer
+Disallow: /store
+Disallow: /admin
+Disallow: /profile
+Disallow: /notifications
+Disallow: /activity
+Disallow: /settings
+Disallow: /change-password
+
+# ── Internal feature modules (all behind auth) ──────────────────────
+Disallow: /api
+Disallow: /crops
+Disallow: /crops-directory
+Disallow: /harvests
+Disallow: /products
+Disallow: /stores
+Disallow: /quotations
+Disallow: /top-quoted
+Disallow: /recommendations
+Disallow: /calendar
+Disallow: /weather
+Disallow: /ai-chat
+Disallow: /formulas
+Disallow: /inventory
+Disallow: /storefront
+
+# ── Auth flows that should never surface in search ──────────────────
+Disallow: /activate
+Disallow: /forgot-password
+Disallow: /password
+Disallow: /email
+Disallow: /logout
+
+# ── Non-page resources ──────────────────────────────────────────────
+Disallow: /storage/
+Disallow: /*.json$
+Disallow: /*.php$
+
+# ── Sitemap ─────────────────────────────────────────────────────────
+Sitemap: https://aquilala.me/sitemap.xml

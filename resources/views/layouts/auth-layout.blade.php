@@ -3,8 +3,114 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title') | Aquilala</title>
+
+    {{-- ────────────────────────────────────────────────────────────────────
+         SEO block (the ONLY indexable page in the app is the public
+         landing/login view — every other auth screen is noindex by default).
+
+         Pages opt in/out with sections:
+             @section('title', '…')          page <title> (+ "| Aquilala" suffix)
+             @section('description', '…')    meta description
+             @section('keywords', '…')       meta keywords
+             @section('robots', 'index, follow')          login does this
+             @section('canonical', url('/'))              login does this
+         ──────────────────────────────────────────────────────────────── --}}
+    @php
+        $siteName = 'Aquilala Irrigators Association Inc.';
+
+        $pageTitle = trim($__env->yieldContent('title'));
+        $seoTitle = $pageTitle === ''
+            ? $siteName . ' — Member Sign In'
+            : (str_contains($pageTitle, $siteName) ? $pageTitle : $pageTitle . ' | Aquilala');
+
+        $seoDescription = trim($__env->yieldContent('description'));
+        if ($seoDescription === '') {
+            $seoDescription = 'Official member portal of the Aquilala Irrigators Association Inc. (Aqui lala) — '
+                . 'sign in for crop, harvest, quotation and farm services in Barangay Aquino, Bulan, Sorsogon.';
+        }
+
+        $seoKeywords = trim($__env->yieldContent('keywords'));
+        if ($seoKeywords === '') {
+            $seoKeywords = 'Aquilala, Aqui lala, Aquilala Irrigators, Aquilala Irrigators Association, '
+                . 'Aquilala Bulan, Aquilala Sorsogon, Bulan Sorsogon farming services, irrigation association Philippines, '
+                . 'Barangay Aquino Bulan Sorsogon, farmer member portal, agricultural services Sorsogon';
+        }
+
+        $seoRobots    = trim($__env->yieldContent('robots')) ?: 'noindex, nofollow';
+        $seoCanonical = trim($__env->yieldContent('canonical')) ?: url()->current();
+        $seoImage     = asset('assets/og-banner.png');
+    @endphp
+
+    {{-- Search result snippet (SERP) --}}
+    <title>{{ $seoTitle }}</title>
+    <meta name="description" content="{{ $seoDescription }}">
+    <meta name="keywords" content="{{ $seoKeywords }}">
+    <meta name="robots" content="{{ $seoRobots }}">
+    <link rel="canonical" href="{{ $seoCanonical }}">
+
+    {{-- Favicons / home-screen icons --}}
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/pwa/apple-touch-icon.png') }}">
+
+    {{-- ── Open Graph: link preview on Facebook, Messenger, Viber,
+         WhatsApp, LinkedIn, iMessage, Telegram ── --}}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ $siteName }}">
+    <meta property="og:locale" content="en_PH">
+    <meta property="og:title" content="{{ $seoTitle }}">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:url" content="{{ $seoCanonical }}">
+    <meta property="og:image" content="{{ $seoImage }}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ $siteName }} — Barangay Aquino, Bulan, Sorsogon">
+
+    {{-- ── Twitter / X card ── --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $seoTitle }}">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+    <meta name="twitter:image" content="{{ $seoImage }}">
+    <meta name="twitter:image:alt" content="{{ $siteName }} — Barangay Aquino, Bulan, Sorsogon">
+
+    {{-- ── Schema.org: entity mapping so Google resolves "Aquilala" and the
+         typo/space variant "Aqui lala" (and partial matches such as
+         "Aquilala Irrigators", "Aquilala Bulan") to this association ── --}}
+    <script type="application/ld+json">
+    {{-- NOTE: the '@context' key is written as '@' . 'context' on purpose —
+         a literal "@context" gets compiled as a Blade directive. --}}
+    {!! json_encode([
+        '@' . 'context'  => 'https://schema.org',
+        '@type'          => 'Organization',
+        '@id'            => url('/') . '#organization',
+        'name'           => $siteName,
+        'alternateName'  => [
+            'Aquilala',
+            'Aqui lala',
+            'Aquilala Irrigators',
+            'Aquilala Irrigators Association',
+            'Aquilala IA',
+            'Aquilala Irrigators Association Inc',
+        ],
+        'url'            => url('/'),
+        'logo'           => asset('images/logo.png'),
+        'image'          => $seoImage,
+        'description'    => 'Agricultural organization serving irrigators and farmers of Barangay Aquino, Bulan, Sorsogon, Philippines — member portal for crop, harvest, quotation and farm services.',
+        'address'        => [
+            '@type'           => 'PostalAddress',
+            'streetAddress'   => 'IA Office, Barangay Aquino',
+            'addressLocality' => 'Bulan',
+            'addressRegion'   => 'Sorsogon',
+            'addressCountry'  => 'PH',
+        ],
+        'areaServed'     => [
+            '@type' => 'AdministrativeArea',
+            'name'  => 'Bulan, Sorsogon, Philippines',
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+    </script>
+
     {{-- PWA: same install/offline support as the main app layout — see the
          comment block in layouts/sidebar.blade.php. --}}
     <link rel="manifest" href="{{ asset('manifest.json') }}">

@@ -1,6 +1,13 @@
 @extends('layouts.auth-layout')
 
-@section('title', 'Login')
+{{-- ── SEO: this view is the site's public landing page (served at BOTH the
+     root URL and /login), so it is the one auth screen that opts in to
+     indexing. Every other auth page keeps the layout's noindex default. ── --}}
+@section('title', 'Aquilala Irrigators Association Inc. — Sign In')
+@section('description', 'Official member portal of the Aquilala Irrigators Association Inc. (Aqui lala) — sign in for crop, harvest, quotation and farm services in Barangay Aquino, Bulan, Sorsogon.')
+@section('keywords', 'Aquilala, Aqui lala, Aquilala Irrigators, Aquilala Irrigators Association, Aquilala Bulan, Aquilala Sorsogon, Bulan Sorsogon farming services, irrigation association Philippines, Barangay Aquino Bulan Sorsogon, farmer member portal')
+@section('robots', 'index, follow')
+@section('canonical', url('/'))
 
 @section('form-content')
     @push('styles')

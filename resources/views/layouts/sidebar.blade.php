@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
+  {{-- Authenticated app shell: no dashboard or internal page may ever be
+       indexed (belt to the robots.txt braces). --}}
+  <meta name="robots" content="noindex, nofollow">
   <title>@yield('title') | Aquilala</title>
   <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
   {{-- PWA: installable from the browser ("Add to Home Screen" / install

@@ -49,7 +49,11 @@ Route::get('/', function () {
         return redirect()->route('dashboard.redirect', ['role' => Auth::user()->role]);
     }
 
-    return redirect()->route('login');
+    // The landing page IS the sign-in page: render it at the root URL so the
+    // canonical, sitemap-listed URL (https://aquilala.me/) returns real
+    // indexable content instead of a redirect hop to /login. /login still
+    // works for bookmarks and now canonicalises back to the root.
+    return view('auth.login');
 })->name('home');
 
 // Guest-only access. Completing activation and password reset sign the
