@@ -58,7 +58,7 @@
     .audit-ts { font-size: 12px; color: #64748b; font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .audit-actor { display: flex; align-items: center; gap: 10px; }
     .audit-avatar {
-      width: 32px; height: 32px; border-radius: 9px; background: rgb(172, 242, 121); color: #14532d;
+      width: 32px; height: 32px; border-radius: 9px; background: #e6e6e6; color: #6f8f71;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .audit-avatar svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

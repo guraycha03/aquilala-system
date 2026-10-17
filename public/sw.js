@@ -14,7 +14,7 @@
  * Caches are versioned; the page cache is also cleared on logout by
  * pwa-register.js so one user's screens are never left behind for the next.
  */
-const VERSION = 'aquilala-v1';
+const VERSION = 'aquilala-v2';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
 const PAGE_CACHE_LIMIT = 60;

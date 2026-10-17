@@ -86,10 +86,18 @@
 @once
 <script>
 (function () {
-    if (window.TableToolbarEngine) return;
+    // The engine (and its document-level listeners) is defined once per
+    // session, but init must re-run on every Turbo visit: a body swap brings
+    // brand-new toolbar nodes with no listeners. Per-toolbar binding is
+    // guarded by a JS property, not a data-* attribute, because Turbo's
+    // snapshot cache restores keep attributes but lose both listeners and
+    // JS properties — so clones must re-bind, while same-node re-runs skip.
+    if (window.__TTBEngineDefined) {
+        if (window.TableToolbarRun) window.TableToolbarRun();
+        return;
+    }
+    window.__TTBEngineDefined = true;
     window.TableToolbarEngine = true;
-    if (window.__TableToolbarInited) return;
-    window.__TableToolbarInited = true;
 
     function debounce(fn, ms) {
         var t = null;
@@ -108,6 +116,11 @@
     });
 
     function initToolbar(tb) {
+        // Same-node guard: run() fires on DOMContentLoaded, on turbo:load and
+        // on every script re-evaluation — bind each toolbar instance once.
+        if (tb.__ttbInited) return;
+        tb.__ttbInited = true;
+
         var uid = tb.dataset.ttb;
         var tableId = tb.dataset.ttbWorks;
         var countEl = document.getElementById(tb.dataset.ttbCount);
@@ -135,16 +148,29 @@
                 card = tableScroll ? tableScroll.parentElement : tgtTable.parentElement;
             }
             if (!card) return;
-            bottomBar = document.createElement('div');
-            bottomBar.className = 'ttb-bottom-bar';
-            bottomBar.innerHTML = '<span class="pagination-info ttb-info"></span>' +
-                '<span class="pagination-controls ttb-controls"></span>';
-            card.appendChild(bottomBar);
+            // Turbo's snapshot cache restores the DOM as it was when leaving
+            // the page — including a bottom bar injected by a previous visit.
+            // Reuse it instead of stacking a duplicate under the table.
+            bottomBar = card.querySelector(':scope > .ttb-bottom-bar');
+            if (!bottomBar) {
+                bottomBar = document.createElement('div');
+                bottomBar.className = 'ttb-bottom-bar';
+                bottomBar.innerHTML = '<span class="pagination-info ttb-info"></span>' +
+                    '<span class="pagination-controls ttb-controls"></span>';
+                card.appendChild(bottomBar);
+            }
             bottomInfo = bottomBar.querySelector('.ttb-info');
             bottomControls = bottomBar.querySelector('.ttb-controls');
+            if (!bottomInfo || !bottomControls) {
+                bottomBar.innerHTML = '<span class="pagination-info ttb-info"></span>' +
+                    '<span class="pagination-controls ttb-controls"></span>';
+                bottomInfo = bottomBar.querySelector('.ttb-info');
+                bottomControls = bottomBar.querySelector('.ttb-controls');
+            }
         }
 
         var state = { sortKey: '', sortDir: 1, sortType: 'str', page: 1, search: '', filters: {} };
+        var lastOrderSig = null;
         var searchEl = document.getElementById(uid + 'Search');
 
         var firstSort = tb.querySelector('[data-ttb-sort] .ncb-select-option');
@@ -255,7 +281,7 @@
             mk('&rsaquo;', state.page === pages, false, function () { state.page++; render(); });
         }
 
-        function render() {
+        function render(forceOrder) {
             var all = getRows();
             var filtered = all.filter(matches);
             filtered.sort(cmpRow);
@@ -269,21 +295,31 @@
                 renderPagination(filtered.length);
             }
 
-            // sort() only reorders an array. The nodes have to be moved too,
-            // otherwise every row keeps its original document position and all
-            // the sort can change is which rows land on this page — which looks
-            // fine while pagination is hiding rows, and like a dead control as
-            // soon as a filter leaves fewer rows than fit on one page.
+            // Reordering moves every row node in the table. Only do it when
+            // the sort actually changed (or a caller forces it, e.g. after
+            // rows were added) — search/filter/page flips just toggle
+            // visibility and must stay cheap on large tables.
             var container = resolveTable();
             if (container) {
-                filtered.forEach(function (r) { container.appendChild(r); });
-                all.forEach(function (r) {
-                    if (filtered.indexOf(r) === -1) container.appendChild(r);
-                });
+                var sig = state.sortKey + '\u0000' + state.sortDir + '\u0000' + state.sortType;
+                if (forceOrder || sig !== lastOrderSig) {
+                    var filteredSet = new Set(filtered);
+                    var frag = document.createDocumentFragment();
+                    filtered.forEach(function (r) { frag.appendChild(r); });
+                    all.forEach(function (r) { if (!filteredSet.has(r)) frag.appendChild(r); });
+                    container.appendChild(frag);
+                    lastOrderSig = sig;
+                }
             }
 
+            var visibleSet = new Set(visible);
             all.forEach(function (r) {
-                r.style.display = visible.indexOf(r) !== -1 ? '' : 'none';
+                var show = visibleSet.has(r);
+                if (show) {
+                    if (r.style.display === 'none') r.style.display = '';
+                } else if (r.style.display !== 'none') {
+                    r.style.display = 'none';
+                }
             });
 
             if (countEl) countEl.textContent = filtered.length;
@@ -391,15 +427,16 @@
 
         // Pages that add/remove rows at runtime (import editors) call
         // TableToolbarRefresh(tableId) so counts and pages stay truthful.
+        // Public render forces a DOM reorder: new rows arrive in server order.
         window.TableToolbarEngines = window.TableToolbarEngines || {};
         window.TableToolbarEngines[tableId] = {
-            render: render,
+            render: function () { render(true); },
             goToLastPage: function () {
                 var t = resolveTable();
                 if (!t || perPage <= 0) return;
                 var pages = Math.max(1, Math.ceil(t.querySelectorAll('tr').length / perPage));
                 state.page = pages;
-                render();
+                render(true);
             }
         };
     }
@@ -408,6 +445,9 @@
         document.querySelectorAll('.ctl-toolbar.table-toolbar').forEach(initToolbar);
         if (window.TableToolbarPending) window.TableToolbarPending();
     }
+    // Exported before any early return so re-evaluated copies of this script
+    // (every Turbo visit re-runs body scripts) can re-wire the fresh DOM.
+    window.TableToolbarRun = run;
 
     // Re-render a work table's toolbar after rows were added/removed in the DOM.
     // opts.lastPage jumps to the final page first (new rows land at the end).
@@ -417,6 +457,12 @@
         if (opts && opts.lastPage) eng.goToLastPage();
         else eng.render();
     };
+
+    // Registered once (this branch only runs on the first evaluation): fires
+    // after every visit — including restorations where inits that registered
+    // through the layout's DOMContentLoaded shim get drained — so pending
+    // page hooks like TableToolbarPending always see the final DOM.
+    document.addEventListener('turbo:load', run);
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', run);

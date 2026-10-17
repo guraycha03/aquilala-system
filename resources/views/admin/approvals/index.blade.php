@@ -110,7 +110,7 @@
     .app-card + .app-card { border-top: 1px solid #f1f3f2; }
     .app-card:hover { background: #fafbfa; border-radius: 12px; }
     .app-avatar {
-      width: 46px; height: 46px; border-radius: 13px; background: rgb(172, 242, 121); color: #14532d;
+      width: 46px; height: 46px; border-radius: 13px; background: #e6e6e6; color: #6f8f71;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .app-avatar svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

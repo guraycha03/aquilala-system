@@ -102,7 +102,7 @@
     /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
     .user-cell { display: flex; align-items: center; gap: 11px; min-width: 0; }
     .user-avatar {
-      width: 36px; height: 36px; border-radius: 10px; background: rgb(172, 242, 121); color: #14532d;
+      width: 36px; height: 36px; border-radius: 10px; background: #e6e6e6; color: #6f8f71;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .user-avatar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -201,7 +201,7 @@
       border-bottom: 1px solid #f1f5f9; margin-bottom: 14px;
     }
     .profile-avatar {
-      width: 46px; height: 46px; border-radius: 12px; background: rgb(172, 242, 121); color: #14532d;
+      width: 46px; height: 46px; border-radius: 12px; background: #e6e6e6; color: #6f8f71;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; font-weight: 800;
     }
     .profile-hero .p-name { font-size: 15px; font-weight: 700; color: #0f172a; }
@@ -711,8 +711,11 @@
 
       function attach() {
         var container = document.getElementById('userFilterCards');
-        if (!container || container.getAttribute('data-attached')) return;
-        container.setAttribute('data-attached', '1');
+        // JS property, not a data attribute: Turbo's snapshot clones keep
+        // attributes but drop listeners, so an attribute guard would leave
+        // restored filter cards dead until the next full page load.
+        if (!container || container.__aqCardsAttached) return;
+        container.__aqCardsAttached = true;
         var cards = Array.prototype.slice.call(container.querySelectorAll('.filter-card'));
         cards.forEach(function (card) {
           card.addEventListener('click', function () {

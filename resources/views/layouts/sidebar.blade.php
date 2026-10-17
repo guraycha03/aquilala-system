@@ -75,9 +75,11 @@
         // On Turbo visits body <script src> elements are activated asynchronously,
         // so a queued init can run before its sibling library finishes loading
         // (e.g. flatpickr init skipped because typeof flatpickr === 'undefined').
-        // Wait for every not-yet-loaded script to settle (load/error/15s timeout)
-        // unless this is the real DOMContentLoaded, where the parser guarantees
-        // all sync/defer scripts already executed.
+        // Wait for every not-yet-loaded script to settle (load/error/1.5s
+        // timeout) unless this is the real DOMContentLoaded, where the parser
+        // guarantees all sync/defer scripts already executed. The timeout must
+        // stay short: it gates the whole queue, and a stalled script here used
+        // to freeze sidebar/navigation inits for 15 seconds.
         if (!force) {
           var pending = [];
           try {
@@ -95,7 +97,7 @@
               var settle = function () { s.dataset.aqReady = '1'; window.__aqDrainDC(false); };
               s.addEventListener('load', settle);
               s.addEventListener('error', settle);
-              setTimeout(settle, 15000);
+              setTimeout(settle, 1500);
             });
             return;
           }
@@ -109,11 +111,13 @@
       aqNativeDC('turbo:load', function () { window.__aqDrainDC(false); });
     }
   </script>
-  <script src="{{ asset('js/turbo.min.js') }}" defer></script>
+  {{-- ?v=2 busts the service worker's static cache — it is cache-first, so an
+       old Turbo would otherwise keep booting from aquilala-v1 storage. --}}
+  <script src="{{ asset('js/turbo.min.js') }}?v=2" defer></script>
   <script src="{{ asset('js/alpine.min.js') }}" defer></script>
   {{-- Display theme: every rule is scoped to [data-theme="dark"], so this file
        costs nothing while the user is in light mode. --}}
-  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=2">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scrollbar-width: none; -ms-overflow-style: none; }

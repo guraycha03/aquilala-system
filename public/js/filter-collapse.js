@@ -36,12 +36,15 @@
     function init() {
         var bars = document.querySelectorAll('[data-fc]');
         Array.prototype.forEach.call(bars, function (bar) {
-            if (bar.getAttribute('data-fc-ready')) return;
+            // JS property, not data-fc-ready: Turbo snapshot clones keep the
+            // attribute but drop the click listener, which left the funnel
+            // button dead after a back/forward restore.
+            if (bar.__fcReady) return;
 
             var toggle = bar.querySelector('[data-fc-toggle]');
             var panel = bar.querySelector('[data-fc-panel]');
             if (!toggle || !panel) return;
-            bar.setAttribute('data-fc-ready', '1');
+            bar.__fcReady = true;
 
             toggle.addEventListener('click', function () {
                 setPanel(panel, toggle, panel.hasAttribute('hidden'));

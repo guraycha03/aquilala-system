@@ -57,7 +57,7 @@
     font-size: 11px; font-weight: 800;
   }
   .ai-msg.bot .ai-msg-avatar { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
-  .ai-msg.user .ai-msg-avatar { background: #ecfdf5; color: #16a34a; border: 1px solid #bbf7d0; }
+  .ai-msg.user .ai-msg-avatar { background: #e6e6e6; color: #6f8f71; border: 1px solid #d4d4d4; }
   .ai-msg-body { max-width: 84%; min-width: 0; }
   .ai-msg-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
   .ai-msg-name { font-size: 11.5px; font-weight: 700; color: #64748b; }

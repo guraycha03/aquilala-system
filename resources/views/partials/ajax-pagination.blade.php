@@ -1,5 +1,11 @@
 <script>
 (function () {
+  // This partial is pushed onto pages whose bodies re-evaluate on every Turbo
+  // visit — bind the document-level handlers once for the session or each
+  // visit stacks another copy.
+  if (window.__aqAjaxPagiBound) return;
+  window.__aqAjaxPagiBound = true;
+
   document.addEventListener('click', function (e) {
     var link = e.target.closest('[data-paginated] a[href]');
     if (!link) return;
@@ -9,8 +15,6 @@
 
     var url = link.getAttribute('href');
     if (!url || url === '#') return;
-    // Re-entry guard: after a Turbo visit an older copy of this handler may
-    // still be bound — only the first fire for a click should fetch/push.
     if (container.dataset.pagiBusy) return;
     container.dataset.pagiBusy = '1';
 
