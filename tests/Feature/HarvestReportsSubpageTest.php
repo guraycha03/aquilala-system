@@ -162,11 +162,15 @@ class HarvestReportsSubpageTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.harvests.reports'));
 
         // The toolbar compares and sorts into an array, then must push the rows
-        // back into the table in that order. Without the appendChild pass a sort
+        // back into the table in that order. Without the re-append pass a sort
         // only re-runs pagination, so once a filter leaves fewer rows than fit
-        // on one page the sort looks like a dead control.
+        // on one page the sort looks like a dead control. Rows are batched into
+        // a DocumentFragment first (one reflow instead of N), so the contract
+        // to assert is both halves: filtered rows go into the fragment, and the
+        // fragment goes back into the table.
         $response->assertOk()
-            ->assertSee('filtered.forEach(function (r) { container.appendChild(r); })', false)
+            ->assertSee('filtered.forEach(function (r) { frag.appendChild(r); })', false)
+            ->assertSee('container.appendChild(frag);', false)
             ->assertSee('var container = resolveTable();', false);
     }
 
