@@ -182,6 +182,9 @@ class QuotationController extends Controller
                 'quantity' => (float) $item->calculated_quantity,
                 'unit' => strtolower(trim($item->product?->stock_unit ?? 'unit')),
                 'subtotal' => round((float) $item->subtotal, 2),
+                // Deferred lines are NOT part of the total — the advisor
+                // must know, or its explanation will not add up.
+                'deferred' => (bool) $item->is_deferred,
             ])
             ->map(fn ($i) => $i['unit'] === 'piece' ? array_merge($i, ['unit' => 'unit']) : $i)
             ->values();
@@ -190,6 +193,9 @@ class QuotationController extends Controller
         $landArea = (float) $quotation->land_area;
         $perHectare = $landArea > 0 ? round($total / $landArea, 2) : $total;
 
+        $deferredItems = $quotation->items->where('is_deferred', true);
+        $budgetCap = $quotation->budget_cap !== null ? (float) $quotation->budget_cap : null;
+
         $context = [
             'farm_area' => $landArea,
             'crop' => $quotation->crop_type,
@@ -197,6 +203,19 @@ class QuotationController extends Controller
             'total' => $total,
             'per_hectare' => $perHectare,
             'item_count' => $items->count(),
+            'soil' => $quotation->soil_type
+                ? CostQuotationEngine::getSoilTypeLabel($quotation->soil_type)
+                : null,
+            'weather_risk' => $quotation->weather_context
+                ? CostQuotationEngine::getWeatherContextLabel($quotation->weather_context)
+                : null,
+            'budget' => $budgetCap === null ? null : [
+                'cap' => $budgetCap,
+                'fitted_total' => $total,
+                'deferred_count' => $deferredItems->count(),
+                'deferred_total' => round((float) $deferredItems->sum('subtotal'), 2),
+                'deferred_names' => $deferredItems->pluck('product_name')->filter()->take(8)->values()->all(),
+            ],
             'generated' => $quotation->created_at->format('F d, Y'),
             'valid_until' => $quotation->valid_until?->format('F d, Y'),
             'items' => $items,
@@ -221,25 +240,36 @@ class QuotationController extends Controller
         }
 
         $system = <<<'PROMPT'
-You are a senior agronomist-farm advisor for the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). A farmer generated an auto-computed cost quotation for the farm input(s) they chose for their planned crop. Explain the quotation as plain-language farming guidance focused ONLY on the input(s) they selected. Use ONLY the JSON telemetry given. Never invent numbers, prices, or products.
+You are a trusted farm adviser for the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). A farmer just generated a cost quotation for their planned crop. Explain what it means for THEIR farm, using ONLY the JSON telemetry given. Never invent numbers, prices, or products.
 
-Write in warm, plain English a farmer would trust. Keep it SHORT and centered on what the farmer chose. Do NOT reproduce a price table and do NOT list every line item with its math — that itemized table is shown separately on this page. Structure your response EXACTLY with these markdown headings:
+HOW TO SOUND:
+- Write like a knowledgeable neighbor who also farms: plain words, short sentences, honest observations. Explain the reason behind a point, not just the point.
+- Vary how sentences start. No filler ("In conclusion", "It is important to note"), no corporate hedging, no emojis, and never the same sentence shape twice.
+- Talk to this farmer's situation, not to a generic audience.
+
+WHAT MATTERS HERE (use whatever applies, skip the rest):
+- Field conditions: the soil type and weather risk in the telemetry change quantities and prices — say plainly what they changed and why it matters for this crop.
+- Budget: when a budget is present, explain what fits, what was left out, and why that trade-off is sensible for this plan.
+- Items marked "deferred" are NOT part of the total — they are inputs the farmer can add when the budget allows. Make that clear.
+- The total is what the plan costs now; per-hectare cost puts it in scale for the land area.
+
+STRUCTURE — use these markdown headings exactly:
 
 ### AI Takeaway
-ONE sentence saying what this quotation means for the farmer's plan: the chosen input(s), the total, and the per-hectare cost, plus one brief observation on whether it looks reasonable.
+1-2 sentences: what this quotation means for this farmer's plan — the inputs, the total, the per-hectare cost, and one honest read on whether it looks reasonable.
 
 ### What It Means For Your Farm
-2-3 short plain-language bullets explaining what the selected input(s) will do for their crop and why the quantity and budget make sense for their land area, crop, and season. Reference the chosen input by name. Do not list prices line by line.
+2-4 short bullets on what the chosen inputs will do for the crop and why the quantities, field conditions, and budget fit this land, crop, and season. Name the products.
 
 ### Practical Advice
-2-3 specific, actionable bullets grounded in this quotation (e.g. confirm the price with the store, adjust the quantity if the land plan changed, ask about a bulk discount). Never invent external prices.
+2-4 specific, doable actions grounded in this quotation (confirm price and stock with the store, adjust quantities if the land plan changed, ask about a bulk discount, get ready for the stated weather risk). Never invent external prices.
 
 ### Next Move
-ONE closing sentence suggesting the immediate next step (e.g. contact the store to confirm availability and lock in the price before the quote expires).
+One closing sentence with the single best next step — usually contacting the store to confirm and lock in the price before the quote expires.
 
 FORMATTING RULES:
 1. Use **bold** for money amounts, quantities, and product names.
-2. Keep bullets short and scannable - no emojis, no long paragraphs, no markdown tables, no price-per-item listings.
+2. Short, scannable bullets — no markdown tables, no price-per-item listings.
 3. Never include a [SUGGEST:...] line.
 PROMPT;
 
@@ -247,7 +277,7 @@ PROMPT;
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer '.$apiKey,
                 'Content-Type' => 'application/json',
-            ])->withoutVerifying()->timeout(90)->post('https://api.groq.com/openai/v1/chat/completions', [
+            ])->withoutVerifying()->connectTimeout(5)->timeout(30)->post('https://api.groq.com/openai/v1/chat/completions', [
                 'model' => 'openai/gpt-oss-20b',
                 'messages' => [
                     ['role' => 'system', 'content' => $system],
@@ -285,6 +315,10 @@ PROMPT;
     /**
      * Deterministic "smart response" shown when the AI service is unavailable.
      * Built entirely from the quotation's own data so it is always truthful.
+     *
+     * This text is what farmers read on a slow night with no model to reach,
+     * so it carries the same job as the AI version — plain language, the
+     * field conditions and budget story included — not a stub.
      */
     private function buildFarmerSmartFallback(Quotation $quotation, array $context): string
     {
@@ -301,6 +335,16 @@ PROMPT;
                 ? '**'.$names->first().'**'
                 : '**'.$names->implode('**, **').'**');
 
+        $soilLabel = $quotation->soil_type
+            ? CostQuotationEngine::getSoilTypeLabel($quotation->soil_type)
+            : null;
+        $riskLabel = $quotation->weather_context
+            ? CostQuotationEngine::getWeatherContextLabel($quotation->weather_context)
+            : null;
+
+        $deferred = $quotation->items->where('is_deferred', true);
+        $budgetCap = $quotation->budget_cap !== null ? (float) $quotation->budget_cap : null;
+
         $lines = '### AI Takeaway'."\n"
             .'Your **'.$quotation->crop_type.'** '.ucfirst($quotation->season).'-season plan for **'
             .$landArea.' ha** comes to **₱'.number_format($total, 2)
@@ -308,12 +352,29 @@ PROMPT;
             .'### What It Means For Your Farm'."\n";
 
         if ($count === 0) {
-            $lines .= '- No products matched the formulas for this crop and season, so the total may be incomplete.'."\n";
+            $lines .= '- No inputs matched this crop and season in the catalog, so the total is not a full plan yet.'."\n";
         } else {
-            $lines .= '- You selected '.$subject.' to cover your input needs for '.$landArea.' ha.'."\n";
-            $lines .= '- The **₱'.number_format($perHectare, 2).'/ha** budget already includes everything the formulas recommend for this crop and season.'."\n";
+            $lines .= '- You chose '.$subject.' to cover your input needs for '.$landArea.' ha, priced at the rates set for this crop and season.'."\n";
+            $lines .= '- At **₱'.number_format($perHectare, 2).' per hectare**, the plan scales with your land — twice the area, twice these inputs.'."\n";
+            if ($soilLabel) {
+                $lines .= '- Your **'.$soilLabel.'** soil setting is already factored into the quantities above.'."\n";
+            }
+            if ($riskLabel) {
+                $lines .= '- The plan is sized for a **'.$riskLabel.'** season.'."\n";
+            }
+            if ($budgetCap !== null) {
+                if ($total == 0 && $deferred->isNotEmpty()) {
+                    $lines .= '- Your **₱'.number_format($budgetCap, 2).'** budget is below what this plan needs, so nothing was included — a slightly larger budget, or a smaller area, would make the plan work.'."\n";
+                } elseif ($deferred->isNotEmpty()) {
+                    $lines .= '- Your **₱'.number_format($budgetCap, 2).'** budget kept what fits, and **'.$deferred->count().'** input(s) worth **₱'.number_format((float) $deferred->sum('subtotal'), 2).'** are set aside on the quotation to add when the budget allows.'."\n";
+                } elseif ($total <= $budgetCap) {
+                    $lines .= '- You set a **₱'.number_format($budgetCap, 2).'** budget and the whole plan fits inside it, with **₱'.number_format($budgetCap - $total, 2).'** left over.'."\n";
+                } else {
+                    $lines .= '- Your **₱'.number_format($budgetCap, 2).'** budget is below what the plan comes to, so the total runs **₱'.number_format($total - $budgetCap, 2).'** past it.'."\n";
+                }
+            }
             if ($context['valid_until']) {
-                $lines .= '- The quotation is valid until **'.$context['valid_until'].'** — the prices are only locked until then.'."\n";
+                $lines .= '- The prices hold only until **'.$context['valid_until'].'** — confirm before then.'."\n";
             }
         }
 
@@ -322,12 +383,14 @@ PROMPT;
             : 'the general catalog';
 
         $lines .= "\n".'### Practical Advice'."\n"
-            .'- Confirm the listed prices and stock with **'.$storeText.'** before buying — prices can move after the quote expires.'."\n"
-            .'- Check the quantities against your actual planting plan; whole bags/sacks are rounded up, so you may end up with extra.'."\n"
-            .'- Ask about volume discounts or free delivery if you need more this season.'."\n\n"
+            .'- Run the numbers past **'.$storeText.'** — confirm the listed price and stock, since prices can move once the quote expires.'."\n"
+            .'- Match the quantities to your real planting plan; whole bags and bottles are rounded up, so you may end up with a little extra.'."\n"
+            .'- It never hurts to ask about a volume discount or free delivery if you are buying for the whole season.'."\n\n"
             .'### Next Move'."\n"
-            .'Reach out to '.($context['stores']->isNotEmpty() ? 'the store' : 'the general catalog')
-            .' to lock in the price before the quotation expires.';
+            .'Message '.($context['stores']->isNotEmpty() ? 'the store' : 'the catalog')
+            .' to confirm availability and lock in the price'
+            .($context['valid_until'] ? ' before **'.$context['valid_until'].'** passes' : ' while it holds')
+            .'.';
 
         return $lines;
     }
@@ -745,11 +808,6 @@ PROMPT;
     {
         abort_unless($request->user()?->role === 'store_owner', 403);
 
-        $apiKey = config('services.groq.key');
-        if (! $apiKey) {
-            return response()->json(['error' => 'AI service is not configured yet.'], 500);
-        }
-
         $storeUserId = Auth::id();
 
         $quotations = Quotation::involvingStore($storeUserId)
@@ -802,6 +860,20 @@ PROMPT;
             'top_crops' => $topCrops,
         ];
 
+        // Deterministic report first: the store always gets a real report.
+        // No key, dead network, or rejected call all land here instead of
+        // an error the page would have to explain away.
+        $fallback = $this->buildStoreSmartFallback($context);
+
+        $apiKey = config('services.groq.key');
+        if (! $apiKey) {
+            return response()->json([
+                'overview' => $fallback,
+                'source' => 'fallback',
+                'metrics' => $context,
+            ]);
+        }
+
         $system = 'You are a senior business analyst for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Farmers generate cost quotations and stores see them as "demand signals" - demand visibility, no action required. Write a COMPLETE demand intelligence report using ONLY the JSON telemetry provided. Report total_signals, this_week and last_week EXACTLY as given - this_week/last_week are the last 7 and previous 7 days respectively, distinct from total_signals. Never invent numbers.
 
 STRUCTURE YOUR RESPONSE WITH THESE SECTIONS (use markdown headings exactly as shown):
@@ -831,7 +903,7 @@ FORMATTING RULES:
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer '.$apiKey,
                 'Content-Type' => 'application/json',
-            ])->withoutVerifying()->timeout(90)->post('https://api.groq.com/openai/v1/chat/completions', [
+            ])->withoutVerifying()->connectTimeout(5)->timeout(30)->post('https://api.groq.com/openai/v1/chat/completions', [
                 'model' => 'openai/gpt-oss-20b',
                 'messages' => [
                     ['role' => 'system', 'content' => $system],
@@ -842,28 +914,120 @@ FORMATTING RULES:
                 'reasoning_effort' => 'low',
             ]);
 
-            if ($response->failed()) {
+            $overview = $response->failed()
+                ? ''
+                : trim((string) $response->json('choices.0.message.content', ''));
+
+            if ($overview === '') {
                 return response()->json([
-                    'error' => $response->json('error.message') ?? 'AI service returned an error.',
-                ], 502);
+                    'overview' => $fallback,
+                    'source' => 'fallback',
+                    'metrics' => $context,
+                ]);
             }
 
             return response()->json([
-                'overview' => trim((string) $response->json('choices.0.message.content', '')),
-                'metrics' => [
-                    'total_signals' => $quotations->count(),
-                    'unique_farmers' => $quotations->pluck('user_id')->filter()->unique()->count(),
-                    'this_week' => $recentQuotations,
-                    'last_week' => $priorQuotations,
-                    'own_products_value' => round($storeItems->sum('subtotal'), 2),
-                    'signals_total_value' => round($quotations->sum('estimated_total_cost'), 2),
-                    'top_products' => $topProducts,
-                    'top_crops' => $topCrops,
-                ],
+                'overview' => $overview,
+                'source' => 'ai',
+                'metrics' => $context,
             ]);
         } catch (\Throwable $e) {
-            return response()->json(['error' => 'Failed to reach the AI service. Please try again.'], 500);
+            return response()->json([
+                'overview' => $fallback,
+                'source' => 'fallback',
+                'metrics' => $context,
+            ]);
         }
+    }
+
+    /**
+     * Deterministic demand report shown when the model provider is
+     * unavailable. Built only from metrics computed above, in the same
+     * section layout as the AI report so the page renders identically —
+     * and only claiming what the numbers actually say.
+     */
+    private function buildStoreSmartFallback(array $context): string
+    {
+        $signals = (int) $context['total_signals'];
+        $farmers = (int) $context['unique_farmers'];
+        $thisWeek = (int) $context['this_week'];
+        $lastWeek = (int) $context['last_week'];
+        $quotedValue = (float) $context['signals_total_value'];
+        $ownValue = (float) $context['own_products_value'];
+        $topProducts = collect($context['top_products']);
+        $topCrops = collect($context['top_crops']);
+
+        if ($signals === 0) {
+            return '### AI Analyst Takeaway'."\n"
+                .'No farmer demand signals have reached your store yet — this report fills in as farmers generate quotations.'."\n\n"
+                .'### Demand Snapshot'."\n"
+                .'- **0** demand signals from **0** farmers so far, with nothing to compare week-over-week yet.'."\n\n"
+                .'### Top Products & Crop Trends'."\n"
+                .'- Nothing quoted yet — product and crop trends appear here once signals arrive.'."\n\n"
+                .'### Product Recommendations'."\n"
+                .'- Share your store with association farmers; their quotations become your demand forecast.'."\n\n"
+                .'### Next Step'."\n"
+                .'Let farmers know your store is listed so their quotation requests start landing here.';
+        }
+
+        if ($lastWeek > 0) {
+            $delta = $thisWeek - $lastWeek;
+            $pct = (int) round(abs($delta) / $lastWeek * 100);
+            $trend = $delta > 0
+                ? 'up **'.$pct.'%** week-over-week'
+                : ($delta < 0 ? 'down **'.$pct.'%** week-over-week' : 'level with last week');
+        } elseif ($thisWeek > 0) {
+            $trend = 'with no prior week on record to compare against';
+        } else {
+            $trend = 'quiet this week';
+        }
+
+        $lines = '### AI Analyst Takeaway'."\n"
+            .'**'.$signals.'** demand signals from **'.$farmers.'** farmer(s), worth **₱'.number_format($quotedValue, 2).'** in quoted value.'."\n\n"
+            .'### Demand Snapshot'."\n"
+            .'- This week brought **'.$thisWeek.'** new signals vs **'.$lastWeek.'** last week — '.$trend.'.'."\n"
+            .'- Farmers quoted **₱'.number_format($quotedValue, 2).'** overall; **₱'.number_format($ownValue, 2).'** of that sits on your own products.'."\n";
+
+        if ($topProducts->isNotEmpty()) {
+            $lines .= '- Most quoted right now: **'.$topProducts->first()['name'].'** ('.$topProducts->first()['count'].' quotation(s)).'."\n";
+        }
+
+        $lines .= "\n".'### Top Products & Crop Trends'."\n";
+        if ($topProducts->isEmpty() && $topCrops->isEmpty()) {
+            $lines .= '- No product or crop activity in the data yet.'."\n";
+        } else {
+            foreach ($topProducts->take(5) as $product) {
+                $lines .= '- **'.$product['name'].'** — '.$product['count'].' quote(s), ₱'.number_format((float) $product['value'], 2).' quoted.'."\n";
+            }
+            foreach ($topCrops->take(3) as $crop) {
+                $lines .= '- **'.$crop['crop'].'** — '.$crop['count'].' quotation(s) covering '.round((float) $crop['area'], 2).' ha.'."\n";
+            }
+        }
+
+        $lines .= "\n".'### Product Recommendations'."\n";
+        if ($topProducts->isEmpty()) {
+            $lines .= '- No product recommendations yet — they appear once farmers quote your inputs.'."\n";
+        } else {
+            foreach ($topProducts->take(3) as $product) {
+                $lines .= '- Keep **'.$product['name'].'** well stocked — '.$product['count'].' farmer quote(s) already lean on it.'."\n";
+            }
+        }
+
+        $lines .= "\n".'### Next Step'."\n"
+            .($topProducts->isNotEmpty()
+                ? 'Check stock on **'.$topProducts->first()['name'].'** first — it is what farmers ask for most.'
+                : 'Share your store with association farmers so demand signals start arriving.');
+
+        $keywords = $topProducts->take(3)
+            ->map(fn ($product) => trim(str_replace(',', '', strtolower((string) $product['name']))))
+            ->filter()
+            ->implode(', ');
+
+        if ($keywords !== '') {
+            $lines .= "\n".'[SUGGEST:'.$keywords.']';
+        }
+
+        return $lines;
     }
 
     // ────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\AI\AiSuggestionPicker;
 use App\Models\Category;
 use App\Models\DecisionFormula;
 use App\Models\Product;
@@ -11,6 +12,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -553,7 +555,210 @@ class CostQuotationEngine
                 ->get();
         }
 
+        // The farmer picked nothing: suggest the best product for each job
+        // instead of every product configured for the crop. Products the
+        // farmer chose by hand are never touched — they asked for those.
+        if (empty($selectedIds)) {
+            $products = $this->curateAutoSuggestions($products, $cropType, $season);
+        }
+
         return $products;
+    }
+
+    /**
+     * Narrow an auto-included candidate list to the best product per job.
+     *
+     * A quotation used to quote EVERY product with a formula for the
+     * crop — 20+ lines, several of them competing for the same job
+     * (five fertilizer types, three insecticides…). A suggestion means
+     * the best seed, the best fertilizer, one weed control, and so on:
+     * one winner per role, ordered crop-basics-first.
+     *
+     * The model provider is asked first when it is reachable — it can
+     * weigh the candidates with more nuance than a fixed ranking. Any
+     * problem at all (no key, slow network, garbage reply, a bug in this
+     * very method) falls through to the deterministic ranking below, and
+     * the whole method is wrapped so a quotation is NEVER worth an error
+     * page: worst case, the full candidate list is quoted as before.
+     */
+    private function curateAutoSuggestions(\Illuminate\Support\Collection $products, string $cropType, string $season): \Illuminate\Support\Collection
+    {
+        if ($products->count() < 2) {
+            return $products;
+        }
+
+        try {
+            $candidates = $this->describeCandidates($products);
+
+            $pickIds = app(AiSuggestionPicker::class)->pick($candidates, $cropType, $season);
+
+            if ($pickIds === null) {
+                $pickIds = $this->deterministicPicks($candidates);
+            }
+
+            $byId = [];
+            foreach ($products as $product) {
+                $byId[(int) $product->id] = $product;
+            }
+
+            $picked = [];
+            foreach ($pickIds as $id) {
+                if (isset($byId[$id])) {
+                    $picked[] = $byId[$id];
+                }
+            }
+
+            usort($picked, fn (Product $a, Product $b) => $this->autoRoleRank($a) <=> $this->autoRoleRank($b));
+
+            return \Illuminate\Support\Collection::make($picked);
+        } catch (\Throwable $e) {
+            Log::warning('Auto-include curation failed; quoting the full candidate list.', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return $products;
+        }
+    }
+
+    /**
+     * Flat descriptors both pickers reason over: what each candidate is,
+     * which job it does, and how it has been doing (stock, farmer demand).
+     *
+     * @return array<int, array{id: int, name: string, category: string, role: string, price: float, stock: int, times_quoted: int}>
+     */
+    private function describeCandidates(\Illuminate\Support\Collection $products): array
+    {
+        $timesQuoted = DB::table('quotation_items')
+            ->whereIn('product_id', $products->pluck('id')->all())
+            ->groupBy('product_id')
+            ->selectRaw('product_id, COUNT(*) as times')
+            ->pluck('times', 'product_id');
+
+        return $products
+            ->map(function (Product $product) use ($timesQuoted) {
+                $category = (string) $product->category_display_name;
+
+                return [
+                    'id'            => (int) $product->id,
+                    'name'          => (string) $product->name,
+                    'category'      => $category,
+                    'role'          => $this->roleForCategory($category),
+                    'price'         => round((float) $product->price, 2),
+                    'stock'         => (int) $product->stock_quantity,
+                    'times_quoted'  => (int) ($timesQuoted[$product->id] ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * The AI-free ranking: for each job the single strongest candidate.
+     *
+     * In stock beats out of stock — an unbuyable line helps nobody. Then
+     * the product other farmers quoted most (proven demand), then the
+     * cheaper one (fits more budgets), then the older listing. A total
+     * order every step of the way, so the same inputs always suggest the
+     * same products.
+     *
+     * @param  array<int, array{id: int, role: string, price: float, stock: int, times_quoted: int}>  $candidates
+     * @return array<int, int>
+     */
+    private function deterministicPicks(array $candidates): array
+    {
+        $best = [];
+
+        foreach ($candidates as $candidate) {
+            $role = $candidate['role'];
+
+            if (! isset($best[$role]) || $this->candidateBeats($candidate, $best[$role])) {
+                $best[$role] = $candidate;
+            }
+        }
+
+        return array_map(fn (array $candidate) => $candidate['id'], array_values($best));
+    }
+
+    private function candidateBeats(array $candidate, array $current): bool
+    {
+        if (($candidate['stock'] > 0) !== ($current['stock'] > 0)) {
+            return $candidate['stock'] > 0;
+        }
+        if ($candidate['times_quoted'] !== $current['times_quoted']) {
+            return $candidate['times_quoted'] > $current['times_quoted'];
+        }
+        if ($candidate['price'] !== $current['price']) {
+            return $candidate['price'] < $current['price'];
+        }
+
+        return $candidate['id'] < $current['id'];
+    }
+
+    /**
+     * Which job a product does, derived from its category name. Grouping
+     * is deliberately coarse per job — every fertilizer family is one
+     * fertilizer slot, every protection family keeps its own slot
+     * (a weed killer does not replace a fungicide).
+     */
+    private function roleForCategory(string $category): string
+    {
+        $name = strtolower($category);
+
+        if (str_contains($name, 'seed') || str_contains($name, 'seedling') || str_contains($name, 'planting material')) {
+            return 'seed';
+        }
+        if (str_contains($name, 'fertilizer') || str_contains($name, 'fertiliser') || str_contains($name, 'micronutrient') || str_contains($name, 'nutrient')) {
+            return 'fertilizer';
+        }
+        if (str_contains($name, 'herbicide') || str_contains($name, 'weed')) {
+            return 'herbicide';
+        }
+        if (str_contains($name, 'fungicide') || str_contains($name, 'fungi') || str_contains($name, 'disease')) {
+            return 'fungicide';
+        }
+        if (str_contains($name, 'insecticide') || str_contains($name, 'pesticide') || str_contains($name, 'insect') || str_contains($name, 'miticide')) {
+            return 'insecticide';
+        }
+        if (str_contains($name, 'crop protection') || str_contains($name, 'pest control')) {
+            return 'crop-protection';
+        }
+        if (str_contains($name, 'irrigation')) {
+            return 'irrigation';
+        }
+        if (str_contains($name, 'tool') || str_contains($name, 'machinery') || str_contains($name, 'equipment')) {
+            return 'tool';
+        }
+
+        // Soil amendments and everything else keep their own slot: a lime
+        // or organic input is its own job, and an unknown category should
+        // never be silently folded into the wrong one.
+        if (str_contains($name, 'soil') || str_contains($name, 'amendment') || str_contains($name, 'lime')) {
+            return 'soil';
+        }
+
+        return 'other';
+    }
+
+    /**
+     * Display order for auto-suggested lines: crop basics first, then
+     * field-condition inputs, then protections, then the rest.
+     */
+    private function autoRoleRank(Product $product): int
+    {
+        $rank = [
+            'seed'           => 0,
+            'fertilizer'     => 1,
+            'soil'           => 2,
+            'herbicide'      => 3,
+            'fungicide'      => 4,
+            'insecticide'    => 5,
+            'crop-protection'=> 6,
+            'irrigation'     => 7,
+            'tool'           => 8,
+            'other'          => 9,
+        ];
+
+        return $rank[$this->roleForCategory((string) $product->category_display_name)] ?? 9;
     }
 
     /**

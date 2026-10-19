@@ -35,9 +35,12 @@ class AiLlmClient
 
     /**
      * @param  array<int, array{role: string, content: string}>  $messages
+     * @param  int  $maxTokens
+     * @param  int  $timeout  Seconds to wait — callers mid-request pass a
+     *                        short one so a dead network degrades fast.
      * @return array{raw: string, model: string}|null
      */
-    public function completeJson(array $messages, int $maxTokens = 1200): ?array
+    public function completeJson(array $messages, int $maxTokens = 1200, int $timeout = 60): ?array
     {
         if (! $this->available() || $messages === []) {
             return null;
@@ -49,7 +52,10 @@ class AiLlmClient
                 'Content-Type'  => 'application/json',
             ])
                 ->withoutVerifying()
-                ->timeout(60)
+                // A dead or slow network must degrade in seconds, not
+                // minutes: the callers all have their own wording ready.
+                ->connectTimeout(5)
+                ->timeout($timeout)
                 ->post(self::ENDPOINT, [
                     'model' => self::MODEL,
                     'messages' => $messages,
