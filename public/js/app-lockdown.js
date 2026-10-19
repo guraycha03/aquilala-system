@@ -4,19 +4,23 @@
  * bump that version when editing this file, sw.js caches .js cache-first).
  *
  * What it enforces, for everyone, on every page:
- *   · no long-press / right-click browser menu (the iOS callout sheet is
- *     already suppressed by the CSS half; this covers Android + desktop,
- *     where the event is `contextmenu`) — this is what previously showed
- *     "Open in new tab" on long-press of the KPI cards
- *   · no copy / cut of page content (event layer + shortcut layer)
- *   · no dragging text/images out of the page
+ *   · no long-press / right-click browser menu on display content (the
+ *     iOS callout sheet is already suppressed by the CSS half; this
+ *     covers Android + desktop, where the event is `contextmenu`) — this
+ *     is what previously showed "Open in new tab" on long-press of the
+ *     KPI cards
+ *   · no copy / cut / drag-out of display content (event layer +
+ *     shortcut layer)
  *   · no devtools / view-source / save-page / print shortcuts
  *
- * KEEP WORKING (deliberate exemptions — these are the app's own inputs,
- * losing them would break data entry):
- *   · every input, textarea, select, contenteditable: typing, caret
- *     moves, select-all, copy/cut/paste, IME, autofill
- *   · the native text-editing menu inside those fields (mobile paste)
+ * KEEP WORKING (deliberate exemptions, mirrored from css/app-lockdown.css
+ * — if you add a zone here, add it there too and bump both ?v=):
+ *   · form fields: typing, caret moves, select-all, copy/cut/paste, IME,
+ *     autofill, the native text-editing menu (mobile paste)
+ *   · TABLES: selecting and copying the user's own rows — harvest
+ *     numbers, member lists. Per feedback, blocking that is a hassle
+ *     rather than a protection; page titles, subtext and cards remain
+ *     locked everywhere.
  *
  * Per-page capture shield (opt-in via `shield` route middleware →
  * data-capture-shield on <body>): a blank branded cover is shown while
@@ -43,37 +47,56 @@
 
   // Resolved fresh on every event: Turbo swaps the <body>, so nothing
   // about the current page may be captured up front.
-  function isEditable(el) {
-    return !!(el && el.closest && el.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'));
+  var FORM_ZONE = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
+  // Selectable/copyable zones — MUST mirror the exempted selectors in
+  // css/app-lockdown.css (form controls + labels + every table cell).
+  var COPY_ZONES = FORM_ZONE + ', label, table';
+
+  function inZone(el, zones) {
+    return !!(el && el.closest && el.closest(zones));
+  }
+  // Copy/cut decisions must look at the SELECTION, not only the event
+  // target: table cells aren't focusable, so after clicking one e.target
+  // is usually <body> while the user's selection sits inside the table.
+  function selectionAllowed() {
+    var sel = document.getSelection();
+    if (!sel || sel.isCollapsed || sel.rangeCount === 0) return false;
+    var node = sel.anchorNode;
+    var el = node && (node.nodeType === 1 ? node : node.parentNode);
+    return inZone(el, COPY_ZONES);
+  }
+  function canCopy(target) {
+    return inZone(target, COPY_ZONES) || selectionAllowed();
   }
   function shielded() {
     return !!(document.body && document.body.hasAttribute('data-capture-shield'));
   }
 
   // ── Long-press / right-click menu ───────────────────────────────────
-  // Blocked everywhere EXCEPT inside form fields, where mobile users need
-  // the native Paste / Select-all menu to enter data. Cards, tables and
-  // links get no "Open in new tab" sheet — freeing the gesture for the
-  // long-press modals planned for the KPI cards (those will use their own
-  // touchstart timer, which this does not interfere with).
+  // Blocked on display content — cards, titles, static text (this is what
+  // previously showed "Open in new tab" on long-press of the KPI cards,
+  // freeing the gesture for the long-press modals planned there; those use
+  // their own touchstart timer, which this does not interfere with).
+  // Allowed inside form fields (mobile Paste / Select-all) and inside
+  // tables (Copy of the user's own rows).
   document.addEventListener('contextmenu', function (e) {
-    if (isEditable(e.target)) return;
+    if (inZone(e.target, COPY_ZONES)) return;
     e.preventDefault();
   });
 
   // ── Copy / cut / drag-out ───────────────────────────────────────────
   // The event layer is the real enforcement: it catches Ctrl+C, the
   // browser Edit menu, drag-to-another-app, and any path the keydown
-  // layer below misses. Allowed inside form fields (copying within a
-  // form is data entry, not data theft).
+  // layer below misses. Allowed in copy zones (form fields, table cells)
+  // — canCopy() also consults the selection, see above.
   ['copy', 'cut'].forEach(function (type) {
     document.addEventListener(type, function (e) {
-      if (isEditable(e.target)) return;
+      if (canCopy(e.target)) return;
       e.preventDefault();
     });
   });
   document.addEventListener('dragstart', function (e) {
-    if (isEditable(e.target)) return;
+    if (canCopy(e.target)) return;
     e.preventDefault();
   });
 
@@ -82,10 +105,10 @@
     var key = e.key || '';
     var lower = key.toLowerCase();
     var mod = e.ctrlKey || e.metaKey;      // Cmd on macOS behaves like Ctrl here
-    var editable = isEditable(e.target);
 
     // F12 / devtools variants (Windows+macOS) / view-source / save / print.
-    // Blocked even inside form fields: none of them are data-entry keys.
+    // Blocked even inside form fields and tables: none of them are
+    // data-entry keys, and printing has its own CSS-level blank page.
     if (key === 'F12' ||
         (mod && e.shiftKey && ['i', 'j', 'c'].indexOf(lower) !== -1) ||
         (e.metaKey && e.altKey && ['i', 'j', 'c'].indexOf(lower) !== -1) ||
@@ -94,11 +117,12 @@
       return;
     }
 
-    // Select-all / copy / cut: allowed inside form fields, blocked on
-    // page content (where selection is already off — this closes the
-    // keyboard path to it).
+    // Select-all / copy / cut: allowed in copy zones (form fields, table
+    // cells) or when the selection already sits in one; blocked on display
+    // content (where selection is already off — this closes the keyboard
+    // path to it).
     if (mod && !e.shiftKey && !e.altKey && ['a', 'c', 'x'].indexOf(lower) !== -1) {
-      if (!editable) e.preventDefault();
+      if (!canCopy(e.target)) e.preventDefault();
     }
   });
 

@@ -7,18 +7,25 @@
  *   · resources/views/layouts/auth-layout.blade.php   (login/register)
  *
  * Makes the portal behave like a native app:
- *   · no text selection anywhere — cards, tables, headings
+ *   · no text selection on display content — page titles (h1), subtext,
+ *     cards, nav, static copy
  *   · no long-press callout: kills iOS's "Copy / Look Up / Open in New
  *     Tab" sheet on links and text (the JS half additionally blocks the
  *     Android/desktop right-click+long-press menu)
  *   · no blue/grey tap highlight
  *   · printing prints one notice on an otherwise blank page
  *
- * FORM FIELDS ARE EXEMPT and must stay exempt: typing, caret placement,
- * text selection and paste inside inputs/textareas/contenteditable all
- * ride on the selection API. Without the exemption every form in the
- * system would become uneditable on mobile and paste/password-manager
- * flows would break.
+ * EXEMPT — kept selectable everywhere (per feedback: copying your own
+ * data should work; blocking it is a hassle, not a protection):
+ *   · TABLES — every cell: harvest numbers, member lists, quotations.
+ *     The JS half mirrors this so copy/cut/drag actually go through.
+ *   · FORM FIELDS (+ their <label>s): typing, caret placement, selection
+ *     and paste inside inputs/textareas/contenteditable all ride on the
+ *     selection API. Without the exemption every form in the system would
+ *     become uneditable on mobile and paste/password-manager flows would
+ *     break.
+ * Page titles, subtext and cards stay locked on every page, including
+ * table and editing pages — only the important parts are copyable.
  *
  * Screenshot mitigations are deliberately NOT here — they are per-page
  * (per feedback: only security-sensitive pages), wired by
@@ -35,9 +42,15 @@ html, body, body * {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Exemption — must stay AFTER the rule above: equal specificity, so
-   source order decides the winner. */
-input, textarea, select, [contenteditable]:not([contenteditable="false"]) {
+/* Exemptions — must stay AFTER the rule above: equal specificity, so
+   source order decides the winner. Tables + form controls (+labels):
+   selectable and copyable; every other text (titles, subtext, cards)
+   stays locked. `table *` is required because the rule above sets
+   user-select directly on each element — inheriting from `table`
+   alone would not reach the cells. */
+input, textarea, select, [contenteditable]:not([contenteditable="false"]),
+label,
+table, table * {
   -webkit-user-select: text;
   -moz-user-select: text;
   -ms-user-select: text;
