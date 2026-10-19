@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Recent Activity')
+@section('title', 'Activity History')
 
 @section('content')
 <style>
@@ -54,7 +54,7 @@
 </style>
 
 <div class="header-panel" style="margin-bottom: 10px;">
-  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Recent Activity</h1>
+  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Activity History</h1>
   <p style="color: #606d64; font-size: 14px; margin: 0;">All user actions across the system — quotations, crops, products, and more.</p>
 </div>
 

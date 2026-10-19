@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'User Management')
+@section('title', 'All Users')
 
 @section('content')
   @php
@@ -227,7 +227,7 @@
     <div class="users-content">
       <div class="header-row">
         <div>
-          <h1>User Account Profiles</h1>
+          <h1>All Users</h1>
           <p>Manage system authorization, monitor accounts, and assign platform privileges.</p>
         </div>
         <div class="header-actions">
@@ -247,7 +247,7 @@
       </div>
 
       <!-- Account filter cards (click to filter the table) -->
-      <div class="users-kpis" id="userFilterCards">
+      <div class="users-kpis kpi-strip" id="userFilterCards">
         <button type="button" class="users-kpi filter-card active" data-user-filter="">
           <span class="uk-label"><span class="uk-dot" style="background:#3f6b3e;"></span>All Accounts</span>
           <span class="uk-value">{{ $totalUsers }}</span>

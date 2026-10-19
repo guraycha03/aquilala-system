@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'My Activity')
+@section('title', 'Activity History')
 
 @section('content')
 <!-- Load AlpineJS -->
@@ -327,12 +327,12 @@
 </style>
 
 <div class="page-header">
-  <h1 class="page-title">Store Activity</h1>
+  <h1 class="page-title">Activity History</h1>
   <p class="page-subtitle">Your store's complete history — product listings, stock changes, and input formulas.</p>
 </div>
 
 <!-- Stats Row -->
-<div class="stats-row">
+<div class="stats-row kpi-strip">
   <div class="stat-pill green">
     <div class="stat-icon">
       <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>

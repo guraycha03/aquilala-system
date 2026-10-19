@@ -20,7 +20,14 @@ class EnsureTestAccessSeeder extends Seeder
     {
         $credentials = [
             'cruz@gmail.com' => env('SEED_FARMER_PASSWORD', 'qwerty_Farmer01'),
-            'maya@gmail.com' => env('SEED_STORE_PASSWORD', 'qwerty_Store01'),
+
+            // Store owners. maya@gmail.com is the account the store flow is
+            // usually demoed with; the other two seeded stores had drifted
+            // away from the .env password (their stored hashes matched no
+            // known value), which locked them out of their own listings.
+            'maya@gmail.com'         => env('SEED_STORE_PASSWORD', 'qwerty_Store01'),
+            'cgguray1227@gmail.com'  => env('SEED_STORE_PASSWORD', 'qwerty_Store01'),
+            'dev.store@aquilala.org' => env('SEED_STORE_PASSWORD', 'qwerty_Store01'),
         ];
 
         foreach ($credentials as $email => $plainPassword) {

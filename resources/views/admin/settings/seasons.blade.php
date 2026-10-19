@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Seasons')
+@section('title', 'Season Settings')
 
 @section('content')
   @php
@@ -21,7 +21,7 @@
     <div class="set-content">
       <div class="header-row">
         <div>
-          <h1>Seasons</h1>
+          <h1>Season Settings</h1>
           <p>Crop season windows, active season detection, and seasonal variety recommendations.</p>
         </div>
         <div class="header-actions">

@@ -12,47 +12,13 @@
 @endphp
 
 <style>
-  .dash-page { position: relative; }
-  .dash-page::before,
-  .dash-page::after {
-    content: "";
-    position: fixed;
-    border-radius: 50%;
-    filter: blur(60px);
-    pointer-events: none;
-    z-index: 0;
-  }
-  .dash-page::before { width: 340px; height: 340px; background: rgba(22,163,74,0.18); top: -80px; right: -80px; }
-  .dash-page::after { width: 280px; height: 280px; background: rgba(2,132,199,0.15); bottom: -60px; left: -60px; }
-  .dash-content { position: relative; z-index: 1; }
-  @media (min-width: 769px) {
-    .dash-page > .dash-content { margin-top: 57px; }
-  }
+  /* The page frame, welcome header and quick-action panel now come from
+     components/dash-top.blade.php — shared with the Farmer and Admin
+     dashboards — and the KPI card from components/kpi-card.blade.php.
+     Only this page's own panels and carousel are styled here. */
 
   .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1); }
   .reveal.in { opacity: 1; transform: translateY(0); }
-
-  /* ── Store Hero (consistent light band) ─────────────────────── */
-  .hero-band {
-    background: rgb(241, 250, 214);
-    border-radius: 22px; padding: 30px 32px; color: #143d23; position: relative; overflow: hidden;
-    box-shadow: 0 4px 16px rgba(20,61,35,0.10); margin-bottom: 26px;
-  }
-  .hero-band::before { content: ""; position: absolute; top: -110px; right: -60px; width: 280px; height: 280px; border-radius: 50%; background: rgba(16,185,129,0.15); }
-  .hero-band::after { content: ""; position: absolute; bottom: -90px; left: 25%; width: 200px; height: 200px; border-radius: 50%; background: rgba(59,130,246,0.10); }
-  .hero-inner { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; }
-  .hero-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #166534; margin-bottom: 6px; }
-  .hero-title { font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.01em; color: #14532d; }
-  .hero-sub { font-size: 13px; color: #40632d; margin: 6px 0 0 0; }
-  .hero-sub strong { color: #14532d; }
-  .hero-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-  .hero-meta span {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(255,255,255,0.85); border: 1px solid rgba(20,61,35,0.10);
-    padding: 6px 12px; border-radius: 9px;
-    font-size: 12px; font-weight: 500; color: #40632d;
-  }
-  .hero-meta svg { width: 14px; height: 14px; stroke: #16a34a; flex-shrink: 0; }
 
   /* ── Panels ─────────────────────────────────────────────────── */
   .dash-panel {
@@ -125,58 +91,93 @@
   .carousel-arrow.next { right: -12px; }
 
   @media (max-width: 640px) {
-    .hero-band { padding: 22px; }
-    .hero-title { font-size: 21px; }
     .prod-carousel { gap: 12px; }
     .prod-carousel .product-card, .prod-carousel .prod-more { flex: 0 0 200px; }
   }
 </style>
 
-<div class="dash-page">
-  <div class="dash-content">
+<div class="fd-page">
 
-    <!-- 1. STORE HERO -->
-    <section class="hero-band reveal in">
-      <div class="hero-inner">
-        <div>
-          <div class="hero-eyebrow">Store Dashboard</div>
-          <h1 class="hero-title"><span data-greeting>{{ $greeting }}</span>, {{ $storeName }}</h1>
-          <p class="hero-sub">Here's your <strong>store overview</strong> for {{ $now->format('l, F j') }}.@if($user->store_name && $user->store_name !== $user->name) Owned by <strong>{{ $user->name }}</strong>.@endif</p>
-          @if($user->address || $user->barangay || $user->city || $user->province || $user->contact_number || $user->email)
-            <div class="hero-meta">
-              @if($user->address || $user->barangay || $user->city || $user->province)
-                <span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {{ trim(implode(', ', array_filter([$user->address, $user->barangay, $user->city, $user->province]))) }}
-                </span>
-              @endif
-              @if($user->contact_number)
-                <span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                  {{ $user->contact_number }}
-                </span>
-              @endif
-              @if($user->email)
-                <span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                  {{ $user->email }}
-                </span>
-              @endif
-            </div>
-          @endif
-        </div>
-      </div>
-    </section>
+    {{-- 1 & 2. Welcome header + quick actions — shared with every dashboard --}}
+    <x-dash-top
+        eyebrow="Store Dashboard"
+        :title="$greeting . ', ' . $storeName"
+        :subtitle="'Here\'s your store overview for ' . $now->format('l, F j') . ($user->store_name && $user->store_name !== $user->name ? '. Managed by <strong>' . e($user->name) . '</strong>' : '')"
+    >
+        <x-slot:panelIcon>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 9l1-5h16l1 5"/>
+                <path d="M5 9v11h14V9"/>
+                <path d="M9 20v-6h6v6"/>
+            </svg>
+        </x-slot:panelIcon>
+
+        <x-slot:panelHeading>Your store is live to farmers.</x-slot:panelHeading>
+        <x-slot:panelText>Keep your listings and stock current so farmers see accurate prices.</x-slot:panelText>
+
+        @if($user->address || $user->barangay || $user->city || $user->province || $user->contact_number || $user->email)
+            <x-slot:meta>
+                @if($user->address || $user->barangay || $user->city || $user->province)
+                    <span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {{ trim(implode(', ', array_filter([$user->address, $user->barangay, $user->city, $user->province]))) }}
+                    </span>
+                @endif
+                @if($user->contact_number)
+                    <span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        {{ $user->contact_number }}
+                    </span>
+                @endif
+                @if($user->email)
+                    <span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        {{ $user->email }}
+                    </span>
+                @endif
+            </x-slot:meta>
+        @endif
+
+        {{-- Quick actions, shortest label first — same rule as the Farmer
+             dashboard, so the three buttons scan the same way. --}}
+        <x-slot:actions>
+            <a href="{{ route('store.storefront.index') }}" class="fd-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                <span>Add Product</span>
+            </a>
+
+            <a href="{{ route('store.inventory.index') }}" class="fd-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                <span>Inventory</span>
+            </a>
+
+            <a href="{{ route('store.quotations.index') }}" class="fd-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+                    <path d="M14 2v6h6M8 13h8M8 17h8"/>
+                </svg>
+                <span>Quotations</span>
+            </a>
+        </x-slot:actions>
+    </x-dash-top>
 
     <!-- 2. KPI CARDS -->
-    <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
+    <section class="kpi-strip">
       <x-kpi-card title="Total Products" value="{{ $productCount }}" trendValue="{{ $productCount > 0 ? 'live listings' : 'start listing' }}" trendDirection="{{ $productCount > 0 ? 'up' : 'neutral' }}" trendLabel="In marketplace" accent="#16a34a" link="{{ route('store.storefront.index') }}">
         <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></x-slot:icon>
       </x-kpi-card>
       <x-kpi-card title="Low Stock Items" value="{{ $lowStockCount }}" trendValue="{{ $lowStockCount > 0 ? 'reorder soon' : 'all healthy' }}" trendDirection="{{ $lowStockCount > 0 ? 'down' : 'up' }}" trendLabel="Alert threshold" accent="#d97706" link="{{ route('store.inventory.index') }}">
         <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Demand Signals" value="{{ $demandQuotationCount }}" trendValue="{{ $computedQuotationCount }} estimate-ready" trendDirection="{{ $demandQuotationCount > 0 ? 'up' : 'neutral' }}" trendLabel="{{ $viewedQuotationCount }} viewed by you" accent="#7c3aed" link="{{ route('store.quotations.index') }}">
+      <x-kpi-card title="Farmer Quotations" value="{{ $demandQuotationCount }}" trendValue="{{ $computedQuotationCount }} estimate-ready" trendDirection="{{ $demandQuotationCount > 0 ? 'up' : 'neutral' }}" trendLabel="{{ $viewedQuotationCount }} viewed by you" accent="#7c3aed" link="{{ route('store.quotations.index') }}">
         <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></x-slot:icon>
       </x-kpi-card>
     </section>
@@ -228,7 +229,6 @@
       </div>
 
       </section>
-  </div>
 </div>
 
 <script>

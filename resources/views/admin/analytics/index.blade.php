@@ -303,7 +303,7 @@
       </div>
 
       <!-- KPI ROW -->
-      <section class="ana-kpis" id="kpiRow">
+      <section class="ana-kpis kpi-strip" id="kpiRow">
         <div class="kpi-card reveal" data-reveal>
           <div class="kpi-top">
             <div class="kpi-label">Total Users</div>

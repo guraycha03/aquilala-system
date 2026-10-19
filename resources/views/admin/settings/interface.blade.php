@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Interface')
+@section('title', 'Appearance')
 
 @section('content')
   @php
@@ -17,7 +17,7 @@
     <div class="set-content">
       <div class="header-row">
         <div>
-          <h1>Interface</h1>
+          <h1>Appearance</h1>
           <p>Appearance, sub-page navigation, and how numbers are shown across the dashboard.</p>
         </div>
         <div class="header-actions">
@@ -216,7 +216,7 @@
         })
           .then(function (r) { return r.json(); })
           .then(function (res) {
-            if (res.ok) showToast('Interface settings saved. They apply everywhere immediately.');
+            if (res.ok) showToast('Appearance settings saved. They apply everywhere immediately.');
             else showToast('Saved settings failed to apply.');
           })
           .catch(function () { showToast('Failed to save — check your connection.'); })

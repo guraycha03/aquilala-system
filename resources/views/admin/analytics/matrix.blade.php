@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Decision Rule Matrix')
+@section('title', 'Input Formulas')
 
 @section('content')
   @php
@@ -114,7 +114,7 @@
 
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:10px;">
         <div>
-          <h1 style="font-size:22px;font-weight:700;color:#1e293b;margin:0 0 4px 0;">Decision Rule Matrix</h1>
+          <h1 style="font-size:22px;font-weight:700;color:#1e293b;margin:0 0 4px 0;">Input Formulas</h1>
           <p style="font-size:13px;color:#64748b;margin:0;">Baseline application rates per hectare — managed by store owners</p>
         </div>
         <div class="matrix-chips">

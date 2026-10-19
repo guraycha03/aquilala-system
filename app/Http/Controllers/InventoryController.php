@@ -95,11 +95,14 @@ class InventoryController extends Controller
         // Stock health breakdown
         $healthyCount = $totalItems - $lowStockCount - $outOfStockCount;
 
+        // Archived (trashed) products this store can restore — powers the Archive button badge.
+        $archivedCount = Product::onlyTrashed()->where('user_id', $userId)->count();
+
         return view('store.inventory.index', compact(
             'products', 'allProducts',
             'totalItems', 'lowStockCount', 'outOfStockCount',
             'totalStockValue', 'totalUnits', 'healthyCount', 'lowStockItems',
-            'status', 'q', 'cat', 'filterActive', 'categories'
+            'status', 'q', 'cat', 'filterActive', 'categories', 'archivedCount'
         ));
     }
 

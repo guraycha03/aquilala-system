@@ -436,7 +436,7 @@
   <div>
     <div style="font-weight: 700; font-size: 14px; color: #166534; margin-bottom: 4px;">This is a cost quotation, not a purchase order</div>
     <p style="margin: 0; font-size: 13px; color: #15803d; line-height: 1.6;">
-      Prices are the current store prices at the time of generation and may change. Store owners can see this as demand intelligence.
+      Prices are the current store prices at the time of generation and may change. Store owners can see which products are in demand from your quotation.
       Contact the store directly to finalize any purchase.
     </p>
   </div>

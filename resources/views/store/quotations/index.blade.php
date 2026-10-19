@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Demand Intelligence')
+@section('title', 'Quotation Demand Trends')
 
 @section('content')
 <style>
@@ -230,8 +230,8 @@
 </style>
 
 <div style="margin-bottom: 28px;">
-  <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">Demand Intelligence</h1>
-  <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">See which farmers are exploring your products. This is demand visibility — no action required.</p>
+  <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">Quotation Demand Trends</h1>
+  <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">See which farmers are asking about your products. For information only — no action required.</p>
 </div>
 
 @if(session('success'))
@@ -243,11 +243,11 @@
   </div>
 @endif
 
-<div class="stats-grid">
+<div class="stats-grid kpi-strip">
   <div class="stat-card blue">
     <div>
       <div class="stat-value">{{ $totalQuotations }}</div>
-      <div class="stat-label">Demand Signals</div>
+      <div class="stat-label">Farmer Quotations</div>
       <div class="stat-sub">From <b>{{ $uniqueFarmers }}</b> interested farmers</div>
     </div>
     <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(37,99,235,0.1); display: flex; align-items: center; justify-content: center;">
@@ -257,7 +257,7 @@
   <div class="stat-card amber">
     <div>
       <div class="stat-value">{{ $recentQuotations }}</div>
-      <div class="stat-label">Demand This Week</div>
+      <div class="stat-label">Quotations This Week</div>
       <div class="stat-sub">
         @if($weekTrend > 0)
           <svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
@@ -277,7 +277,7 @@
   <div class="stat-card green">
     <div>
       <div class="stat-value">₱{{ number_format($ownDemandValue, 0) }}</div>
-      <div class="stat-label">Your Products' Demand Value</div>
+      <div class="stat-label">Your Products' Quoted Value</div>
       <div class="stat-sub">Across <b>{{ $demandProductCount }}</b> of your products</div>
     </div>
     <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(22,163,74,0.1); display: flex; align-items: center; justify-content: center;">
@@ -327,7 +327,7 @@
           <div class="empty-icon" style="margin-bottom: 12px;">
             <svg viewBox="0 0 24 24" width="28" height="28" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
           </div>
-          <p style="margin: 0; font-size: 14px; color: #879a8c; line-height: 1.5;">No demand data yet. As farmers generate quotations using your products, you'll see trends here.</p>
+          <p style="margin: 0; font-size: 14px; color: #879a8c; line-height: 1.5;">No quotations yet. As farmers generate quotations using your products, you'll see trends here.</p>
         </div>
       @endif
     </div>
@@ -395,7 +395,7 @@
 <div class="table-card">
   <div style="padding: 20px 24px; border-bottom: 1px solid #f0f2f1; display: flex; justify-content: space-between; align-items: center; background: #fafdfb;">
     <div>
-      <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">All Demand Signals</h2>
+      <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">All Farmer Quotations</h2>
       <p style="font-size: 13px; color: #879a8c; margin: 2px 0 0 0;">Every cost quotation that includes your products</p>
     </div>
     <span style="font-size: 13px; color: #879a8c; font-weight: 600; background: #f0f2f1; padding: 4px 12px; border-radius: 8px;">{{ $totalQuotations }} total</span>
@@ -467,7 +467,7 @@
                 <div class="empty-icon">
                   <svg viewBox="0 0 24 24" width="28" height="28" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 </div>
-                <p style="font-size: 16px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Demand Signals Yet</p>
+                <p style="font-size: 16px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Farmer Quotations Yet</p>
                 <p style="font-size: 13px; color: #879a8c; margin: 0;">When farmers generate quotations using your products, they'll appear here.</p>
               </div>
             </td>
@@ -492,7 +492,7 @@
   <div class="ai-modal-head">
     <div>
       <h3 id="aiModalTitle">AI Store Overview</h3>
-      <p>LLM-generated demand intelligence report</p>
+      <p>AI summary of what farmers are asking for</p>
     </div>
     <button type="button" class="ai-modal-close" id="aiModalClose" aria-label="Close AI overview" title="Close">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -591,7 +591,7 @@
     var html = '<div class="ai-narrative">' +
       '<div class="ai-narrative-head">' +
       '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#7c3aed" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>' +
-      '<h4>AI Demand Intelligence Report</h4></div><div class="ai-narrative-body">' + renderAiMarkdown(lastAiOverview) + '</div></div>' +
+      '<h4>AI Quotation Demand Trends</h4></div><div class="ai-narrative-body">' + renderAiMarkdown(lastAiOverview) + '</div></div>' +
       '<div class="ai-modal-foot">' +
       '<button type="button" class="ai-chat-link" onclick="openAiChat()">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +

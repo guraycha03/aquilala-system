@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'My Store')
+@section('title', 'Product Listings')
 
 @section('content')
 
@@ -233,155 +233,11 @@
         .product-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
-    .product-card { 
-        background: #ffffff; 
-        border: 1px solid #e2e8f0; 
-        border-radius: 14px; 
-        overflow: hidden; 
-        display: flex; 
-        flex-direction: column; 
-        transition: all 0.25s ease;
-    }
-
-    .product-card:hover {
-        border-color: #cbd5e1;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-        transform: translateY(-3px);
-    }
-
-    .product-image-container {
-        background: #f8fafc; 
-        height: 190px; 
-        width: 100%;
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        border-bottom: 1px solid #f1f5f9;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .product-card-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.3s ease;
-    }
-
-    .product-card:hover .product-card-img {
-        transform: scale(1.03);
-    }
-
-    .product-details { 
-        padding: 20px; 
-        flex-grow: 1; 
-        display: flex; 
-        flex-direction: column; 
-    }
-
-    .category-chip {
-        font-size: 11px; 
-        color: #0f766e; 
-        background: #ccfbf1;
-        padding: 2px 8px;
-        border-radius: 4px;
-        text-transform: uppercase; 
-        font-weight: 700;
-        letter-spacing: 0.03em;
-    }
-
-    .product-title {
-        font-size: 16px; 
-        color: #0f172a; 
-        font-weight: 700; 
-        margin: 10px 0 6px 0;
-        line-height: 1.3;
-    }
-
-    .product-description {
-        color: #64748b; 
-        font-size: 13px; 
-        margin: 0 0 16px 0; 
-        line-height: 1.5;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    /* Badges */
-    .badge-group {
-        display: flex; 
-        align-items: center; 
-        justify-content: space-between;
-        gap: 8px; 
-        margin-bottom: 16px;
-        flex-wrap: nowrap;
-    }
-
-    /* The season and stock badges used to live here. The shared product card
-       now draws the season itself (as an icon) and stock belongs on the
-       product detail page, so only the layout wrapper is left. */
-
-    /* Footer / Pricing Section */
-    .card-footer {
-        margin-top: auto;
-        padding-top: 14px;
-        border-top: 1px dashed #e2e8f0;
-    }
-
-    .price-row {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        margin-bottom: 14px;
-    }
-
-    .price-tag { 
-        font-size: 20px; 
-        font-weight: 800; 
-        color: #0f172a; 
-        letter-spacing: -0.01em;
-    }
-
-    /* Actions */
-    .action-group {
-        display: flex; 
-        gap: 8px; 
-    }
-
-    .btn-action { 
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        background: #f8fafc; 
-        color: #334155; 
-        border: 1px solid #cbd5e1; 
-        padding: 8px 12px; 
-        border-radius: 8px; 
-        font-size: 13px; 
-        font-weight: 600; 
-        cursor: pointer; 
-        text-decoration: none; 
-        transition: all 0.2s; 
-    }
-
-    .btn-action:hover { 
-        background: #f1f5f9; 
-        color: #0f172a;
-    }
-
-    .btn-delete { 
-        background: #fff5f5; 
-        color: #e11d48; 
-        border-color: #fecdd3; 
-    }
-
-    .btn-delete:hover { 
-        background: #ffe4e6; 
-        color: #be123c;
-    }
+    /* The card's own rules (shape, photo field, brand, name, divider,
+       unit caption, price) live in components/product-card.blade.php and
+       are the single source of truth for every catalog surface. This page
+       used to restate them with its own colours, which is why its cards
+       drifted from the farmer's. Only the grid is left here. */
 
 /* Empty State */
     .empty-state { 
@@ -419,34 +275,19 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 14px;
         }
-        .product-details { padding: 14px; }
-        .product-title { font-size: 14px; }
-        .product-description { font-size: 12px; }
-        .card-footer { padding-top: 12px; }
     }
 </style>
 
 <!-- Header -->
 <div class="page-header">
     <div>
-        <h1 class="page-title">Retail Product Catalog</h1>
+        <h1 class="page-title">Product Listings</h1>
         <p class="page-subtitle">Manage items displayed in the public marketplace browse view for association farmers.</p>
     </div>
     <div class="page-actions">
-        <a href="{{ route('store.products.trash') }}" class="btn-ghost" title="Archived products you can restore later">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1"></rect><path d="M5 8v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"></path></svg>
-            Archive
-            @if(($archivedCount ?? 0) > 0)
-                <span style="background:#fee2e2;color:#b91c1c;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;">{{ $archivedCount }}</span>
-            @endif
-        </a>
-        <a href="{{ route('store.products.import') }}" class="btn-ghost">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>
-            Import from File
-        </a>
         <a href="{{ route('store.products.create') }}" class="btn-primary">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Add Product Profile
+            Add Product
         </a>
     </div>
 </div>
@@ -551,7 +392,7 @@
             <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
         </svg>
         <h3>No Products Listed Yet</h3>
-        <p>Your product catalog is currently empty. Click "Add Product Profile" above to create your first item, or "Import from File" to bring in a whole list from a CSV or Excel sheet.</p>
+        <p>Your product catalog is currently empty. Click "Add Product" above to create your first item, or use "Import" in Inventory to bring in a whole list from a CSV or Excel sheet.</p>
     </div>
     @endif
 

@@ -552,7 +552,7 @@
     <div class="cd-hero">
       <div class="cd-hero-inner">
         <div>
-          <h1>Supported Crops</h1>
+          <h1>Crop Guide</h1>
           <p>Comprehensive list of crops suitable for cultivation in Bulan, Sorsogon and across the Bicol region of the Philippines, backed by the Decision Formula system.</p>
         </div>
         <span class="cd-badge">

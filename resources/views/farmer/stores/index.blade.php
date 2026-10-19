@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Partner Stores Directory')
+@section('title', 'Available Stores')
 
 @section('content')
 <style>
@@ -16,6 +16,8 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.02);
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
   }
   .store-card:hover {
     border-color: #d1d9d3;
@@ -32,6 +34,7 @@
     align-items: center;
     justify-content: center;
     background-color: #f5f7f6;
+    flex-shrink: 0;
   }
   .store-cover-img {
     width: 100%;
@@ -41,7 +44,7 @@
     inset: 0;
   }
 
-  .store-body { padding: 0 24px 22px; }
+  .store-body { padding: 0 24px 20px; }
 
   /* Smooth fading glassmorphism header */
   .store-name-area {
@@ -53,12 +56,12 @@
     margin-top: -80px;
     position: relative;
     z-index: 3;
-    
+
     /* Soft white gradient for a natural color transition */
     background: linear-gradient(
-      180deg, 
-      rgba(255, 255, 255, 0.3) 0%, 
-      rgba(255, 255, 255, 0.85) 40%, 
+      180deg,
+      rgba(255, 255, 255, 0.3) 0%,
+      rgba(255, 255, 255, 0.85) 40%,
       #ffffff 100%
     );
 
@@ -101,36 +104,6 @@
     text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
   }
 
-  .partner-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 10px; font-weight: 700; text-transform: uppercase;
-    padding: 4px 10px; border-radius: 6px; letter-spacing: 0.06em;
-    background: rgba(240, 253, 244, 0.9);
-    color: #15803d; border: 1px solid rgba(187, 247, 208, 0.8);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-  .partner-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; animation: pulse-dot 2s infinite; }
-
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-
-  .product-pill {
-    font-size: 11px; font-weight: 600;
-    background: #f8faf9; border: 1px solid #e8ecea;
-    border-radius: 8px; padding: 5px 10px;
-    display: inline-flex; align-items: center; gap: 5px;
-    color: #4b5c50; transition: all 0.15s;
-  }
-  .product-pill:hover { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
-  .product-pill.more {
-    background: linear-gradient(135deg, #143d23, #1a5230);
-    color: white; border-color: transparent;
-    box-shadow: 0 2px 6px rgba(20,61,35,0.2);
-  }
-
   .browse-link {
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 13px; font-weight: 700; color: #fff;
@@ -139,6 +112,7 @@
     background: linear-gradient(135deg, #143d23, #1a5230);
     transition: all 0.2s;
     box-shadow: 0 2px 8px rgba(20,61,35,0.25);
+    flex-shrink: 0;
   }
   .browse-link:hover {
     box-shadow: 0 4px 16px rgba(20,61,35,0.35);
@@ -156,18 +130,70 @@
     flex-shrink: 0;
   }
 
-  .store-meta-row {
-    display: flex; gap: 12px; align-items: center;
-    padding: 12px 24px;
-    border-top: 1px solid #f5f7f6;
-    background: #fafdfb;
-    margin-top: 12px;
+  /* Section break: everything above this line is about the store, everything
+     below it — count, button, carousel — is about the products. */
+  .store-stats {
+    display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: center; justify-content: space-between;
+    padding: 15px 0 0; margin-top: 17px;
+    border-top: 1px solid #dfe6e1;
   }
   .meta-chip {
     display: inline-flex; align-items: center; gap: 5px;
     font-size: 11px; font-weight: 600; color: #6b7c6e;
   }
   .meta-chip svg { width: 14px; height: 14px; }
+
+  /* ── Featured products carousel ─────────────────────────────────── */
+  /* The same scrolling shelf the store-owner dashboard uses, sized down to
+     fit inside a store card. Six products only; everything else is one
+     Browse Products tap away. */
+  .store-carousel-wrap { position: relative; margin-top: 16px; }
+  .store-carousel {
+    display: flex; gap: 14px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    padding: 2px 2px 10px;
+  }
+  .store-carousel .product-card { flex: 0 0 200px; scroll-snap-align: start; }
+  .store-carousel::-webkit-scrollbar { height: 8px; }
+  .store-carousel::-webkit-scrollbar-track { background: transparent; }
+  .store-carousel::-webkit-scrollbar-thumb { background: #dbe5df; border-radius: 8px; }
+  .store-carousel::-webkit-scrollbar-thumb:hover { background: #c4d5ca; }
+
+  .carousel-label {
+    font-size: 11px; font-weight: 600; color: #879a8c;
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+  }
+
+  /* End tile: makes "only six here" explicit and points at the rest. */
+  .store-more {
+    flex: 0 0 140px; scroll-snap-align: start;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    background: #f7faf8; border: 2px dashed #cfe0d6; border-radius: 14px;
+    text-decoration: none; color: #14532d; text-align: center; padding: 22px 14px; cursor: pointer;
+    transition: all 0.25s ease;
+  }
+  .store-more:hover { border-color: #143d23; background: #eef5f1; }
+  .store-more svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .store-more strong { font-size: 14px; font-weight: 800; }
+  .store-more span { font-size: 11.5px; color: #64748b; }
+
+  /* Arrows sit inset rather than overhanging: the store card clips its own
+     corners (overflow:hidden), so an overhanging arrow would be cut off. */
+  .carousel-arrow {
+    position: absolute; top: 46%; transform: translateY(-50%); z-index: 4;
+    width: 32px; height: 32px; border-radius: 50%; border: 1px solid #dbe5df;
+    background: #fff; color: #143d23; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12); transition: all 0.2s ease;
+    opacity: 0.45;
+  }
+  .carousel-arrow:hover,
+  .carousel-arrow:active,
+  .carousel-arrow:focus-visible { opacity: 1; background: #143d23; color: #fff; border-color: #143d23; }
+  .carousel-arrow:disabled { opacity: 0; pointer-events: none; }
+  .carousel-arrow svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .carousel-arrow.prev { left: 4px; }
+  .carousel-arrow.next { right: 4px; }
 
   .empty-state {
     background: #ffffff;
@@ -177,10 +203,16 @@
     text-align: center;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.02);
   }
+
+  @media (max-width: 640px) {
+    .store-grid { grid-template-columns: 1fr; }
+    .store-carousel { gap: 12px; }
+    .store-carousel .product-card { flex: 0 0 176px; }
+  }
 </style>
 
 <div style="margin-bottom: 28px;">
-  <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">Partner Store Locations</h1>
+  <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">Available Stores</h1>
   <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
     {{ $totalStores }} registered agricultural supply stores with {{ $totalProducts }} active products available
   </p>
@@ -192,22 +224,24 @@
       <div class="store-card">
         <!-- Cover Image -->
         <div class="store-cover">
-          <img 
-            src="{{ $store->cover_image ? asset('storage/' . $store->cover_image) : asset('images/store_isle.png') }}" 
-            alt="{{ $store->store_name }} Cover" 
+          <img
+            src="{{ $store->cover_image ? asset('storage/' . $store->cover_image) : asset('images/store_isle.png') }}"
+            alt="{{ $store->store_name }} Cover"
             class="store-cover-img"
           >
         </div>
 
         <!-- Upper Translucent Header & Name Area -->
+        {{-- The "Active" badge is gone: a store only appears here if it is
+             active, so telling a farmer that would be saying the obvious in
+             the system's own jargon. --}}
         <div class="store-name-area">
           <div style="flex: 1; min-width: 0;">
             <h2 class="store-title">{{ $store->store_name }}</h2>
             @if($store->name !== $store->store_name)
-              <p class="store-subtitle">Operated by {{ $store->name }}</p>
+              <p class="store-subtitle">Managed by {{ $store->name }}</p>
             @endif
           </div>
-          <span class="partner-badge"><span class="dot"></span> Active</span>
         </div>
 
         <!-- Body -->
@@ -242,47 +276,59 @@
             <span>{{ $store->email }}</span>
           </div>
 
-          <!-- Products Preview -->
-          @if($store->products->isNotEmpty())
-            <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid #f5f7f6;">
-              <div style="font-size: 11px; font-weight: 600; color: #879a8c; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em;">Featured Products</div>
-              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                @foreach($store->products->take(4) as $product)
-                  <span class="product-pill">
-                    ₱{{ number_format($product->price, 0) }}
-                    <span style="color: #d1d9d3;">·</span>
-                    {{ Str::limit($product->display_name, 26) }}
-                  </span>
-                @endforeach
-                @if($store->products_count > 4)
-                  <span class="product-pill more">
-                    +{{ $store->products_count - 4 }} more
-                  </span>
-                @endif
-              </div>
+          <!-- Store size, with the button that opens it on the same line -->
+          <div class="store-stats">
+            <div class="meta-chip">
+              <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+              {{ $store->products_count }} product{{ $store->products_count !== 1 ? 's' : '' }}
             </div>
-          @endif
+            {{-- Kept in the template, switched off in the display: a farmer
+                 picking a supply store cares that it is stocked, not how long
+                 it has been registered. Delete `display: none;` to bring it
+                 back — it still reads from $store->created_at. --}}
+            <div class="meta-chip" style="display: none;">
+              <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Joined {{ $store->created_at->format('M Y') }}
+            </div>
 
-          <!-- Action -->
-          <div style="margin-top: 16px;">
-            <a href="{{ route('farmer.products.browse') }}?store={{ $store->id }}" class="browse-link">
+            <a href="{{ route('farmer.stores.show', $store->id) }}" class="browse-link">
               Browse Products
               <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
             </a>
           </div>
         </div>
 
-        <!-- Meta Footer -->
-        <div class="store-meta-row">
-          <div class="meta-chip">
-            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
-            {{ $store->products_count }} product{{ $store->products_count !== 1 ? 's' : '' }}
+        <!-- Featured products, at the foot of the card -->
+        @if($store->products->isNotEmpty())
+          <div class="store-body" style="padding-top: 0;">
+            <div class="store-carousel-wrap">
+              <div class="carousel-label">Featured Products</div>
+              <div class="store-carousel">
+                @foreach($store->products as $product)
+                  <x-product-card
+                    :product="$product"
+                    href="{{ route('farmer.products.show', $product->id) }}"
+                    image-height="120px"
+                  />
+                @endforeach
+
+                {{-- The rest of this store's listing lives on its own page. --}}
+                <a class="store-more" href="{{ route('farmer.stores.show', $store->id) }}">
+                  <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                  <strong>See all</strong>
+                  <span>{{ $store->products_count }} products</span>
+                </a>
+              </div>
+
+              <button type="button" class="carousel-arrow prev" aria-label="Scroll featured products left">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button type="button" class="carousel-arrow next" aria-label="Scroll featured products right">
+                <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
           </div>
-          <div class="meta-chip">
-            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Joined {{ $store->created_at->format('M Y') }}
-          </div>
-        </div>
+        @endif
       </div>
     @endforeach
   </div>
@@ -303,4 +349,30 @@
     </a>
   </div>
 @endif
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Every store card owns its own shelf, so this wires each one rather than
+    // reaching for page-wide ids. Arrows disable themselves at the ends.
+    document.querySelectorAll('.store-carousel-wrap').forEach(function (wrap) {
+      var track = wrap.querySelector('.store-carousel');
+      var prev = wrap.querySelector('.carousel-arrow.prev');
+      var next = wrap.querySelector('.carousel-arrow.next');
+      if (!track || !prev || !next) return;
+
+      var step = function () { return Math.round(track.clientWidth * 0.8); };
+      var updateArrows = function () {
+        var max = track.scrollWidth - track.clientWidth;
+        prev.disabled = track.scrollLeft <= 1;
+        next.disabled = track.scrollLeft >= max - 1;
+      };
+
+      prev.addEventListener('click', function () { track.scrollBy({ left: -step(), behavior: 'smooth' }); });
+      next.addEventListener('click', function () { track.scrollBy({ left: step(), behavior: 'smooth' }); });
+      track.addEventListener('scroll', updateArrows);
+      window.addEventListener('resize', updateArrows);
+      updateArrows();
+    });
+  });
+</script>
 @endsection

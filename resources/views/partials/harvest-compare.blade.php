@@ -112,7 +112,7 @@
 </form>
 
 {{-- ── KPI cards ── --}}
-<div class="cmp-kpis">
+<div class="cmp-kpis kpi-strip">
   <div class="cmp-kpi">
     <div class="k">Estimated Yield</div>
     <div class="v">{{ number_format($kpis['total_estimate_mt'], 2) }} <span style="font-size:13px;font-weight:700;color:#94a3b8;">MT</span></div>

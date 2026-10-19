@@ -229,6 +229,12 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/products/browse', [ProductController::class, 'browse'])->name('products.browse');
         Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
         Route::get('/stores', [StoreDirectoryController::class, 'index'])->name('stores.index');
+        // One store's own page: its details plus every product it lists.
+        // The directory card's Browse Products button and its "See all" tile
+        // both land here, so a farmer is never sent to a mixed catalog.
+        Route::get('/stores/{store}', [StoreDirectoryController::class, 'show'])
+            ->name('stores.show')
+            ->whereNumber('store');
 
         // Top Quoted Products — ranked by real farmer demand (quotation count)
         Route::get('/top-quoted', [ProductController::class, 'topQuoted'])->name('top-quoted.index');
@@ -250,8 +256,12 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // Activity Log
         Route::get('/activity', [QuotationController::class, 'farmerActivity'])->name('activity.index');
 
-        // Harvest Reports (shared with admin — same harvest_reports table)
-        Route::get('/harvests', [HarvestReportController::class, 'farmerIndex'])->name('harvests.index');
+        // Harvest Reports (shared with admin — same harvest_reports table).
+        // List page shielded (->middleware('shield')); add the same token to
+        // any route below to extend coverage, delete it to drop coverage.
+        Route::get('/harvests', [HarvestReportController::class, 'farmerIndex'])
+            ->name('harvests.index')
+            ->middleware('shield');
         Route::get('/harvests/create', [HarvestReportController::class, 'farmerCreate'])->name('harvests.create');
         // Estimate vs Actual — planting estimate against filed yield.
         Route::get('/harvests/compare', [HarvestReportController::class, 'farmerCompare'])
@@ -362,12 +372,24 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         Route::get('/dashboard', [AuthController::class, 'showAdminDashboard'])->name('dashboard');
 
-        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        // ── Capture shield ── these pages carry ->middleware('shield'), which
+        // blocks the browser's display-capture API on them and shows the blank
+        // app-switcher cover while the page is in the background. Add the token
+        // to any route to opt it in, delete it to opt it out — that's the whole
+        // switch (see app/Http/Middleware/CaptureShield.php).
+
+        // Member registry: names, contacts, roles, emails.
+        Route::get('/users', [AdminUserController::class, 'index'])
+            ->name('users.index')
+            ->middleware('shield');
 
         // Admin pre-registration with phone/email uniqueness check + free email activation flow
         Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
         Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
-        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
+        // One member's full profile — same personal data as the registry above.
+        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])
+            ->name('users.edit')
+            ->middleware('shield');
         Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
         Route::post('/users/{user}/resend-invitation', [AdminUserController::class, 'resend'])
             ->name('users.resend');
@@ -615,13 +637,18 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // Real audit trail: every row comes from activity_logs.
         Route::get('/audit', [AdminAuditController::class, 'index'])->name('audit.index');
 
-        // Harvest Reports — admin view of every farmer's harvest reports
-        Route::get('/harvests', [HarvestReportController::class, 'adminIndex'])->name('harvests.index');
+        // Harvest Reports — admin view of every farmer's harvest reports.
+        // (->middleware('shield') = the per-page capture switch; drop the token
+        // from a route to take the page back out of shielded scope.)
+        Route::get('/harvests', [HarvestReportController::class, 'adminIndex'])
+            ->name('harvests.index')
+            ->middleware('shield');
 
         // All Harvest Reports — the full, filterable table, split out from the
         // landing page so that page can surface summary cards instead.
         Route::get('/harvests/reports', [HarvestReportController::class, 'reportsIndex'])
-            ->name('harvests.reports');
+            ->name('harvests.reports')
+            ->middleware('shield');
 
         // AI Harvest Insights — analytics subpage over the harvest_reports table.
         // Declared before the index so the literal path can never be shadowed.

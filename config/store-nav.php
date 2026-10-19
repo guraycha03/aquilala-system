@@ -12,6 +12,11 @@
 |
 | `icon`  -> raw inline SVG (same glyph as the classic top-level menu item)
 | `items` -> ['label', 'routes'] the current request may be on
+|
+| Ordering follows the navigation plan: Dashboard, Store Management,
+| Quotations & Reports, Account Settings. No notification items or badges are
+| shown here — notifications live outside the sidebar. Quotation
+| terminology is preserved intentionally.
 */
 
 return [
@@ -23,29 +28,29 @@ return [
             ['label' => 'Top Products', 'routes' => ['store.dashboard.performance']],
         ],
     ],
-    'shop' => [
-        'label' => 'My Store',
+    'store-management' => [
+        'label' => 'Store Management',
         'icon' => '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
         'items' => [
-            ['label' => 'Storefront', 'routes' => ['store.storefront.index']],
-            ['label' => 'Inventory Management', 'routes' => ['store.inventory.index']],
+            ['label' => 'Product Listings', 'routes' => ['store.storefront.index']],
+            ['label' => 'Inventory', 'routes' => ['store.inventory.index']],
             ['label' => 'Input Formulas', 'routes' => ['store.formulas.index', 'store.formulas.create', 'store.formulas.edit']],
         ],
     ],
-    'demand' => [
-        'label' => 'Demand Insights',
+    'demand-reports' => [
+        'label' => 'Quotations & Reports',
         'icon' => '<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
         'items' => [
-            ['label' => 'Demand Intelligence', 'routes' => ['store.quotations.index', 'store.quotations.show']],
+            ['label' => 'Quotation Demand Trends', 'routes' => ['store.quotations.index', 'store.quotations.show']],
             ['label' => 'AI Assistant', 'routes' => ['store.ai-chat.index', 'store.ai-chat.history.show']],
         ],
     ],
-    'settings' => [
-        'label' => 'Settings',
+    'account-settings' => [
+        'label' => 'Account Settings',
         'icon' => '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
         'items' => [
             ['label' => 'Settings', 'routes' => ['store.settings.index']],
-            ['label' => 'Activity Log', 'routes' => ['store.activity.index']],
+            ['label' => 'Activity History', 'routes' => ['store.activity.index']],
         ],
     ],
 ];

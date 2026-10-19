@@ -69,6 +69,18 @@
           }
         } catch (e) {}
       };
+      // Failsafe for the gate below: if a drain is waiting on script load
+      // events that were already consumed (or lost across a Turbo swap /
+      // tab restore), the queue could stay blocked forever and every page
+      // init would die with it. Force a drain after a short grace period so
+      // the app can never end up permanently unwired.
+      window.__aqDrainFailsafe = function () {
+        clearTimeout(window.__aqDrainTimer);
+        window.__aqDrainTimer = setTimeout(function () {
+          window.__aqDrainTimer = null;
+          window.__aqDrainDC(true);
+        }, 2500);
+      };
       window.__aqDrainDC = function (force) {
         var q = window.__aqDCQueue;
         if (!q.length) return;
@@ -99,6 +111,8 @@
               s.addEventListener('error', settle);
               setTimeout(settle, 1500);
             });
+            // Arm the failsafe so this gate can never stay shut forever.
+            window.__aqDrainFailsafe();
             return;
           }
         }
@@ -118,6 +132,16 @@
   {{-- Display theme: every rule is scoped to [data-theme="dark"], so this file
        costs nothing while the user is in light mode. --}}
   <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=2">
+  {{-- App lockdown: kills text selection, copy/cut, long-press & right-click
+       browser menus, and printing outside form fields — applies to every page
+       and role, so the portal behaves like a native app and long-press is
+       free for the app's own modals. The same file also raises the blank
+       "capture shield" cover on routes carrying the `shield` middleware.
+       ?v=1 busts the service worker's cache-first static cache — bump it on
+       every edit to either file below or installed PWAs keep serving stale
+       bytes (same trick as turbo.min.js?v=2). --}}
+  <link rel="stylesheet" href="{{ asset('css/app-lockdown.css') }}?v=1">
+  <script src="{{ asset('js/app-lockdown.js') }}?v=1" defer></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scrollbar-width: none; -ms-overflow-style: none; }
@@ -137,6 +161,52 @@
       letter-spacing: 0.03em;
     }
     .nav-links li a, .nav-dropdown-btn, .sub-nav-links li a { letter-spacing: 0.02em; }
+
+    /* ── Shared KPI / stat strip ────────────────────────────────────────
+       One responsive grid for every page's top-of-page metric cards so
+       they stay uniform and never stack one-per-line on small screens.
+       Desktop: cards flow across (3–5 up by count). Phones (≤640px): a
+       tidy 2-up grid where each card reshapes compactly, roughly halving
+       the scroll length. Scoped with `body` so it overrides the per-page
+       container rules regardless of source order. */
+    body .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    @media (max-width: 640px) {
+      body .kpi-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      /* Compact card shape so two cards share a row without tall towers */
+      body .kpi-strip > * { min-height: 0; padding: 13px 13px 12px; }
+      body .kpi-strip .kpi-value,
+      body .kpi-strip .stat-value,
+      body .kpi-strip .stat-val,
+      body .kpi-strip .stat-num,
+      body .kpi-strip .uk-value,
+      body .kpi-strip .ak-value,
+      body .kpi-strip .metric-value,
+      body .kpi-strip .fd-kpi-value,
+      body .kpi-strip .v { font-size: 21px; }
+      body .kpi-strip .kpi-label,
+      body .kpi-strip .kpi-title,
+      body .kpi-strip .stat-label,
+      body .kpi-strip .stat-lbl,
+      body .kpi-strip .uk-label,
+      body .kpi-strip .ak-label,
+      body .kpi-strip .metric-label,
+      body .kpi-strip .fd-kpi-label,
+      body .kpi-strip .fd-kpi-tag,
+      body .kpi-strip .k { font-size: 10px; }
+      body .kpi-strip .kpi-icon-chip,
+      body .kpi-strip .stat-icon,
+      body .kpi-strip .metric-icon,
+      body .kpi-strip .fd-kpi-icon { width: 32px; height: 32px; }
+    }
 
     /* Sidebar menu: kill the blue tap highlight and the focus box the browser
        draws when a menu item is tapped. Keyboard users keep a themed outline. */
@@ -703,7 +773,7 @@
     }
   }
 @endphp
-<body data-sidebar-theme="{{ $stActive }}">
+<body data-sidebar-theme="{{ $stActive }}"@if($captureShield ?? false) data-capture-shield @endif>
 
   @php
     // Desktop notification bell: every role gets one, each pointing at its
@@ -961,7 +1031,7 @@
           <li>
             <a href="{{ route('store.quotations.index') }}" class="{{ request()->routeIs('store.quotations.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              Demand Intelligence
+              Quotation Demand Trends
             </a>
           </li>
           <li>
@@ -1253,11 +1323,23 @@
       var open = li.classList.toggle('open');
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
-    document.addEventListener('DOMContentLoaded', function () {
-      document.querySelectorAll('.nav-dropdown-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () { toggleNavDropdown(btn); });
+    // Sidebar dropdowns: ONE delegated listener on <document>, bound once for
+    // the whole session. The old approach attached a listener to every button
+    // through the DOMContentLoaded queue — but those listeners live on the
+    // sidebar's DOM nodes, and Turbo replaces the whole body (and restores
+    // cloned snapshots) whenever the page is swapped or the tab/app is
+    // resumed after being left. When the re-init didn't run, a CLOSED
+    // dropdown could never be opened again, while plain links kept working
+    // because native navigation needs no listener. Delegation resolves the
+    // button at click time, so it works on whatever markup is in the DOM.
+    if (!window.__aqDdDelegate) {
+      window.__aqDdDelegate = true;
+      document.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest('.nav-dropdown-btn') : null;
+        if (!btn) return;
+        toggleNavDropdown(btn);
       });
-    });
+    }
 
     // Climate widget: background fill when the server had no fresh weather to
     // render. The page never waits on the weather API — this runs after paint
@@ -1304,27 +1386,30 @@
       card.classList.toggle('pinned', !pinned);
       card.setAttribute('aria-expanded', String(!pinned));
     }
-    document.addEventListener('DOMContentLoaded', function () {
-      const card = document.getElementById('climate-card');
-      if (!card) return;
-      card.addEventListener('click', function (e) {
+    // Climate widget: same once-only delegation as the dropdowns (see above)
+    // so a replaced/restored sidebar can never end up with dead handlers.
+    if (!window.__aqClimateDelegate) {
+      window.__aqClimateDelegate = true;
+      document.addEventListener('click', function (e) {
+        var card = e.target && e.target.closest ? e.target.closest('#climate-card') : null;
+        if (!card) return;
         e.stopPropagation();
         toggleClimate();
       });
-      card.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') {
+      document.addEventListener('keydown', function (e) {
+        var card = document.getElementById('climate-card');
+        if (!card) return;
+        if ((e.key === 'Enter' || e.key === ' ') && document.activeElement === card) {
           e.preventDefault();
           toggleClimate();
         }
-      });
-      // Close the pinned card when pressing Escape
-      document.addEventListener('keydown', function (e) {
+        // Close the pinned card when pressing Escape
         if (e.key === 'Escape' && card.classList.contains('pinned')) {
           card.classList.remove('pinned');
           card.setAttribute('aria-expanded', 'false');
         }
       });
-    });
+    }
 
     // Desktop notification bell — hide on scroll down, show on scroll up (desktop only)
     document.addEventListener('DOMContentLoaded', function () {
@@ -1344,6 +1429,56 @@
         lastY = y;
       }, { passive: true });
     });
+
+    // ── Resilience guards (registered ONCE per session) ──────────────────
+    // 1) A Turbo visit whose request never settles (server asleep, connection
+    //    dropped while the app was in the background) leaves the shell stuck:
+    //    clicks look dead until a manual refresh. Watch every visit and do
+    //    the refresh automatically if it does not finish in time.
+    // 2) When the session expires while idle, Turbo would render the login
+    //    body INSIDE this shell; do a clean full-page redirect instead.
+    // 3) Returning from another app/tab can restore a stale modal lock
+    //    (overlay hidden but body still scroll-locked) — clear it.
+    if (!window.__aqNavGuard) {
+      window.__aqNavGuard = true;
+      var aqNavTimer = null;
+      var aqArmNavTimer = function () {
+        clearTimeout(aqNavTimer);
+        aqNavTimer = setTimeout(function () {
+          aqNavTimer = null;
+          window.location.reload();
+        }, 20000);
+      };
+      var aqClearNavTimer = function () { clearTimeout(aqNavTimer); aqNavTimer = null; };
+      document.addEventListener('turbo:click', aqArmNavTimer);
+      document.addEventListener('turbo:before-fetch-request', aqArmNavTimer);
+      document.addEventListener('turbo:visit', aqClearNavTimer);
+      document.addEventListener('turbo:render', aqClearNavTimer);
+      document.addEventListener('turbo:load', aqClearNavTimer);
+      document.addEventListener('turbo:fetch-request-error', function () {
+        aqClearNavTimer();
+        window.location.reload();
+      });
+      // Session expired mid-idle: send the user to the real login page.
+      document.addEventListener('turbo:before-fetch-response', function (e) {
+        try {
+          var resp = e.detail && e.detail.fetchResponse && e.detail.fetchResponse.response;
+          if (!resp || !resp.redirected) return;
+          var loc = new URL(resp.url, location.href);
+          if (loc.pathname === '/login') {
+            aqClearNavTimer();
+            window.location.href = loc.pathname + loc.search;
+          }
+        } catch (err) { /* ignore */ }
+      });
+      // Stale locks when the app is resumed.
+      window.addEventListener('pageshow', function () {
+        try {
+          var ov = document.getElementById('aqnOverlay');
+          if (!ov || !ov.classList.contains('open')) document.body.classList.remove('aqn-lock');
+        } catch (err) { /* ignore */ }
+      });
+    }
   </script>
 
   <style>

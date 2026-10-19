@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Audit Logs')
+@section('title', 'Audit Log')
 
 @section('content')
 
@@ -96,7 +96,7 @@
     <div class="audit-content">
       <div class="header-row">
         <div>
-          <h1>System Audit Logs</h1>
+          <h1>Audit Log</h1>
           <p>Every recorded action across the system — sign-ins, account changes, product CRUD, quotations and moderation — straight from the activity trail.</p>
         </div>
         <div class="header-actions">
@@ -108,7 +108,7 @@
       </div>
 
       <!-- Summary KPIs (computed from activity_logs) -->
-      <div class="audit-kpis">
+      <div class="audit-kpis kpi-strip">
         <div class="audit-kpi">
           <div class="ak-label">Total Events</div>
           <div class="ak-value">{{ number_format($kpis['total']) }}</div>

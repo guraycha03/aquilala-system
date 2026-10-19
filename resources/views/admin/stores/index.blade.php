@@ -80,7 +80,7 @@
 
       <div class="header-row">
         <div>
-          <h1>Local Supply Stores</h1>
+          <h1>Stores</h1>
           <p>Directory of accredited agricultural supply stores and their assigned store owners.</p>
         </div>
         <div class="header-actions">
@@ -91,7 +91,7 @@
         </div>
       </div>
 
-      <div class="stores-kpis">
+      <div class="stores-kpis kpi-strip">
         <div class="stores-kpi">
           <div class="kpi-label">Total Stores</div>
           <div class="kpi-value">{{ $totals['stores'] }}</div>
@@ -170,7 +170,7 @@
                       </div>
                       <div style="min-width:0;">
                         <div class="u-name">{{ $store->store_name ?: $store->name }}</div>
-                        <div class="u-mail">Operated by {{ $store->name }} · {{ $store->email }}</div>
+                        <div class="u-mail">Managed by {{ $store->name }} · {{ $store->email }}</div>
                       </div>
                     </div>
                   </td>

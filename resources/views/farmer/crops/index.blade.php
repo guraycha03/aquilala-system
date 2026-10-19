@@ -313,7 +313,7 @@
 </section>
 
 <!-- ── Stats ── -->
-<div class="stats-strip">
+<div class="stats-strip kpi-strip">
     <div class="stat-pill">
         <div class="stat-icon" style="background: #dcfce7; color: #16a34a;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>

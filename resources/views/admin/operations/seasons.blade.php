@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Seasons')
+@section('title', 'Planting Seasons')
 
 @section('content')
 

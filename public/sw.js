@@ -14,10 +14,27 @@
  * Caches are versioned; the page cache is also cleared on logout by
  * pwa-register.js so one user's screens are never left behind for the next.
  */
-const VERSION = 'aquilala-v2';
+const VERSION = 'aquilala-v3';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
 const PAGE_CACHE_LIMIT = 60;
+
+// A fetch with no timeout is a hang: if the device sleeps / the connection
+// drops while the app sits idle, the pending navigation request can stay
+// unresolved forever and the whole page looks frozen until a manual refresh.
+// Bound every network wait so the strategies below can always fall back.
+const PAGE_TIMEOUT_MS = 12000;
+const STATIC_TIMEOUT_MS = 12000;
+
+function fetchWithTimeout(request, timeoutMs) {
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('network-timeout')), timeoutMs);
+        fetch(request).then(
+            (res) => { clearTimeout(timer); resolve(res); },
+            (err) => { clearTimeout(timer); reject(err); }
+        );
+    });
+}
 
 const PRECACHE = [
     '/offline.html',
@@ -83,7 +100,7 @@ self.addEventListener('fetch', (event) => {
 
 async function pageStrategy(request, isNavigate) {
     try {
-        const fresh = await fetch(request);
+        const fresh = await fetchWithTimeout(request, PAGE_TIMEOUT_MS);
         const contentType = (fresh.headers.get('content-type') || '').toLowerCase();
 
         const cacheable =
@@ -124,7 +141,7 @@ async function staticStrategy(request) {
     if (cached) return cached;
 
     try {
-        const fresh = await fetch(request);
+        const fresh = await fetchWithTimeout(request, STATIC_TIMEOUT_MS);
         if (fresh && fresh.status === 200) {
             const cache = await caches.open(STATIC_CACHE);
             await cache.put(request, fresh.clone());

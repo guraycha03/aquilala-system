@@ -208,7 +208,7 @@
         </div>
       </div>
 
-      <section class="app-kpis">
+      <section class="app-kpis kpi-strip">
         <div class="app-kpi">
           <div class="ak-label">Needs Review</div>
           <div class="ak-value" id="kpiPending">{{ $pendingApplications->count() }}</div>

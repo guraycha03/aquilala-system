@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\SeasonHelper;
+use App\Models\AssociationEvent;
 use App\Models\Category;
 use App\Models\HarvestReport;
 use App\Models\Product;
@@ -198,6 +199,11 @@ class AuthController extends Controller
         $currentSeasonHarvests = HarvestReport::whereRaw('LOWER(season) LIKE ?', [strtolower($currentSeason).'%'])->count();
         $pendingCount = User::where('status', User::STATUS_PENDING)->count();
 
+        // The one event the dashboard should point at: the nearest entry on
+        // the association calendar that hasn't happened yet (scopeUpcoming
+        // already orders by date, then start time).
+        $upcomingEvent = AssociationEvent::upcoming()->first();
+
         // Harvest report activity over the past 14 days
         $harvestCountsByDate = DB::table('harvest_reports')
             ->selectRaw('DATE(created_at) as date, COUNT(*) as total')
@@ -351,6 +357,7 @@ class AuthController extends Controller
             'currentSeasonLabel',
             'currentSeasonHarvests',
             'pendingCount',
+            'upcomingEvent',
             'harvestTrend',
             'harvestGraphYear',
             'harvestGraphMonth',

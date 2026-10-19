@@ -262,7 +262,7 @@
     <div style="font-weight: 700; font-size: 14px; color: #166534; margin-bottom: 4px;">This is a cost quotation, not a purchase order</div>
     <p style="margin: 0; font-size: 13px; color: #15803d; line-height: 1.6;">
       Prices reflect store prices at the time of generation. Contact the store directly to confirm availability and totals.
-      Store owners can see this quotation as demand intelligence.
+      Store owners can see which products are in demand from this quotation.
     </p>
   </div>
 </div>

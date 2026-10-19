@@ -199,7 +199,7 @@
 </div>
 
 <!-- System-wide metrics -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px;">
+<div class="kpi-strip">
   <div class="stat-card">
     <div>
       <div class="stat-value">{{ $stats['farmers'] }}</div>

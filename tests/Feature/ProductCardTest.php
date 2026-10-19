@@ -125,11 +125,18 @@ class ProductCardTest extends TestCase
         $this->assertStringContainsString('pc-season', $html);
     }
 
-    public function test_the_card_never_shows_stock_brand_or_sku(): void
+    public function test_the_card_never_shows_stock_or_sku(): void
     {
-        // Stock, remaining quantity and brand are stock-control data. They
-        // belong on the product detail page, so give the card a product where
-        // leaking any of them would be obvious.
+        // Stock and remaining quantity are stock-control data. They belong on
+        // the product detail page, so give the card a product where leaking
+        // them would be obvious.
+        //
+        // The brand is deliberately NOT hidden any more: it is the small light
+        // eyebrow above the product name (TradeWinds, AgriVet…), added when the
+        // card was restructured into brand / name / divider / unit caption /
+        // price. It identifies the maker, which is catalog copy a shopper reads
+        // while comparing — unlike stock and SKU, which describe one shop's
+        // shelf. Pinned below so a future change cannot quietly remove it.
         $this->product->update([
             'brand'          => 'Philphos',
             'stock_quantity' => 1,
@@ -142,7 +149,7 @@ class ProductCardTest extends TestCase
             'product' => $this->product->fresh(),
         ]);
 
-        $this->assertStringNotContainsString('Philphos', $html, 'the brand must not appear on the card');
+        $this->assertStringContainsString('Philphos', $html, 'the brand eyebrow must appear above the product name');
         $this->assertStringNotContainsString('In Stock', $html, 'the stock badge must not appear on the card');
         $this->assertStringNotContainsString('Low Stock', $html, 'the stock badge must not appear on the card');
         // Target the rendered copy, not the bare word "left": the component's
@@ -185,10 +192,13 @@ class ProductCardTest extends TestCase
 
         // Every icon on the card goes through <i data-lucide="..."> so the
         // official open-source glyphs render, not hand-rolled polygons.
+        // Wet season is a raindrop (was an umbrella: it filled in at 14px
+        // and read as weather-generic rather than as the season itself).
         $html = $card('wet');
         $this->assertStringContainsString('data-lucide="pencil"', $html);
         $this->assertStringContainsString('data-lucide="trash-2"', $html);
-        $this->assertStringContainsString('data-lucide="umbrella"', $html);
+        $this->assertStringContainsString('data-lucide="droplet"', $html);
+        $this->assertStringNotContainsString('data-lucide="umbrella"', $html, 'the umbrella glyph was retired for wet season');
         $this->assertStringContainsString('data-lucide="image"', $html);
         $this->assertStringContainsString('data-lucide="sun"', $card('dry'));
         $this->assertStringContainsString('data-lucide="refresh-cw"', $card('all'));

@@ -11,21 +11,28 @@
 ])
 
 @php
-    // Detect numeric value for count-up animation
-    $cleanValue = preg_replace('/[^0-9.]/', '', (string) $value);
-    $numeric = $cleanValue !== '' && is_numeric($cleanValue);
-    $decimals = 0;
-    if ($numeric && str_contains($cleanValue, '.')) {
-        $decimals = strlen(strrchr($cleanValue, '.') ?: '0') - 1;
-    }
-    $hasDecimals = $decimals > 0;
-    $countTarget = $numeric ? (float) $cleanValue : null;
+    // The count-up only runs when the value is a plain figure wearing
+    // decoration it knows how to put back: "₱1,234", "403.71 MT", "87%".
+    // Anything else — an event date ("Oct 25, 2026"), a title that happens
+    // to contain a digit — is rendered exactly as passed. Stripping every
+    // non-digit used to turn that date into a counted-up "252,026".
+    $raw = trim((string) $value);
     $prefix = '';
     $suffix = '';
-    if ($numeric) {
-        $raw = trim((string) $value);
-        if (str_starts_with($raw, '₱')) $prefix = '₱';
-        if (str_ends_with($raw, '%')) $suffix = '%';
+    $decimals = 0;
+    $countTarget = null;
+
+    if (preg_match('/^(₱?)\s*([0-9][0-9,]*(?:\.[0-9]+)?)\s*([A-Za-z%]{1,4})?$/u', $raw, $parts)) {
+        $number = str_replace(',', '', $parts[2]);
+
+        if (is_numeric($number)) {
+            $prefix = $parts[1];
+            $suffix = $parts[3] ?? '';
+            $countTarget = (float) $number;
+            $decimals = str_contains($parts[2], '.')
+                ? strlen(strrchr($parts[2], '.')) - 1
+                : 0;
+        }
     }
 @endphp
 
@@ -36,27 +43,24 @@
 @endif
 
     <div class="kpi-top">
-        <h3 class="kpi-title">{{ $title }}</h3>
         @isset($icon)
             <div class="kpi-icon-chip">{{ $icon }}</div>
         @endisset
+        {{-- The farmer dashboard's tag slot: a short, calm pill. Colour
+             carried by the wording ("reorder soon"), not by a red badge. --}}
+        @if($trendValue !== null)
+            <span class="kpi-trend-pill">{{ $trendValue }}</span>
+        @endif
     </div>
 
     <div class="kpi-value" data-count-target="{{ $countTarget ?? '' }}" data-count-decimals="{{ $decimals }}" data-count-prefix="{{ $prefix }}" data-count-suffix="{{ $suffix }}">
         {{ $value }}
     </div>
 
-    @if($trendValue !== null || $trendLabel)
-        <div class="kpi-foot">
-            @if($trendValue !== null)
-                <span class="kpi-trend-pill">
-                    {{ $trendValue }}
-                </span>
-            @endif
-            @if($trendLabel)
-                <span class="kpi-trend-label">{{ $trendLabel }}</span>
-            @endif
-        </div>
+    <h3 class="kpi-title">{{ $title }}</h3>
+
+    @if($trendLabel)
+        <p class="kpi-desc">{{ $trendLabel }}</p>
     @endif
 @if($link)
     </a>
@@ -65,49 +69,44 @@
 @endif
 
 <style>
+    /* The Farmer dashboard's KPI card, shared by every role's dashboard:
+       flat white, sage icon tile, one calm tag, then the figure, the label
+       and a one-line description. */
     .kpi-card {
         --accent: #16a34a;
-        --chip-bg: rgba(22, 163, 74, 0.10);
-        --chip-color: var(--accent);
-        position: relative;
+        --chip-bg: #EDF1E9;
+        --chip-color: #648268;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        min-height: 150px;
-        padding: 22px 24px 20px;
-        background: linear-gradient(160deg, rgba(255,255,255,0.78), rgba(255,255,255,0.42));
-        backdrop-filter: blur(18px) saturate(160%);
-        -webkit-backdrop-filter: blur(18px) saturate(160%);
-        border: 1px solid rgba(255,255,255,0.65);
         border-radius: 16px;
-        box-shadow: 0 8px 28px rgba(31, 45, 61, 0.10), inset 0 1px 0 rgba(255,255,255,0.7);
+        border: 1px solid #E0E5DB;
+        background: #fff;
+        padding: 20px;
+        box-sizing: border-box;
+        color: inherit;
         text-decoration: none;
-        transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        transition: border-color .15s, box-shadow .15s;
     }
     .kpi-card:hover {
-        background: linear-gradient(160deg, rgba(255,255,255,0.94), rgba(255,255,255,0.62));
-        border-color: rgba(255,255,255,0.92);
-        box-shadow: 0 10px 30px rgba(31, 45, 61, 0.14), inset 0 1px 0 rgba(255,255,255,0.9);
+        border-color: #C8D5C5;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     }
     .kpi-top {
         display: flex;
+        align-items: flex-start;
         justify-content: space-between;
-        align-items: center;
         gap: 12px;
-        margin-bottom: 18px;
     }
     .kpi-title {
-        margin: 0;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.09em;
-        color: #64748b;
+        margin: 4px 0 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #344B38;
     }
     .kpi-icon-chip {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -115,41 +114,52 @@
         background: var(--chip-bg);
         color: var(--chip-color);
     }
-    .kpi-icon-chip svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .kpi-icon-chip svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .kpi-icon-chip img { max-width: 22px; max-height: 22px; object-fit: contain; }
     .kpi-value {
-        font-size: 32px;
-        font-weight: 800;
-        color: #0f172a;
+        margin-top: 20px;
+        font-size: 30px;
+        font-weight: 600;
+        color: #344B38;
         line-height: 1.1;
-        letter-spacing: -0.03em;
+        letter-spacing: -0.025em;
         display: inline-flex;
         align-items: baseline;
     }
-    .kpi-foot {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 18px;
+    .kpi-desc {
+        margin: 4px 0 0;
+        font-size: 12px;
+        line-height: 1.35;
+        color: #647263;
     }
+    /* Same pill the farmer cards use. The wording carries the meaning
+       ("reorder soon"), so no red badge competes with it. */
     .kpi-trend-pill {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        padding: 4px 10px;
         border-radius: 999px;
+        background: #F3F5F0;
+        padding: 4px 10px;
         font-size: 12px;
-        font-weight: 700;
-        color: var(--trend-color);
+        font-weight: 500;
+        color: #71816F;
+        white-space: nowrap;
     }
-    .kpi-trend-up .kpi-trend-pill { background: rgba(22, 163, 74, 0.10); }
-    .kpi-trend-down .kpi-trend-pill { background: rgba(220, 38, 38, 0.10); }
-    .kpi-trend-neutral .kpi-trend-pill { background: rgba(100, 116, 139, 0.10); }
     .kpi-trend-pill svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-    .kpi-trend-label { font-size: 12px; font-weight: 500; color: #94a3b8; }
-    .kpi-trend-up { --trend-color: #16a34a; }
-    .kpi-trend-down { --trend-color: #dc2626; }
-    .kpi-trend-neutral { --trend-color: #64748b; }
+
+    @media (max-width: 640px) {
+        .kpi-value { margin-top: 12px; }
+        .kpi-trend-pill { padding: 3px 8px; }
+    }
+
+    [data-theme="dark"] .kpi-card { background: #111827; border-color: #334155; }
+    [data-theme="dark"] .kpi-card:hover { border-color: #4ade80; }
+    [data-theme="dark"] .kpi-icon-chip { background: #16301f; color: #6ee7a0; }
+    [data-theme="dark"] .kpi-trend-pill { background: #1f2937; color: #9fb3a6; }
+    [data-theme="dark"] .kpi-value { color: #d6f5e3; }
+    [data-theme="dark"] .kpi-title { color: #d6f5e3; }
+    [data-theme="dark"] .kpi-desc { color: #9fb3a6; }
 
     @keyframes kpiPop { 0% { transform: scale(1); } 45% { transform: scale(1.08); } 100% { transform: scale(1); } }
     @keyframes kpiSuffixBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
@@ -170,24 +180,15 @@
 
         function applyAccents() {
             document.querySelectorAll('.kpi-card').forEach(function (card) {
-                var accent = card.dataset.accent;
-                if (accent) {
-                    card.style.setProperty('--accent', accent);
-                    if (!card.dataset.chipBg) {
-                        card.style.setProperty('--chip-bg', hexToRgba(accent, 0.10));
-                    }
-                    if (!card.dataset.chipColor) {
-                        card.style.setProperty('--chip-color', accent);
-                    }
+                // The icon tile is sage on every dashboard. A card only tints
+                // it when it asks for a colour explicitly, so one loud accent
+                // can't make a dashboard drift from the shared look.
+                if (card.dataset.accent) {
+                    card.style.setProperty('--accent', card.dataset.accent);
                 }
                 if (card.dataset.chipBg) card.style.setProperty('--chip-bg', card.dataset.chipBg);
                 if (card.dataset.chipColor) card.style.setProperty('--chip-color', card.dataset.chipColor);
             });
-        }
-        function hexToRgba(hex, alpha) {
-            var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
-            if (!m) return 'rgba(22, 163, 74, ' + alpha + ')';
-            return 'rgba(' + parseInt(m[1], 16) + ', ' + parseInt(m[2], 16) + ', ' + parseInt(m[3], 16) + ', ' + alpha + ')';
         }
         applyAccents();
         document.addEventListener('DOMContentLoaded', applyAccents);

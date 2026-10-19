@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'New Product Profile')
+@section('title', 'Add Product')
 
 @section('content')
 
@@ -266,7 +266,7 @@
 <div class="form-container">
     <!-- Header -->
     <div class="page-header">
-        <h1 class="page-title">Insert New Product Profile</h1>
+        <h1 class="page-title">Add Product</h1>
         <p class="page-subtitle">Add a new agricultural input product to your marketplace catalog for farmers to browse and quote.</p>
     </div>
 

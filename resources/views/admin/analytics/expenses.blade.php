@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Expenses')
+@section('title', 'Farming Cost Reports')
 
 @section('content')
 
@@ -62,12 +62,12 @@
     <div class="exp-content">
 
       <div class="exp-head">
-        <h1>Expense Analysis</h1>
+        <h1>Farming Cost Reports</h1>
         <p>Planned budget versus actual farm expenditures across harvest reports.</p>
       </div>
 
 
-      <div class="exp-kpis">
+      <div class="exp-kpis kpi-strip">
         <div class="exp-kpi">
           <div class="kpi-label">Planned Budget</div>
           <div class="kpi-value">{{ $money($totals['planned']) }}</div>

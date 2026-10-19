@@ -1,29 +1,6 @@
+                Icon color	     Chip background
 
-ssh root@72.62.246.107
+Light mode	    #648268	    #EDF1E9
 
-
-the container harvest report from admin/ dashboard overview page has a very fade, blurry like covered in overlay bar/chart, the inside of the container is like covered in a fuzzy overlay icant see the graph well, please fix it, could it be from the empty state (placeholder style)
-
-
-
-
-Can you update or make the setup of our system ready to be a Progressive WEb application, we're its kinda like an app online and can be donwloaeded and access fromd evice homepage. do not remove anything, or change feature of the system, you just have to make the system a wpa so its can act like an app (webapp)
-
-
-
-
-is KVM 1 plan suitable for our system and support all our system features, like ocr, reading csv and excel file, llm api, mysql, resend for OTP, etc.
-
-https://www.hostinger.com/ph/vps-hosting?hl=en-PH
-
-1 vCPU core
-4 GB RAM
-50 GB NVMe disk space
-4 TB bandwidth
-
-
-
-
-
-
+Dark mode	    #6ee7a0	    #16301f
 

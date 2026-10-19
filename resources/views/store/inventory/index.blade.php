@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Inventory Management')
+@section('title', 'Inventory')
 
 @section('content')
 @php
@@ -32,6 +32,15 @@
   }
   .btn-add:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(20,83,45,0.3); }
   .btn-add svg { width: 16px; height: 16px; stroke: currentColor; }
+  .inv-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .btn-ghost-inv {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; color: #334155; padding: 11px 18px; border-radius: 10px;
+    font-size: 14px; font-weight: 600; text-decoration: none;
+    border: 1px solid #e2e8f0; transition: all .2s; cursor: pointer;
+  }
+  .btn-ghost-inv:hover { background: #f8fafc; border-color: #cbd5e1; transform: translateY(-1px); }
+  .btn-ghost-inv svg { width: 16px; height: 16px; stroke: currentColor; }
 
   /* Tabs */
   .inv-tabs {
@@ -223,13 +232,26 @@
 
 <div class="inv-header">
   <div>
-    <h1>Crop Input Stock Management</h1>
+    <h1>Inventory</h1>
     <p>Monitor warehouse volumes, adjust alert boundaries, and track item statuses in real time.</p>
   </div>
-  <a href="{{ route('store.products.create') }}" class="btn-add">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Register Stock Batch
-  </a>
+  <div class="inv-actions">
+    <a href="{{ route('store.products.trash') }}" class="btn-ghost-inv" title="Archived products you can restore later">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1"></rect><path d="M5 8v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"></path></svg>
+      Archive
+      @if(($archivedCount ?? 0) > 0)
+        <span style="background:#fee2e2;color:#b91c1c;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;">{{ $archivedCount }}</span>
+      @endif
+    </a>
+    <a href="{{ route('store.products.import') }}" class="btn-ghost-inv">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>
+      Import
+    </a>
+    <a href="{{ route('store.products.create') }}" class="btn-add">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Product
+    </a>
+  </div>
 </div>
 
 @if (session('success'))
@@ -252,7 +274,7 @@
 
 <div class="tab-pane{{ $activeTab === 'overview' ? ' active' : '' }}" id="tab-overview">
 <!-- Metrics -->
-<div class="metrics-grid">
+<div class="metrics-grid kpi-strip">
   <div class="metric-card">
     <div class="metric-top">
       <div class="metric-icon" style="background:#e0f2fe;">

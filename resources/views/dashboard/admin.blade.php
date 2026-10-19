@@ -11,30 +11,13 @@
 @endphp
 
 <style>
-  .dash-page { position: relative; }
-  .dash-page::before,
-  .dash-page::after {
-    content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
-  }
-  .dash-page::before { width: 360px; height: 360px; background: rgba(16,185,129,0.18); top: -90px; right: -90px; }
-  .dash-page::after { width: 300px; height: 300px; background: rgba(59,130,246,0.15); bottom: -70px; left: -70px; }
-  .dash-content { position: relative; z-index: 1; }
+  /* The page frame, welcome header and quick-action panel now come from
+     components/dash-top.blade.php — shared with the Farmer and Store Owner
+     dashboards — and the KPI card from components/kpi-card.blade.php.
+     Only this page's own queue, panels and chart are styled here. */
 
   .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1); }
   .reveal.in { opacity: 1; transform: translateY(0); }
-
-  .hero-band {
-    background: rgb(241, 250, 214);
-    border-radius: 22px; padding: 30px 32px; color: #143d23; position: relative; overflow: hidden;
-    box-shadow: 0 4px 16px rgba(20,61,35,0.10); margin-bottom: 26px;
-  }
-  .hero-band::before { content: ""; position: absolute; top: -110px; right: -60px; width: 280px; height: 280px; border-radius: 50%; background: rgba(16,185,129,0.15); }
-  .hero-band::after { content: ""; position: absolute; bottom: -90px; left: 25%; width: 200px; height: 200px; border-radius: 50%; background: rgba(59,130,246,0.10); }
-  .hero-inner { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; }
-  .hero-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #166534; margin-bottom: 6px; }
-  .hero-title { font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.01em; color: #14532d; }
-  .hero-sub { font-size: 13px; color: #40632d; margin: 6px 0 0 0; }
-  .hero-sub strong { color: #14532d; }
 
   /* Pending action queue */
   .queue-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; padding: 4px 20px 20px 20px; }
@@ -53,17 +36,6 @@
   .queue-arrow { width: 16px; height: 16px; stroke: #94a3b8; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
   .queue-empty { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #40632d; font-weight: 600; }
   .queue-empty svg { width: 16px; height: 16px; stroke: #16a34a; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-
-  .btn-hero {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: #ffffff; border: 1px solid rgba(20,61,35,0.10);
-    color: #14532d; padding: 11px 20px; border-radius: 12px; font-size: 13px; font-weight: 700;
-    text-decoration: none; transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(20,61,35,0.08);
-  }
-  .btn-hero:hover { background: #f0fdf4; transform: translateY(-1px); }
-  .btn-hero svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-  .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
   .dash-panel {
     background: rgba(255,255,255,0.84); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
@@ -175,54 +147,150 @@
   @media (min-width: 981px) {
   }
 
+  /* The Total IA Members chip carries a pre-coloured 512px raster
+     (public/images/farmer-light.png, farmer-dark.png), so it needs no
+     masking — each file already ships in its theme's chip colour. Only the
+     sizing is set here. It sits at 26px rather than the 20px the stroked
+     SVG chips use: at the same box size the raster's strokes land around
+     1.2px, well under the SVGs' 2px stroke-width, so the glyph read
+     noticeably smaller and lighter than its neighbours. Sizing up evens the
+     visual weight without touching the shared component rule. The dark theme
+     swaps the file outright via content:, the same technique the sidebar
+     nav icons use. */
+  .kpi-icon-chip .kpi-icon-farmer {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    /* The pitchfork-free replacement kept the old 512px canvas, so the
+       farmer's ink now ends around x=442 and the glyph sits ~6% left of the
+       canvas centre — visible as a left-leaning icon in the chip. Shifting
+       it back re-centres it without re-exporting the PNG. */
+    transform: translateX(6%);
+  }
+  [data-theme="dark"] .kpi-icon-chip .kpi-icon-farmer {
+    content: url('{{ asset("images/farmer-dark.png") }}?v={{ filemtime(public_path("images/farmer-dark.png")) }}');
+  }
+
   @media (max-width: 980px) {
     .dash-grid, .dash-grid.equal { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 768px) {
-    .hero-band { padding: 22px; }
-    .hero-title { font-size: 21px; }
+    .dash-grid, .dash-grid.equal { grid-template-columns: 1fr; }
   }
 </style>
 
-<div class="dash-page">
-  <div class="dash-content">
+<div class="fd-page">
 
+    {{-- 1 & 2. Welcome header + quick actions — shared with every dashboard --}}
+    <x-dash-top
+        eyebrow="Aquilala IA Management Portal"
+        :title="$greeting . ', ' . $user->name"
+        :subtitle="'Association overview for <strong>' . $now->format('l, F j, Y') . '</strong> &middot; currently in the <strong>' . $currentSeasonLabel . '</strong>.'"
+    >
+        <x-slot:panelIcon>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+        </x-slot:panelIcon>
 
-    <!-- 1. HERO -->
-    <section class="hero-band reveal in">
-      <div class="hero-inner">
-        <div>
-          <div class="hero-eyebrow">Aquilala IA Management Portal</div>
-          <h1 class="hero-title"><span data-greeting>{{ $greeting }}</span>, {{ $user->name }}</h1>
-          <p class="hero-sub">Association overview for <strong>{{ $now->format('l, F j, Y') }}</strong> &middot; currently in the <strong>{{ $currentSeasonLabel }}</strong>.</p>
-        </div>
-        <div class="hero-actions">
-          <a href="{{ route('admin.users.index') }}" class="btn-hero">
-            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Manage Users
-          </a>
-          <a href="{{ route('admin.approvals.index') }}" class="btn-hero">
-            <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            Approvals
-          </a>
-        </div>
-      </div>
-    </section>
+        <x-slot:panelHeading>Welcome to the management portal.</x-slot:panelHeading>
+        <x-slot:panelText>Approvals and member records are one tap away.</x-slot:panelText>
 
-    <!-- 2. KPI CARDS -->
-    <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:22px;">
-      <x-kpi-card title="Total IA Members" value="214" trendLabel="Official farmer registry" accent="#16a34a" link="{{ route('admin.users.index') }}">
-        <x-slot:icon><img src="{{ asset('images/farmer.png') }}" alt="Farmer" width="26" height="26" style="object-fit:contain;"></x-slot:icon>
+        {{-- Quick actions, shortest label first — same rule as the other
+             dashboards, so the buttons scan the same way. --}}
+        <x-slot:actions>
+            <a href="{{ route('admin.approvals.index') }}" class="fd-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <span>Approvals</span>
+            </a>
+
+            <a href="{{ route('admin.users.index') }}" class="fd-action">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <span>Manage Users</span>
+            </a>
+        </x-slot:actions>
+    </x-dash-top>
+
+    <!-- 2. KPI CARDS
+         Four cards, one question each: who is in the association, what have
+         they submitted, how much that adds up to in the field, and what is
+         next on the calendar. -->
+    @php
+        // "Upcoming Event" reads the nearest future calendar entry in the
+        // same words the calendar page uses. Year only rides along when the
+        // event lands in a different year than today. The card stays an
+        // overview — big date, card title, and the event's category as the
+        // bottom line — so the full title and time are deliberately not
+        // built here.
+        $nextEventDate = $upcomingEvent
+            ? $upcomingEvent->event_date->format(
+                $upcomingEvent->event_date->isSameYear(now()) ? 'M j' : 'M j, Y'
+            )
+            : null;
+        $nextEventType = $upcomingEvent?->type_label;
+    @endphp
+    <section class="kpi-strip">
+      {{-- Who is in the association --}}
+      <x-kpi-card title="Total IA Members" value="{{ $farmersCount }}" trendLabel="Official farmer registry" accent="#16a34a" link="{{ route('admin.users.index') }}">
+        {{-- Local copy of the Icons8 farmer glyph (from message_to_opencode.txt),
+             vendored to public/images so the card doesn't depend on a remote
+             host. The source PNG is solid black, which fought the sage chips,
+             so it is painted through a CSS mask instead of drawn directly:
+             the mask carries the shape and currentColor carries the colour,
+             exactly like the stroked SVG chips beside it. --}}
+        {{-- Local 512px farmer raster (public/images), pre-coloured per theme:
+             farmer-light.png in light mode, farmer-dark.png in dark. The dark
+             swap is a content: override in the <style> block above, so no JS
+             is needed. Sized to 26px — a touch above the stroked SVG chips'
+             20px — so the raster's thinner strokes carry the same visual
+             weight as the icons beside it.
+
+             Both URLs carry ?v=<mtime> on purpose. public/sw.js serves .png
+             cache-first and never revalidates, so a fixed filename meant a
+             swapped-in file kept the old bytes cached on every device that had
+             already seen it. Busting off the file's own mtime changes the URL
+             the moment the PNG changes, which defeats both the service worker
+             cache and the browser HTTP cache with no manual clearing. --}}
+        <x-slot:icon><img class="kpi-icon-farmer" src="{{ asset('images/farmer-light.png') }}?v={{ filemtime(public_path('images/farmer-light.png')) }}" alt="" width="26" height="26" aria-hidden="true"></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Partner Stores" value="{{ $storeOwnersCount }}" trendLabel="Local supply stores" accent="#d97706" link="{{ route('admin.stores.index') }}">
-        <x-slot:icon><img src="{{ asset('images/store.png') }}" alt="Store" width="22" height="22" style="object-fit:contain;"></x-slot:icon>
+      {{-- Everything farmers have submitted. The captions on these cards
+           stay period-neutral on purpose — a long-press modal will soon set
+           the scope (all time / yearly / monthly), so no fixed period word
+           is baked into the visible text. --}}
+      <x-kpi-card title="Harvest Reports" value="{{ number_format($totalHarvests) }}" trendLabel="Farmer submissions" accent="#2563eb" link="{{ route('admin.harvests.index') }}">
+        <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Active Store Items" value="{{ $activeProducts }}" trendLabel="Items listed in store catalogs" accent="#7c3aed" link="{{ route('admin.operations.catalog') }}">
-        <x-slot:icon><img src="{{ asset('images/product.png') }}" alt="Product" width="22" height="22" style="object-fit:contain;"></x-slot:icon>
+      {{-- Production reported, summed across every report. Icon is the official
+           Lucide "file-chart-column" glyph: the layout's createIcons() pass
+           swaps this <i data-lucide> placeholder for the real SVG. (Lucide has
+           no "file-chat-column" — no *-chat-* icon at all — and this is the
+           file-with-a-column-chart glyph that name was reaching for.) --}}
+      <x-kpi-card title="Reported Total Yield" value="{{ number_format((float) $totalHarvestYield, 2) }} MT" trendLabel="Across harvest reports" accent="#d97706" link="{{ route('admin.harvests.reports') }}">
+        <x-slot:icon><i data-lucide="file-chart-column" width="18" height="18" aria-hidden="true"></i></x-slot:icon>
       </x-kpi-card>
-      <x-kpi-card title="Seasonal Harvest Logs" value="{{ $currentSeasonHarvests }}" trendLabel="{{ $currentSeasonLabel }} yield records" accent="#2563eb" link="{{ route('admin.harvests.index') }}">
-        <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></x-slot:icon>
+      {{-- What is next on the association calendar. Overview only: the big
+           date, the card title, and the event category as the bottom line.
+           No top-right pill, no long title/time text. --}}
+      <x-kpi-card title="Upcoming Event"
+        :value="$nextEventDate ?? 'None yet'"
+        :trendLabel="$nextEventType"
+        accent="#0284c7" link="{{ route('admin.calendar.index') }}">
+        <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></x-slot:icon>
       </x-kpi-card>
     </section>
 
@@ -284,7 +352,6 @@
   </div>
 </section>
 
-  </div>
 </div>
 
 <script src="{{ asset('js/chart.umd.min.js') }}"></script>

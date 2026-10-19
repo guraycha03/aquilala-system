@@ -237,7 +237,7 @@
 $isFinished = in_array($farmerCrop->growth_stage, ['harvested', 'failed']);
 $unit = $farmerCrop->land_area_unit === 'ha' ? 'ha' : $farmerCrop->land_area_unit;
 @endphp
-<div class="stats-strip">
+<div class="stats-strip kpi-strip">
     <div class="stat-pill">
         <div class="stat-icon" style="background: #f0fdf4; color: #16a34a;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>

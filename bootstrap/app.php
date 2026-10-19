@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CaptureShield;
 use App\Http\Middleware\EnsurePasswordChanged;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Application;
@@ -34,6 +35,10 @@ return Application::configure(basePath: dirname(__DIR__))
             // Redirects members with a temporary password to the change-
             // password page until they set a permanent one.
             'password.setup' => EnsurePasswordChanged::class,
+            // Per-page capture shield: ->middleware('shield') on a route opts
+            // that ONE page in (display-capture header + app-switcher cover).
+            // Remove the token from the route to opt it back out.
+            'shield' => CaptureShield::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

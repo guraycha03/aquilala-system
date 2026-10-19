@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'My Harvest Reports')
+@section('title', 'Harvest Reports')
 
 @section('content')
 <style>
@@ -131,7 +131,7 @@
 <div class="header-panel" style="margin-bottom: 28px;">
   <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
     <div>
-      <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">My Harvest Reports</h1>
+      <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">Harvest Reports</h1>
       <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
         Recorded harvests are instantly visible to the Aquilala administrator — yields, expenses, and planted areas stay in sync system-wide.
       </p>
@@ -153,7 +153,7 @@
 @endif
 
 <!-- Stats -->
-<div class="stats-grid">
+<div class="stats-grid kpi-strip">
   <div class="stat-card blue">
     <div class="stat-icon">
       <!-- Document / Report Icon -->

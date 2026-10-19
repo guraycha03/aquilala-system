@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Cost Quotation Analytics')
+@section('title', 'Quotation Demand Trends')
 
 @section('content')
 <style>
@@ -105,12 +105,12 @@
 </style>
 
 <div class="header-panel" style="margin-bottom: 10px;">
-  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Demand Trends</h1>
-  <p style="color: #606d64; font-size: 14px; margin: 0;">System-wide demand visibility — which products and crops are in demand.</p>
+  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Quotation Demand Trends</h1>
+  <p style="color: #606d64; font-size: 14px; margin: 0;">See which products and crops farmers across the system are asking for.</p>
 </div>
 
 <!-- System-wide metrics -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px;">
+<div class="kpi-strip">
   <div class="stat-card">
     <div>
       <div class="stat-value">{{ $metrics['total'] }}</div>
@@ -195,7 +195,7 @@
 <div class="data-table-container" style="margin-bottom: 24px;">
   <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
     <div>
-      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Crop Demand &amp; Planting</h2>
+      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Crops Farmers Are Asking For</h2>
       <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Most-quoted crop types from estimates, against what farmers have actually planned or planted.</p>
     </div>
     <div class="seg" role="tablist" aria-label="Crop view">

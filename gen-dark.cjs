@@ -202,7 +202,17 @@ function declsOf(body) {
     return out;
 }
 
-const SKIP_SELECTOR = new Set(['body', 'html', '*', ':root', 'html, body', 'body, html']);
+// Selectors the scraper must leave alone. These carry hand-tuned semantic or
+// state colours whose meaning is not "light surface -> dark surface": the
+// season glyph is coded wet/dry/all, and the bookmark has normal/hover/saved
+// states. Deriving them mechanically misreads the hue — e.g. dry season's
+// orange (#c2410c) came back as red, and the neutral bookmark came back blue.
+// Their dark colours are written by hand in the component's own <style>.
+const SKIP_SELECTOR = new Set([
+    'body', 'html', '*', ':root', 'html, body', 'body, html',
+    '.pc-save', '.pc-save:hover', '.pc-save.is-saved',
+    '.pc-season.season-wet', '.pc-season.season-dry', '.pc-season.season-all',
+]);
 
 // ── collect ────────────────────────────────────────────────────────────────
 const classRules = new Map();   // key -> { at, sel, decls }

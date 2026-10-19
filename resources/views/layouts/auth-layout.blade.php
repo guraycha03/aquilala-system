@@ -126,6 +126,11 @@
     <meta name="apple-mobile-web-app-title" content="Aquilala">
     <link rel="apple-touch-icon" href="{{ asset('images/pwa/apple-touch-icon.png') }}">
     <script src="{{ asset('js/pwa-register.js') }}" defer></script>
+    {{-- Same global app lockdown as the app shell (selection, copy, long-press
+         menus, printing — forms stay fully editable) so login/register behave
+         identically. ?v= bump on edit: sw.js caches .css/.js cache-first. --}}
+    <link rel="stylesheet" href="{{ asset('css/app-lockdown.css') }}?v=1">
+    <script src="{{ asset('js/app-lockdown.js') }}?v=1" defer></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scrollbar-width: none; -ms-overflow-style: none; }
@@ -316,7 +321,7 @@
 
     @stack('styles')
 </head>
-<body class="@if(isset($hideVisualPane) && $hideVisualPane) auth-body--tall @endif">
+<body class="@if(isset($hideVisualPane) && $hideVisualPane) auth-body--tall @endif"@if($captureShield ?? false) data-capture-shield @endif>
 
     <div class="auth-container @if(isset($hideVisualPane) && $hideVisualPane) auth-container--wide @endif">
         <div class="form-pane">

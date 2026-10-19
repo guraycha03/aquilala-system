@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Edit Product Profile')
+@section('title', 'Edit Product')
 
 @section('content')
 
@@ -321,7 +321,7 @@
 <div class="form-container">
     <!-- Header -->
     <div class="page-header">
-        <h1 class="page-title">Edit Product Profile</h1>
+        <h1 class="page-title">Edit Product</h1>
         <p class="page-subtitle">Update details, pricing, and inventory status for <strong>{{ $product->name }}</strong>.</p>
     </div>
 

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Crop;
 use App\Models\DecisionFormula;
+use App\Models\FarmerCrop;
+use App\Models\HarvestReport;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\User;
@@ -58,6 +60,14 @@ class FarmerDashboardController extends Controller
             ->distinct()
             ->pluck('crop_type');
 
+        // ─── Farmer-focused KPI cards (My Farming at a Glance) ─────
+        // All four are the signed-in farmer's own records, except
+        // "Local Stores" which counts the stores they can buy from.
+        $myCropsCount = FarmerCrop::where('user_id', $farmerId)->count();
+        $costEstimatesCount = $quotationCount;
+        $harvestReportsCount = HarvestReport::where('user_id', $farmerId)->count();
+        $localStoresCount = $storeCount;
+
         return view('dashboard.farmer', compact(
             'totalCrops',
             'recommendedCount',
@@ -69,6 +79,10 @@ class FarmerDashboardController extends Controller
             'stores',
             'recentQuotations',
             'supportedCrops',
+            'myCropsCount',
+            'costEstimatesCount',
+            'harvestReportsCount',
+            'localStoresCount',
         ));
     }
 }

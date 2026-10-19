@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Catalog')
+@section('title', 'Product Catalog')
 
 @section('content')
 
@@ -73,12 +73,12 @@
     <div class="cat-content">
 
       <div class="cat-head">
-        <h1>Farm Supply Catalog</h1>
-        <p>Overview of the supply catalog and farmer demand signals.</p>
+        <h1>Product Catalog</h1>
+        <p>Overview of the supply catalog and what farmers are asking for.</p>
       </div>
 
 
-      <div class="cat-kpis">
+      <div class="cat-kpis kpi-strip">
         <div class="cat-kpi">
           <div class="kpi-label">Total Products</div>
           <div class="kpi-value">{{ $productStats['total'] }}</div>
@@ -97,7 +97,7 @@
         <div class="cat-kpi">
           <div class="kpi-label">Most Quoted</div>
           <div class="kpi-value">{{ $topQuoted->first()->quote_count ?? 0 }}</div>
-          <div class="kpi-sub">Highest demand count</div>
+          <div class="kpi-sub">Most farmer quotations</div>
         </div>
       </div>
 
@@ -126,8 +126,8 @@
 
         <div class="cat-panel">
           <div class="panel-head">
-            <h3>Demand Snapshot</h3>
-            <p>Products ranked by distinct farmer quotations — real purchase intent</p>
+            <h3>What Farmers Ask For</h3>
+            <p>Products ranked by how many farmer quotations include them</p>
           </div>
           <div class="panel-body">
             @if($topQuoted->isEmpty())

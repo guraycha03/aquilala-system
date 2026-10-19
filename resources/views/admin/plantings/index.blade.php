@@ -104,7 +104,7 @@
 
 
 {{-- Status summary — each card doubles as the filter for its status. --}}
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 18px;">
+<div class="kpi-strip">
   <a href="{{ route('admin.plantings.index', ['status' => 'pending']) }}"
      class="stat-card clickable {{ $status === 'pending' ? 'active-filter' : '' }}" style="text-decoration: none;">
     <div>

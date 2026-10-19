@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Quotation;
+use App\Models\User;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Services\ActivityLogger;
@@ -717,15 +718,32 @@ class ProductController extends Controller
 
     /**
      * Display all active products for farmers to browse.
+     *
+     * `?store=` narrows the catalog to one store owner's products. The Stores
+     * Directory links here from each store card, so a farmer who wants "the
+     * rest" of a store's listing lands on that store rather than on every
+     * store at once. An unknown or non-store id is ignored rather than
+     * erroring, so a stale link still yields a usable catalog.
      */
     public function browse()
     {
         $products = Product::active()
             // category.parent is what lets a card report its top-level group,
             // which the shared filter bar matches on.
-            ->with(['category.parent', 'storeOwner', 'mainImage', 'images'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->with(['category.parent', 'storeOwner', 'mainImage', 'images']);
+
+        if ($storeId = (int) request('store')) {
+            $isStore = User::whereKey($storeId)
+                ->where('role', 'store_owner')
+                ->whereNotNull('store_name')
+                ->exists();
+
+            if ($isStore) {
+                $products->where('user_id', $storeId);
+            }
+        }
+
+        $products = $products->orderBy('created_at', 'desc')->get();
 
         Product::markSavedState($products, Auth::user());
 

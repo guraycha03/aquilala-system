@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Smart Recommendations')
+@section('title', 'Recommended Supplies')
 
 @section('content')
 @php
@@ -504,7 +504,7 @@
 
     {{-- ═══ 2. Hero Section ═══ --}}
     <div class="sr-hero">
-      <h1>Smart Recommendations</h1>
+      <h1>Recommended Supplies</h1>
       <p>Personalized product suggestions based on your crops, season, and farming needs in Bulan, Sorsogon</p>
       <div class="sr-info-bar">
         <div class="sr-info-chip season-chip">

@@ -387,7 +387,7 @@
       <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
       Generate Cost Quotation
     </button>
-    <span style="font-size: 12.5px; color: #879a8c;">Instant estimate — store owners see it as demand intel.</span>
+    <span style="font-size: 12.5px; color: #879a8c;">Instant estimate — store owners can see which products you need.</span>
   </div>
 </form>
 

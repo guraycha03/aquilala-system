@@ -1050,7 +1050,7 @@
 </style>
 
 <div class="breadcrumb">
-    <a href="{{ route('store.quotations.index') }}">Demand Intelligence</a>
+    <a href="{{ route('store.quotations.index') }}">Quotation Demand Trends</a>
     <span>/</span>
     AI Assistant
 </div>
@@ -1063,7 +1063,7 @@
                 <img src="{{ asset('images/ai-avatar.png') }}" alt="AI Assistant">
             </div>
             <div class="header-info">
-                <div class="header-title">Demand Assistant</div>
+                <div class="header-title">AI Assistant</div>
                 <div class="header-status">
                     <div class="status-dot"></div>
                     Online
@@ -1096,16 +1096,16 @@
                 </div>
                 <div class="message-bubble">
                     <div>
-                        Hello! I'm your AI demand assistant for Aquilala stores. I can help you with:
+                        Hello! I'm your AI assistant for Aquilala stores. I can help you with:
                     </div>
                     <ul>
-                        <li>Reading the demand signals from farmer quotations</li>
+                        <li>Reading farmer quotations to see what they need</li>
                         <li>Spotting product and crop trends in your area</li>
                         <li>Deciding what to stock or restock</li>
                         <li>Pricing and quoting guidance</li>
                     </ul>
                     <div style="margin-top: 10px;">
-                        Ask me anything about your store's demand!
+                        Ask me anything about your store!
                     </div>
                 </div>
             </div>
@@ -1119,7 +1119,7 @@
                 <div class="message-bubble">
                     <div class="quick-chips">
                         <button class="chip" onclick="sendChip(this)">
-                            Give me a demand overview
+                            Show me my quotation trends
                         </button>
                         <button class="chip" onclick="sendChip(this)">
                             Which products should I restock?
@@ -1141,7 +1141,7 @@
                     type="text"
                     class="chat-input"
                     id="chatInput"
-                    placeholder="Ask about demand, crops, products to stock, or pricing..."
+                    placeholder="Ask about quotations, crops, products to stock, or pricing..."
                     autocomplete="off"
                 />
                 <button class="send-btn" id="sendBtn">
@@ -1788,14 +1788,14 @@
         }
     });
 
-    // ─── Seed a demand overview handed off from Demand Intelligence ───
+    // ─── Seed a quotation trends overview handed off from Quotation Demand Trends ───
     (function restoreSeededOverview() {
         let seed = null;
         try { seed = sessionStorage.getItem('aiSeedOverview'); } catch (e) {}
         if (!seed) return;
         try { sessionStorage.removeItem('aiSeedOverview'); } catch (e) {}
 
-        const prompt = 'Show me my complete demand overview with product recommendations.';
+        const prompt = 'Show me my quotation trends with product recommendations.';
         addUserMessage(prompt);
         chatHistory.push({ role: 'user', content: prompt });
 

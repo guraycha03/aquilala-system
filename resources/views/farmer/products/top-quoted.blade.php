@@ -39,25 +39,11 @@
   @media (max-width: 900px)  { .product-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 640px)  { .product-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; } }
 
-  .product-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    overflow: hidden;
-  }
-  .product-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px -5px rgba(20, 61, 35, 0.08);
-    border-color: #cbd5e1;
-  }
+  /* The card's shape, photo field, brand, name, divider and price come
+     from components/product-card.blade.php. Only this page's own content
+     — the rank badge and the store name it injects into the card body —
+     is styled here. */
   /* The shared filter bar hides filtered-out cards itself, via .cf-hidden. */
-  .card-body { padding: 16px; }
   .card-rank-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .rank-badge {
     display: inline-flex; align-items: center; gap: 5px;
@@ -79,14 +65,6 @@
   .store-name { font-size: 11.5px; color: #64748b; display: flex; align-items: center; gap: 5px; }
   .store-name svg { width: 12px; height: 12px; stroke: #94a3b8; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
-  .card-footer {
-    padding: 12px 16px;
-    background: #f8fafc;
-    border-top: 1px solid #f1f5f9;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
   .quote-link { font-size: 12px; font-weight: 700; color: #16a34a; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
   .quote-link:hover { text-decoration: underline; }
 
@@ -109,11 +87,6 @@
     transition: background 0.2s;
   }
   .btn-primary:hover { background: #1a5a30; }
-
-  @media (max-width: 640px) {
-    .card-body { padding: 14px; }
-    .card-footer { padding: 12px 14px; }
-  }
 </style>
 
 <x-breadcrumb :items="[['label' => 'Top Quoted Products']]"/>
@@ -123,7 +96,7 @@
   <p class="page-subtitle">Farm supplies other farmers request most in cost quotations — ranked by real purchase intent, not ratings.</p>
 </div>
 
-<div class="stats-row">
+<div class="stats-row kpi-strip">
   <div class="stat-chip">
     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     <div>
