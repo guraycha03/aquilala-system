@@ -131,7 +131,7 @@
   <script src="{{ asset('js/alpine.min.js') }}" defer></script>
   {{-- Display theme: every rule is scoped to [data-theme="dark"], so this file
        costs nothing while the user is in light mode. --}}
-  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=2">
+  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=3">
   {{-- App lockdown: kills text selection, copy/cut, long-press & right-click
        browser menus, and printing outside form fields — applies to every page
        and role, so the portal behaves like a native app and long-press is
@@ -1195,10 +1195,15 @@
     renderLucideIcons();
     document.addEventListener('DOMContentLoaded', renderLucideIcons);
 
-    // Apply dynamic styles from data-inline-style (keeps Blade interpolation out of style="" attributes)
+    // Apply dynamic styles from data-inline-style (keeps Blade interpolation
+    // out of style="" attributes). setAttribute, NOT style.cssText: assigning
+    // cssText makes the browser SERIALIZE the style attribute with normalized
+    // colors ("background: #ffffff" comes back as "background: rgb(255, 255,
+    // 255)"), which breaks the generated [style*="#ffffff"] dark-mode rules
+    // that match on the literal source string. setAttribute keeps the literal.
     function applyDataInlineStyles() {
       document.querySelectorAll('[data-inline-style]').forEach(function (el) {
-        el.style.cssText = el.getAttribute('data-inline-style');
+        el.setAttribute('style', el.getAttribute('data-inline-style'));
       });
       // For elements whose width is animated by JS (bars), only set the --bg custom property
       document.querySelectorAll('[data-bg]').forEach(function (el) {

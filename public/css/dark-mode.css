@@ -110,7 +110,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] [style*="background: #f0f9ff" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: #f0fdf4" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: #f1f5f9" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] [style*="background: #f4f6f5" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: #f5f3ff" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: #f6f8f7" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: #faf5ff" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
@@ -176,7 +175,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] [style*="border: 1px solid #86efac" i] { border-color: #166534 !important }
 [data-theme="dark"] [style*="border: 1px solid #bbf7d0" i] { border-color: #166534 !important }
 [data-theme="dark"] [style*="border: 1px solid #bfdbfe" i] { border-color: #334155 !important }
-[data-theme="dark"] [style*="border: 1px solid #d7dfda" i] { border-color: #334155 !important }
 [data-theme="dark"] [style*="border: 1px solid #ddd6fe" i] { border-color: #334155 !important }
 [data-theme="dark"] [style*="border: 1px solid #e2e8f0" i] { border-color: #334155 !important }
 [data-theme="dark"] [style*="border: 1px solid #e5e5e5" i] { border-color: #334155 !important }
@@ -398,6 +396,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .archive-meta .sku { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .archive-name { color: #93c5fd !important }
 [data-theme="dark"] .archive-thumb { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
+[data-theme="dark"] .area-unit { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important; color: #93c5fd !important }
 [data-theme="dark"] .audit-avatar { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a7f3d0 !important }
 [data-theme="dark"] .audit-bar { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .audit-empty h3 { color: #93c5fd !important }
@@ -636,6 +635,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .chip:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a7f3d0 !important }
 [data-theme="dark"] .climate-card { border-color: #334155 !important }
 [data-theme="dark"] .climate-card:hover, [data-theme="dark"] .climate-card.pinned { border-color: #334155 !important }
+[data-theme="dark"] .climate-sub { color: #93c5fd !important }
 [data-theme="dark"] .cmp-card { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
 [data-theme="dark"] .cmp-card-head { border-color: #334155 !important }
 [data-theme="dark"] .cmp-card-title { color: #a7f3d0 !important }
@@ -1331,6 +1331,10 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .season-badge-wet { background-color: hsl(204, 94%, 17%) !important; color: #93c5fd !important; border-color: #334155 !important }
 [data-theme="dark"] .season-badge.dry { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #fcd34d !important }
 [data-theme="dark"] .season-badge.wet { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #93c5fd !important }
+[data-theme="dark"] .season-card { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
+[data-theme="dark"] .season-card .sc-sub { color: #93c5fd !important }
+[data-theme="dark"] .season-card .sc-title { color: #a7f3d0 !important }
+[data-theme="dark"] .season-card.is-selected { background-color: hsl(141, 84%, 17%) !important }
 [data-theme="dark"] .section-header { color: #a7f3d0 !important; border-color: #334155 !important }
 [data-theme="dark"] .section-header svg { color: #a7f3d0 !important }
 [data-theme="dark"] .section-label { color: #e2e8f0 !important }

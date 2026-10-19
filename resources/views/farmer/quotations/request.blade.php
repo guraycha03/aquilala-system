@@ -6,16 +6,11 @@
 @php
   $selSeason = old('season') ?? $globalSeason;
   $climate = $globalClimateInfo;
-  $cardStyle = function ($season) use ($selSeason) {
-      $selected = $selSeason === $season;
-      return 'display: flex; align-items: center; gap: 10px; padding: 13px 16px; border: 1.5px solid ' . ($selected ? '#143d23' : '#d7dfda') . '; border-radius: 11px; cursor: pointer; transition: all 0.15s; background: ' . ($selected ? '#f0fdf4' : '#ffffff') . ';';
-  };
-  $climateDotStyle = 'display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: ' . ($climate['season'] === 'wet' ? '#0284c7' : '#d97706') . ';';
 @endphp
 <style>
   .input-field {
     width: 100%; padding: 12px 15px; border: 1px solid #d7dfda;
-    border-radius: 10px; font-size: 14px; font-family: inherit;
+    border-radius: 10px; font-size: 14px; line-height: 1.5; font-family: inherit;
     background: #ffffff; transition: border-color 0.2s, box-shadow 0.2s;
   }
   .input-field:focus {
@@ -24,11 +19,12 @@
   }
   .input-label {
     display: block; font-size: 13.5px; font-weight: 700;
-    color: #1a2b1e; margin-bottom: 7px;
+    color: #1a2b1e; margin: 0; line-height: 1.4;
   }
   .input-hint {
-    font-size: 12px; color: #879a8c; margin-top: 7px; line-height: 1.45;
+    font-size: 12px; color: #879a8c; margin-top: 8px; line-height: 1.6;
   }
+  .opt-tag { color: #94a3b8; font-weight: 400; }
   select.input-field {
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
@@ -47,27 +43,68 @@
   .submit-btn:active { transform: scale(0.98); }
   .submit-btn svg { width: 17px; height: 17px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 
-  /* Guided question layout — clean, organized, breathable */
+  /* Guided question layout — clean, organized, breathable. The step
+     number shares the title row instead of reserving a whole left
+     gutter for itself; the control below spans the full column. */
   .q-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px 40px;
+    gap: 36px 44px;
     align-items: start;
   }
-  .q-block { display: flex; gap: 15px; }
   .q-span { grid-column: 1 / -1; }
   @media (max-width: 860px) { .q-grid { grid-template-columns: 1fr; } }
+  .q-head {
+    display: flex; align-items: center; gap: 11px; margin-bottom: 13px;
+  }
   .q-num {
-    width: 34px; height: 34px; border-radius: 11px; flex-shrink: 0;
+    width: 30px; height: 30px; border-radius: 10px; flex-shrink: 0;
     background: #eef5ee; color: #143d23;
     display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 800; margin-top: 1px;
+    font-size: 12.5px; font-weight: 800;
   }
-  .q-body { flex: 1; min-width: 0; }
+  .q-body { min-width: 0; }
+
+  /* Season choice cards — class-based (NOT data-inline-style) so the
+     dark-mode generator can scrape them into dark-mode.css and the
+     cards actually go dark at runtime. */
+  .season-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .season-card {
+    display: flex; align-items: center; gap: 11px; padding: 14px 16px;
+    border: 1.5px solid #d7dfda; border-radius: 12px; cursor: pointer;
+    background: #ffffff;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  }
+  .season-card:hover { border-color: #648268; }
+  .season-card.is-selected {
+    background: #dcfce7; border-color: #143d23;
+    box-shadow: 0 1px 4px rgba(20, 61, 35, 0.08);
+  }
+  .season-card .sc-title { font-weight: 700; font-size: 14px; color: #1e2922; line-height: 1.35; }
+  .season-card .sc-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+  @media (max-width: 420px) { .season-grid { grid-template-columns: 1fr; } }
+
+  /* "Currently in season" hint line */
+  .climate-line { display: inline-flex; align-items: center; gap: 6px; }
+  .climate-dot {
+    display: inline-block; width: 9px; height: 9px;
+    border-radius: 50%; flex-shrink: 0;
+  }
+  .climate-dot.wet { background: #0284c7; }
+  .climate-dot.dry { background: #d97706; }
+  .climate-sub { color: #64748b; }
+
+  /* Land area row */
+  .area-row { display: flex; gap: 10px; max-width: 330px; }
+  .area-unit {
+    display: flex; align-items: center; padding: 0 14px;
+    background: #f4f6f5; border: 1px solid #d7dfda; border-radius: 10px;
+    font-size: 14px; color: #64748b; font-weight: 600; white-space: nowrap;
+  }
 
   .form-sheet {
     background: #ffffff; border: 1px solid #e4ebe6; border-radius: 18px;
-    padding: 34px 38px 36px;
+    padding: 38px 42px 40px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   }
 
@@ -276,9 +313,11 @@
 
   <!-- 1. Crop Type -->
   <div class="q-block">
-    <div class="q-num">1</div>
-    <div class="q-body">
+    <div class="q-head">
+      <span class="q-num">1</span>
       <label for="crop_type" class="input-label">What crop are you planting?</label>
+    </div>
+    <div class="q-body">
       <div class="crop-selector-wrap">
         <svg class="crop-search-icon" viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="crop-search" class="crop-search-input"
@@ -291,37 +330,38 @@
           @endforeach
         </div>
       </div>
-      <div class="input-hint">Type to search the crop directory, or pick from the list.</div>
     </div>
   </div>
 
   <!-- 2. Season -->
   <div class="q-block">
-    <div class="q-num">2</div>
-    <div class="q-body">
+    <div class="q-head">
+      <span class="q-num">2</span>
       <label class="input-label">Which season are you planting for?</label>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <label data-inline-style="{{ $cardStyle('wet') }}">
-          <input type="radio" name="season" value="wet" @checked((old('season') ?? $globalSeason) === 'wet') style="accent-color: #143d23;" required>
+    </div>
+    <div class="q-body">
+      <div class="season-grid">
+        <label class="season-card {{ $selSeason === 'wet' ? 'is-selected' : '' }}">
+          <input type="radio" name="season" value="wet" @checked($selSeason === 'wet') style="accent-color: #143d23;" required>
           <div>
-            <div style="font-weight: 600; font-size: 14px; color: #1e2922;">Wet Season</div>
-            <div style="font-size: 12px; color: #94a3b8;">June – January</div>
+            <div class="sc-title">Wet Season</div>
+            <div class="sc-sub">June – January</div>
           </div>
         </label>
-        <label data-inline-style="{{ $cardStyle('dry') }}">
-          <input type="radio" name="season" value="dry" @checked((old('season') ?? $globalSeason) === 'dry') style="accent-color: #143d23;" required>
+        <label class="season-card {{ $selSeason === 'dry' ? 'is-selected' : '' }}">
+          <input type="radio" name="season" value="dry" @checked($selSeason === 'dry') style="accent-color: #143d23;" required>
           <div>
-            <div style="font-weight: 600; font-size: 14px; color: #1e2922;">Dry Season</div>
-            <div style="font-size: 12px; color: #94a3b8;">February – May</div>
+            <div class="sc-title">Dry Season</div>
+            <div class="sc-sub">February – May</div>
           </div>
         </label>
       </div>
       <div class="input-hint">
-        <span style="display: flex; align-items: center; gap: 6px;">
-          <span data-inline-style="{{ $climateDotStyle }}"></span>
+        <span class="climate-line">
+          <span class="climate-dot {{ $climate['season'] }}"></span>
           <strong>Currently:</strong> {{ $globalSeasonLabel }} — {{ $climate['months'] }}
           @if(isset($climate['sub_season']))
-            <span style="color: #64748b;">({{ $climate['sub_season'] }})</span>
+            <span class="climate-sub">({{ $climate['sub_season'] }})</span>
           @endif
         </span>
       </div>
@@ -330,14 +370,16 @@
 
   <!-- 3. Land Area -->
   <div class="q-block">
-    <div class="q-num">3</div>
-    <div class="q-body">
+    <div class="q-head">
+      <span class="q-num">3</span>
       <label for="land_area" class="input-label">How big is your farm area?</label>
-      <div style="display: flex; gap: 10px; max-width: 320px;">
+    </div>
+    <div class="q-body">
+      <div class="area-row">
         <input type="number" name="land_area" id="land_area" class="input-field"
                placeholder="e.g., 1.5" step="0.01" min="0.01" max="999.99"
                value="{{ old('land_area') }}" required>
-        <div style="display: flex; align-items: center; padding: 0 14px; background: #f4f6f5; border: 1px solid #d7dfda; border-radius: 10px; font-size: 14px; color: #64748b; font-weight: 600; white-space: nowrap;">hectares</div>
+        <div class="area-unit">hectares</div>
       </div>
       <div class="input-hint">The quantity of each input is calculated from this area.</div>
     </div>
@@ -345,9 +387,11 @@
 
   <!-- 4. Products -->
   <div class="q-block q-span">
-    <div class="q-num">4</div>
+    <div class="q-head">
+      <span class="q-num">4</span>
+      <label class="input-label">Select products <span class="opt-tag">(optional)</span></label>
+    </div>
     <div class="q-body">
-      <label class="input-label">Select products <span style="color: #94a3b8; font-weight: 400;">(optional)</span></label>
       <div id="product-selector-section">
         <div id="product-prompt" class="product-prompt">
           Pick your crop and season above to see the available products.
@@ -372,9 +416,11 @@
 
   <!-- 5. Notes -->
   <div class="q-block q-span">
-    <div class="q-num">5</div>
+    <div class="q-head">
+      <span class="q-num">5</span>
+      <label for="notes" class="input-label">Additional notes <span class="opt-tag">(optional)</span></label>
+    </div>
     <div class="q-body">
-      <label for="notes" class="input-label">Additional notes <span style="color: #94a3b8; font-weight: 400;">(optional)</span></label>
       <textarea name="notes" id="notes" class="input-field" rows="3"
                 placeholder="Any specific requirements, preferred varieties, or special instructions...">{{ old('notes') }}</textarea>
     </div>
@@ -387,7 +433,6 @@
       <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
       Generate Cost Quotation
     </button>
-    <span style="font-size: 12.5px; color: #879a8c;">Instant estimate — store owners can see which products you need.</span>
   </div>
 </form>
 
@@ -652,6 +697,16 @@
 
   cropInput.addEventListener('change', fetchProducts);
   seasonInputs.forEach(r => r.addEventListener('change', fetchProducts));
+
+  // Season cards: mirror the radio state onto the card styling so the
+  // highlight follows the click without a round-trip.
+  const seasonCards = Array.from(document.querySelectorAll('.season-card'));
+  seasonInputs.forEach(r => r.addEventListener('change', function () {
+    seasonCards.forEach(c => c.classList.toggle(
+      'is-selected',
+      c.querySelector('input[name="season"]').checked
+    ));
+  }));
 
   searchInput.addEventListener('focus', () => renderDropdown(searchInput.value));
   searchInput.addEventListener('input', () => {
