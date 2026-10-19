@@ -127,7 +127,9 @@ class StoreOwnerActivityController extends Controller
 
     /**
      * Store owner's notifications — cost estimates that involve this
-     * store's products (demand signals), newest first.
+     * store's products (demand signals), newest first. Farmer identities
+     * are never shown here: stores learn that demand exists, not who
+     * generated it.
      */
     public function notifications(): View
     {
@@ -148,7 +150,7 @@ class StoreOwnerActivityController extends Controller
             'unreadCount'   => $unreadCount,
             'routePrefix'   => 'store.notifications',
             'subtitle'      => 'Demand signals for your store — cost estimates that include your products.',
-            'emptyText'     => "There's nothing here right now. When a farmer generates a cost estimate that includes your products, it will appear here.",
+            'emptyText'     => "There's nothing here right now. When a farmer generates a cost estimate that includes your products, it will appear here — the farmer's identity stays private.",
         ]);
     }
 

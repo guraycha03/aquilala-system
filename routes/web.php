@@ -24,6 +24,7 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PasswordSetupController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductImportController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\StoreDirectoryController;
 use App\Http\Controllers\StoreOwnerActivityController;
@@ -171,6 +172,16 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
 
         return response()->json(['ok' => true, 'mode' => $mode]);
     })->name('settings.theme');
+
+    // Web Push (outside-the-system notifications) — every signed-in role may
+    // opt this device in from Settings. With no VAPID keys configured the
+    // public key returns empty and the frontend never offers the toggle.
+    Route::get('/push/public-key', [PushSubscriptionController::class, 'publicKey'])
+        ->name('push.public-key');
+    Route::post('/push/subscribe', [PushSubscriptionController::class, 'subscribe'])
+        ->name('push.subscribe')->middleware('throttle:30,1');
+    Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'unsubscribe'])
+        ->name('push.unsubscribe')->middleware('throttle:30,1');
 
     // Save / unsave a product for later — every signed-in role may keep their
     // own list. There is no saved-products page yet; the toggle just syncs the

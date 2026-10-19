@@ -13,8 +13,12 @@
  *
  * Caches are versioned; the page cache is also cleared on logout by
  * pwa-register.js so one user's screens are never left behind for the next.
+ *
+ * Push: the server's pushes arrive here even when the app is closed — the
+ * payload carries the notification text plus the in-app page to open, and a
+ * click focuses an already-open window (navigating it) or opens a fresh one.
  */
-const VERSION = 'aquilala-v3';
+const VERSION = 'aquilala-v4';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
 const PAGE_CACHE_LIMIT = 60;
@@ -51,6 +55,9 @@ const PRECACHE = [
 const STATIC_EXT = /\.(?:css|js|mjs|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|otf|eot|map)$/i;
 
 self.addEventListener('install', (event) => {
+    // New worker takes over immediately: push handlers only exist in the
+    // new version, so waiting for every tab to close would delay notifications.
+    self.skipWaiting();
     event.waitUntil(
         caches.open(STATIC_CACHE)
             .then((cache) => cache.addAll(PRECACHE))
@@ -74,6 +81,71 @@ self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'CLEAR_PAGES') {
         caches.delete(PAGE_CACHE);
     }
+});
+
+// ── Web Push ──────────────────────────────────────────────────────
+// A push is shown by the service worker itself, so the notification
+// appears even when the app is closed. The server payload is JSON:
+// { title, body, url, tag } — url is the in-app page a click opens.
+self.addEventListener('push', (event) => {
+    let data = { title: 'Aquilala', body: '', url: '/', tag: 'aquilala' };
+
+    if (event.data) {
+        try {
+            const parsed = event.data.json();
+            if (parsed && typeof parsed === 'object') {
+                data = {
+                    title: parsed.title || data.title,
+                    body:  parsed.body  || data.body,
+                    url:   parsed.url   || data.url,
+                    tag:   parsed.tag   || data.tag
+                };
+            }
+        } catch (err) {
+            // Plain-text push — show it verbatim rather than dropping it.
+            data.body = event.data.text();
+        }
+    }
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, {
+            body:  data.body,
+            icon:  '/images/pwa/icon-192.png',
+            badge: '/images/pwa/icon-192-maskable.png',
+            tag:   data.tag,
+            renotify: false,
+            data:  { url: data.url }
+        })
+    );
+});
+
+// Clicking the notification opens (or reuses) a window on the target page —
+// the "opens straight to the page in the app" behaviour.
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const target = new URL(
+        (event.notification.data && event.notification.data.url) || '/',
+        self.location.origin
+    ).href;
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+            // Reuse the first app window already open: focus it and, when we
+            // can, navigate it straight to the notification's page.
+            for (const client of windows) {
+                if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+                    client.focus();
+                    if ('navigate' in client) {
+                        return client.navigate(target).catch(() => undefined);
+                    }
+                    return undefined;
+                }
+            }
+
+            return clients.openWindow(target);
+        })
+    );
 });
 
 self.addEventListener('fetch', (event) => {

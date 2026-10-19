@@ -19,8 +19,11 @@ use Tests\TestCase;
  * dedicated notifications page (shared view) with an unread badge fed by
  * that role's ActivityLog scope:
  *
- *   farmer      — quotation + planting-decision rows (existing behaviour)
- *   store_owner — rows fanned out for quotations involving their products
+ *   farmer      — important notices only: planting requests + outcomes,
+ *                 harvest report submissions, association events. Their
+ *                 own quotation rows are history (Settings → Activity).
+ *   store_owner — anonymous demand signals for quotations involving their
+ *                 products (no farmer name, no actor, ever)
  *   admin       — rows fanned out for quotations, planting requests and
  *                 harvest reports across the association
  */
@@ -137,7 +140,6 @@ class RoleNotificationsTest extends TestCase
 
         // Drive the shortcut the controller calls after a successful create.
         $this->actingAs($this->farmer);
-        $this->actingAs($this->farmer);
         ActivityLogger::quotationCreated($quotation);
 
         $storeRows = ActivityLog::forUser($this->store->id)->storeNotifications()->get();
@@ -145,8 +147,15 @@ class RoleNotificationsTest extends TestCase
         $this->assertNull($storeRows->first()->read_at);
         $this->assertStringContainsString('includes your products', $storeRows->first()->description);
 
-        // The farmer keeps their own row and the admin gets one too.
-        $this->assertSame(1, ActivityLog::forUser($this->farmer->id)->farmerNotifications()->count());
+        // Strictly anonymous: no actor is recorded and the farmer's name
+        // never appears in the store's copy.
+        $this->assertNull($storeRows->first()->actor_id);
+        $this->assertStringNotContainsString('Ana Farmer', $storeRows->first()->description);
+
+        // The farmer's own quotation row is history — it no longer surfaces
+        // in their notifications. The admin still gets a named row.
+        $this->assertSame(0, ActivityLog::forUser($this->farmer->id)->farmerNotifications()->count());
+        $this->assertSame(1, ActivityLog::forUser($this->farmer->id)->where('type', ActivityLog::TYPE_QUOTATION_CREATED)->count());
         $this->assertSame(1, ActivityLog::forUser($this->admin->id)->adminNotifications()->count());
     }
 
@@ -154,14 +163,15 @@ class RoleNotificationsTest extends TestCase
     {
         $quotation = $this->makeQuotation($this->farmer);
         $this->actingAs($this->farmer);
-        $this->actingAs($this->farmer);
         ActivityLogger::quotationCreated($quotation);
 
         $this->actingAs($this->store)
             ->get(route('store.notifications.index'))
             ->assertOk()
             ->assertSee('QT-NOTIF-TEST')
-            ->assertSee('<b>1</b> unread', false);
+            ->assertSee('<b>1</b> unread', false)
+            // Strictly anonymous: the generating farmer is never on the page.
+            ->assertDontSee('Ana Farmer');
 
         // Badge on the dashboard header while unread.
         $this->actingAs($this->store)
@@ -197,7 +207,6 @@ class RoleNotificationsTest extends TestCase
     public function test_a_store_owner_cannot_mark_another_stores_notification_read(): void
     {
         $quotation = $this->makeQuotation($this->farmer);
-        $this->actingAs($this->farmer);
         $this->actingAs($this->farmer);
         ActivityLogger::quotationCreated($quotation);
 
@@ -255,20 +264,91 @@ class RoleNotificationsTest extends TestCase
             ->assertSee('No Notifications Yet');
     }
 
-    // ── Farmer regression ────────────────────────────────────────────────
+    // ── Farmer scope ────────────────────────────────────────────────────
 
-    public function test_the_farmer_bell_still_uses_the_shared_view(): void
+    public function test_the_farmer_bell_uses_the_shared_view_for_important_notices(): void
     {
+        $rice = Crop::create(['name' => 'Rice', 'category' => 'Cereal', 'description' => 'Test rice']);
+
+        $this->actingAs($this->farmer)->post(route('farmer.crops.store'), [
+            'crop_id' => $rice->id,
+            'variety' => CropLibraryService::GENERAL_VARIETY,
+            'land_area' => 1.0,
+            'land_area_unit' => 'ha',
+            'planting_date' => now()->subDays(2)->format('Y-m-d'),
+            'season' => 'wet',
+        ])->assertRedirect(route('farmer.crops.index'));
+
+        $this->actingAs($this->farmer)
+            ->get(route('farmer.notifications.index'))
+            ->assertOk()
+            ->assertSee('Planted Rice')
+            ->assertSee('<b>1</b> unread', false)
+            ->assertSee(route('farmer.notifications.read-all'), false);
+    }
+
+    public function test_a_farmers_own_quotation_rows_stay_out_of_their_notifications(): void
+    {
+        // Important notices only: generating a quotation is the farmer's own
+        // action — it belongs to Activity history under Settings, not the bell.
         $quotation = $this->makeQuotation($this->farmer);
-        $this->actingAs($this->farmer);
         $this->actingAs($this->farmer);
         ActivityLogger::quotationCreated($quotation);
 
         $this->actingAs($this->farmer)
             ->get(route('farmer.notifications.index'))
             ->assertOk()
-            ->assertSee('Generated cost estimate')
-            ->assertSee('<b>1</b> unread', false)
-            ->assertSee(route('farmer.notifications.read-all'), false);
+            ->assertSee('No Notifications Yet');
+
+        // The row still exists for their activity history.
+        $this->assertSame(1, ActivityLog::forUser($this->farmer->id)->where('type', ActivityLog::TYPE_QUOTATION_CREATED)->count());
+    }
+
+    public function test_association_events_reach_every_farmers_bell(): void
+    {
+        $otherFarmer = $this->makeUser('Ben Farmer', 'farmer');
+
+        $this->actingAs($this->admin)->post(route('admin.calendar.events.store'), [
+            'title' => 'Free Corn Seeds Distribution',
+            'event_type' => 'free_input',
+            'event_date' => now()->addDays(3)->toDateString(),
+            'location' => 'Association Warehouse',
+            'description' => 'Hybrid seeds for members.',
+        ])->assertSessionHas('success');
+
+        foreach ([$this->farmer, $otherFarmer] as $farmer) {
+            $row = ActivityLog::forUser($farmer->id)->farmerNotifications()
+                ->ofType(ActivityLog::TYPE_EVENT_CREATED)->sole();
+            $this->assertStringContainsString('Upcoming event', $row->description);
+            $this->assertStringContainsString('Free Corn Seeds Distribution', $row->description);
+            $this->assertNull($row->read_at);
+        }
+
+        // Stores are not association members for events — no row for them.
+        $this->assertSame(0, ActivityLog::forUser($this->store->id)->where('type', ActivityLog::TYPE_EVENT_CREATED)->count());
+    }
+
+    public function test_editing_an_event_updates_the_farmers_in_app_rows(): void
+    {
+        $event = \App\Models\AssociationEvent::create([
+            'title' => 'General Assembly',
+            'event_type' => 'meeting',
+            'event_date' => now()->addDays(7)->toDateString(),
+            'location' => 'Association Office',
+            'created_by' => $this->admin->id,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.calendar.events.update', $event), [
+                'title' => 'General Assembly',
+                'event_type' => 'meeting',
+                'event_date' => now()->addDays(10)->toDateString(),
+                'location' => 'Association Office',
+            ])
+            ->assertSessionHas('success');
+
+        $row = ActivityLog::forUser($this->farmer->id)->farmerNotifications()
+            ->ofType(ActivityLog::TYPE_EVENT_UPDATED)->sole();
+        $this->assertStringContainsString('Updated event', $row->description);
     }
 }

@@ -187,20 +187,30 @@ class ActivityLog extends Model
         return $query->whereNull('read_at');
     }
 
+    /**
+     * Farmer notifications — important notices only, not a history log.
+     * The page carries: their planting request and the admin's decision on
+     * it, their harvest report submissions, and association events (the
+     * most important notice). The farmer's own quotation rows are their
+     * activity history and live under Settings → Activity history.
+     */
     public function scopeFarmerNotifications($query)
     {
         return $query->whereIn('type', [
-            self::TYPE_QUOTATION_CREATED,
-            self::TYPE_QUOTATION_DELETED,
+            self::TYPE_CROP_PLANTED,
             self::TYPE_CROP_CONFIRMED,
             self::TYPE_CROP_REJECTED,
+            self::TYPE_HARVEST_CREATED,
+            self::TYPE_EVENT_CREATED,
+            self::TYPE_EVENT_UPDATED,
         ]);
     }
 
     /**
      * Store-owner notifications: cost estimates that involve this store's
      * products (demand signals). QuotationController fans one recipient row
-     * out to every involved store when an estimate is created or deleted.
+     * out to every involved store when an estimate is created or deleted —
+     * strictly anonymously (no farmer name or actor, see ActivityLogger).
      */
     public function scopeStoreNotifications($query)
     {

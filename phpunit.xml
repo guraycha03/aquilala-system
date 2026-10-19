@@ -30,6 +30,8 @@
              provider by accident. Tests that exercise AI set the config and
              Http::fake explicitly. -->
         <env name="GROQ_API_KEY" value="" force="true"/>
+        <env name="PUSH_VAPID_PUBLIC_KEY" value="" force="true"/>
+        <env name="PUSH_VAPID_PRIVATE_KEY" value="" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

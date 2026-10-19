@@ -1290,6 +1290,12 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .progress-foot { color: #e2e8f0 !important }
 [data-theme="dark"] .progress-title { color: #93c5fd !important }
 [data-theme="dark"] .progress-track { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
+[data-theme="dark"] .push-hint { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important; color: #fcd34d !important }
+[data-theme="dark"] .push-status { color: #93c5fd !important }
+[data-theme="dark"] .push-status.is-error { color: #fca5a5 !important }
+[data-theme="dark"] .push-toggle { color: #93c5fd !important }
+[data-theme="dark"] .push-toggle-thumb { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
+[data-theme="dark"] .push-toggle-track { background-color: hsl(213, 27%, 17%) !important }
 [data-theme="dark"] .q-num { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a7f3d0 !important }
 [data-theme="dark"] .q-select-btn { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .q-select-btn:hover { border-color: #166534 !important }
@@ -1408,6 +1414,9 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .set-panel { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
 [data-theme="dark"] .set-row .info b { color: #93c5fd !important }
 [data-theme="dark"] .set-toast svg { stroke: #a7f3d0 !important }
+[data-theme="dark"] .settings-card { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
+[data-theme="dark"] .settings-card-desc { color: #93c5fd !important }
+[data-theme="dark"] .settings-card-title { color: #93c5fd !important }
 [data-theme="dark"] .shimmer-line { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .sidebar-footer { border-color: #334155 !important }
 [data-theme="dark"] .spec-divider { border-color: #334155 !important }
@@ -1651,6 +1660,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] [data-theme="dark"] .product-image-container > .lucide { stroke: #93c5fd !important }
 [data-theme="dark"] #loginForm input:not([type="hidden"]) { color: #e2e8f0 !important }
 [data-theme="dark"] #pickCount { color: #93c5fd !important }
+[data-theme="dark"] a.push-hint:hover { background-color: hsl(48, 96%, 17%) !important }
 [data-theme="dark"] details.howto summary { color: #a7f3d0 !important }
 [data-theme="dark"] input[type="date"], [data-theme="dark"] select, [data-theme="dark"] textarea { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important; color: #93c5fd !important }
 [data-theme="dark"] select { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }

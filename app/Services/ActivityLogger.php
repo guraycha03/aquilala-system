@@ -83,6 +83,11 @@ class ActivityLogger
      * File the event for each store owner whose products appear in the
      * estimate — the store's demand signal. Same recipient-row rule as
      * notifyAdmins(); the requesting farmer is never their own recipient.
+     *
+     * Strictly anonymous: no actor is recorded (so the page can never
+     * attribute the row to a person) and the caller-supplied description
+     * must not name the farmer — stores learn that demand exists, never
+     * who generated it.
      */
     private static function notifyStoresOfQuotation(Quotation $quotation, string $type, string $description): void
     {
@@ -92,11 +97,21 @@ class ActivityLogger
                 continue;
             }
 
-            self::log($type, $description, $quotation, [
-                'quotation_number' => $quotation->quotation_number,
-                'crop_type'        => $quotation->crop_type,
-                'season'           => $quotation->season,
-            ], $store);
+            ActivityLog::create([
+                'user_id'      => $store->id,
+                'actor_id'     => null,
+                'type'         => $type,
+                'subject_type' => get_class($quotation),
+                'subject_id'   => $quotation->id,
+                'description'  => $description,
+                'metadata'     => [
+                    'quotation_number' => $quotation->quotation_number,
+                    'crop_type'        => $quotation->crop_type,
+                    'season'           => $quotation->season,
+                    'anonymized'       => true,
+                ],
+                'ip_address'   => self::currentIp(),
+            ]);
         }
     }
 
@@ -163,12 +178,15 @@ class ActivityLogger
         );
 
         // Demand signal: the same event is filed for each store whose
-        // products are in the estimate, and for every admin.
+        // products are in the estimate, and for every admin. The store's
+        // copy stays anonymous — no name, no actor — per the store owners'
+        // agreement; the admin copy keeps the farmer's name since admins
+        // know their members.
         $farmerName = Auth::user()?->name ?? 'A farmer';
         self::notifyStoresOfQuotation(
             $quotation,
             ActivityLog::TYPE_QUOTATION_CREATED,
-            "New cost estimate {$quotation->quotation_number} from {$farmerName} includes your products ({$quotation->crop_type}, {$quotation->season} season)"
+            "A farmer generated cost estimate {$quotation->quotation_number} that includes your products ({$quotation->crop_type}, {$quotation->season} season)"
         );
         self::notifyAdmins(
             ActivityLog::TYPE_QUOTATION_CREATED,
@@ -197,11 +215,11 @@ class ActivityLogger
             $meta
         );
 
-        $farmerName = Auth::user()?->name ?? 'A farmer';
+        // Anonymous copy for stores (see quotationCreated).
         self::notifyStoresOfQuotation(
             $quotation,
             ActivityLog::TYPE_QUOTATION_DELETED,
-            "Cost estimate {$quotation->quotation_number} that included your products was deleted by {$farmerName}"
+            "Cost estimate {$quotation->quotation_number} that included your products was deleted"
         );
 
         return $row;
@@ -416,9 +434,15 @@ class ActivityLogger
 
     // ── Association calendar shortcuts ───────────────────────────
 
+    /**
+     * The admin's own audit row (unchanged), plus one recipient row per
+     * farmer and a Web Push to every farmer who opted a device in — the
+     * association's events are the notices farmers most need outside the
+     * app. Pushes are fire-and-forget: PushService never throws.
+     */
     public static function eventCreated(AssociationEvent $event): ActivityLog
     {
-        return self::log(
+        $row = self::log(
             ActivityLog::TYPE_EVENT_CREATED,
             "Added calendar event \"{$event->title}\" for {$event->event_date->format('M d, Y')}",
             $event,
@@ -428,11 +452,33 @@ class ActivityLogger
                 'start_time' => $event->start_time?->format('H:i:s'),
             ]
         );
+
+        self::notifyFarmersOfEvent(
+            $event,
+            ActivityLog::TYPE_EVENT_CREATED,
+            self::eventNotice($event, 'Upcoming event')
+        );
+
+        $farmerIds = User::where('role', 'farmer')->pluck('id');
+        PushService::sendToUsers(
+            $farmerIds,
+            "Upcoming event: {$event->title}",
+            self::eventPushBody($event),
+            route('farmer.calendar.index'),
+            'event-' . $event->id
+        );
+
+        return $row;
     }
 
+    /**
+     * A rescheduled/edited event reaches the same farmers in-app. No push:
+     * the creation notice already carried the event, and in-app rows keep
+     * the update visible without nagging devices.
+     */
     public static function eventUpdated(AssociationEvent $event): ActivityLog
     {
-        return self::log(
+        $row = self::log(
             ActivityLog::TYPE_EVENT_UPDATED,
             "Updated calendar event \"{$event->title}\" ({$event->event_date->format('M d, Y')})",
             $event,
@@ -441,6 +487,14 @@ class ActivityLogger
                 'event_date' => $event->event_date->toDateString(),
             ]
         );
+
+        self::notifyFarmersOfEvent(
+            $event,
+            ActivityLog::TYPE_EVENT_UPDATED,
+            "Updated event: \"{$event->title}\" is now on {$event->event_date->format('M d, Y')}"
+        );
+
+        return $row;
     }
 
     public static function eventDeleted(AssociationEvent $event): ActivityLog
@@ -454,6 +508,41 @@ class ActivityLogger
                 'event_date' => $event->event_date->toDateString(),
             ]
         );
+    }
+
+    /**
+     * One in-app row per farmer for a calendar event. Rows belong to the
+     * farmer (independent read state); the acting admin is the actor.
+     */
+    private static function notifyFarmersOfEvent(AssociationEvent $event, string $type, string $description): void
+    {
+        $meta = [
+            'event_type' => $event->event_type,
+            'event_date' => $event->event_date->toDateString(),
+            'start_time' => $event->start_time?->format('H:i:s'),
+            'location'   => $event->location,
+        ];
+
+        foreach (User::where('role', 'farmer')->get() as $farmer) {
+            self::log($type, $description, $event, $meta, $farmer);
+        }
+    }
+
+    private static function eventNotice(AssociationEvent $event, string $prefix): string
+    {
+        $line = "{$prefix}: \"{$event->title}\" on {$event->event_date->format('M d, Y')}"
+            . ($event->start_time ? ' at ' . $event->start_time->format('g:i A') : '');
+
+        return $event->location ? "{$line} — {$event->location}" : $line;
+    }
+
+    /** Compact body for the OS-level push (kept short; no member data). */
+    private static function eventPushBody(AssociationEvent $event): string
+    {
+        $line = "{$event->event_date->format('M d, Y')}"
+            . ($event->start_time ? ' at ' . $event->start_time->format('g:i A') : '');
+
+        return $event->location ? "{$line} — {$event->location}" : $line;
     }
 
     public static function landUpdated(float $oldArea, float $newArea, string $unit): ActivityLog
