@@ -10,11 +10,11 @@ use Illuminate\View\View;
 class FarmerNotificationController extends Controller
 {
     /**
-     * Farmer's notifications — important notices only: planting requests
-     * and their outcomes, harvest report submissions, and association
-     * events. The farmer's own action history lives under Settings →
-     * Activity history, not here. Rendered by the shared notifications
-     * view every role uses.
+     * Farmer's notifications — important notices only: the admin's
+     * decisions on their planting requests, harvest report submissions,
+     * and association events. The farmer's own action history (planting
+     * requests, quotations) lives under Settings → Activity history, not
+     * here. Rendered by the shared notifications view every role uses.
      */
     public function index(): View
     {
@@ -34,8 +34,8 @@ class FarmerNotificationController extends Controller
             'notifications' => $notifications,
             'unreadCount'   => $unreadCount,
             'routePrefix'   => 'farmer.notifications',
-            'subtitle'      => 'Important notices — planting requests, report submissions and association events.',
-            'emptyText'     => "There's nothing here right now. Planting requests, harvest report submissions and upcoming association events will appear here.",
+            'subtitle'      => 'Important notices — planting decisions, report submissions and association events.',
+            'emptyText'     => "There's nothing here right now. Decisions on your planting requests, harvest report submissions and upcoming association events will appear here.",
         ]);
     }
 

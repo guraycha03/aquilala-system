@@ -279,12 +279,46 @@ class RoleNotificationsTest extends TestCase
             'season' => 'wet',
         ])->assertRedirect(route('farmer.crops.index'));
 
+        $farmerCrop = \App\Models\FarmerCrop::sole();
+
+        // The request echo is the farmer's own action — it stays out of the
+        // bell (it lives in Activity history). The bell shows the decision.
         $this->actingAs($this->farmer)
             ->get(route('farmer.notifications.index'))
             ->assertOk()
-            ->assertSee('Planted Rice')
+            ->assertDontSee('Planted Rice')
+            ->assertSee('No Notifications Yet');
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.plantings.confirm', $farmerCrop))
+            ->assertRedirect();
+
+        $this->actingAs($this->farmer)
+            ->get(route('farmer.notifications.index'))
+            ->assertOk()
+            ->assertSee('Confirmed planting of Rice')
             ->assertSee('<b>1</b> unread', false)
             ->assertSee(route('farmer.notifications.read-all'), false);
+    }
+
+    public function test_a_farmers_own_planted_rows_stay_out_of_their_notifications(): void
+    {
+        // Same rule as quotations: submitting a planting request is the
+        // farmer's own action — history under Settings, not a bell notice.
+        $rice = Crop::create(['name' => 'Rice', 'category' => 'Cereal', 'description' => 'Test rice']);
+
+        $this->actingAs($this->farmer)->post(route('farmer.crops.store'), [
+            'crop_id' => $rice->id,
+            'variety' => CropLibraryService::GENERAL_VARIETY,
+            'land_area' => 1.0,
+            'land_area_unit' => 'ha',
+            'planting_date' => now()->subDays(2)->format('Y-m-d'),
+            'season' => 'wet',
+        ])->assertRedirect(route('farmer.crops.index'));
+
+        $this->assertSame(0, ActivityLog::forUser($this->farmer->id)->farmerNotifications()->count());
+        // The row still exists for their activity history.
+        $this->assertSame(1, ActivityLog::forUser($this->farmer->id)->where('type', ActivityLog::TYPE_CROP_PLANTED)->count());
     }
 
     public function test_a_farmers_own_quotation_rows_stay_out_of_their_notifications(): void
