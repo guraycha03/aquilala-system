@@ -332,4 +332,161 @@ class BudgetQuotationTest extends TestCase
             ->assertOk()
             ->assertSee('DEFERRED');
     }
+
+    // ── Strict mode: "fit suggestions to my budget" ──────────────
+
+    public function test_strict_mode_builds_the_included_set_inside_the_cap(): void
+    {
+        $result = $this->quote(['budget_cap' => 500, 'budget_strict' => true]);
+
+        // Same outcome as the informational fit here: the essential line
+        // fits, the optional line does not — but now the cap is the rule,
+        // not a guide.
+        $this->assertSame('trimmed', $result['summary']['budget_status']);
+        $this->assertTrue($result['summary']['budget_strict']);
+        $this->assertCount(1, $result['items']);
+        $this->assertSame($this->fertilizer->id, $result['items'][0]['product_id']);
+        $this->assertEqualsWithDelta(100.0, (float) $result['summary']['budget_left'], 0.01);
+    }
+
+    public function test_strict_mode_prices_nothing_when_the_budget_is_below_the_essentials(): void
+    {
+        // Non-strict keeps the essentials and reports over_budget;
+        // strict must refuse to include anything it cannot afford.
+        $result = $this->quote(['budget_cap' => 300, 'budget_strict' => true]);
+
+        $this->assertSame('unreachable', $result['summary']['budget_status']);
+        $this->assertEmpty($result['items']);
+        $this->assertCount(2, $result['deferred_items']);
+        // ₱400 essentials vs a ₱300 cap → ₱100 short of the floor.
+        $this->assertEqualsWithDelta(400.0, (float) $result['summary']['essential_minimum'], 0.01);
+        $this->assertEqualsWithDelta(100.0, (float) $result['summary']['shortfall'], 0.01);
+        $this->assertNull($result['summary']['budget_left']);
+    }
+
+    public function test_strict_mode_limits_auto_included_products_by_the_budget(): void
+    {
+        // The reported bug: no products selected → the engine auto-included
+        // the whole recommended plan (₱26k) on a ₱1,000 budget. Strict mode
+        // must cap the auto-included set at what the budget can buy.
+        $tight = $this->quote(['selected_products' => [], 'budget_cap' => 500, 'budget_strict' => true]);
+
+        $this->assertSame('trimmed', $tight['summary']['budget_status']);
+        $this->assertCount(1, $tight['items']);
+        $this->assertSame($this->fertilizer->id, $tight['items'][0]['product_id']);
+        $this->assertCount(1, $tight['deferred_items']);
+
+        // A budget below every line auto-includes nothing at all.
+        $tiny = $this->quote(['selected_products' => [], 'budget_cap' => 100, 'budget_strict' => true]);
+
+        $this->assertSame('unreachable', $tiny['summary']['budget_status']);
+        $this->assertEmpty($tiny['items']);
+        $this->assertCount(2, $tiny['deferred_items']);
+    }
+
+    public function test_without_strict_the_budget_stays_additional_information(): void
+    {
+        // Toggle off → current behavior: essentials always survive even
+        // below their cost, with the shortfall reported.
+        $result = $this->quote(['budget_cap' => 300]);
+
+        $this->assertSame('over_budget', $result['summary']['budget_status']);
+        $this->assertCount(1, $result['items']);
+        $this->assertFalse($result['summary']['budget_strict']);
+    }
+
+    public function test_priority_tier_is_persisted_on_every_line(): void
+    {
+        $engine = $this->app->make(CostQuotationEngine::class);
+
+        $quotation = $engine->calculateAndSave([
+            'store_owner_id'    => $this->store->id,
+            'crop_type'         => 'Rice',
+            'season'            => 'wet',
+            'weather_context'   => 'normal',
+            'soil_type'         => 'clay_loam',
+            'land_area'         => 1.0,
+            'selected_products' => [$this->fertilizer->id, $this->fungicide->id],
+        ], $this->farmer);
+
+        $this->assertSame('essential', $quotation->items->firstWhere('product_id', $this->fertilizer->id)->priority);
+        $this->assertSame('optional', $quotation->items->firstWhere('product_id', $this->fungicide->id)->priority);
+    }
+
+    public function test_budget_strict_reaches_the_quotation_from_the_form(): void
+    {
+        $response = $this->actingAs($this->farmer)->post(route('farmer.quotations.store'), [
+            'crop_type'            => 'Rice',
+            'season'               => 'wet',
+            'land_area'            => 1.0,
+            'soil_type'            => 'clay_loam',
+            'weather_context'      => 'normal',
+            'budget_cap'           => 300,
+            'budget_strict'        => '1',
+            'selected_product_ids' => json_encode([$this->fertilizer->id, $this->fungicide->id]),
+        ]);
+
+        $response->assertSessionHasNoErrors();
+
+        $quotation = \App\Models\Quotation::where('user_id', $this->farmer->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($quotation);
+        $this->assertEqualsWithDelta(300.0, (float) $quotation->budget_cap, 0.01);
+        // Nothing fits ₱300: both lines recorded but deferred, total ₱0.
+        $this->assertCount(2, $quotation->items);
+        $this->assertTrue($quotation->items->every('is_deferred'));
+        $this->assertEqualsWithDelta(0.0, (float) $quotation->estimated_total_cost, 0.01);
+    }
+
+    // ── The product filter data the form needs ───────────────────
+
+    public function test_products_endpoint_returns_categories_for_the_filter(): void
+    {
+        $response = $this->actingAs($this->farmer)->get(
+            route('farmer.quotations.products', ['crop_type' => 'Rice', 'season' => 'wet'])
+        );
+
+        $response->assertOk();
+        $categories = collect($response->json())->pluck('category')->filter()->all();
+
+        $this->assertContains('Fertilizer', $categories);
+        $this->assertContains('Crop Protection', $categories);
+    }
+
+    public function test_unreachable_budget_pages_render_the_nothing_fits_state(): void
+    {
+        $engine = $this->app->make(CostQuotationEngine::class);
+
+        $quotation = $engine->calculateAndSave([
+            'store_owner_id'    => $this->store->id,
+            'crop_type'         => 'Rice',
+            'season'            => 'wet',
+            'weather_context'   => 'normal',
+            'soil_type'         => 'clay_loam',
+            'land_area'         => 1.0,
+            'budget_cap'        => 100,
+            'budget_strict'     => true,
+            'selected_products' => [$this->fertilizer->id, $this->fungicide->id],
+        ], $this->farmer);
+
+        $this->actingAs($this->farmer)
+            ->get(route('farmer.quotations.show', $quotation))
+            ->assertOk()
+            ->assertSee('Nothing fits your')
+            ->assertSee('plan needs');
+
+        $this->actingAs($this->farmer)
+            ->get(route('farmer.quotations.breakdown', $quotation))
+            ->assertOk()
+            ->assertSee('nothing fits');
+
+        $this->actingAs($this->farmer)
+            ->get(route('farmer.quotations.request'))
+            ->assertOk()
+            ->assertSee('Fit suggestions to my budget')
+            ->assertSee('product-category', false)
+            ->assertSee('Weather risk this planting');
+    }
 }

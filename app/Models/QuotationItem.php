@@ -10,7 +10,7 @@ class QuotationItem extends Model
     protected $fillable = [
         'quotation_id', 'product_id', 'product_name',
         'price_at_generation', 'calculated_quantity', 'subtotal',
-        'override_price', 'override_quantity', 'is_deferred',
+        'override_price', 'override_quantity', 'is_deferred', 'priority',
     ];
 
     protected $casts = [

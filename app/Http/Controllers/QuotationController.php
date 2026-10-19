@@ -406,6 +406,7 @@ PROMPT;
             'soil_type' => ['nullable', 'in:clay_loam,sandy,peat'],
             'weather_context' => ['nullable', 'in:normal,low_rain,typhoon,el_nino'],
             'budget_cap' => ['nullable', 'numeric', 'min:1', 'max:99999999.99'],
+            'budget_strict' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'selected_product_ids' => ['nullable', 'string'],
         ]);
@@ -434,6 +435,7 @@ PROMPT;
                 'weather_context' => $validated['weather_context'] ?? 'normal',
                 'soil_type' => $validated['soil_type'] ?? 'clay_loam',
                 'budget_cap' => isset($validated['budget_cap']) ? (float) $validated['budget_cap'] : null,
+                'budget_strict' => ! empty($validated['budget_strict']),
                 'selected_products' => ! empty($selectedProductIds) ? $selectedProductIds : null,
                 'notes' => $validated['notes'] ?? null,
             ], Auth::user());

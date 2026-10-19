@@ -253,10 +253,17 @@
         @if($quotation->budget_cap !== null)
           @php
             $cap = (float) $quotation->budget_cap;
+            $allDeferred = $quotation->items->isNotEmpty() && $quotation->items->every('is_deferred');
+            $fitFloor = (float) $quotation->items->where('priority', '!=', 'optional')->sum('subtotal');
+            if ($fitFloor <= 0) {
+              $fitFloor = (float) $dItems->sum('subtotal');
+            }
           @endphp
           <div class="down-total-caption" style="margin-top: 5px;">
             Budget ₱{{ number_format($cap, 2) }}
-            @if($total > $cap)
+            @if($allDeferred)
+              &middot; <strong style="color: #a1352b;">nothing fits — the plan needs about ₱{{ number_format($fitFloor, 2) }}</strong>
+            @elseif($total > $cap)
               &middot; <strong style="color: #a1352b;">short ₱{{ number_format($total - $cap, 2) }}</strong>
             @else
               &middot; <strong style="color: #166534;">₱{{ number_format($cap - $total, 2) }} to spare</strong>

@@ -40,6 +40,16 @@
   $shortfall     = $budgetDiff !== null && $budgetDiff > 0 ? $budgetDiff : null;
   $budgetLeft    = $budgetDiff !== null && $budgetDiff <= 0 ? abs($budgetDiff) : null;
   $deferredTotal = (float) $deferredItems->sum('subtotal');
+
+  // "Nothing fits" state (strict budget mode priced nothing inside the
+  // cap): every line on the quotation is deferred. The floor the plan
+  // would need is the essential minimum, or the deferred sum when the
+  // plan is all optional lines.
+  $essentialMin = (float) $quotation->items->where('priority', '!=', 'optional')->sum('subtotal');
+  $fitFloor     = $essentialMin > 0 ? $essentialMin : $deferredTotal;
+  $unreachable  = $budgetCap !== null && $quotation->items->isNotEmpty() && $fittedCount === 0;
+  $unreachableShortfall = $unreachable ? round($fitFloor - $budgetCap, 2) : null;
+  $isRed       = $unreachable || $shortfall;
 @endphp
 <style>
   /* Small context chips in the header (soil type, season risk) */
@@ -377,7 +387,24 @@
 
 <!-- Budget outcome (only when the farmer set a budget cap) -->
 @if($budgetCap !== null)
-  @if($shortfall)
+  @if($unreachable)
+    <div class="budget-banner over">
+      <div class="bb-icon">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div>
+        <b class="bb-title">Nothing fits your ₱{{ number_format($budgetCap, 2) }} budget yet</b>
+        <p class="bb-text">The inputs this plan needs start at about ₱{{ number_format($fitFloor, 2) }} for {{ number_format($landArea, 2) }} ha — above your budget, so no items were included. Raise the budget toward ₱{{ number_format($fitFloor, 2) }}, or reduce the farm area, then generate again:</p>
+        @if($deferredCount > 0)
+          <ul class="bb-list">
+            @foreach($deferredItems as $di)
+              <li>{{ $di->product_name }} — ₱{{ number_format((float) $di->subtotal, 2) }}</li>
+            @endforeach
+          </ul>
+        @endif
+      </div>
+    </div>
+  @elseif($shortfall)
     <div class="budget-banner over">
       <div class="bb-icon">
         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -394,7 +421,7 @@
       </div>
       <div>
         <b class="bb-title">Fitted to your ₱{{ number_format($budgetCap, 2) }} budget — ₱{{ number_format((float) $budgetLeft, 2) }} left</b>
-        <p class="bb-text">{{ $deferredCount }} optional item(s) worth ₱{{ number_format($deferredTotal, 2) }} were deferred to fit your budget. They stay on this quotation so you can add them when your budget allows:</p>
+        <p class="bb-text">{{ $deferredCount }} input(s) worth ₱{{ number_format($deferredTotal, 2) }} were deferred to fit your budget. They stay on this quotation so you can add them when your budget allows:</p>
         <ul class="bb-list">
           @foreach($deferredItems as $di)
             <li>{{ $di->product_name }} — ₱{{ number_format((float) $di->subtotal, 2) }}</li>
@@ -482,7 +509,7 @@
       @if($budgetCap !== null)
         <div class="fact-row">
           <span style="font-size: 13px; color: #51605a;">Budget</span>
-          <span style="font-weight: 700; color: {{ $shortfall ? '#a1352b' : '#166534' }};">₱{{ number_format($budgetCap, 2) }}@if($shortfall) &middot; short ₱{{ number_format($shortfall, 2) }}@endif</span>
+          <span style="font-weight: 700; color: {{ $isRed ? '#a1352b' : '#166534' }};">₱{{ number_format($budgetCap, 2) }}@if($unreachable) &middot; plan needs ₱{{ number_format($fitFloor, 2) }}@elseif($shortfall) &middot; short ₱{{ number_format($shortfall, 2) }}@endif</span>
         </div>
       @endif
       <div class="fact-row">

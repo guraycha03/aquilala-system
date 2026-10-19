@@ -221,40 +221,87 @@ class CostQuotationEngine
         }
 
         // ─── 4.5 Budget Fitting ──────────────────────────────────
-        // When the farmer states a budget: essential inputs (seeds,
-        // fertilizer) and situational lines triggered by the chosen field
-        // conditions (peat lime, El Niño irrigation) always stay — no crop
-        // without them. Optional crop-protection lines are added in
-        // recommended order until the budget is reached; the rest are
-        // deferred: still recorded on the quotation, but excluded from the
-        // fitted total. Contingencies below then apply to what the farmer
-        // will actually spend.
+        // Two modes, both stated on the quotation — never silently:
+        //
+        // Informational (default): essentials and condition-justified
+        // lines always stay — no crop without them — and optional crop
+        // protection is added in recommended order until the budget is
+        // reached; the rest are deferred: still recorded on the
+        // quotation, but excluded from the fitted total.
+        //
+        // Strict ("fit suggestions to my budget"): every line competes
+        // for the budget in priority order, so the included set is built
+        // inside the cap from the start — if not even the essentials
+        // fit, nothing is priced and the shortfall says what the plan
+        // needs instead.
+        //
+        // Contingencies below then apply to what the farmer will
+        // actually spend.
         $fullPlanSubtotal = $subtotal;
         $budgetCap = isset($input['budget_cap']) && $input['budget_cap'] !== null
             ? round((float) $input['budget_cap'], 2)
             : null;
+        $budgetStrict = filter_var($input['budget_strict'] ?? false, FILTER_VALIDATE_BOOL);
         $deferredItems = [];
+
+        // The essential floor of the full plan (seeds, fertilizer, and any
+        // condition-justified lines) — used to explain an unreachable budget.
+        $essentialMinimum = round(array_sum(array_column(
+            array_filter($items, fn (array $i) => $i['priority'] !== self::PRIORITY_OPTIONAL),
+            'subtotal'
+        )), 2);
 
         if ($budgetCap !== null) {
             $runningSubtotal = 0.0;
             $kept           = [];
-            $optionalPool   = [];
 
-            foreach ($items as $item) {
-                if ($item['priority'] === self::PRIORITY_OPTIONAL) {
-                    $optionalPool[] = $item;
-                    continue;
+            if ($budgetStrict) {
+                // Strict fit: every line competes for the budget in a
+                // transparent order — essentials first, then the lines the
+                // field conditions justify, then crop protection; cheapest
+                // first within a tier so the budget buys as much as it can.
+                // Nothing is added once the budget is reached.
+                $rank = [
+                    self::PRIORITY_ESSENTIAL   => 0,
+                    self::PRIORITY_SITUATIONAL => 1,
+                    self::PRIORITY_OPTIONAL    => 2,
+                ];
+                $candidates = $items;
+                usort($candidates, fn (array $a, array $b) =>
+                    [$rank[$a['priority']], $a['price_at_generation']]
+                    <=> [$rank[$b['priority']], $b['price_at_generation']]
+                );
+
+                foreach ($candidates as $item) {
+                    if ($runningSubtotal + $item['subtotal'] <= $budgetCap) {
+                        $kept[] = $item;
+                        $runningSubtotal += $item['subtotal'];
+                    } else {
+                        $deferredItems[] = $item;
+                    }
                 }
-                $kept[] = $item;
-                $runningSubtotal += $item['subtotal'];
-            }
+            } else {
+                // Informational fit: essentials and condition-justified lines
+                // always stay — no crop without them — and optional crop
+                // protection is added in recommended order while it fits.
+                $optionalPool = [];
 
-            foreach ($optionalPool as $item) {
-                if ($runningSubtotal + $item['subtotal'] <= $budgetCap) {
+                foreach ($items as $item) {
+                    if ($item['priority'] === self::PRIORITY_OPTIONAL) {
+                        $optionalPool[] = $item;
+                        continue;
+                    }
                     $kept[] = $item;
                     $runningSubtotal += $item['subtotal'];
-                } else {
-                    $deferredItems[] = $item;
+                }
+
+                foreach ($optionalPool as $item) {
+                    if ($runningSubtotal + $item['subtotal'] <= $budgetCap) {
+                        $kept[] = $item;
+                        $runningSubtotal += $item['subtotal'];
+                    } else {
+                        $deferredItems[] = $item;
+                    }
                 }
             }
 
@@ -304,7 +351,12 @@ class CostQuotationEngine
         $budgetLeft   = null;
 
         if ($budgetCap !== null) {
-            if ($grandTotal > $budgetCap) {
+            if ($budgetStrict && $items === [] && $fullPlanSubtotal > 0) {
+                // Strict mode priced nothing inside the budget: the plan's
+                // essentials already start above it.
+                $budgetStatus = 'unreachable';
+                $shortfall    = round($essentialMinimum - $budgetCap, 2);
+            } elseif ($grandTotal > $budgetCap) {
                 $budgetStatus = 'over_budget';
                 $shortfall    = round($grandTotal - $budgetCap, 2);
             } elseif ($deferredItems !== []) {
@@ -326,8 +378,10 @@ class CostQuotationEngine
             'soil_contingency'    => $soilContingency,
             'grand_total'         => $grandTotal,
             'budget_cap'          => $budgetCap,
+            'budget_strict'       => $budgetStrict,
             'budget_status'       => $budgetStatus,
             'full_plan_subtotal'  => round($fullPlanSubtotal, 2),
+            'essential_minimum'   => $essentialMinimum,
             'deferred_count'      => count($deferredItems),
             'deferred_total'      => round(array_sum(array_column($deferredItems, 'subtotal')), 2),
             'shortfall'           => $shortfall,
@@ -394,6 +448,7 @@ class CostQuotationEngine
                     'calculated_quantity' => $itemData['adjusted_quantity'],
                     'subtotal'            => $itemData['subtotal'],
                     'is_deferred'         => $itemData['is_deferred'],
+                    'priority'            => $itemData['priority'] ?? self::PRIORITY_ESSENTIAL,
                 ]);
             }
 
@@ -417,6 +472,7 @@ class CostQuotationEngine
             'soil_type'         => ['required', 'in:clay_loam,sandy,peat'],
             'land_area'         => ['required', 'numeric', 'min:0.01', 'max:999.99'],
             'budget_cap'        => ['nullable', 'numeric', 'min:1', 'max:99999999.99'],
+            'budget_strict'     => ['nullable', 'boolean'],
             'selected_products' => ['nullable', 'array'],
             'selected_products.*' => ['integer', 'exists:products,id'],
             'notes'             => ['nullable', 'string', 'max:2000'],

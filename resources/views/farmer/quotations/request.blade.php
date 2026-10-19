@@ -108,6 +108,75 @@
   .cond-group + .cond-group { margin-top: 15px; }
   .cond-group .input-label { margin-bottom: 6px; }
 
+  /* Custom select dropdowns (soil, weather risk) — same language as the
+     crop selector, so every choice list on the page feels the same. */
+  .q-select { position: relative; }
+  .q-select-btn {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 15px; border: 1.5px solid #d7dfda; border-radius: 10px;
+    background: #ffffff; cursor: pointer; font-family: inherit; text-align: left;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .q-select-btn:hover { border-color: #b9cec0; }
+  .q-select.open .q-select-btn { border-color: #143d23; box-shadow: 0 0 0 3px rgba(20, 61, 35, 0.08); }
+  .qsel-title { font-size: 14px; font-weight: 600; color: #1e2922; }
+  .qsel-chev { width: 16px; height: 16px; color: #64748b; flex-shrink: 0; transition: transform 0.18s; }
+  .q-select.open .qsel-chev { transform: rotate(180deg); }
+  .q-select-menu {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60;
+    background: #ffffff; border: 1px solid #e0e5e1; border-radius: 12px;
+    box-shadow: 0 10px 34px rgba(20, 61, 35, 0.14);
+    padding: 6px; display: none; max-height: 268px; overflow-y: auto;
+  }
+  .q-select.open .q-select-menu { display: block; }
+  .q-select-item {
+    display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px;
+    border-radius: 9px; cursor: pointer; transition: background 0.12s;
+  }
+  .q-select-item:hover { background: #f4f6f5; }
+  .q-select-item.is-active { background: #e9f6d2; }
+  .qsel-t { font-size: 13.5px; font-weight: 700; color: #1e2922; }
+  .q-select-item.is-active .qsel-t { color: #14532d; }
+  .qsel-s { font-size: 12px; color: #64748b; margin-top: 2px; line-height: 1.45; }
+  .qsel-check { width: 15px; height: 15px; color: #14532d; flex-shrink: 0; margin-left: auto; margin-top: 2px; visibility: hidden; }
+  .q-select-item.is-active .qsel-check { visibility: visible; }
+
+  /* Budget "fit suggestions" toggle */
+  .budget-toggle {
+    display: flex; align-items: flex-start; gap: 11px; cursor: pointer;
+    margin-top: 14px; padding: 12px 14px; max-width: 420px;
+    border: 1.5px solid #d7dfda; border-radius: 12px; background: #ffffff;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .budget-toggle:hover { border-color: #b9cec0; }
+  .budget-toggle.is-on { background: #f4f9e9; border-color: #b5d97d; }
+  .budget-toggle.is-disabled { opacity: 0.55; cursor: not-allowed; }
+  .budget-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+  .bt-switch {
+    position: relative; width: 40px; height: 23px; border-radius: 20px;
+    background: #d7dfda; flex-shrink: 0; margin-top: 1px; transition: background 0.18s;
+  }
+  .bt-knob {
+    position: absolute; top: 2.5px; left: 3px; width: 18px; height: 18px;
+    border-radius: 50%; background: #ffffff; box-shadow: 0 1px 3px rgba(20, 40, 28, 0.25);
+    transition: transform 0.18s;
+  }
+  .budget-toggle input:checked + .bt-switch { background: #14532d; }
+  .budget-toggle input:checked + .bt-switch .bt-knob { transform: translateX(16px); }
+  .budget-toggle input:focus-visible + .bt-switch { box-shadow: 0 0 0 3px rgba(20, 61, 35, 0.15); }
+  .bt-title { display: block; font-size: 13.5px; font-weight: 700; color: #1a2b1e; }
+  .bt-sub { display: block; font-size: 12px; color: #879a8c; line-height: 1.5; margin-top: 2px; }
+
+  /* Product filters: category + budget chip */
+  .product-filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 11px; }
+  .pf-select { max-width: 250px; }
+  .pf-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+    border-radius: 20px; background: #f4f9e9; border: 1px solid #cfdfa8;
+    font-size: 12px; font-weight: 600; color: #4a6353;
+  }
+  .pf-chip svg { color: #6b8a52; }
+
   .form-sheet {
     background: #ffffff; border: 1px solid #e4ebe6; border-radius: 18px;
     padding: 38px 42px 40px;
@@ -398,23 +467,79 @@
     </div>
     <div class="q-body">
       <div class="cond-group">
-        <label for="soil_type" class="input-label">Soil type</label>
-        <select name="soil_type" id="soil_type" class="input-field">
-          <option value="clay_loam" @selected(old('soil_type', 'clay_loam') === 'clay_loam')>Clay loam — typical rice soil</option>
-          <option value="sandy" @selected(old('soil_type') === 'sandy')>Sandy — fertilizer drains faster (+15%)</option>
-          <option value="peat" @selected(old('soil_type') === 'peat')>Peat — acidic, needs lime</option>
-        </select>
+        <label class="input-label" id="soilLabel">Soil type</label>
+        <div class="q-select" data-field="soil_type">
+          <input type="hidden" name="soil_type" id="soil_type" value="{{ old('soil_type', 'clay_loam') }}">
+          <button type="button" class="q-select-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="soilLabel">
+            <span class="qsel-title">Clay loam</span>
+            <svg class="qsel-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="q-select-menu" role="listbox" aria-labelledby="soilLabel">
+            <div class="q-select-item" data-value="clay_loam" role="option">
+              <div class="qsel-opt">
+                <div class="qsel-t">Clay loam</div>
+                <div class="qsel-s">Typical rice soil — no adjustment needed</div>
+              </div>
+              <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="q-select-item" data-value="sandy" role="option">
+              <div class="qsel-opt">
+                <div class="qsel-t">Sandy</div>
+                <div class="qsel-s">Fertilizer drains faster — adds 15% more fertilizer</div>
+              </div>
+              <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="q-select-item" data-value="peat" role="option">
+              <div class="qsel-opt">
+                <div class="qsel-t">Peat</div>
+                <div class="qsel-s">Acidic soil — adds the lime cost it needs</div>
+              </div>
+              <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="cond-group">
-        <label for="weather_context" class="input-label">Season risk</label>
-        <select name="weather_context" id="weather_context" class="input-field">
-          <option value="normal" @selected(old('weather_context', 'normal') === 'normal')>Normal season</option>
-          <option value="low_rain" @selected(old('weather_context') === 'low_rain')>Low rainfall</option>
-          <option value="typhoon" @selected(old('weather_context') === 'typhoon')>Typhoon risk — extra fungicide</option>
-          <option value="el_nino" @selected(old('weather_context') === 'el_nino')>El Niño — drought, irrigation needed</option>
-        </select>
+        <label class="input-label" id="riskLabel">Weather risk this planting</label>
+        <div class="q-select" data-field="weather_context">
+          <input type="hidden" name="weather_context" id="weather_context" value="{{ old('weather_context', 'normal') }}">
+          <button type="button" class="q-select-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="riskLabel">
+            <span class="qsel-title">Normal season</span>
+            <svg class="qsel-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="q-select-menu" role="listbox" aria-labelledby="riskLabel">
+            <div class="q-select-item" data-value="normal" role="option">
+              <div class="qsel-opt">
+                <div class="qsel-t">Normal season</div>
+                <div class="qsel-s">No extreme weather expected — nothing extra added</div>
+              </div>
+              <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="q-select-item" data-value="low_rain" role="option">
+              <div class="qsel-opt">
+                <div class="qsel-t">Low rainfall</div>
+                <div class="qsel-s">Drier than usual — plan for scarce water</div>
+              </div>
+              <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="q-select-item" data-value="typhoon" role="option">
+              <div class="qsel-opt">
+                <div class="qsel-t">Typhoon risk</div>
+                <div class="qsel-s">Adds extra fungicide + an 8% price buffer</div>
+              </div>
+              <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="q-select-item" data-value="el_nino" role="option">
+              <div class="qsel-opt">
+                <div class="qsel-t">El Niño drought</div>
+                <div class="qsel-s">Adds irrigation fuel/water fees + a 10% buffer</div>
+              </div>
+              <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="input-hint">Tell us what weather to plan for — the system adds the protective inputs and price buffers each risk needs, so the estimate matches your situation.</div>
       </div>
-      <div class="input-hint">These fine-tune the quantities and add the right risk contingencies for your situation.</div>
     </div>
   </div>
 
@@ -431,7 +556,15 @@
                placeholder="e.g., 25000" step="0.01" min="1" max="99999999.99"
                value="{{ old('budget_cap') }}">
       </div>
-      <div class="input-hint">We&rsquo;ll fit the plan within this amount — essentials always stay, optional items are deferred so you can add them when your budget allows. Leave blank for no limit.</div>
+      <label class="budget-toggle" for="budget_strict">
+        <input type="checkbox" name="budget_strict" id="budget_strict" value="1" @checked(old('budget_strict'))>
+        <span class="bt-switch"><span class="bt-knob"></span></span>
+        <span>
+          <span class="bt-title">Fit suggestions to my budget</span>
+          <span class="bt-sub">On: only suggest and include inputs that fit this amount. Off: full recommendations, with the budget used as a guide.</span>
+        </span>
+      </label>
+      <div class="input-hint">Leave blank for no limit.</div>
     </div>
   </div>
 
@@ -451,6 +584,15 @@
           Loading products...
         </div>
         <div id="product-selector-container" style="display: none;">
+          <div class="product-filter-row">
+            <select id="product-category" class="input-field pf-select" aria-label="Filter products by category">
+              <option value="">All categories</option>
+            </select>
+            <span id="budget-filter-chip" class="pf-chip" style="display: none;">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+              Within <b id="budget-chip-amount">₱0</b> budget
+            </span>
+          </div>
           <div class="product-selector-wrap">
             <svg class="product-search-icon" viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" id="product-search" class="product-search-input"
@@ -460,7 +602,7 @@
           <div id="selected-products" class="selected-products"></div>
         </div>
       </div>
-      <div class="input-hint">Leave empty to auto-include every input recommended for your crop and season.</div>
+      <div class="input-hint">Leave empty to auto-include every input recommended for your crop and season — with &lsquo;Fit suggestions to my budget&rsquo; on, only what fits your budget is included.</div>
     </div>
   </div>
 
@@ -523,7 +665,7 @@
         </div>
         <div>
           <div class="im-step-title">3. Field conditions &amp; budget</div>
-          <div class="im-step-desc">Pick your soil type and season risk so quantities and contingencies match your situation, and set an optional budget — the plan is then fitted within it, deferring optional items if needed.</div>
+          <div class="im-step-desc">Pick your soil type and the weather risk you expect, so quantities and price buffers match your situation. Set an optional budget — switch on &ldquo;Fit suggestions to my budget&rdquo; to have the plan built inside it.</div>
         </div>
       </div>
       <div class="im-step">
@@ -618,6 +760,55 @@
     }
   });
 
+  // --- Custom select dropdowns (soil type, weather risk) ---
+  document.querySelectorAll('.q-select').forEach(function (sel) {
+    const hidden = sel.querySelector('input[type="hidden"]');
+    const btn = sel.querySelector('.q-select-btn');
+    const title = sel.querySelector('.qsel-title');
+    const items = Array.from(sel.querySelectorAll('.q-select-item'));
+
+    function sync() {
+      items.forEach(function (i) {
+        i.classList.toggle('is-active', i.dataset.value === hidden.value);
+      });
+      const active = items.find(function (i) { return i.dataset.value === hidden.value; });
+      title.textContent = active ? active.querySelector('.qsel-t').textContent : 'Select…';
+    }
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const isOpen = sel.classList.contains('open');
+      document.querySelectorAll('.q-select.open').forEach(function (o) {
+        o.classList.remove('open');
+        o.querySelector('.q-select-btn').setAttribute('aria-expanded', 'false');
+      });
+      if (!isOpen) {
+        sel.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    items.forEach(function (i) {
+      i.addEventListener('click', function () {
+        hidden.value = i.dataset.value;
+        sel.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+        sync();
+      });
+    });
+
+    sync();
+  });
+
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('.q-select.open').forEach(function (o) {
+      if (!o.contains(e.target)) {
+        o.classList.remove('open');
+        o.querySelector('.q-select-btn').setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
+
   // --- Product Selector ---
   const cropInput = cropHiddenInput;
   const seasonInputs = document.querySelectorAll('input[name="season"]');
@@ -666,6 +857,7 @@
       allProducts = products;
       loadingEl.style.display = 'none';
       selectorEl.style.display = '';
+      populateCategoryOptions();
       renderDropdown('');
     })
     .catch(() => {
@@ -675,12 +867,20 @@
 
   function renderDropdown(query) {
     const q = query.toLowerCase();
-    const filtered = q
-      ? allProducts.filter(p => p.name.toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q) || (p.sku||'').toLowerCase().includes(q))
-      : allProducts;
+    const cat = categorySelect ? categorySelect.value : '';
+    const cap = activeBudgetCap();
+
+    let filtered = allProducts.filter(p =>
+      (!q || p.name.toLowerCase().includes(q) || (p.brand||'').toLowerCase().includes(q) || (p.sku||'').toLowerCase().includes(q))
+      && (!cat || p.category === cat)
+      && (!cap || parseFloat(p.price) <= cap)
+    );
+    if (cap) filtered = filtered.slice().sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
 
     if (filtered.length === 0) {
-      dropdownEl.innerHTML = '<div class="product-dropdown-empty">No products found for this crop and season.</div>';
+      dropdownEl.innerHTML = cap
+        ? '<div class="product-dropdown-empty">No products within your ₱' + cap.toLocaleString('en-PH') + ' budget' + (cat ? ' in ' + escapeHtml(cat) : '') + ' for this crop and season.</div>'
+        : '<div class="product-dropdown-empty">No products found for this crop and season.</div>';
     } else {
       dropdownEl.innerHTML = filtered.map(p => `
         <div class="product-dropdown-item ${selectedIds.has(p.id) ? 'selected' : ''}" data-id="${p.id}">
@@ -783,6 +983,66 @@
       dropdownEl.classList.remove('open');
     }
   });
+
+  // --- Budget fitting toggle + category filter ---
+  const budgetInput = document.getElementById('budget_cap');
+  const strictToggle = document.getElementById('budget_strict');
+  const strictWrap = strictToggle ? strictToggle.closest('.budget-toggle') : null;
+  const categorySelect = document.getElementById('product-category');
+  const budgetChip = document.getElementById('budget-filter-chip');
+  const budgetChipAmount = document.getElementById('budget-chip-amount');
+
+  // The budget cap the suggestion list is filtered by — only when the
+  // "fit suggestions" toggle is on and a positive budget is typed.
+  function activeBudgetCap() {
+    const cap = parseFloat(budgetInput && budgetInput.value);
+    const on = strictToggle && strictToggle.checked && !strictToggle.disabled && cap > 0;
+    return on ? cap : null;
+  }
+
+  function populateCategoryOptions() {
+    if (!categorySelect) return;
+    const current = categorySelect.value;
+    const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b));
+    categorySelect.innerHTML = '<option value="">All categories</option>' +
+      cats.map(c => '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>').join('');
+    categorySelect.value = cats.includes(current) ? current : '';
+  }
+
+  function syncBudgetUI() {
+    const hasBudget = parseFloat(budgetInput && budgetInput.value) > 0;
+    if (strictToggle) {
+      if (!hasBudget) {
+        strictToggle.checked = false;
+        strictToggle.disabled = true;
+      } else {
+        strictToggle.disabled = false;
+      }
+    }
+    if (strictWrap) {
+      strictWrap.classList.toggle('is-disabled', !hasBudget);
+      strictWrap.classList.toggle('is-on', hasBudget && strictToggle.checked);
+    }
+    const active = activeBudgetCap();
+    if (budgetChip) {
+      budgetChip.style.display = active ? '' : 'none';
+      if (active && budgetChipAmount) {
+        budgetChipAmount.textContent = '₱' + active.toLocaleString('en-PH', { maximumFractionDigits: 2 });
+      }
+    }
+  }
+
+  function refreshSuggestions() {
+    syncBudgetUI();
+    populateCategoryOptions();
+    if (dropdownEl.classList.contains('open')) renderDropdown(searchInput.value);
+  }
+
+  if (budgetInput) budgetInput.addEventListener('input', refreshSuggestions);
+  if (strictToggle) strictToggle.addEventListener('change', refreshSuggestions);
+  if (categorySelect) categorySelect.addEventListener('change', () => renderDropdown(searchInput.value));
+  syncBudgetUI();
 
   if (cropInput.value.trim() && getSelectedSeason()) {
     fetchProducts();
