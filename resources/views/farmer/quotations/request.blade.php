@@ -117,13 +117,14 @@
   }
   .help-btn {
     width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+    margin-top: -6.5px; /* center the button on the 24px title line */
     background: #ffffff; border: 1px solid #d7dfda; cursor: pointer;
     color: #143d23; display: flex; align-items: center; justify-content: center;
     transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   }
   .help-btn:hover { border-color: #143d23; background: #f3f8f4; transform: translateY(-1px); }
   .help-btn:active { transform: scale(0.96); }
-  .help-btn svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .help-btn svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 
   /* ── Instructions modal ── */
   .imodal-overlay {
@@ -361,10 +362,7 @@
       <div class="input-hint">
         <span class="climate-line">
           <span class="climate-dot {{ $climate['season'] }}"></span>
-          <strong>Currently:</strong> {{ $globalSeasonLabel }} — {{ $climate['months'] }}
-          @if(isset($climate['sub_season']))
-            <span class="climate-sub">({{ $climate['sub_season'] }})</span>
-          @endif
+          <strong>Currently:</strong> {{ $globalSeasonLabel }}
         </span>
       </div>
     </div>
