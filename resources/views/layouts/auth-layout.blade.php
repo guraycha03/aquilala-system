@@ -167,6 +167,14 @@
             outline: none !important;
         }
 
+        /* Field border weight — match the app's 1.5px fields (the calm,
+           substantial weight of the harvest-report forms); 1px read as
+           thin and sharp. The login phone wrapper matches separately. */
+        input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+        select, textarea {
+            border-width: 1.5px !important;
+        }
+
         /* Global select/dropdown styling — white field, rounded corners, custom arrow,
            and a forced light dropdown popup (never an OS-dark "black box") */
         select {

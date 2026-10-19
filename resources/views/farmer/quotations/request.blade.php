@@ -59,7 +59,7 @@
   }
   .q-num {
     width: 30px; height: 30px; border-radius: 10px; flex-shrink: 0;
-    background: #eef5ee; color: #143d23;
+    background: #eef3ef; color: #143d23;
     display: flex; align-items: center; justify-content: center;
     font-size: 12.5px; font-weight: 800;
   }
@@ -75,11 +75,13 @@
     background: #ffffff;
     transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
   }
-  .season-card:hover { border-color: #648268; }
+  .season-card:hover { border-color: #b9cec0; }
   .season-card.is-selected {
-    background: #dcfce7; border-color: #143d23;
+    background: #e9f6d2; border-color: #b5d97d;
     box-shadow: 0 1px 4px rgba(20, 61, 35, 0.08);
   }
+  .season-card.is-selected .sc-title { color: #14532d; }
+  .season-card.is-selected .sc-sub { color: #5f7d5c; }
   .season-card .sc-title { font-weight: 700; font-size: 14px; color: #1e2922; line-height: 1.35; }
   .season-card .sc-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
   @media (max-width: 420px) { .season-grid { grid-template-columns: 1fr; } }
@@ -119,9 +121,9 @@
     color: #143d23; display: flex; align-items: center; justify-content: center;
     transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.03);
   }
-  .help-btn:hover { border-color: #143d23; background: #f0fdf4; transform: translateY(-1px); }
+  .help-btn:hover { border-color: #143d23; background: #f3f8f4; transform: translateY(-1px); }
   .help-btn:active { transform: scale(0.96); }
-  .help-btn svg { width: 19px; height: 19px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .help-btn svg { width: 21px; height: 21px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 
   /* ── Instructions modal ── */
   .imodal-overlay {
@@ -202,8 +204,8 @@
     border-bottom: 1px solid #f4f6f5; transition: background 0.15s;
   }
   .product-dropdown-item:last-child { border-bottom: none; }
-  .product-dropdown-item:hover { background: #f0fdf4; }
-  .product-dropdown-item.selected { background: #f0fdf4; }
+  .product-dropdown-item:hover { background: #f3f8f4; }
+  .product-dropdown-item.selected { background: #f3f8f4; }
   .product-dropdown-item .prod-name { font-weight: 600; color: #1a2b1e; flex: 1; }
   .product-dropdown-item .prod-meta { font-size: 12px; color: #b0b8b3; }
   .product-dropdown-item .prod-price { font-weight: 700; color: #143d23; white-space: nowrap; }
@@ -213,9 +215,9 @@
   .selected-products { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
   .selected-product-chip {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 13px; background: #f0fdf4;
-    border: 1px solid #bbf7d0; border-radius: 9px;
-    font-size: 13px; color: #166534; font-weight: 600;
+    padding: 6px 13px; background: #eef3ef;
+    border: 1px solid #d8e3db; border-radius: 9px;
+    font-size: 13px; color: #3f7a4f; font-weight: 600;
   }
   .selected-product-chip button {
     background: none; border: none; color: #b0b8b3; cursor: pointer;
@@ -225,7 +227,7 @@
   .product-loading { padding: 18px; text-align: center; color: #879a8c; font-size: 13px; }
   .product-prompt {
     padding: 22px; text-align: center; color: #879a8c; font-size: 13px;
-    border: 1.5px dashed #d3dcd6; border-radius: 11px; background: #fafdfb;
+    border: 1.5px dashed #d3dcd6; border-radius: 11px; background: #f6f8f7;
   }
 
   /* Searchable Crop Selector */
@@ -256,8 +258,8 @@
     color: #1a2b1e;
   }
   .crop-dropdown-item:last-child { border-bottom: none; }
-  .crop-dropdown-item:hover { background: #f0fdf4; }
-  .crop-dropdown-item.active { background: #f0fdf4; font-weight: 600; color: #143d23; }
+  .crop-dropdown-item:hover { background: #f3f8f4; }
+  .crop-dropdown-item.active { background: #f3f8f4; font-weight: 600; color: #143d23; }
   .crop-dropdown-empty {
     padding: 22px 15px; text-align: center; color: #879a8c; font-size: 13px;
   }
@@ -283,7 +285,7 @@
     </p>
   </div>
   <button type="button" class="help-btn" id="helpBtn" title="How it works" aria-label="How it works">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
   </button>
 </div>
 

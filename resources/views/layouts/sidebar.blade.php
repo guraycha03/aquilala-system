@@ -131,7 +131,7 @@
   <script src="{{ asset('js/alpine.min.js') }}" defer></script>
   {{-- Display theme: every rule is scoped to [data-theme="dark"], so this file
        costs nothing while the user is in light mode. --}}
-  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=3">
+  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=4">
   {{-- App lockdown: kills text selection, copy/cut, long-press & right-click
        browser menus, and printing outside form fields — applies to every page
        and role, so the portal behaves like a native app and long-press is
@@ -147,6 +147,38 @@
     html { scrollbar-width: none; -ms-overflow-style: none; }
     html::-webkit-scrollbar { width: 0; height: 0; display: none; }
     body { font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif; background: #f3f6f4; color: #2c3530; display: flex; min-height: 100vh; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+    /* Remove the browser's default focus outline (a black ring on Windows)
+       on form fields; every input family paints its own focus state
+       (border-color + box-shadow) and the native ring covers it.
+       Same reset the auth layout already applies. Links/buttons keep
+       their keyboard focus ring. */
+    input:focus, input:focus-visible, input:focus-within,
+    select:focus, select:focus-visible,
+    textarea:focus, textarea:focus-visible {
+      outline: none !important;
+    }
+
+    /* Soft matte focus border on every field (light mode) — pages used
+       near-black greens (#143d23, #1e293b …) which read as a hard dark
+       border while typing; the muted sage from the palette (#648268)
+       keeps focus visible without the harshness. Dark mode keeps its
+       green focus border from dark-mode.css. */
+    html[data-theme="light"] input:focus,
+    html[data-theme="light"] select:focus,
+    html[data-theme="light"] textarea:focus {
+      border-color: #648268 !important;
+    }
+
+    /* Field border weight — the Submit Harvest Report form's 1.5px border
+       reads calm and substantial; the thinner 1px used elsewhere looked
+       sharp and unsettling on focus. Applied at rest (not only :focus) so
+       focused fields don't shift by a half-pixel. Native checkbox/radio/
+       range widgets keep their own geometry. */
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select, textarea {
+      border-width: 1.5px !important;
+    }
 
     /* Global: consistent, readable letter-spacing on all validation / feedback text */
     .field-error, .field-feedback, .form-error, .form-error-message,

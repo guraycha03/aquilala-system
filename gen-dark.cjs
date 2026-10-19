@@ -304,7 +304,11 @@ html[data-theme="dark"] { color-scheme: dark; }
 }
 [data-theme="dark"] input::placeholder,
 [data-theme="dark"] textarea::placeholder { color: #6b7280 !important; }
-[data-theme="dark"] input:focus, [data-theme="dark"] select:focus,
+/* The focus selector mirrors the base rule's :not() chain above — with the
+   chain, the focused border-color outranks the base rule's (both !important,
+   and without it the base [type] exclusions won the specificity tie). */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+[data-theme="dark"] select:focus,
 [data-theme="dark"] textarea:focus { border-color: #4ade80 !important; }
 [data-theme="dark"] option { background: #111827; color: #e5e7eb; }
 [data-theme="dark"] label { color: #9fb3a6; }

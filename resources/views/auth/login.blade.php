@@ -68,7 +68,7 @@
         /* Philippine mobile prefix (+639, locked) */
         .phone-row {
             display: flex; align-items: stretch;
-            border: 1px solid #e2e8f0; border-radius: 8px;
+            border: 1.5px solid #e2e8f0; border-radius: 8px;
             background: #fafbfa; overflow: hidden;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
@@ -270,12 +270,12 @@
         const row = document.querySelector('#phone-group .phone-row');
         const fb = document.getElementById('login-phone-local-feedback');
         if (isValid) {
-            row.style.border = '1px solid #16a34a';
+            row.style.border = '1.5px solid #16a34a';
             row.style.boxShadow = 'none';
             fb.style.color = '#16a34a';
             fb.textContent = message || '✓ Valid';
         } else {
-            row.style.border = '1px solid #e87070';
+            row.style.border = '1.5px solid #e87070';
             row.style.boxShadow = 'none';
             fb.style.color = '#d05b5b';
             fb.textContent = message || 'Required';
@@ -364,7 +364,7 @@
                 // Phone input is borderless; the wrapper carries the border
                 this.style.border = 'none';
                 this.style.boxShadow = 'none';
-                row.style.border = '1px solid #7fae8b';
+                row.style.border = '1.5px solid #7fae8b';
                 row.style.boxShadow = 'none';
             } else if (fb) {
                 this.style.border = '1px solid #7fae8b';
