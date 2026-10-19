@@ -333,34 +333,101 @@ class BudgetQuotationTest extends TestCase
             ->assertSee('DEFERRED');
     }
 
-    // ── Strict mode: "fit suggestions to my budget" ──────────────
+    // ── Fit mode: the 2× flexible ceiling ─────────────────────────
 
-    public function test_strict_mode_builds_the_included_set_inside_the_cap(): void
+    public function test_fit_mode_allows_the_plan_up_to_double_the_budget(): void
     {
-        $result = $this->quote(['budget_cap' => 500, 'budget_strict' => true]);
+        // Confirmed with the farmer: a ₱300 budget may build a plan worth
+        // up to ₱600 — the essential line (₱400) now fits even though it
+        // crosses the stated budget, and the optional line (another ₱400)
+        // is trimmed because the pair would reach ₱800 > ₱600.
+        $result = $this->quote(['budget_cap' => 300, 'budget_strict' => true]);
 
-        // Same outcome as the informational fit here: the essential line
-        // fits, the optional line does not — but now the cap is the rule,
-        // not a guide.
+        $this->assertTrue($result['summary']['budget_in_flex_band']);
+        $this->assertEqualsWithDelta(600.0, (float) $result['summary']['budget_flex_ceiling'], 0.01);
         $this->assertSame('trimmed', $result['summary']['budget_status']);
-        $this->assertTrue($result['summary']['budget_strict']);
         $this->assertCount(1, $result['items']);
         $this->assertSame($this->fertilizer->id, $result['items'][0]['product_id']);
-        $this->assertEqualsWithDelta(100.0, (float) $result['summary']['budget_left'], 0.01);
+        $this->assertCount(1, $result['deferred_items']);
+        $this->assertNull($result['summary']['budget_left']);
     }
 
-    public function test_strict_mode_prices_nothing_when_the_budget_is_below_the_essentials(): void
+    public function test_fit_mode_stays_unreachable_when_essentials_pass_double_the_budget(): void
     {
-        // Non-strict keeps the essentials and reports over_budget;
-        // strict must refuse to include anything it cannot afford.
-        $result = $this->quote(['budget_cap' => 300, 'budget_strict' => true]);
+        // ₱150 budget → ₱300 ceiling; essentials start at ₱400: even the
+        // flexibility cannot start the plan.
+        $result = $this->quote(['budget_cap' => 150, 'budget_strict' => true]);
 
         $this->assertSame('unreachable', $result['summary']['budget_status']);
         $this->assertEmpty($result['items']);
         $this->assertCount(2, $result['deferred_items']);
-        // ₱400 essentials vs a ₱300 cap → ₱100 short of the floor.
+        // ₱400 essentials vs the ₱300 ceiling → ₱100 short.
         $this->assertEqualsWithDelta(400.0, (float) $result['summary']['essential_minimum'], 0.01);
+        $this->assertEqualsWithDelta(300.0, (float) $result['summary']['budget_flex_ceiling'], 0.01);
         $this->assertEqualsWithDelta(100.0, (float) $result['summary']['shortfall'], 0.01);
+        $this->assertNull($result['summary']['budget_left']);
+    }
+
+    public function test_fit_mode_does_not_apply_when_the_toggle_is_off(): void
+    {
+        // Toggle off → ceiling is the stated budget itself, no allowance.
+        $result = $this->quote(['budget_cap' => 500]);
+
+        $this->assertEqualsWithDelta(500.0, (float) $result['summary']['budget_flex_ceiling'], 0.01);
+        $this->assertFalse($result['summary']['budget_in_flex_band']);
+        $this->assertSame('trimmed', $result['summary']['budget_status']);
+        $this->assertCount(1, $result['items']);
+    }
+
+    public function test_fit_band_renders_as_flexible_not_short(): void
+    {
+        $engine = $this->app->make(CostQuotationEngine::class);
+
+        $quotation = $engine->calculateAndSave([
+            'store_owner_id'    => $this->store->id,
+            'crop_type'         => 'Rice',
+            'season'            => 'wet',
+            'weather_context'   => 'normal',
+            'soil_type'         => 'clay_loam',
+            'land_area'         => 1.0,
+            'budget_cap'        => 300,
+            'budget_strict'     => true,
+            'selected_products' => [$this->fertilizer->id, $this->fungicide->id],
+        ], $this->farmer);
+
+        // The persisted flag tells the view this is the allowance band,
+        // not a plain over-budget plan.
+        $this->assertTrue((bool) $quotation->budget_strict);
+
+        $this->actingAs($this->farmer)
+            ->get(route('farmer.quotations.show', $quotation))
+            ->assertOk()
+            ->assertSee('Within your flexible limit')
+            ->assertDontSee('Short by');
+
+        $this->actingAs($this->farmer)
+            ->get(route('farmer.quotations.breakdown', $quotation))
+            ->assertOk()
+            ->assertSee('within your flexible limit')
+            ->assertSee('up to ₱600.00');
+    }
+
+    // ── Strict mode: "fit suggestions to my budget" ──────────────
+
+    public function test_strict_mode_builds_the_included_set_inside_the_ceiling(): void
+    {
+        $result = $this->quote(['budget_cap' => 500, 'budget_strict' => true]);
+
+        // The full ₱800 plan now fits: fit mode's ceiling is twice the
+        // ₱500 budget (₱1,000), so strict mode keeps everything the old
+        // 1× cap would have trimmed — the ceiling is the rule.
+        $this->assertSame('fitted', $result['summary']['budget_status']);
+        $this->assertTrue($result['summary']['budget_strict']);
+        $this->assertCount(2, $result['items']);
+        $this->assertEmpty($result['deferred_items']);
+        $this->assertTrue($result['summary']['budget_in_flex_band']);
+        $this->assertEqualsWithDelta(800.0, (float) $result['summary']['grand_total'], 0.01);
+        $this->assertEqualsWithDelta(1000.0, (float) $result['summary']['budget_flex_ceiling'], 0.01);
         $this->assertNull($result['summary']['budget_left']);
     }
 
@@ -368,15 +435,19 @@ class BudgetQuotationTest extends TestCase
     {
         // The reported bug: no products selected → the engine auto-included
         // the whole recommended plan (₱26k) on a ₱1,000 budget. Strict mode
-        // must cap the auto-included set at what the budget can buy.
-        $tight = $this->quote(['selected_products' => [], 'budget_cap' => 500, 'budget_strict' => true]);
+        // must cap the auto-included set at what the ceiling can buy —
+        // twice the stated budget.
+        $tight = $this->quote(['selected_products' => [], 'budget_cap' => 300, 'budget_strict' => true]);
 
+        // ₱600 ceiling keeps the ₱400 essential line, trims the ₱400
+        // optional line that would reach ₱800.
         $this->assertSame('trimmed', $tight['summary']['budget_status']);
         $this->assertCount(1, $tight['items']);
         $this->assertSame($this->fertilizer->id, $tight['items'][0]['product_id']);
         $this->assertCount(1, $tight['deferred_items']);
 
-        // A budget below every line auto-includes nothing at all.
+        // A budget whose doubled ceiling still sits below every line
+        // auto-includes nothing at all.
         $tiny = $this->quote(['selected_products' => [], 'budget_cap' => 100, 'budget_strict' => true]);
 
         $this->assertSame('unreachable', $tiny['summary']['budget_status']);
@@ -434,10 +505,12 @@ class BudgetQuotationTest extends TestCase
 
         $this->assertNotNull($quotation);
         $this->assertEqualsWithDelta(300.0, (float) $quotation->budget_cap, 0.01);
-        // Nothing fits ₱300: both lines recorded but deferred, total ₱0.
+        $this->assertTrue((bool) $quotation->budget_strict);
+        // ₱600 ceiling: the essential line survives, the optional line is
+        // trimmed — and the fitted total reflects what actually stays.
         $this->assertCount(2, $quotation->items);
-        $this->assertTrue($quotation->items->every('is_deferred'));
-        $this->assertEqualsWithDelta(0.0, (float) $quotation->estimated_total_cost, 0.01);
+        $this->assertSame(1, $quotation->items->where('is_deferred', true)->count());
+        $this->assertEqualsWithDelta(400.0, (float) $quotation->estimated_total_cost, 0.01);
     }
 
     // ── The product filter data the form needs ───────────────────

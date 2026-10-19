@@ -36,19 +36,31 @@
   $deferredCount = $deferredItems->count();
   $fittedCount   = $quotation->items->count() - $deferredCount;
   $budgetCap     = $quotation->budget_cap !== null ? (float) $quotation->budget_cap : null;
-  $budgetDiff    = $budgetCap !== null ? round($total - $budgetCap, 2) : null;
-  $shortfall     = $budgetDiff !== null && $budgetDiff > 0 ? $budgetDiff : null;
-  $budgetLeft    = $budgetDiff !== null && $budgetDiff <= 0 ? abs($budgetDiff) : null;
+  // Fit mode's hard ceiling: twice the stated budget — the same rule the
+  // engine fits against (mirrored here because only the persisted cap,
+  // total, and strict flag reach the view).
+  $budgetStrict  = (bool) $quotation->budget_strict;
+  $budgetCeiling = $budgetCap !== null
+    ? round($budgetCap * ($budgetStrict ? 2 : 1), 2)
+    : null;
+  // Over the stated budget but inside the allowance: fit mode's flexible
+  // band — fitted, not short.
+  $flexBand      = $budgetCap !== null && $budgetStrict
+    && $total > $budgetCap && $total <= $budgetCeiling;
+  $shortfall     = $budgetCap !== null && $total > $budgetCeiling
+    ? round($total - $budgetCeiling, 2) : null;
+  $budgetLeft    = $budgetCap !== null && $total <= $budgetCap
+    ? round($budgetCap - $total, 2) : null;
   $deferredTotal = (float) $deferredItems->sum('subtotal');
 
   // "Nothing fits" state (strict budget mode priced nothing inside the
-  // cap): every line on the quotation is deferred. The floor the plan
+  // ceiling): every line on the quotation is deferred. The floor the plan
   // would need is the essential minimum, or the deferred sum when the
   // plan is all optional lines.
   $essentialMin = (float) $quotation->items->where('priority', '!=', 'optional')->sum('subtotal');
   $fitFloor     = $essentialMin > 0 ? $essentialMin : $deferredTotal;
   $unreachable  = $budgetCap !== null && $quotation->items->isNotEmpty() && $fittedCount === 0;
-  $unreachableShortfall = $unreachable ? round($fitFloor - $budgetCap, 2) : null;
+  $unreachableShortfall = $unreachable ? round($fitFloor - (float) $budgetCeiling, 2) : null;
   $isRed       = $unreachable || $shortfall;
 @endphp
 <style>
@@ -410,8 +422,25 @@
         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </div>
       <div>
-        <b class="bb-title">Short by ₱{{ number_format($shortfall, 2) }} — essentials alone exceed your budget</b>
-        <p class="bb-text">Your ₱{{ number_format($budgetCap, 2) }} budget is below what the essentials come to (₱{{ number_format($total, 2) }}). The plan below keeps only essentials and required condition items — optional inputs stay deferred. Adjust quantities, wait for better prices, or revisit before committing.</p>
+        <b class="bb-title">Short by ₱{{ number_format($shortfall, 2) }}@if($budgetStrict) — past your ₱{{ number_format($budgetCeiling, 2) }} flexible limit @else — essentials alone exceed your budget @endif</b>
+        <p class="bb-text">Your ₱{{ number_format($budgetCap, 2) }} budget @if($budgetStrict) with its ₱{{ number_format($budgetCeiling, 2) }} allowance @endif is below what this plan comes to (₱{{ number_format($total, 2) }}). The plan below keeps what fits — anything extra stays deferred. Adjust quantities, wait for better prices, or revisit before committing.</p>
+      </div>
+    </div>
+  @elseif($flexBand)
+    <div class="budget-banner trimmed">
+      <div class="bb-icon">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </div>
+      <div>
+        <b class="bb-title">Within your flexible limit — ₱{{ number_format($total, 2) }} of your ₱{{ number_format($budgetCap, 2) }} budget</b>
+        <p class="bb-text">Fit mode allows up to ₱{{ number_format($budgetCeiling, 2) }} — twice your budget — so a must-have that crosses the line can still be part of the plan; the total never goes past that limit.@if($deferredCount > 0) {{ $deferredCount }} input(s) worth ₱{{ number_format($deferredTotal, 2) }} were deferred to stay within it:@endif</p>
+        @if($deferredCount > 0)
+          <ul class="bb-list">
+            @foreach($deferredItems as $di)
+              <li>{{ $di->product_name }} — ₱{{ number_format((float) $di->subtotal, 2) }}</li>
+            @endforeach
+          </ul>
+        @endif
       </div>
     </div>
   @elseif($deferredCount > 0)
@@ -509,7 +538,7 @@
       @if($budgetCap !== null)
         <div class="fact-row">
           <span style="font-size: 13px; color: #51605a;">Budget</span>
-          <span style="font-weight: 700; color: {{ $isRed ? '#a1352b' : '#166534' }};">₱{{ number_format($budgetCap, 2) }}@if($unreachable) &middot; plan needs ₱{{ number_format($fitFloor, 2) }}@elseif($shortfall) &middot; short ₱{{ number_format($shortfall, 2) }}@endif</span>
+          <span style="font-weight: 700; color: {{ $isRed ? '#a1352b' : '#166534' }};">₱{{ number_format($budgetCap, 2) }}@if($unreachable) &middot; plan needs ₱{{ number_format($fitFloor, 2) }}@elseif($shortfall) &middot; short ₱{{ number_format($shortfall, 2) }}@elseif($flexBand) &middot; flexible to ₱{{ number_format($budgetCeiling, 2) }}@endif</span>
         </div>
       @endif
       <div class="fact-row">

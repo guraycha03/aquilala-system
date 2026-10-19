@@ -14,8 +14,8 @@
     background: #ffffff; transition: border-color 0.2s, box-shadow 0.2s;
   }
   .input-field:focus {
-    outline: none; border-color: #143d23;
-    box-shadow: 0 0 0 3px rgba(20, 61, 35, 0.08);
+    outline: none; border-color: #648268;
+    box-shadow: 0 0 0 3px rgba(100, 130, 104, 0.12);
   }
   .input-label {
     display: block; font-size: 13.5px; font-weight: 700;
@@ -118,7 +118,9 @@
     transition: border-color 0.15s, box-shadow 0.15s;
   }
   .q-select-btn:hover { border-color: #b9cec0; }
-  .q-select.open .q-select-btn { border-color: #143d23; box-shadow: 0 0 0 3px rgba(20, 61, 35, 0.08); }
+  /* Open state uses the same soft matte sage as focus — the near-black
+     green (#143d23) read as a hard dark border on an active field. */
+  .q-select.open .q-select-btn { border-color: #648268; box-shadow: 0 0 0 3px rgba(100, 130, 104, 0.12); }
   .qsel-title { font-size: 14px; font-weight: 600; color: #1e2922; }
   .qsel-chev { width: 16px; height: 16px; color: #64748b; flex-shrink: 0; transition: transform 0.18s; }
   .q-select.open .qsel-chev { transform: rotate(180deg); }
@@ -176,6 +178,24 @@
     font-size: 12px; font-weight: 600; color: #4a6353;
   }
   .pf-chip svg { color: #6b8a52; }
+
+  /* Live budget total under the product picker — recalculates the moment
+     a product, the budget, or the fit toggle changes. States reuse the
+     budget-banner palette (muted green / amber / rose) so the dark-mode
+     generator can scrape them. */
+  .budget-meter {
+    display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+    margin-top: 12px; padding: 11px 14px; border-radius: 10px;
+    border: 1.5px solid #d7dfda; background: #f7faf8;
+    font-size: 13px; line-height: 1.55; color: #46554c;
+  }
+  .budget-meter .bm-amount { font-weight: 800; color: #1a2b1e; }
+  .budget-meter.bm-ok { border-color: #bbf7d0; background: #f0fdf4; color: #3f6b4d; }
+  .budget-meter.bm-ok .bm-amount { color: #166534; }
+  .budget-meter.bm-flex { border-color: #f0e0ad; background: #fdf9ec; color: #7a6431; }
+  .budget-meter.bm-flex .bm-amount { color: #85620f; }
+  .budget-meter.bm-over { border-color: #f6d0cc; background: #fdf3f2; color: #8c524b; }
+  .budget-meter.bm-over .bm-amount { color: #a1352b; }
 
   .form-sheet {
     background: #ffffff; border: 1px solid #e4ebe6; border-radius: 18px;
@@ -259,8 +279,8 @@
     background: #ffffff; transition: border-color 0.2s, box-shadow 0.2s;
   }
   .product-search-input:focus {
-    outline: none; border-color: #143d23;
-    box-shadow: 0 0 0 3px rgba(20, 61, 35, 0.08);
+    outline: none; border-color: #648268;
+    box-shadow: 0 0 0 3px rgba(100, 130, 104, 0.12);
   }
   .product-search-icon {
     position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
@@ -313,8 +333,8 @@
     background: #ffffff; transition: border-color 0.2s, box-shadow 0.2s;
   }
   .crop-search-input:focus {
-    outline: none; border-color: #143d23;
-    box-shadow: 0 0 0 3px rgba(20, 61, 35, 0.08);
+    outline: none; border-color: #648268;
+    box-shadow: 0 0 0 3px rgba(100, 130, 104, 0.12);
   }
   .crop-search-icon {
     position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
@@ -561,7 +581,7 @@
         <span class="bt-switch"><span class="bt-knob"></span></span>
         <span>
           <span class="bt-title">Fit suggestions to my budget</span>
-          <span class="bt-sub">On: only suggest and include inputs that fit this amount. Off: full recommendations, with the budget used as a guide.</span>
+          <span class="bt-sub">On: suggestions and included inputs stay within this budget — up to double it, so a must-have just over the line can still be considered. Off: full recommendations, with the budget used as a guide.</span>
         </span>
       </label>
       <div class="input-hint">Leave blank for no limit.</div>
@@ -590,7 +610,7 @@
             </select>
             <span id="budget-filter-chip" class="pf-chip" style="display: none;">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
-              Within <b id="budget-chip-amount">₱0</b> budget
+              Budget <b id="budget-chip-budget">₱0</b> · up to <b id="budget-chip-amount">₱0</b>
             </span>
           </div>
           <div class="product-selector-wrap">
@@ -600,9 +620,10 @@
             <div id="product-dropdown" class="product-dropdown"></div>
           </div>
           <div id="selected-products" class="selected-products"></div>
+          <div id="budget-meter" class="budget-meter" style="display: none;" aria-live="polite"></div>
         </div>
       </div>
-      <div class="input-hint">Leave empty to auto-include every input recommended for your crop and season — with &lsquo;Fit suggestions to my budget&rsquo; on, only what fits your budget is included.</div>
+      <div class="input-hint">Leave empty to auto-include the best input for each job for your crop and season — with &lsquo;Fit suggestions to my budget&rsquo; on, the plan is fitted live inside your budget (up to twice it only when a must-have needs it).</div>
     </div>
   </div>
 
@@ -665,7 +686,7 @@
         </div>
         <div>
           <div class="im-step-title">3. Field conditions &amp; budget</div>
-          <div class="im-step-desc">Pick your soil type and the weather risk you expect, so quantities and price buffers match your situation. Set an optional budget — switch on &ldquo;Fit suggestions to my budget&rdquo; to have the plan built inside it.</div>
+          <div class="im-step-desc">Pick your soil type and the weather risk you expect, so quantities and price buffers match your situation. Set an optional budget — switch on &ldquo;Fit suggestions to my budget&rdquo; to have the plan fitted inside it (up to twice your budget, only when a must-have needs it).</div>
         </div>
       </div>
       <div class="im-step">
@@ -879,7 +900,7 @@
 
     if (filtered.length === 0) {
       dropdownEl.innerHTML = cap
-        ? '<div class="product-dropdown-empty">No products within your ₱' + cap.toLocaleString('en-PH') + ' budget' + (cat ? ' in ' + escapeHtml(cat) : '') + ' for this crop and season.</div>'
+        ? '<div class="product-dropdown-empty">No products up to ₱' + cap.toLocaleString('en-PH') + ' (your budget’s fit limit)' + (cat ? ' in ' + escapeHtml(cat) : '') + ' for this crop and season.</div>'
         : '<div class="product-dropdown-empty">No products found for this crop and season.</div>';
     } else {
       dropdownEl.innerHTML = filtered.map(p => `
@@ -914,6 +935,7 @@
     if (selectedIds.size === 0) {
       selectedEl.innerHTML = '';
       updateHiddenInput();
+      updateBudgetMeter();
       return;
     }
 
@@ -929,6 +951,57 @@
     }).join('');
 
     updateHiddenInput();
+    updateBudgetMeter();
+  }
+
+  // Live budget total: recalculated the moment a product, the budget, or
+  // the fit toggle changes — the farmer sees where the picks stand against
+  // the budget (and its 2× fit limit) before ever generating. Reads its
+  // own elements so it can run whenever renderSelected does.
+  function updateBudgetMeter() {
+    const meter = document.getElementById('budget-meter');
+    if (!meter) return;
+
+    const cap = parseFloat(document.getElementById('budget_cap')?.value);
+    const toggle = document.getElementById('budget_strict');
+    const strictOn = !!(toggle && toggle.checked && !toggle.disabled && cap > 0);
+
+    if (!(cap > 0)) {
+      meter.style.display = 'none';
+      meter.className = 'budget-meter';
+      return;
+    }
+
+    const ceiling = strictOn ? cap * 2 : cap;
+    const total = [...selectedIds].reduce((sum, id) => {
+      const p = allProducts.find(x => x.id === id);
+      return sum + (p ? parseFloat(p.price) : 0);
+    }, 0);
+    const peso = (n) => '₱' + n.toLocaleString('en-PH', { maximumFractionDigits: 2 });
+
+    let cls, html;
+    if (selectedIds.size === 0) {
+      cls = strictOn ? 'bm-flex' : '';
+      html = strictOn
+        ? '<span class="bm-amount">' + peso(0) + '</span> selected — leave empty and the system will fit the best suggestions up to <span class="bm-amount">' + peso(ceiling) + '</span> (2× your ' + peso(cap) + ' budget).'
+        : 'Budget noted: <span class="bm-amount">' + peso(cap) + '</span>. Leave products empty to auto-include the best input for each job, or pick your own.';
+    } else if (strictOn && total > ceiling) {
+      cls = 'bm-over';
+      html = 'Selected <span class="bm-amount">' + peso(total) + '</span> — past your ' + peso(ceiling) + ' fit limit (2× the ' + peso(cap) + ' budget). The quotation will trim what no longer fits.';
+    } else if (strictOn && total > cap) {
+      cls = 'bm-flex';
+      html = 'Selected <span class="bm-amount">' + peso(total) + '</span> — over your ' + peso(cap) + ' budget but within the ' + peso(ceiling) + ' flexible limit.';
+    } else if (strictOn) {
+      cls = 'bm-ok';
+      html = 'Selected <span class="bm-amount">' + peso(total) + '</span> of your ' + peso(cap) + ' budget — ' + peso(cap - total) + ' still free.';
+    } else {
+      cls = '';
+      html = 'Selected <span class="bm-amount">' + peso(total) + '</span> · budget <span class="bm-amount">' + peso(cap) + '</span> (a guide — fit mode keeps the plan inside it).';
+    }
+
+    meter.className = 'budget-meter ' + cls;
+    meter.innerHTML = html;
+    meter.style.display = '';
   }
 
   function updateHiddenInput() {
@@ -991,13 +1064,15 @@
   const categorySelect = document.getElementById('product-category');
   const budgetChip = document.getElementById('budget-filter-chip');
   const budgetChipAmount = document.getElementById('budget-chip-amount');
+  const budgetChipBudget = document.getElementById('budget-chip-budget');
 
-  // The budget cap the suggestion list is filtered by — only when the
-  // "fit suggestions" toggle is on and a positive budget is typed.
+  // The hard ceiling the suggestion list is filtered by — the stated
+  // budget, or twice it while "fit suggestions to my budget" is on
+  // (the 2× flexibility the engine fits against too).
   function activeBudgetCap() {
     const cap = parseFloat(budgetInput && budgetInput.value);
     const on = strictToggle && strictToggle.checked && !strictToggle.disabled && cap > 0;
-    return on ? cap : null;
+    return on ? cap * 2 : null;
   }
 
   function populateCategoryOptions() {
@@ -1025,10 +1100,14 @@
       strictWrap.classList.toggle('is-on', hasBudget && strictToggle.checked);
     }
     const active = activeBudgetCap();
+    const stated = parseFloat(budgetInput && budgetInput.value);
     if (budgetChip) {
       budgetChip.style.display = active ? '' : 'none';
       if (active && budgetChipAmount) {
         budgetChipAmount.textContent = '₱' + active.toLocaleString('en-PH', { maximumFractionDigits: 2 });
+      }
+      if (active && budgetChipBudget) {
+        budgetChipBudget.textContent = '₱' + stated.toLocaleString('en-PH', { maximumFractionDigits: 2 });
       }
     }
   }
@@ -1036,6 +1115,7 @@
   function refreshSuggestions() {
     syncBudgetUI();
     populateCategoryOptions();
+    updateBudgetMeter();
     if (dropdownEl.classList.contains('open')) renderDropdown(searchInput.value);
   }
 
@@ -1043,6 +1123,7 @@
   if (strictToggle) strictToggle.addEventListener('change', refreshSuggestions);
   if (categorySelect) categorySelect.addEventListener('change', () => renderDropdown(searchInput.value));
   syncBudgetUI();
+  updateBudgetMeter();
 
   if (cropInput.value.trim() && getSelectedSeason()) {
     fetchProducts();

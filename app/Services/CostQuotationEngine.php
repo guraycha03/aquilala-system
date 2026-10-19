@@ -75,6 +75,15 @@ class CostQuotationEngine
     const PRIORITY_SITUATIONAL = 'situational';
 
     /**
+     * "Fit suggestions to my budget" lets the plan reach TWICE the stated
+     * budget (confirmed with the farmer: a ₱50 budget may suggest up to
+     * ₱100) so a must-have that crosses the line can still be considered —
+     * never past this ceiling, and never applied when the toggle is off
+     * (then the budget stays a guide, not a rule).
+     */
+    const BUDGET_FLEX_MULTIPLIER = 2.0;
+
+    /**
      * Main entry point: compute a complete cost quotation.
      *
      * @param array $input {
@@ -246,6 +255,12 @@ class CostQuotationEngine
         $budgetStrict = filter_var($input['budget_strict'] ?? false, FILTER_VALIDATE_BOOL);
         $deferredItems = [];
 
+        // The hard ceiling fitting works against: the stated budget, or
+        // twice it while "fit suggestions to my budget" is on.
+        $budgetCeiling = $budgetCap !== null
+            ? round($budgetCap * ($budgetStrict ? self::BUDGET_FLEX_MULTIPLIER : 1), 2)
+            : null;
+
         // The essential floor of the full plan (seeds, fertilizer, and any
         // condition-justified lines) — used to explain an unreachable budget.
         $essentialMinimum = round(array_sum(array_column(
@@ -262,7 +277,8 @@ class CostQuotationEngine
                 // transparent order — essentials first, then the lines the
                 // field conditions justify, then crop protection; cheapest
                 // first within a tier so the budget buys as much as it can.
-                // Nothing is added once the budget is reached.
+                // Nothing is added once the flexible ceiling (twice the
+                // stated budget) is reached.
                 $rank = [
                     self::PRIORITY_ESSENTIAL   => 0,
                     self::PRIORITY_SITUATIONAL => 1,
@@ -275,7 +291,7 @@ class CostQuotationEngine
                 );
 
                 foreach ($candidates as $item) {
-                    if ($runningSubtotal + $item['subtotal'] <= $budgetCap) {
+                    if ($runningSubtotal + $item['subtotal'] <= $budgetCeiling) {
                         $kept[] = $item;
                         $runningSubtotal += $item['subtotal'];
                     } else {
@@ -346,21 +362,32 @@ class CostQuotationEngine
         // ─── 8. Build Summary ──────────────────────────────────────
         // Budget outcome, in plain terms for the farmer-facing views:
         // fitted = everything fits (with room to spare), trimmed = some
-        // optional lines were deferred, over_budget = even essentials plus
-        // contingencies exceed the stated budget.
+        // optional lines were deferred, in the flexible band = the plan
+        // sits between the stated budget and twice it (fit mode's
+        // allowance), over_budget = past the ceiling, unreachable = not
+        // even twice the budget can start the plan.
         $budgetStatus = 'none';
         $shortfall    = null;
         $budgetLeft   = null;
+        $inFlexBand   = false;
 
         if ($budgetCap !== null) {
             if ($budgetStrict && $items === [] && $fullPlanSubtotal > 0) {
-                // Strict mode priced nothing inside the budget: the plan's
-                // essentials already start above it.
+                // Strict mode priced nothing inside the ceiling: the plan's
+                // essentials already start above twice the budget.
                 $budgetStatus = 'unreachable';
-                $shortfall    = round($essentialMinimum - $budgetCap, 2);
-            } elseif ($grandTotal > $budgetCap) {
+                $shortfall    = round($essentialMinimum - $budgetCeiling, 2);
+            } elseif ($grandTotal > $budgetCeiling) {
+                // Contingencies can push a strict plan past the ceiling;
+                // with the toggle off, the stated cap is the rule.
                 $budgetStatus = 'over_budget';
-                $shortfall    = round($grandTotal - $budgetCap, 2);
+                $shortfall    = round($grandTotal - $budgetCeiling, 2);
+            } elseif ($budgetStrict && $grandTotal > $budgetCap) {
+                // The flexible band: over the stated budget, never past
+                // twice it — counted as fitted, with no "left" to claim.
+                $budgetStatus = $deferredItems !== [] ? 'trimmed' : 'fitted';
+                $budgetLeft   = null;
+                $inFlexBand   = true;
             } elseif ($deferredItems !== []) {
                 $budgetStatus = 'trimmed';
                 $budgetLeft   = round($budgetCap - $grandTotal, 2);
@@ -381,6 +408,8 @@ class CostQuotationEngine
             'grand_total'         => $grandTotal,
             'budget_cap'          => $budgetCap,
             'budget_strict'       => $budgetStrict,
+            'budget_flex_ceiling' => $budgetCeiling,
+            'budget_in_flex_band' => $inFlexBand,
             'budget_status'       => $budgetStatus,
             'full_plan_subtotal'  => round($fullPlanSubtotal, 2),
             'essential_minimum'   => $essentialMinimum,
@@ -427,6 +456,7 @@ class CostQuotationEngine
                 'weather_context'      => $input['weather_context'] ?? 'normal',
                 'land_area'            => $summary['land_area'],
                 'budget_cap'           => $summary['budget_cap'],
+                'budget_strict'        => $summary['budget_strict'],
                 'estimated_total_cost' => $summary['grand_total'],
                 'status'               => Quotation::STATUS_COMPUTED,
                 'valid_until'          => $summary['valid_until'],

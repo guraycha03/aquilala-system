@@ -31,6 +31,7 @@ class Quotation extends Model
         'weather_context',
         'land_area',
         'budget_cap',
+        'budget_strict',
         'estimated_total_cost',
         'status',
         'viewed_at',
@@ -44,6 +45,7 @@ class Quotation extends Model
         'viewed_at'   => 'datetime',
         'land_area'   => 'decimal:2',
         'budget_cap'  => 'decimal:2',
+        'budget_strict' => 'boolean',
     ];
 
     // ── Accessors ──────────────────────────────────────────────────
