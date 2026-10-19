@@ -27,7 +27,10 @@ class Quotation extends Model
         'quotation_number',
         'crop_type',
         'season',
+        'soil_type',
+        'weather_context',
         'land_area',
+        'budget_cap',
         'estimated_total_cost',
         'status',
         'viewed_at',
@@ -40,6 +43,7 @@ class Quotation extends Model
         'valid_until' => 'datetime',
         'viewed_at'   => 'datetime',
         'land_area'   => 'decimal:2',
+        'budget_cap'  => 'decimal:2',
     ];
 
     // ── Accessors ──────────────────────────────────────────────────

@@ -200,9 +200,14 @@
                 $rounded = in_array($unit, $discreteUnits) && is_numeric($baseQty) && ceil($baseQty) != $baseQty;
                 $storeOwner = $item->product?->storeOwner;
               @endphp
-              <tr>
+              <tr @if($item->is_deferred) style="opacity: 0.62;" @endif>
                 <td>
-                  <div style="font-weight: 600; color: #1a2b1e;">{{ $item->product_name }}</div>
+                  <div style="font-weight: 600; color: #1a2b1e;">
+                    {{ $item->product_name }}
+                    @if($item->is_deferred)
+                      <span style="display: inline-block; margin-left: 7px; padding: 2px 8px; border-radius: 8px; background: #fdf0c8; color: #85620f; font-size: 11px; font-weight: 700; vertical-align: middle;">Deferred to fit budget</span>
+                    @endif
+                  </div>
                   @if($item->product)
                     <div style="font-size: 13px; color: #94a3b8; font-family: 'SF Mono', ui-monospace, monospace;">SKU: {{ $item->product->sku }}</div>
                     <div style="font-size: 13px; color: #94a3b8; text-transform: capitalize;">{{ $item->product->category_display_name }}</div>
@@ -242,6 +247,25 @@
         <div class="down-total-label">Estimated Total</div>
         <div class="down-total-value">₱{{ number_format($total, 2) }}</div>
         <div class="down-total-caption">Rate per hectare &times; land area, priced at the store&rsquo;s current rate</div>
+        @php
+          $dItems = $quotation->items->where('is_deferred', true);
+        @endphp
+        @if($quotation->budget_cap !== null)
+          @php
+            $cap = (float) $quotation->budget_cap;
+          @endphp
+          <div class="down-total-caption" style="margin-top: 5px;">
+            Budget ₱{{ number_format($cap, 2) }}
+            @if($total > $cap)
+              &middot; <strong style="color: #a1352b;">short ₱{{ number_format($total - $cap, 2) }}</strong>
+            @else
+              &middot; <strong style="color: #166534;">₱{{ number_format($cap - $total, 2) }} to spare</strong>
+            @endif
+          </div>
+        @endif
+        @if($dItems->isNotEmpty())
+          <div class="down-total-caption" style="margin-top: 5px;">{{ $dItems->count() }} deferred item(s) worth ₱{{ number_format((float) $dItems->sum('subtotal'), 2) }} — kept for reference, not included in this total</div>
+        @endif
       </div>
       <div class="app-scrollbar">
         <div class="app-scrollbar-track"></div>

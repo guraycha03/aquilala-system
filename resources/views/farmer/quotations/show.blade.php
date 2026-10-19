@@ -10,8 +10,83 @@
   $daysLeft   = $quotation->valid_until ? (int) max(0, now()->diffInDays($quotation->valid_until, false)) : null;
   $effStatus  = $quotation->effective_status;
   $storeOwners = $quotation->items->pluck('product.storeOwner')->filter()->unique('id');
+
+  // Field-condition chips for the header and plan rows.
+  $soilLabels = [
+      'clay_loam' => 'Clay loam soil',
+      'sandy'     => 'Sandy soil',
+      'peat'      => 'Peat soil',
+  ];
+  $riskLabels = [
+      'normal'   => 'Normal conditions',
+      'low_rain' => 'Low rainfall',
+      'typhoon'  => 'Typhoon risk',
+      'el_nino'  => 'El Niño drought',
+  ];
+  $soilLabel = $quotation->soil_type
+      ? ($soilLabels[$quotation->soil_type] ?? ucfirst(str_replace('_', ' ', $quotation->soil_type)))
+      : null;
+  $riskLabel = $quotation->weather_context
+      ? ($riskLabels[$quotation->weather_context] ?? ucfirst(str_replace('_', ' ', $quotation->weather_context)))
+      : null;
+
+  // Budget outcome, derived from the stored quotation (the engine's
+  // summary is not persisted wholesale): cap + fitted total + deferrals.
+  $deferredItems = $quotation->items->where('is_deferred', true);
+  $deferredCount = $deferredItems->count();
+  $fittedCount   = $quotation->items->count() - $deferredCount;
+  $budgetCap     = $quotation->budget_cap !== null ? (float) $quotation->budget_cap : null;
+  $budgetDiff    = $budgetCap !== null ? round($total - $budgetCap, 2) : null;
+  $shortfall     = $budgetDiff !== null && $budgetDiff > 0 ? $budgetDiff : null;
+  $budgetLeft    = $budgetDiff !== null && $budgetDiff <= 0 ? abs($budgetDiff) : null;
+  $deferredTotal = (float) $deferredItems->sum('subtotal');
 @endphp
 <style>
+  /* Small context chips in the header (soil type, season risk) */
+  .meta-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 11px; border-radius: 20px;
+    background: #f4f6f5; border: 1px solid #d7dfda;
+    font-size: 11.5px; font-weight: 700; color: #4a6353;
+  }
+  .meta-chip .chip-dot { width: 7px; height: 7px; border-radius: 50%; background: #8fae97; flex-shrink: 0; }
+
+  /* Budget outcome banner — muted green / amber / rose, in the page's
+     calm visual language. Class-based (NOT inline style) so the
+     dark-mode generator can scrape the rules into dark-mode.css. */
+  .budget-banner {
+    display: flex; gap: 13px; align-items: flex-start;
+    border: 1.5px solid; border-radius: 14px;
+    padding: 16px 18px; margin-bottom: 20px;
+  }
+  .budget-banner .bb-icon {
+    width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .budget-banner .bb-title { display: block; font-size: 14px; font-weight: 800; margin-bottom: 3px; }
+  .budget-banner .bb-text { margin: 0; font-size: 13px; line-height: 1.6; }
+  .budget-banner .bb-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 7px; }
+  .budget-banner .bb-list li {
+    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 8px;
+    background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(30, 41, 34, 0.10);
+    color: inherit;
+  }
+
+  .budget-banner.fitted { background: #f0fdf4; border-color: #bbf7d0; }
+  .budget-banner.fitted .bb-title { color: #166534; }
+  .budget-banner.fitted .bb-text { color: #3f6b4d; }
+  .budget-banner.fitted .bb-icon { background: #dcfce7; color: #166534; }
+
+  .budget-banner.trimmed { background: #fdf9ec; border-color: #f0e0ad; }
+  .budget-banner.trimmed .bb-title { color: #85620f; }
+  .budget-banner.trimmed .bb-text { color: #7a6431; }
+  .budget-banner.trimmed .bb-icon { background: #fdf0c8; color: #85620f; }
+
+  .budget-banner.over { background: #fdf3f2; border-color: #f6d0cc; }
+  .budget-banner.over .bb-title { color: #a1352b; }
+  .budget-banner.over .bb-text { color: #8c524b; }
+  .budget-banner.over .bb-icon { background: #fbded9; color: #a1352b; }
+
   .page-header-card {
     background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #e0f7ea 100%);
     border: 1px solid #bbf7d0;
@@ -251,6 +326,12 @@
             No expiration set
           @endif
         </span>
+        @if($soilLabel)
+          <span class="meta-chip"><span class="chip-dot"></span>{{ $soilLabel }}</span>
+        @endif
+        @if($riskLabel)
+          <span class="meta-chip"><span class="chip-dot"></span>{{ $riskLabel }}</span>
+        @endif
       </div>
       <h1 style="font-size: 24px; font-weight: 800; color: #1a2b1e; margin: 0 0 6px 0; letter-spacing: -0.02em; font-family: 'SF Mono', ui-monospace, monospace;">
         {{ $quotation->quotation_number }}
@@ -287,12 +368,52 @@
       </div>
       <div class="spot-stats">
         <div class="spot-stat"><b>{{ number_format($landArea, 2) }} ha</b><span>Land Area</span></div>
-        <div class="spot-stat"><b>{{ $quotation->items->count() }}</b><span>Line Items</span></div>
+        <div class="spot-stat"><b>{{ $fittedCount }}@if($deferredCount) <small style="font-size: 10.5px; color: #85620f; font-weight: 700;">({{ $deferredCount }} deferred)</small>@endif</b><span>Line Items</span></div>
         <div class="spot-stat"><b>{{ max(1, $storeOwners->count()) }}</b><span>Store(s)</span></div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Budget outcome (only when the farmer set a budget cap) -->
+@if($budgetCap !== null)
+  @if($shortfall)
+    <div class="budget-banner over">
+      <div class="bb-icon">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div>
+        <b class="bb-title">Short by ₱{{ number_format($shortfall, 2) }} — essentials alone exceed your budget</b>
+        <p class="bb-text">Your ₱{{ number_format($budgetCap, 2) }} budget is below what the essentials come to (₱{{ number_format($total, 2) }}). The plan below keeps only essentials and required condition items — optional inputs stay deferred. Adjust quantities, wait for better prices, or revisit before committing.</p>
+      </div>
+    </div>
+  @elseif($deferredCount > 0)
+    <div class="budget-banner trimmed">
+      <div class="bb-icon">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+      </div>
+      <div>
+        <b class="bb-title">Fitted to your ₱{{ number_format($budgetCap, 2) }} budget — ₱{{ number_format((float) $budgetLeft, 2) }} left</b>
+        <p class="bb-text">{{ $deferredCount }} optional item(s) worth ₱{{ number_format($deferredTotal, 2) }} were deferred to fit your budget. They stay on this quotation so you can add them when your budget allows:</p>
+        <ul class="bb-list">
+          @foreach($deferredItems as $di)
+            <li>{{ $di->product_name }} — ₱{{ number_format((float) $di->subtotal, 2) }}</li>
+          @endforeach
+        </ul>
+      </div>
+    </div>
+  @else
+    <div class="budget-banner fitted">
+      <div class="bb-icon">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div>
+        <b class="bb-title">Fits your ₱{{ number_format($budgetCap, 2) }} budget — ₱{{ number_format((float) $budgetLeft, 2) }} to spare</b>
+        <p class="bb-text">Every recommended input fits within the budget you set.</p>
+      </div>
+    </div>
+  @endif
+@endif
 
 <!-- AI Overview (auto-loaded) -->
 <div class="panel-card">
@@ -346,13 +467,31 @@
         <span style="font-size: 13px; color: #51605a;">Land Area</span>
         <span style="font-weight: 700; color: #1a2b1e;">{{ number_format($landArea, 2) }} hectares</span>
       </div>
+      @if($soilLabel)
+        <div class="fact-row">
+          <span style="font-size: 13px; color: #51605a;">Soil Type</span>
+          <span style="font-weight: 700; color: #1a2b1e;">{{ $soilLabel }}</span>
+        </div>
+      @endif
+      @if($riskLabel)
+        <div class="fact-row">
+          <span style="font-size: 13px; color: #51605a;">Season Risk</span>
+          <span style="font-weight: 700; color: #1a2b1e;">{{ $riskLabel }}</span>
+        </div>
+      @endif
+      @if($budgetCap !== null)
+        <div class="fact-row">
+          <span style="font-size: 13px; color: #51605a;">Budget</span>
+          <span style="font-weight: 700; color: {{ $shortfall ? '#a1352b' : '#166534' }};">₱{{ number_format($budgetCap, 2) }}@if($shortfall) &middot; short ₱{{ number_format($shortfall, 2) }}@endif</span>
+        </div>
+      @endif
       <div class="fact-row">
         <span style="font-size: 13px; color: #51605a;">Cost per Hectare</span>
         <span style="font-weight: 700; color: #1a2b1e;">₱{{ number_format($perHectare, 2) }}</span>
       </div>
       <div class="fact-row">
         <span style="font-size: 13px; color: #51605a;">Selected Inputs</span>
-        <span style="font-weight: 700; color: #1a2b1e;">{{ $quotation->items->count() }} item(s)</span>
+        <span style="font-weight: 700; color: #1a2b1e;">{{ $fittedCount }} item(s)@if($deferredCount) <span style="font-weight: 600; color: #85620f;">&middot; {{ $deferredCount }} deferred</span>@endif</span>
       </div>
       <div class="fact-row">
         <span style="font-size: 13px; color: #51605a;">Generated On</span>
@@ -398,7 +537,12 @@
               </div>
               <div style="flex: 1; min-width: 0;">
                 <div style="font-weight: 700; color: #1a2b1e; font-size: 13.5px;">{{ $store->name }}</div>
-                <div style="font-size: 12px; color: #879a8c;">{{ $quotation->items->where('product.user_id', $store->id)->count() }} product(s) &middot; ₱{{ number_format($quotation->items->where('product.user_id', $store->id)->sum('subtotal'), 2) }}</div>
+                @php
+                  $sItems    = $quotation->items->where('product.user_id', $store->id);
+                  $sFitted   = $sItems->where('is_deferred', false);
+                  $sDeferred = $sItems->count() - $sFitted->count();
+                @endphp
+                <div style="font-size: 12px; color: #879a8c;">{{ $sFitted->count() }} product(s) &middot; ₱{{ number_format((float) $sFitted->sum('subtotal'), 2) }}@if($sDeferred) &middot; {{ $sDeferred }} deferred @endif</div>
               </div>
             </div>
           @endforeach

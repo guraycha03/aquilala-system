@@ -154,7 +154,15 @@
   <div class="detail-card-header">
     <div>
       <h2 style="font-size: 16px; font-weight: 700; color: #1a2b1e; margin: 0;">Your Products in This Quotation</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">{{ $storeItems->count() }} of your product(s) were included</p>
+      @php
+        $sFitted = $storeItems->where('is_deferred', false);
+      @endphp
+      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">
+        {{ $sFitted->count() }} of your product(s) were included
+        @if($storeItems->count() !== $sFitted->count())
+          &middot; {{ $storeItems->count() - $sFitted->count() }} deferred to fit the farmer&rsquo;s budget
+        @endif
+      </p>
     </div>
   </div>
   <div style="padding: 0;">
@@ -170,9 +178,14 @@
         </thead>
         <tbody>
           @foreach($storeItems as $item)
-            <tr>
+            <tr @if($item->is_deferred) style="opacity: 0.62;" @endif>
               <td>
-                <div style="font-weight: 600; color: #1a2b1e;">{{ $item->product_name }}</div>
+                <div style="font-weight: 600; color: #1a2b1e;">
+                  {{ $item->product_name }}
+                  @if($item->is_deferred)
+                    <span style="display: inline-block; margin-left: 7px; padding: 2px 8px; border-radius: 8px; background: #fdf0c8; color: #85620f; font-size: 10.5px; font-weight: 700; vertical-align: middle;">DEFERRED</span>
+                  @endif
+                </div>
                 @if($item->product)
                   <div style="font-size: 11px; color: #b0b8b3; font-family: 'SF Mono', ui-monospace, monospace;">SKU: {{ $item->product->sku }}</div>
                 @endif
@@ -189,9 +202,20 @@
           <tr style="background: #fafdfb;">
             <td colspan="3" style="font-weight: 700; color: #1a2b1e;">Total from Your Store</td>
             <td style="text-align: right; font-weight: 800; color: #143d23; font-size: 18px;">
-              ₱{{ number_format($storeItems->sum('subtotal'), 2) }}
+              ₱{{ number_format((float) $sFitted->sum('subtotal'), 2) }}
             </td>
           </tr>
+          @php
+            $sDeferred = $storeItems->where('is_deferred', true);
+          @endphp
+          @if($sDeferred->isNotEmpty())
+            <tr style="background: #fdf9ec;">
+              <td colspan="3" style="font-weight: 600; color: #85620f; font-size: 13px;">Deferred to fit the farmer&rsquo;s budget &mdash; kept as demand signal, not in the current plan</td>
+              <td style="text-align: right; font-weight: 700; color: #85620f; font-size: 14px;">
+                ₱{{ number_format((float) $sDeferred->sum('subtotal'), 2) }}
+              </td>
+            </tr>
+          @endif
         </tfoot>
       </table>
     @else
@@ -233,12 +257,15 @@
         <tbody>
           @foreach($quotation->items as $item)
             @php $isYours = $item->product && $item->product->user_id === Auth::id(); @endphp
-            <tr class="{{ $isYours ? 'yours' : '' }}">
+            <tr class="{{ $isYours ? 'yours' : '' }}" @if($item->is_deferred) style="opacity: 0.62;" @endif>
               <td>
                 <div style="font-weight: 600; {{ $isYours ? 'color: #143d23;' : '' }}">
                   {{ $item->product_name }}
                   @if($isYours)
                     <span class="your-product-tag">YOUR PRODUCT</span>
+                  @endif
+                  @if($item->is_deferred)
+                    <span class="your-product-tag" style="background: #fdf0c8; color: #85620f;">DEFERRED</span>
                   @endif
                 </div>
               </td>

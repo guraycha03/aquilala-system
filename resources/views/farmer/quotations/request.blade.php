@@ -104,6 +104,10 @@
     font-size: 14px; color: #64748b; font-weight: 600; white-space: nowrap;
   }
 
+  /* Field-condition select groups (Step 4) */
+  .cond-group + .cond-group { margin-top: 15px; }
+  .cond-group .input-label { margin-bottom: 6px; }
+
   .form-sheet {
     background: #ffffff; border: 1px solid #e4ebe6; border-radius: 18px;
     padding: 38px 42px 40px;
@@ -167,6 +171,7 @@
   }
   .im-step-badge.green { background: #dcfce7; color: #166534; }
   .im-step-badge.blue  { background: #dbeafe; color: #1d4ed8; }
+  .im-step-badge.teal  { background: #ccfbf1; color: #0f766e; }
   .im-step-badge.amber { background: #fef3c7; color: #b45309; }
   .im-step-badge.violet{ background: #ede9fe; color: #6d28d9; }
   .im-step-title { font-size: 13.5px; font-weight: 700; color: #1a2b1e; }
@@ -385,10 +390,55 @@
     </div>
   </div>
 
-  <!-- 4. Products -->
-  <div class="q-block q-span">
+  <!-- 4. Field Conditions -->
+  <div class="q-block">
     <div class="q-head">
       <span class="q-num">4</span>
+      <label class="input-label">What are your field conditions?</label>
+    </div>
+    <div class="q-body">
+      <div class="cond-group">
+        <label for="soil_type" class="input-label">Soil type</label>
+        <select name="soil_type" id="soil_type" class="input-field">
+          <option value="clay_loam" @selected(old('soil_type', 'clay_loam') === 'clay_loam')>Clay loam — typical rice soil</option>
+          <option value="sandy" @selected(old('soil_type') === 'sandy')>Sandy — fertilizer drains faster (+15%)</option>
+          <option value="peat" @selected(old('soil_type') === 'peat')>Peat — acidic, needs lime</option>
+        </select>
+      </div>
+      <div class="cond-group">
+        <label for="weather_context" class="input-label">Season risk</label>
+        <select name="weather_context" id="weather_context" class="input-field">
+          <option value="normal" @selected(old('weather_context', 'normal') === 'normal')>Normal season</option>
+          <option value="low_rain" @selected(old('weather_context') === 'low_rain')>Low rainfall</option>
+          <option value="typhoon" @selected(old('weather_context') === 'typhoon')>Typhoon risk — extra fungicide</option>
+          <option value="el_nino" @selected(old('weather_context') === 'el_nino')>El Niño — drought, irrigation needed</option>
+        </select>
+      </div>
+      <div class="input-hint">These fine-tune the quantities and add the right risk contingencies for your situation.</div>
+    </div>
+  </div>
+
+  <!-- 5. Budget -->
+  <div class="q-block">
+    <div class="q-head">
+      <span class="q-num">5</span>
+      <label for="budget_cap" class="input-label">What&rsquo;s your budget for this planting? <span class="opt-tag">(optional)</span></label>
+    </div>
+    <div class="q-body">
+      <div class="area-row">
+        <div class="area-unit">₱</div>
+        <input type="number" name="budget_cap" id="budget_cap" class="input-field"
+               placeholder="e.g., 25000" step="0.01" min="1" max="99999999.99"
+               value="{{ old('budget_cap') }}">
+      </div>
+      <div class="input-hint">We&rsquo;ll fit the plan within this amount — essentials always stay, optional items are deferred so you can add them when your budget allows. Leave blank for no limit.</div>
+    </div>
+  </div>
+
+  <!-- 6. Products -->
+  <div class="q-block q-span">
+    <div class="q-head">
+      <span class="q-num">6</span>
       <label class="input-label">Select products <span class="opt-tag">(optional)</span></label>
     </div>
     <div class="q-body">
@@ -414,10 +464,10 @@
     </div>
   </div>
 
-  <!-- 5. Notes -->
+  <!-- 7. Notes -->
   <div class="q-block q-span">
     <div class="q-head">
-      <span class="q-num">5</span>
+      <span class="q-num">7</span>
       <label for="notes" class="input-label">Additional notes <span class="opt-tag">(optional)</span></label>
     </div>
     <div class="q-body">
@@ -442,7 +492,7 @@
     <div class="imodal-head">
       <div>
         <h3 id="helpModalTitle">How to Generate a Cost Quotation</h3>
-        <p>Three quick questions, one instant estimate</p>
+        <p>A few quick questions, one instant estimate</p>
       </div>
       <button type="button" class="imodal-close" id="helpModalClose" aria-label="Close">
         <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -468,11 +518,20 @@
         </div>
       </div>
       <div class="im-step">
+        <div class="im-step-badge teal">
+          <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <div class="im-step-title">3. Field conditions &amp; budget</div>
+          <div class="im-step-desc">Pick your soil type and season risk so quantities and contingencies match your situation, and set an optional budget — the plan is then fitted within it, deferring optional items if needed.</div>
+        </div>
+      </div>
+      <div class="im-step">
         <div class="im-step-badge amber">
           <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
         </div>
         <div>
-          <div class="im-step-title">3. Select products (optional)</div>
+          <div class="im-step-title">4. Select products (optional)</div>
           <div class="im-step-desc">Choose specific inputs and their quantities. Leave this empty to auto-include every recommended input.</div>
         </div>
       </div>
@@ -481,12 +540,12 @@
           <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
         <div>
-          <div class="im-step-title">4. Generate &amp; review</div>
+          <div class="im-step-title">5. Generate &amp; review</div>
           <div class="im-step-desc">Hit &ldquo;Generate Cost Quotation&rdquo; and get a plain-language summary with a full itemized breakdown on the next page.</div>
         </div>
       </div>
       <div class="im-note">
-        <strong>How the price works:</strong> recommended rate per hectare &times; your land area = quantity needed; quantity &times; current store price = each line. Quotations are valid for 14 days and are for planning — not a purchase commitment.
+        <strong>How the price works:</strong> recommended rate per hectare &times; your land area = quantity needed; quantity &times; current store price = each line. With a budget set, essentials always stay and optional items are listed as deferred so you can add them later. Quotations are valid for 14 days and are for planning — not a purchase commitment.
       </div>
     </div>
   </div>

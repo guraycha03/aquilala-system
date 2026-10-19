@@ -62,6 +62,17 @@ class CostQuotationEngine
     const CONTINGENCY_RATE = 0.05; // 5%
 
     /**
+     * Budget-fitting priority tiers (transparent category rule):
+     * - situational: lime/irrigation lines the soil/weather rules added —
+     *   the chosen field conditions justify them, so a budget never cuts them;
+     * - essential: seeds and fertilizer — no crop without them;
+     * - optional: crop protection — protects yield but can be deferred.
+     */
+    const PRIORITY_ESSENTIAL   = 'essential';
+    const PRIORITY_OPTIONAL    = 'optional';
+    const PRIORITY_SITUATIONAL = 'situational';
+
+    /**
      * Main entry point: compute a complete cost quotation.
      *
      * @param array $input {
@@ -197,6 +208,7 @@ class CostQuotationEngine
                 'adjusted_quantity'   => $adjustedQuantity,
                 'unit'                => $stages?->first()->unit ?? $product->stock_unit ?? 'piece',
                 'subtotal'            => $lineSubtotal,
+                'priority'            => $this->priorityFor($product),
                 'adjustments'         => array_filter([
                     $soilAdjustmentNote,
                     $weatherNote,
@@ -206,6 +218,59 @@ class CostQuotationEngine
             ];
 
             $subtotal += $lineSubtotal;
+        }
+
+        // ─── 4.5 Budget Fitting ──────────────────────────────────
+        // When the farmer states a budget: essential inputs (seeds,
+        // fertilizer) and situational lines triggered by the chosen field
+        // conditions (peat lime, El Niño irrigation) always stay — no crop
+        // without them. Optional crop-protection lines are added in
+        // recommended order until the budget is reached; the rest are
+        // deferred: still recorded on the quotation, but excluded from the
+        // fitted total. Contingencies below then apply to what the farmer
+        // will actually spend.
+        $fullPlanSubtotal = $subtotal;
+        $budgetCap = isset($input['budget_cap']) && $input['budget_cap'] !== null
+            ? round((float) $input['budget_cap'], 2)
+            : null;
+        $deferredItems = [];
+
+        if ($budgetCap !== null) {
+            $runningSubtotal = 0.0;
+            $kept           = [];
+            $optionalPool   = [];
+
+            foreach ($items as $item) {
+                if ($item['priority'] === self::PRIORITY_OPTIONAL) {
+                    $optionalPool[] = $item;
+                    continue;
+                }
+                $kept[] = $item;
+                $runningSubtotal += $item['subtotal'];
+            }
+
+            foreach ($optionalPool as $item) {
+                if ($runningSubtotal + $item['subtotal'] <= $budgetCap) {
+                    $kept[] = $item;
+                    $runningSubtotal += $item['subtotal'];
+                } else {
+                    $deferredItems[] = $item;
+                }
+            }
+
+            // Keep the engine's original line order for display, and say so
+            // on every deferred line so the deferral is never silent.
+            $order = array_flip(array_column($items, 'product_id'));
+            usort($kept,         fn ($a, $b) => $order[$a['product_id']] <=> $order[$b['product_id']]);
+            usort($deferredItems, fn ($a, $b) => $order[$a['product_id']] <=> $order[$b['product_id']]);
+
+            foreach ($deferredItems as &$item) {
+                $item['adjustments'][] = 'Deferred to fit your budget — add it when your budget allows';
+            }
+            unset($item);
+
+            $items    = $kept;
+            $subtotal = round($runningSubtotal, 2);
         }
 
         // ─── 5. Weather-Specific Contingency Fees ──────────────────
@@ -230,6 +295,27 @@ class CostQuotationEngine
         $grandTotal = round($subtotal + $weatherContingency + $soilContingency, 2);
 
         // ─── 8. Build Summary ──────────────────────────────────────
+        // Budget outcome, in plain terms for the farmer-facing views:
+        // fitted = everything fits (with room to spare), trimmed = some
+        // optional lines were deferred, over_budget = even essentials plus
+        // contingencies exceed the stated budget.
+        $budgetStatus = 'none';
+        $shortfall    = null;
+        $budgetLeft   = null;
+
+        if ($budgetCap !== null) {
+            if ($grandTotal > $budgetCap) {
+                $budgetStatus = 'over_budget';
+                $shortfall    = round($grandTotal - $budgetCap, 2);
+            } elseif ($deferredItems !== []) {
+                $budgetStatus = 'trimmed';
+                $budgetLeft   = round($budgetCap - $grandTotal, 2);
+            } else {
+                $budgetStatus = 'fitted';
+                $budgetLeft   = round($budgetCap - $grandTotal, 2);
+            }
+        }
+
         $summary = [
             'land_area'           => $landArea,
             'soil_type'           => $soilType,
@@ -239,13 +325,21 @@ class CostQuotationEngine
             'weather_contingency' => $weatherContingency,
             'soil_contingency'    => $soilContingency,
             'grand_total'         => $grandTotal,
+            'budget_cap'          => $budgetCap,
+            'budget_status'       => $budgetStatus,
+            'full_plan_subtotal'  => round($fullPlanSubtotal, 2),
+            'deferred_count'      => count($deferredItems),
+            'deferred_total'      => round(array_sum(array_column($deferredItems, 'subtotal')), 2),
+            'shortfall'           => $shortfall,
+            'budget_left'         => $budgetLeft,
             'valid_until'         => now()->addDays(14)->format('Y-m-d H:i:s'),
             'quotation_number'    => 'QT-' . date('Y') . '-' . strtoupper(Str::random(6)),
         ];
 
         return [
-            'items'   => $items,
-            'summary' => $summary,
+            'items'          => $items,
+            'deferred_items' => $deferredItems,
+            'summary'        => $summary,
         ];
     }
 
@@ -276,13 +370,22 @@ class CostQuotationEngine
                 'soil_type'            => $input['soil_type'] ?? 'clay_loam',
                 'weather_context'      => $input['weather_context'] ?? 'normal',
                 'land_area'            => $summary['land_area'],
+                'budget_cap'           => $summary['budget_cap'],
                 'estimated_total_cost' => $summary['grand_total'],
                 'status'               => Quotation::STATUS_COMPUTED,
                 'valid_until'          => $summary['valid_until'],
                 'notes'                => $input['notes'] ?? null,
             ]);
 
-            foreach ($subTotal['items'] as $itemData) {
+            // Both fitted and deferred lines are recorded: the farmer and
+            // the store owner see the full plan, with the deferral flag
+            // marking what the stated budget trimmed off.
+            $allItems = array_merge(
+                array_map(fn (array $i) => $i + ['is_deferred' => false], $subTotal['items']),
+                array_map(fn (array $i) => $i + ['is_deferred' => true], $subTotal['deferred_items'] ?? []),
+            );
+
+            foreach ($allItems as $itemData) {
                 QuotationItem::create([
                     'quotation_id'        => $quotation->id,
                     'product_id'          => $itemData['product_id'],
@@ -290,6 +393,7 @@ class CostQuotationEngine
                     'price_at_generation' => $itemData['price_at_generation'],
                     'calculated_quantity' => $itemData['adjusted_quantity'],
                     'subtotal'            => $itemData['subtotal'],
+                    'is_deferred'         => $itemData['is_deferred'],
                 ]);
             }
 
@@ -312,6 +416,7 @@ class CostQuotationEngine
             'weather_context'   => ['required', 'in:normal,low_rain,typhoon,el_nino'],
             'soil_type'         => ['required', 'in:clay_loam,sandy,peat'],
             'land_area'         => ['required', 'numeric', 'min:0.01', 'max:999.99'],
+            'budget_cap'        => ['nullable', 'numeric', 'min:1', 'max:99999999.99'],
             'selected_products' => ['nullable', 'array'],
             'selected_products.*' => ['integer', 'exists:products,id'],
             'notes'             => ['nullable', 'string', 'max:2000'],
@@ -503,6 +608,29 @@ class CostQuotationEngine
         return str_contains($name, 'lime')
             || str_contains($name, 'agricultural lime')
             || str_contains($name, 'calcium');
+    }
+
+    /**
+     * Budget-fitting priority for a line item.
+     *
+     * Situational lines (peat lime, El Niño irrigation) are additions the
+     * chosen field conditions justify, so a budget never cuts them. Seeds
+     * and fertilizer are essential — no crop without them. Crop protection
+     * is optional: it protects yield but can be deferred when money is
+     * tight. Anything the engine cannot classify defaults to essential so
+     * a budget never silently removes an unknown product.
+     */
+    private function priorityFor(Product $product): string
+    {
+        if ($this->isAgriculturalLime($product) || $this->isIrrigation($product)) {
+            return self::PRIORITY_SITUATIONAL;
+        }
+
+        if ($this->isFungicide($product)) {
+            return self::PRIORITY_OPTIONAL;
+        }
+
+        return self::PRIORITY_ESSENTIAL;
     }
 
     /**
