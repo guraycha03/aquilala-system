@@ -27,13 +27,45 @@ class AiChatController extends Controller
 
     public function index()
     {
-        $role = auth()->user()?->role;
+        $user = auth()->user();
+        $data = ['aiAvatar' => $user?->aiAvatarUrl() ?? asset('images/ai-avatar.png')];
 
-        if ($role === 'store_owner') {
-            return view('store.ai-chat.index');
+        if ($user?->role === 'store_owner') {
+            return view('store.ai-chat.index', $data);
         }
 
-        return view('farmer.ai-chat.index');
+        return view('farmer.ai-chat.index', $data);
+    }
+
+    /**
+     * Save this account's AI assistant avatar (chat header + AI messages).
+     * Stored on the public disk under ai-avatars/ and keyed to the user id
+     * via the users table, so it follows the account on every device.
+     */
+    public function updateAvatar(Request $request)
+    {
+        $validated = $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+        ], [
+            'avatar.required' => 'Please choose an image.',
+            'avatar.image' => 'Please choose an image file.',
+            'avatar.mimes' => 'Use a JPG, PNG, or WebP image.',
+            'avatar.max' => 'Image must be smaller than 2 MB.',
+        ]);
+
+        $user = $request->user();
+
+        if ($user->ai_avatar) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($user->ai_avatar);
+        }
+
+        $path = $request->file('avatar')->store('ai-avatars', ['disk' => 'public']);
+        $user->forceFill(['ai_avatar' => $path])->save();
+
+        return response()->json([
+            'ok' => true,
+            'url' => \Illuminate\Support\Facades\Storage::disk('public')->url($path),
+        ]);
     }
 
     /**

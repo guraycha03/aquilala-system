@@ -131,7 +131,7 @@
   <script src="{{ asset('js/alpine.min.js') }}" defer></script>
   {{-- Display theme: every rule is scoped to [data-theme="dark"], so this file
        costs nothing while the user is in light mode. --}}
-  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=9">
+  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=10">
   {{-- App lockdown: kills text selection, copy/cut, long-press & right-click
        browser menus, and printing outside form fields — applies to every page
        and role, so the portal behaves like a native app and long-press is
@@ -146,7 +146,28 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scrollbar-width: none; -ms-overflow-style: none; }
     html::-webkit-scrollbar { width: 0; height: 0; display: none; }
-    body { font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif; background: #f3f6f4; color: #2c3530; display: flex; min-height: 100vh; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+    /* ── System color rule (applies to every page): muted, matte, WARM SAGE
+       greens — never bright or neon greens, never hard black borders or
+       text. Build backgrounds, accents, focus rings, and hover states from
+       these tokens so the whole portal stays soft and easy on the eyes. */
+    :root {
+      --aq-sage-700: #3f5a46;   /* deepest sage: emphasized accents on light */
+      --aq-sage-600: #4f6a56;   /* strong sage: prices, links, small buttons */
+      --aq-sage-500: #648268;   /* primary action sage: buttons, focus, avatar */
+      --aq-sage-400: #7f9a85;   /* soft accents, status dots */
+      --aq-sage-300: #a9bdaa;
+      --aq-sage-200: #ccd7c9;
+      --aq-sage-100: #e6ebe2;   /* soft sage surface (tints, table heads) */
+      --aq-sage-50:  #f1f4ee;   /* sage wash: message panes, hover fills */
+      --aq-bg:       #f4f5f0;   /* warm matte page background */
+      --aq-line:     #e4e8de;   /* warm hairline borders */
+      --aq-ink:      #2c3530;   /* primary text: warm near-black */
+      --aq-ink-soft: #5c6d61;   /* secondary text */
+      --aq-ink-faint:#879a8c;   /* tertiary text, placeholders */
+    }
+
+    body { font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif; background: var(--aq-bg, #f4f5f0); color: var(--aq-ink, #2c3530); display: flex; min-height: 100vh; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
     /* Remove the browser's default focus outline (a black ring on Windows)
        on form fields; every input family paints its own focus state
@@ -774,6 +795,10 @@
       pointer-events: none; z-index: 12;
     }
   </style>
+  {{-- Per-page stylesheets (e.g. the shared AI chat skin). Loaded after the
+       inline base styles so a page can restyle shared components on equal
+       specificity; dark-mode.css still wins in dark mode (!important). --}}
+  @yield('page-styles')
 </head>
 @php
   // Side menu color: light mode honors the user's saved choice; dark mode always

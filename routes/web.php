@@ -222,6 +222,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // AI Chat
         Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai-chat.index');
         Route::post('/ai-chat', [AiChatController::class, 'send'])->name('ai-chat.send');
+        Route::post('/ai-chat/avatar', [AiChatController::class, 'updateAvatar'])->name('ai-chat.avatar');
         Route::post('/ai-chat/suggestions', [AiChatController::class, 'suggestions'])->name('ai-chat.suggestions');
         Route::get('/ai-chat/histories', [AiChatController::class, 'histories'])->name('ai-chat.histories');
         Route::get('/ai-chat/histories/{chatHistory}', [AiChatController::class, 'history'])->name('ai-chat.history.show');
@@ -338,6 +339,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // AI Demand Assistant (chat)
         Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai-chat.index');
         Route::post('/ai-chat', [AiChatController::class, 'send'])->name('ai-chat.send');
+        Route::post('/ai-chat/avatar', [AiChatController::class, 'updateAvatar'])->name('ai-chat.avatar');
         Route::post('/ai-chat/suggestions', [AiChatController::class, 'suggestions'])->name('ai-chat.suggestions');
         Route::get('/ai-chat/histories', [AiChatController::class, 'histories'])->name('ai-chat.histories');
         Route::get('/ai-chat/histories/{chatHistory}', [AiChatController::class, 'history'])->name('ai-chat.history.show');

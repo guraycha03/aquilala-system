@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -51,6 +52,7 @@ class User extends Authenticatable
         'approved_at',
         'sidebar_theme',
         'theme_mode',
+        'ai_avatar',
         'activation_completed_at',
         'must_change_password',
     ];
@@ -91,6 +93,20 @@ class User extends Authenticatable
     public function mustChangePassword(): bool
     {
         return (bool) $this->must_change_password;
+    }
+
+    /**
+     * The AI assistant avatar this account sees in the chat header and beside
+     * every AI reply. Falls back to the shared placeholder image so the page
+     * looks complete before anyone uploads their own.
+     */
+    public function aiAvatarUrl(): string
+    {
+        if (! $this->ai_avatar) {
+            return asset('images/ai-avatar.png');
+        }
+
+        return Storage::disk('public')->url($this->ai_avatar);
     }
 
     public function isPending(): bool

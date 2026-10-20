@@ -1,1053 +1,12 @@
 @extends('layouts.sidebar')
 
+@section('page-styles')
+    {{-- One shared skin for every AI chat page: mute warm-sage palette and a
+         viewport-locked layout so the composer is always on screen. --}}
+    <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=1" data-turbo-track="dynamic">
+@endsection
+
 @section('content')
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: 'DM Sans', sans-serif;
-        background: #f3f6f4;
-    }
-
-    /* Full-page layout: kill padding/whitespace so the chat fills the content area */
-    .main-content {
-        padding: 0;
-    }
-
-    .breadcrumb {
-        height: 64px;
-        padding: 0 24px;
-        display: flex;
-        align-items: center;
-        background: #ffffff;
-        border-bottom: 1px solid #e5e7eb;
-        font-size: 13px;
-        color: #6b7280;
-    }
-
-    .breadcrumb a {
-        color: #6b7280;
-        text-decoration: none;
-    }
-
-    .breadcrumb a:hover {
-        color: #16a34a;
-    }
-
-    .breadcrumb span {
-        margin: 0 6px;
-        color: #9ca3af;
-    }
-
-    .chat-page {
-        display: flex;
-        flex-direction: column;
-        height: calc(100vh - 64px);
-        padding: 0;
-        margin: 0;
-    }
-
-    .chat-container {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        background: #ffffff;
-        border: none;
-        border-radius: 0;
-        overflow: hidden;
-        min-height: 0;
-    }
-
-    .chat-header {
-        display: flex;
-        align-items: center;
-        padding: 16px 20px;
-        border-bottom: 1px solid #e5e7eb;
-        background: #ffffff;
-        flex-shrink: 0;
-    }
-
-    .ai-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: #16a34a;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        overflow: hidden;
-    }
-
-    .ai-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 50%;
-    }
-
-    .header-info {
-        margin-left: 12px;
-        flex: 1;
-    }
-
-    .header-title {
-        font-size: 16px;
-        font-weight: 600;
-        color: #111827;
-    }
-
-    .header-status {
-        display: flex;
-        align-items: center;
-        font-size: 12px;
-        color: #6b7280;
-        margin-top: 2px;
-    }
-
-    .status-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: #16a34a;
-        margin-right: 6px;
-    }
-
-    .chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 24px;
-        scroll-behavior: smooth;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        background: linear-gradient(180deg, #f8fbf9 0%, #f0f6f2 100%);
-    }
-
-    .message-row {
-        display: flex;
-        gap: 10px;
-        max-width: 720px;
-        width: 100%;
-        min-width: 0;
-    }
-
-    /* User messages: full-width row, avatar at the far right, text just left of it */
-    .message-row.user {
-        max-width: 100%;
-        flex-direction: row-reverse;
-    }
-
-    .message-row.user .message-bubble {
-        max-width: 720px;
-    }
-
-    /* Keep AI/user bubbles and their contents inside their containers */
-    .message-bubble {
-        overflow-wrap: break-word;
-        word-break: break-word;
-        min-width: 0;
-    }
-
-    /* Markdown tables: scroll inside the bubble instead of forcing the page wide */
-    .message-bubble .table-wrap {
-        overflow-x: auto;
-        max-width: 100%;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .message-bubble code {
-        white-space: pre-wrap;
-        word-break: break-all;
-    }
-
-    .message-avatar {
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        background: #16a34a;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        margin-top: 2px;
-        overflow: hidden;
-    }
-
-    .message-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 50%;
-    }
-
-    .message-bubble {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 14px 18px;
-        font-size: 14px;
-        line-height: 1.65;
-        color: #1f2937;
-        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
-        max-width: 720px;
-    }
-
-    .message-bubble ul {
-        margin: 10px 0 4px 18px;
-        padding: 0;
-    }
-
-    .message-bubble ul li {
-        margin-bottom: 4px;
-    }
-
-    .placeholder-badge {
-        display: inline-block;
-        background: #fef9c3;
-        color: #92400e;
-        font-size: 11px;
-        font-weight: 500;
-        padding: 3px 10px;
-        border-radius: 20px;
-        margin-bottom: 12px;
-        border: 1px solid #fde68a;
-    }
-
-    .quick-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 4px;
-    }
-
-    .chip {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 14px;
-        background: #ffffff;
-        border: 1px solid #d1d5db;
-        border-radius: 20px;
-        font-size: 13px;
-        color: #374151;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-family: 'DM Sans', sans-serif;
-    }
-
-    .chip:hover {
-        border-color: #16a34a;
-        background: #f0fdf4;
-        color: #16a34a;
-    }
-
-    .chip svg {
-        width: 14px;
-        height: 14px;
-        margin-right: 6px;
-        color: #16a34a;
-    }
-
-    .chat-input-area {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px 20px;
-        border-top: 1px solid #e5e7eb;
-        background: #ffffff;
-        flex-shrink: 0;
-    }
-
-    .chat-input-wrapper {
-        display: flex;
-        align-items: center;
-        flex: 1;
-        max-width: 720px;
-        background: #f9fafb;
-        border: 1px solid #d1d5db;
-        border-radius: 12px;
-        padding: 4px 4px 4px 16px;
-        transition: border-color 0.2s ease;
-    }
-
-    .chat-input-wrapper:focus-within {
-        border-color: #16a34a;
-        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
-    }
-
-    .chat-input {
-        flex: 1;
-        border: none;
-        outline: none;
-        background: transparent;
-        font-size: 14px;
-        font-family: 'DM Sans', sans-serif;
-        color: #1f2937;
-        padding: 10px 0;
-    }
-
-    .chat-input::placeholder {
-        color: #9ca3af;
-    }
-
-    .send-btn {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        border: none;
-        background: #16a34a;
-        color: #ffffff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        flex-shrink: 0;
-        transition: background 0.2s ease;
-    }
-
-    .send-btn:hover {
-        background: #15803d;
-    }
-
-    .send-btn svg {
-        width: 18px;
-        height: 18px;
-    }
-
-    .chat-messages::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .chat-messages::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .chat-messages::-webkit-scrollbar-thumb {
-        background: #d1d5db;
-        border-radius: 3px;
-    }
-
-    .chat-messages::-webkit-scrollbar-thumb:hover {
-        background: #9ca3af;
-    }
-
-    .message-bubble h1,
-    .message-bubble h2,
-    .message-bubble h3,
-    .message-bubble h4 {
-        margin: 14px 0 6px;
-        font-weight: 700;
-        color: #111827;
-        line-height: 1.4;
-    }
-
-    .message-bubble h1 { font-size: 16px; }
-    .message-bubble h2 { font-size: 15.5px; }
-    .message-bubble h3 { font-size: 15px; }
-
-    .message-bubble p {
-        margin: 6px 0;
-    }
-
-    .message-bubble ul,
-    .message-bubble ol {
-        margin: 8px 0 8px 18px;
-        padding: 0;
-    }
-
-    .message-bubble li {
-        margin-bottom: 4px;
-    }
-
-    .message-bubble blockquote {
-        margin: 10px 0;
-        padding: 10px 14px;
-        background: #fef3c7;
-        border-left: 4px solid #f59e0b;
-        border-radius: 8px;
-        color: #78350f;
-        font-size: 13.5px;
-    }
-
-    .message-bubble blockquote p {
-        margin: 0;
-    }
-
-    .message-bubble .warn-icon-img {
-        width: 18px;
-        height: 18px;
-        display: inline-block;
-        margin-right: 6px;
-        vertical-align: -3px;
-        flex-shrink: 0;
-    }
-
-    .message-bubble code {
-        background: #f1f5f9;
-        padding: 2px 5px;
-        border-radius: 5px;
-        font-size: 12.5px;
-    }
-
-    .message-bubble table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 10px 0;
-        font-size: 13px;
-    }
-
-    .message-bubble th {
-        background: #f0fdf4;
-        text-align: left;
-        font-weight: 600;
-    }
-
-    .message-bubble th,
-    .message-bubble td {
-        border: 1px solid #e5e7eb;
-        padding: 8px 10px;
-    }
-
-    .message-bubble strong {
-        color: #111827;
-    }
-
-    .message-bubble em {
-        color: #4b5563;
-    }
-
-    /* Suggested products carousel */
-    .ai-suggestion {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-        max-width: 720px;
-        width: 100%;
-        margin-top: -6px;
-        margin-left: 44px;
-    }
-
-    .ai-suggestion-header {
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
-        color: #4b5563;
-    }
-
-    .suggestion-carousel {
-        display: flex;
-        gap: 12px;
-        overflow-x: auto;
-        width: 100%;
-        padding: 4px 2px 8px;
-        scroll-snap-type: x mandatory;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    .suggestion-carousel::-webkit-scrollbar {
-        display: none;
-    }
-
-    .suggestion-card {
-        flex: 0 0 172px;
-        width: 172px;
-        scroll-snap-align: start;
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        overflow: hidden;
-        text-decoration: none;
-        color: inherit;
-        display: flex;
-        flex-direction: column;
-        transition: box-shadow 0.2s ease, transform 0.2s ease;
-    }
-
-    .suggestion-card:hover {
-        box-shadow: 0 6px 16px rgba(16, 24, 40, 0.12);
-        transform: translateY(-2px);
-    }
-
-    .suggestion-card-img {
-        width: 100%;
-        height: 96px;
-        background: #f3f4f6;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .suggestion-card-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-
-    .suggestion-card-body {
-        padding: 10px 12px 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-width: 0;
-    }
-
-    .suggestion-card-name {
-        font-size: 13px;
-        font-weight: 600;
-        color: #111827;
-        line-height: 1.35;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .suggestion-card-price {
-        font-size: 14px;
-        font-weight: 800;
-        color: #16a34a;
-    }
-
-    .suggestion-card-store {
-        font-size: 11px;
-        color: #6b7280;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    /* Product info modal */
-    .product-modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.15);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        z-index: 1000;
-    }
-
-    .product-modal-overlay.open {
-        display: flex;
-    }
-
-    .product-modal {
-        background: #ffffff;
-        border-radius: 16px;
-        width: 100%;
-        max-width: 420px;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 24px 60px rgba(16, 24, 40, 0.25);
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    .product-modal::-webkit-scrollbar {
-        display: none;
-        width: 0;
-        height: 0;
-    }
-
-    .product-modal-head {
-        position: relative;
-        padding: 14px 20px;
-        border-bottom: 1px solid #eef0f3;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .product-modal-title {
-        font-size: 15px;
-        font-weight: 700;
-        color: #111827;
-    }
-
-    .product-modal-close {
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: #6b7280;
-        padding: 4px;
-        display: inline-flex;
-        border-radius: 6px;
-    }
-
-    .product-modal-close:hover {
-        background: #f3f4f6;
-        color: #111827;
-    }
-
-    .product-modal-close svg {
-        width: 18px;
-        height: 18px;
-    }
-
-    .product-modal-body {
-        padding: 20px;
-    }
-
-    .product-modal-img {
-        width: 100%;
-        height: 180px;
-        background: #f3f4f6;
-        border-radius: 12px;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 14px;
-    }
-
-    .product-modal-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-
-    .product-modal-price-row {
-        display: flex;
-        align-items: baseline;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .product-modal-price {
-        font-size: 22px;
-        font-weight: 800;
-        color: #16a34a;
-    }
-
-    .product-modal-price-unit {
-        font-size: 13px;
-        color: #6b7280;
-    }
-
-    .product-modal-name {
-        font-size: 17px;
-        font-weight: 700;
-        color: #111827;
-        margin: 8px 0 2px;
-    }
-
-    .product-modal-brand {
-        font-size: 13px;
-        color: #6b7280;
-        margin-bottom: 10px;
-    }
-
-    .product-modal-meta {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px 14px;
-        margin: 12px 0;
-    }
-
-    .product-modal-meta-item {
-        background: #f8fafc;
-        border-radius: 10px;
-        padding: 8px 12px;
-        min-width: 0;
-    }
-
-    .product-modal-meta-label {
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #94a3b8;
-        font-weight: 700;
-        margin-bottom: 2px;
-    }
-
-    .product-modal-meta-value {
-        font-size: 13px;
-        font-weight: 600;
-        color: #1f2937;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .product-modal-desc {
-        font-size: 13px;
-        line-height: 1.6;
-        color: #4b5563;
-        margin: 10px 0 16px;
-        display: -webkit-box;
-        -webkit-line-clamp: 4;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .product-modal-actions {
-        display: flex;
-        gap: 10px;
-    }
-
-    .product-modal-btn {
-        flex: 1;
-        padding: 11px 12px;
-        border-radius: 10px;
-        border: none;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 700;
-        font-family: 'DM Sans', sans-serif;
-        text-align: center;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.2s ease;
-    }
-
-    .product-modal-btn-visit {
-        background: #16a34a;
-        color: #ffffff;
-    }
-
-    .product-modal-btn-visit:hover {
-        background: #15803d;
-    }
-
-    .product-modal-btn-close {
-        background: #f3f4f6;
-        color: #374151;
-    }
-
-    .product-modal-btn-close:hover {
-        background: #e5e7eb;
-    }
-
-    @media (max-width: 480px) {
-        .product-modal-overlay {
-            padding: 12px;
-            align-items: flex-end;
-        }
-        .product-modal {
-            border-radius: 16px 16px 0 0;
-            max-height: 88vh;
-        }
-        .product-modal-img {
-            height: 150px;
-        }
-        .product-modal-body {
-            padding: 16px;
-        }
-        .product-modal-meta {
-            grid-template-columns: 1fr;
-        }
-        .product-modal-actions {
-            flex-direction: column-reverse;
-        }
-    }
-
-    /* Chat history */
-    .history-wrap {
-        position: relative;
-        margin-left: auto;
-        flex-shrink: 0;
-    }
-
-    .history-btn {
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        background: none;
-        border: 1px solid #e5e7eb;
-        color: #4b5563;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .history-btn:hover {
-        border-color: #16a34a;
-        color: #16a34a;
-        background: #f0fdf4;
-    }
-
-    .history-btn svg {
-        width: 18px;
-        height: 18px;
-    }
-
-    .history-dropdown {
-        position: absolute;
-        top: 48px;
-        right: 0;
-        width: 320px;
-        max-width: calc(100vw - 32px);
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 14px;
-        box-shadow: 0 12px 32px rgba(16, 24, 40, 0.14);
-        display: none;
-        flex-direction: column;
-        overflow: hidden;
-        z-index: 500;
-    }
-
-    .history-dropdown.open {
-        display: flex;
-    }
-
-    .history-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 14px;
-        border-bottom: 1px solid #eef0f3;
-    }
-
-    .history-head b {
-        font-size: 13px;
-        color: #111827;
-    }
-
-    .history-new-btn {
-        font-size: 12px;
-        font-weight: 700;
-        color: #16a34a;
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-family: 'DM Sans', sans-serif;
-    }
-
-    .history-new-btn:hover {
-        color: #15803d;
-    }
-
-    .history-list {
-        max-height: 320px;
-        overflow-y: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    .history-list::-webkit-scrollbar {
-        display: none;
-    }
-
-    .history-empty {
-        padding: 28px 16px;
-        text-align: center;
-        font-size: 13px;
-        color: #94a3b8;
-    }
-
-    .history-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 11px 14px;
-        cursor: pointer;
-        border-bottom: 1px solid #f5f6f8;
-        transition: background 0.15s ease;
-    }
-
-    .history-item:hover {
-        background: #f8fafc;
-    }
-
-    .history-item-title {
-        flex: 1;
-        min-width: 0;
-        font-size: 13px;
-        font-weight: 600;
-        color: #1f2937;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .history-item-time {
-        font-size: 11px;
-        color: #9ca3af;
-        white-space: nowrap;
-    }
-
-    .history-item-del {
-        width: 26px;
-        height: 26px;
-        border: none;
-        background: none;
-        cursor: pointer;
-        color: #cbd5e1;
-        border-radius: 6px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .history-item-del:hover {
-        background: #fee2e2;
-        color: #dc2626;
-    }
-
-    .history-item-del svg {
-        width: 14px;
-        height: 14px;
-    }
-
-    /* Separate delete-confirmation modal */
-    .delete-modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.15);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-        z-index: 1100;
-    }
-
-    .delete-modal-overlay.open {
-        display: flex;
-    }
-
-    .delete-modal {
-        background: #ffffff;
-        border-radius: 16px;
-        max-width: 380px;
-        width: 100%;
-        box-shadow: 0 24px 60px rgba(16, 24, 40, 0.28);
-        padding: 26px 22px 22px;
-        text-align: center;
-    }
-
-    .delete-modal-icon {
-        width: 52px;
-        height: 52px;
-        margin: 0 auto 14px;
-        border-radius: 50%;
-        background: #fef2f2;
-        color: #dc2626;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .delete-modal-icon svg {
-        width: 24px;
-        height: 24px;
-    }
-
-    .delete-modal-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 8px;
-    }
-
-    .delete-modal-text {
-        font-size: 13px;
-        color: #6b7280;
-        line-height: 1.55;
-        margin-bottom: 20px;
-        word-break: break-word;
-    }
-
-    .delete-modal-text b {
-        color: #1f2937;
-        font-weight: 700;
-    }
-
-    .delete-modal-actions {
-        display: flex;
-        gap: 10px;
-    }
-
-    .delete-modal-btn {
-        flex: 1;
-        padding: 11px 12px;
-        border-radius: 10px;
-        border: none;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 700;
-        font-family: 'DM Sans', sans-serif;
-        transition: background 0.2s ease;
-    }
-
-    .delete-modal-cancel {
-        background: #f3f4f6;
-        color: #374151;
-    }
-
-    .delete-modal-cancel:hover {
-        background: #e5e7eb;
-    }
-
-    .delete-modal-delete {
-        background: #dc2626;
-        color: #ffffff;
-    }
-
-    .delete-modal-delete:hover {
-        background: #b91c1c;
-    }
-
-    /* In-app toast */
-    .app-toast {
-        position: fixed;
-        left: 50%;
-        bottom: 28px;
-        transform: translateX(-50%) translateY(20px);
-        background: #111827;
-        color: #ffffff;
-        padding: 10px 18px;
-        border-radius: 10px;
-        font-size: 13px;
-        font-weight: 600;
-        opacity: 0;
-        pointer-events: none;
-        transition: all 0.25s ease;
-        z-index: 1200;
-        box-shadow: 0 8px 24px rgba(16, 24, 40, 0.22);
-        white-space: nowrap;
-    }
-
-    .app-toast.show {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
-
-    @media (max-width: 768px) {
-        .main-content {
-            padding: 88px 0 0;
-        }
-        .chat-page {
-            height: calc(100vh - 88px - 64px);
-        }
-        .chat-messages {
-            padding: 16px;
-        }
-        .chat-header {
-            padding: 12px 16px;
-        }
-        .chat-input-area {
-            padding: 12px 16px;
-        }
-    }
-</style>
 
 <div class="breadcrumb">
     <a href="{{ route('store.quotations.index') }}">Quotation Demand Trends</a>
@@ -1059,9 +18,13 @@
     <div class="chat-container">
 
         <div class="chat-header">
-            <div class="ai-avatar">
-                <img src="{{ asset('images/ai-avatar.png') }}" alt="AI Assistant">
-            </div>
+            <button type="button" class="ai-avatar" id="aiAvatarBtn" title="Change AI avatar" aria-label="Change AI avatar">
+                <img src="{{ $aiAvatar }}" alt="AI Assistant" data-ai-avatar>
+                <span class="avatar-overlay">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 0 1 2-2h1.5l1-1.5h9l1 1.5H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" /><circle cx="12" cy="13" r="3.2" /></svg>
+                </span>
+            </button>
+            <input type="file" id="aiAvatarInput" accept="image/jpeg,image/png,image/webp" hidden>
             <div class="header-info">
                 <div class="header-title">AI Assistant</div>
                 <div class="header-status">
@@ -1090,9 +53,7 @@
         <div class="chat-messages" id="chatMessages">
             <div class="message-row">
                 <div class="message-avatar">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
-                    </svg>
+                    <img src="{{ $aiAvatar }}" alt="AI" data-ai-avatar>
                 </div>
                 <div class="message-bubble">
                     <div>
@@ -1112,9 +73,7 @@
 
             <div class="message-row">
                 <div class="message-avatar">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
-                    </svg>
+                    <img src="{{ $aiAvatar }}" alt="AI" data-ai-avatar>
                 </div>
                 <div class="message-bubble">
                     <div class="quick-chips">
@@ -1196,9 +155,11 @@
             </div>
         </div>
     </div>
-
-    <div class="app-toast" id="appToast"></div>
 </div>
+
+{{-- Toast sits outside the product overlay: an element inside a display:none
+     overlay can never be seen, and the avatar/history feedback needs it. --}}
+<div class="app-toast" id="appToast"></div>
 
 <script>
     const chatMessages = document.getElementById('chatMessages');
@@ -1216,7 +177,62 @@
     }
 
     function getAiAvatarSvg() {
-        return '<img src="{{ asset('images/ai-avatar.png') }}" alt="AI">';
+        return '<img src="' + aiAvatarUrl + '" alt="AI" data-ai-avatar>';
+    }
+
+    // ─── Per-account AI avatar ──────────────────────────────────
+    // The header avatar is a button: pick a new image, preview it instantly,
+    // then persist it on the server so it follows this account everywhere.
+    let aiAvatarUrl = @json($aiAvatar);
+    const aiAvatarBtn = document.getElementById('aiAvatarBtn');
+    const aiAvatarInput = document.getElementById('aiAvatarInput');
+
+    function setAiAvatar(url) {
+        aiAvatarUrl = url;
+        document.querySelectorAll('[data-ai-avatar]').forEach(function (img) {
+            img.src = url;
+        });
+    }
+
+    if (aiAvatarBtn && aiAvatarInput) {
+        aiAvatarBtn.addEventListener('click', function () {
+            aiAvatarInput.click();
+        });
+
+        aiAvatarInput.addEventListener('change', function () {
+            const file = this.files && this.files[0];
+            this.value = '';
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('Please pick an image smaller than 2 MB');
+                return;
+            }
+
+            const previous = aiAvatarUrl;
+            setAiAvatar(URL.createObjectURL(file));
+
+            const fd = new FormData();
+            fd.append('avatar', file);
+            fetch('{{ route("store.ai-chat.avatar") }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                body: fd,
+            })
+                .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+                .then(function (res) {
+                    if (res.ok && res.d && res.d.ok) {
+                        setAiAvatar(res.d.url);
+                        showToast('AI avatar updated');
+                    } else {
+                        setAiAvatar(previous);
+                        showToast((res.d && (res.d.message || res.d.error)) || 'Could not update avatar');
+                    }
+                })
+                .catch(function () {
+                    setAiAvatar(previous);
+                    showToast('Could not update avatar');
+                });
+        });
     }
 
     function escapeHtml(str) {
@@ -1336,10 +352,10 @@
         const row = document.createElement('div');
         row.className = 'message-row user';
         row.innerHTML =
-            '<div class="message-avatar" style="background:#374151;">' +
+            '<div class="message-avatar" style="background:#8b9184;">' +
             '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>' +
             '</div>' +
-            '<div class="message-bubble" style="background:#f3f4f6;border-color:#e5e7eb;"><div>' + escapeHtml(text).replace(/\n/g, '<br>') + '</div></div>';
+            '<div class="message-bubble" style="background:#edf0e8;border-color:#e1e5da;"><div>' + escapeHtml(text).replace(/\n/g, '<br>') + '</div></div>';
         chatMessages.appendChild(row);
         scrollToBottom();
         return row;
