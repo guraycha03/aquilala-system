@@ -37,7 +37,7 @@
             <label for="reset-email" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #3d4a41; letter-spacing: 0.05em;">
                 Email Address
             </label>
-            <input type="email" id="reset-email" name="email" value="{{ old('email') }}" required placeholder="name@gmail.com"
+            <input type="email" id="reset-email" name="email" value="{{ old('email', session('reset_email_hint')) }}" required placeholder="name@gmail.com"
                    autocomplete="email"
                    style="width: 100%; padding: 11px 14px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 15px; background: #fafbfa; transition: border-color 0.2s, box-shadow 0.2s; outline: none;" />
         </div>

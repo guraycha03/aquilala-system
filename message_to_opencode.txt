@@ -1,7 +1,11 @@
   Message to Opencode -
 
 
-its oaky now, i see the past events as done, but pease improve the ui, keep it clean, breatable and simple
+
+can we do the prioritizing of otp code where it actually shows copy in the email without opening the email, so user dont actualy selected and maually copy the code from email but can click a copy button of the otp code, im receiving emails like this from real app and website and its really convenient, maybe later on i will make the notification of email otp have a fast otp copy too.
+
+
+please improve the ui, keep it clean, breatable and simple
 
 qoutation demend trend page for store owner is so messy and not mobile phone responsive, also see how the dashboards are styled and the colors used, then apply it on qoutation demand trend page so we wont use colorful cards anyomre but uniform simple-looking cards, and also improve the terms and words used in this page, it has to be not too technical and jargon so ordinary store owners can understand them.
 

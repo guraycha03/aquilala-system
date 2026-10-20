@@ -500,12 +500,20 @@ class AccountActivationFlowTest extends TestCase
         ]);
 
         $this->post(route('password.email'), ['email' => $admin->email])
+            ->assertRedirect(route('password.verify'))
             ->assertSessionHas('success');
 
         $code = Mail::sent(PasswordResetOtpMail::class)->last()->otp;
         $this->assertMatchesRegularExpression('/^\d{6}$/', $code);
 
-        $this->get(route('password.verify'))->assertOk()->assertSee('verification code');
+        // The email must link to the code-entry page, not back to the
+        // email-only forgot-password form.
+        $html = Mail::sent(PasswordResetOtpMail::class)->last()->render();
+        $this->assertStringContainsString('/forgot-password/verify', $html);
+        $this->assertStringNotContainsString('/forgot-password"', $html);
+
+        // Arriving at the code step, the email from the previous step is prefilled.
+        $this->get(route('password.verify'))->assertOk()->assertSee('verification code')->assertSee($admin->email, false);
 
         $this->post(route('password.verify.post'), ['email' => $admin->email, 'otp' => $code])
             ->assertRedirect(route('password.reset.show'));

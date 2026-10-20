@@ -33,8 +33,8 @@
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
         <tr>
             <td style="padding:0 0 10px;font-size:14px;line-height:1.6;color:#334155;">
-                <strong style="color:#5DC257;">1.</strong>&nbsp; Open the password reset page:
-                <a href="{{ url('/forgot-password') }}" style="color:#436149;font-weight:700;text-decoration:underline;">{{ url('/forgot-password') }}</a>
+                <strong style="color:#5DC257;">1.</strong>&nbsp; Open the code entry page:
+                <a href="{{ route('password.verify') }}" style="color:#436149;font-weight:700;text-decoration:underline;">{{ route('password.verify') }}</a>
             </td>
         </tr>
         <tr>
@@ -55,7 +55,7 @@
     </table>
 
     <p style="margin:0 0 20px;font-size:13px;line-height:1.6;color:#64748b;">
-        If the code expires, request a new one from the password reset page.
+        If the code expires, request a new one from the same code entry page.
     </p>
 
     {{-- Security note --}}

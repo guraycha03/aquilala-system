@@ -33,7 +33,14 @@ class PasswordResetController extends Controller
             'email.email' => 'Enter a valid email address.',
         ]);
 
-        $user = User::where('email', strtolower(trim($validated['email'])))
+        $email = strtolower(trim($validated['email']));
+
+        // Remember what was typed so the next step (code entry) arrives with
+        // the email already filled in. Stored for known and unknown addresses
+        // alike so the response never reveals which emails have accounts.
+        $request->session()->put('reset_email_hint', $email);
+
+        $user = User::where('email', $email)
             ->where('status', User::STATUS_ACTIVE)
             ->first();
 
@@ -55,7 +62,10 @@ class PasswordResetController extends Controller
             }
         }
 
-        return back()->with('success', 'If an account exists for that email address, a verification code will be sent shortly. Check your inbox.');
+        // Take the user straight to the code-entry step — landing them back on
+        // the email form with nowhere to type the code strands them.
+        return redirect()->route('password.verify')
+            ->with('success', 'If an account exists for that email address, a 6-digit code has been sent. Check your inbox and spam folder, then enter it below.');
     }
 
     public function showVerify()

@@ -48,6 +48,11 @@
     </form>
 
     <p style="margin: 22px 0 0 0; color: #606d64; font-size: 13px; text-align: center; letter-spacing: 0.03em;">
+        Already received a code?
+        <a href="{{ route('password.verify') }}" style="color: #436149; font-weight: 700; text-decoration: none;">Enter it here</a>
+    </p>
+
+    <p style="margin: 12px 0 0 0; color: #606d64; font-size: 13px; text-align: center; letter-spacing: 0.03em;">
         Remembered it?
         <a href="{{ route('login') }}" style="color: #436149; font-weight: 700; text-decoration: none;">Back to log in</a>
     </p>
