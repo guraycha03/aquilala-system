@@ -189,19 +189,21 @@ class ActivityLog extends Model
 
     /**
      * Farmer notifications — important notices only, not a history log.
-     * The page carries: the admin's decision on their planting request
-     * (confirmed/rejected), their harvest report submissions, and
+     * The page carries only things that happen TO the farmer: the admin's
+     * decision on their planting request (confirmed/rejected) and
      * association events (the most important notice). The farmer's own
-     * actions — submitting a planting request or generating a quotation —
-     * are their activity history and live under Settings → Activity
-     * history, never here.
+     * actions — planting a batch, filing a harvest report, generating a
+     * quotation — are their activity history and live under Settings →
+     * Activity history, never here. Harvest reports in particular are
+     * self-submitted with no admin action on them, so there is no outcome
+     * to notify about; only the admin copy ("New harvest report from …")
+     * matters and that lives in the admin scope.
      */
     public function scopeFarmerNotifications($query)
     {
         return $query->whereIn('type', [
             self::TYPE_CROP_CONFIRMED,
             self::TYPE_CROP_REJECTED,
-            self::TYPE_HARVEST_CREATED,
             self::TYPE_EVENT_CREATED,
             self::TYPE_EVENT_UPDATED,
         ]);

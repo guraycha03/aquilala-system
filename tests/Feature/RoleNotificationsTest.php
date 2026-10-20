@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Crop;
 use App\Models\FarmerCrop;
+use App\Models\HarvestReport;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\User;
@@ -19,9 +20,11 @@ use Tests\TestCase;
  * dedicated notifications page (shared view) with an unread badge fed by
  * that role's ActivityLog scope:
  *
- *   farmer      — important notices only: planting requests + outcomes,
- *                 harvest report submissions, association events. Their
- *                 own quotation rows are history (Settings → Activity).
+ *   farmer      — important notices only, i.e. activity incoming FROM
+ *                 other users: the admin's decision on their planting
+ *                 request (confirmed/rejected) and association events.
+ *                 Their own actions (planting batches, harvest reports,
+ *                 quotations) are history — Settings → Activity.
  *   store_owner — anonymous demand signals for quotations involving their
  *                 products (no farmer name, no actor, ever)
  *   admin       — rows fanned out for quotations, planting requests and
@@ -336,6 +339,42 @@ class RoleNotificationsTest extends TestCase
 
         // The row still exists for their activity history.
         $this->assertSame(1, ActivityLog::forUser($this->farmer->id)->where('type', ActivityLog::TYPE_QUOTATION_CREATED)->count());
+    }
+
+    public function test_a_farmers_own_harvest_rows_stay_out_of_their_notifications(): void
+    {
+        // Notifications carry activity incoming from OTHER users. Filing a
+        // harvest report is the farmer's own action, and no admin ever acts
+        // on reports (admin harvest pages are read-only), so no outcome can
+        // come back to them — the row is history under Settings. The admin
+        // copy ("New harvest report from …") is the notice that matters.
+        $report = HarvestReport::create([
+            'user_id' => $this->farmer->id,
+            'crop_type' => 'Rice',
+            'season' => 'wet',
+            'land_area' => 1.0,
+            'actual_yield_metric_tons' => 4.2,
+            'actual_total_expenses' => 20000,
+            'harvest_date' => now()->subDays(2)->toDateString(),
+        ]);
+
+        $this->actingAs($this->farmer);
+        ActivityLogger::harvestReportCreated($report);
+
+        $this->actingAs($this->farmer)
+            ->get(route('farmer.notifications.index'))
+            ->assertOk()
+            ->assertDontSee('Recorded harvest of')
+            ->assertSee('No Notifications Yet');
+
+        // The row still exists for their activity history.
+        $this->assertSame(1, ActivityLog::forUser($this->farmer->id)->where('type', ActivityLog::TYPE_HARVEST_CREATED)->count());
+
+        // The admin side of the same event stays a notice: it is a farmer's
+        // submission arriving at the admin — data from another user.
+        $adminRow = ActivityLog::forUser($this->admin->id)->adminNotifications()
+            ->ofType(ActivityLog::TYPE_HARVEST_CREATED)->sole();
+        $this->assertStringContainsString('New harvest report from', $adminRow->description);
     }
 
     public function test_association_events_reach_every_farmers_bell(): void
