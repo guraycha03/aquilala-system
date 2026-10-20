@@ -876,23 +876,25 @@ PROMPT;
             ]);
         }
 
-        $system = 'You are a senior business analyst for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Farmers generate cost quotations and stores see them as "demand signals" - demand visibility, no action required. Write a COMPLETE demand intelligence report using ONLY the JSON telemetry provided. Report total_signals, this_week and last_week EXACTLY as given - this_week/last_week are the last 7 and previous 7 days respectively, distinct from total_signals. Never invent numbers.
+        $system = 'You are a friendly business adviser for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Farmers generate cost quotations, and stores see the ones that include their products as requests from farmers - for information only, no action required. Write a COMPLETE report for the store owner using ONLY the JSON telemetry provided. Report total_signals, this_week and last_week EXACTLY as given - this_week/last_week are the last 7 and previous 7 days respectively, distinct from total_signals. Never invent numbers.
+
+PLAIN LANGUAGE: the reader is an ordinary store owner, not a business analyst. Use short, everyday words. Never use jargon such as "demand signals", "telemetry", "intelligence", "momentum" or "week-over-week" - say "requests from farmers", "this week", "compared with last week" instead.
 
 STRUCTURE YOUR RESPONSE WITH THESE SECTIONS (use markdown headings exactly as shown):
-### AI Analyst Takeaway
-ONE punchy sentence that sums up the demand picture.
+### In One Sentence
+ONE punchy sentence that sums up what farmers are asking for.
 
-### Demand Snapshot
-4-6 short bullet points (- ) covering: total demand signals and farmer interest, week-over-week change, total quoted value, and one practical read on momentum.
+### What Farmers Asked For
+4-6 short bullet points (- ) covering: how many requests came in and from how many farmers, how this week compares with last week, the total peso value of your products in these requests, and one practical read.
 
-### Top Products & Crop Trends
-Short bullets on your top 3-6 products (quote quantities and PHP peso values) and top crops (quote land area), plus 1 sentence of trend context.
+### Your Most Requested Products
+Short bullets on your top 3-6 products (quote quantities and PHP peso values) and top crops (quote land area), plus 1 sentence of context.
 
-### Product Recommendations
-Recommend 2-4 specific products this store should stock or restock based on the demand data. Use a small markdown table: Product | Est. Weekly Demand | Suggested Action. Add 2 short bullet takeaways if useful.
+### Worth Stocking Up
+Recommend 2-4 specific products this store should stock or restock based on the requests. Use a small markdown table: Product | How Much Farmers Ask For | Suggested Action. Add 2 short bullet takeaways if useful.
 
 ### Next Step
-ONE closing sentence with a practical next action (e.g. restock, price check, or watch a crop).
+ONE closing sentence with a practical next action (e.g. restock, check prices, or watch a crop).
 
 FORMATTING RULES:
 1. Use **bold** for key numbers, product names, and crops.
@@ -960,65 +962,65 @@ FORMATTING RULES:
         $topCrops = collect($context['top_crops']);
 
         if ($signals === 0) {
-            return '### AI Analyst Takeaway'."\n"
-                .'No farmer demand signals have reached your store yet — this report fills in as farmers generate quotations.'."\n\n"
-                .'### Demand Snapshot'."\n"
-                .'- **0** demand signals from **0** farmers so far, with nothing to compare week-over-week yet.'."\n\n"
-                .'### Top Products & Crop Trends'."\n"
-                .'- Nothing quoted yet — product and crop trends appear here once signals arrive.'."\n\n"
-                .'### Product Recommendations'."\n"
-                .'- Share your store with association farmers; their quotations become your demand forecast.'."\n\n"
+            return '### In One Sentence'."\n"
+                .'No requests from farmers have reached your store yet — this report fills in as farmers include your products in their cost estimates.'."\n\n"
+                .'### What Farmers Asked For'."\n"
+                .'- **0** requests from **0** farmers so far, with nothing to compare against last week yet.'."\n\n"
+                .'### Your Most Requested Products'."\n"
+                .'- Nothing requested yet — your most requested products appear here once requests arrive.'."\n\n"
+                .'### Worth Stocking Up'."\n"
+                .'- Share your store with association farmers; their cost estimates become your guide to what to keep in stock.'."\n\n"
                 .'### Next Step'."\n"
-                .'Let farmers know your store is listed so their quotation requests start landing here.';
+                .'Let farmers know your store is listed so their requests start landing here.';
         }
 
         if ($lastWeek > 0) {
             $delta = $thisWeek - $lastWeek;
             $pct = (int) round(abs($delta) / $lastWeek * 100);
             $trend = $delta > 0
-                ? 'up **'.$pct.'%** week-over-week'
-                : ($delta < 0 ? 'down **'.$pct.'%** week-over-week' : 'level with last week');
+                ? 'up **'.$pct.'%** compared with last week'
+                : ($delta < 0 ? 'down **'.$pct.'%** compared with last week' : 'the same as last week');
         } elseif ($thisWeek > 0) {
-            $trend = 'with no prior week on record to compare against';
+            $trend = 'with nothing last week to compare against';
         } else {
             $trend = 'quiet this week';
         }
 
-        $lines = '### AI Analyst Takeaway'."\n"
-            .'**'.$signals.'** demand signals from **'.$farmers.'** farmer(s), worth **₱'.number_format($quotedValue, 2).'** in quoted value.'."\n\n"
-            .'### Demand Snapshot'."\n"
-            .'- This week brought **'.$thisWeek.'** new signals vs **'.$lastWeek.'** last week — '.$trend.'.'."\n"
-            .'- Farmers quoted **₱'.number_format($quotedValue, 2).'** overall; **₱'.number_format($ownValue, 2).'** of that sits on your own products.'."\n";
+        $lines = '### In One Sentence'."\n"
+            .'**'.$signals.'** requests from **'.$farmers.'** farmer(s), worth **₱'.number_format($quotedValue, 2).'** in total.'."\n\n"
+            .'### What Farmers Asked For'."\n"
+            .'- This week brought **'.$thisWeek.'** new requests vs **'.$lastWeek.'** last week — '.$trend.'.'."\n"
+            .'- Farmers asked for **₱'.number_format($quotedValue, 2).'** worth of goods; **₱'.number_format($ownValue, 2).'** of that is your own products.'."\n";
 
         if ($topProducts->isNotEmpty()) {
-            $lines .= '- Most quoted right now: **'.$topProducts->first()['name'].'** ('.$topProducts->first()['count'].' quotation(s)).'."\n";
+            $lines .= '- Most requested right now: **'.$topProducts->first()['name'].'** ('.$topProducts->first()['count'].' request(s)).'."\n";
         }
 
-        $lines .= "\n".'### Top Products & Crop Trends'."\n";
+        $lines .= "\n".'### Your Most Requested Products'."\n";
         if ($topProducts->isEmpty() && $topCrops->isEmpty()) {
-            $lines .= '- No product or crop activity in the data yet.'."\n";
+            $lines .= '- No requests recorded yet.'."\n";
         } else {
             foreach ($topProducts->take(5) as $product) {
-                $lines .= '- **'.$product['name'].'** — '.$product['count'].' quote(s), ₱'.number_format((float) $product['value'], 2).' quoted.'."\n";
+                $lines .= '- **'.$product['name'].'** — '.$product['count'].' request(s), ₱'.number_format((float) $product['value'], 2).' worth.'."\n";
             }
             foreach ($topCrops->take(3) as $crop) {
-                $lines .= '- **'.$crop['crop'].'** — '.$crop['count'].' quotation(s) covering '.round((float) $crop['area'], 2).' ha.'."\n";
+                $lines .= '- **'.$crop['crop'].'** — '.$crop['count'].' request(s) covering '.round((float) $crop['area'], 2).' ha.'."\n";
             }
         }
 
-        $lines .= "\n".'### Product Recommendations'."\n";
+        $lines .= "\n".'### Worth Stocking Up'."\n";
         if ($topProducts->isEmpty()) {
-            $lines .= '- No product recommendations yet — they appear once farmers quote your inputs.'."\n";
+            $lines .= '- Nothing to suggest yet — tips appear once farmers ask for your products.'."\n";
         } else {
             foreach ($topProducts->take(3) as $product) {
-                $lines .= '- Keep **'.$product['name'].'** well stocked — '.$product['count'].' farmer quote(s) already lean on it.'."\n";
+                $lines .= '- Keep **'.$product['name'].'** well stocked — '.$product['count'].' farmer request(s) already lean on it.'."\n";
             }
         }
 
         $lines .= "\n".'### Next Step'."\n"
             .($topProducts->isNotEmpty()
                 ? 'Check stock on **'.$topProducts->first()['name'].'** first — it is what farmers ask for most.'
-                : 'Share your store with association farmers so demand signals start arriving.');
+                : 'Share your store with association farmers so their requests start arriving.');
 
         $keywords = $topProducts->take(3)
             ->map(fn ($product) => trim(str_replace(',', '', strtolower((string) $product['name']))))

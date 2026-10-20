@@ -365,7 +365,7 @@ class AiSuggestionCurationTest extends TestCase
         $response->assertOk()->assertJsonPath('source', 'fallback');
 
         $overview = $response->json('overview');
-        $this->assertStringContainsString('Demand Snapshot', $overview);
+        $this->assertStringContainsString('What Farmers Asked For', $overview);
         $this->assertStringContainsString('Premium Urea', $overview);
         $this->assertStringContainsString('[SUGGEST:', $overview);
         $this->assertStringContainsString('Next Step', $overview);

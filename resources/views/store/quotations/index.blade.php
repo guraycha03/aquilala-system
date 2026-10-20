@@ -243,19 +243,19 @@
 @endphp
 
 <section class="kpi-strip">
-  <x-kpi-card title="Farmer Quotations" value="{{ $totalQuotations }}" trendValue="From {{ $uniqueFarmers }} farmer{{ $uniqueFarmers === 1 ? '' : 's' }}" trendLabel="Quotes that include your products">
+  <x-kpi-card title="Requests Received" value="{{ $totalQuotations }}" trendValue="From {{ $uniqueFarmers }} farmer{{ $uniqueFarmers === 1 ? '' : 's' }}" trendLabel="Cost estimates from farmers that include your products">
     <x-slot:icon>
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     </x-slot:icon>
   </x-kpi-card>
 
-  <x-kpi-card title="Quotations This Week" value="{{ $recentQuotations }}" trendValue="{{ $weekPill }}" trendDirection="{{ $weekDirection }}" trendLabel="Received in the last 7 days">
+  <x-kpi-card title="New Requests This Week" value="{{ $recentQuotations }}" trendValue="{{ $weekPill }}" trendDirection="{{ $weekDirection }}" trendLabel="Requests that came in over the last 7 days">
     <x-slot:icon>
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
     </x-slot:icon>
   </x-kpi-card>
 
-  <x-kpi-card title="Your Products' Worth" value="₱{{ number_format($ownDemandValue, 0) }}" trendLabel="Total of your items across these quotes">
+  <x-kpi-card title="Worth of Your Products" value="₱{{ number_format($ownDemandValue, 0) }}" trendLabel="Combined value of your items in these requests">
     <x-slot:icon>
       <svg viewBox="0 0 24 24"><path d="M9 21V4h4.5a4.5 4.5 0 0 1 0 9H9"/><line x1="6" y1="11" x2="15" y2="11"/><line x1="6" y1="15" x2="15" y2="15"/></svg>
     </x-slot:icon>
@@ -267,11 +267,11 @@
         <svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
       </div>
     </div>
-    <h3 class="kpi-title">AI Store Overview</h3>
-    <p class="kpi-desc">Let AI explain what farmers are asking for, in plain words.</p>
+    <h3 class="kpi-title">Smart Store Summary</h3>
+    <p class="kpi-desc">Let the numbers explain, in plain words, what farmers are looking for.</p>
     <button type="button" class="ai-btn" id="aiOverviewBtn" onclick="generateAiOverview(this)">
       <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
-      <span>Generate Overview</span>
+      <span>Create Summary</span>
     </button>
   </div>
 </section>
@@ -280,7 +280,7 @@
   <div class="panel">
     <div class="panel-header">
       <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">Your Products in Demand</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">How often each product shows up in farmers' quotes</p>
+      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">How often each of your products appears in farmers' requests</p>
     </div>
     <div class="panel-body">
       @if(count($productDemand) > 0)
@@ -289,13 +289,13 @@
           <div style="{{ !$loop->last ? 'margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f0f2f1;' : '' }}">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-weight: 700; color: #1a2b1e; font-size: 14px;">{{ $productName }}</span>
-              <span style="font-size: 12px; color: #879a8c; font-weight: 600;">{{ $data['count'] }} quotation(s)</span>
+              <span style="font-size: 12px; color: #879a8c; font-weight: 600;">{{ $data['count'] }} request{{ $data['count'] == 1 ? '' : 's' }}</span>
             </div>
             <div class="demand-bar">
               <div class="demand-bar-fill" style="width: {{ ($data['count'] / $maxCount) * 100 }}%;"></div>
             </div>
             <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: #b0b8b3;">
-              <span>{{ number_format($data['total_qty'], 1) }} unit(s) total</span>
+              <span>{{ number_format($data['total_qty'], 1) }} units total</span>
               <span style="font-weight: 600; color: #4b5c50;">₱{{ number_format($data['total_value'], 0) }} total</span>
             </div>
           </div>
@@ -305,7 +305,7 @@
           <div class="empty-icon" style="margin-bottom: 12px;">
             <svg viewBox="0 0 24 24" width="28" height="28" stroke-width="1.5" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
           </div>
-          <p style="margin: 0; font-size: 14px; color: #879a8c; line-height: 1.5;">No quotations yet. As farmers generate quotations using your products, you'll see trends here.</p>
+          <p style="margin: 0; font-size: 14px; color: #879a8c; line-height: 1.5;">Nothing here yet. Once farmers start making cost estimates that include your products, you'll see them here.</p>
         </div>
       @endif
     </div>
@@ -313,13 +313,13 @@
 
   <div class="panel">
     <div class="panel-header">
-      <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">Recent Farmer Activity</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">The latest quotes that included your products</p>
+      <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">Latest Requests</h2>
+      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">The newest requests that included your products</p>
     </div>
     <div class="panel-body-flush">
       @if($totalQuotations > 0)
         @foreach($recentActivity as $q)
-          <div style="padding: 14px 20px; {{ !$loop->last ? 'border-bottom: 1px solid #f5f7f6;' : '' }} display: flex; align-items: center; gap: 12px;">
+          <div class="quote-row" style="padding: 14px 20px; {{ !$loop->last ? 'border-bottom: 1px solid #f5f7f6;' : '' }} display: flex; align-items: center; gap: 12px;">
             <div class="farmer-avatar">
               @php
                 $name = $q->farmer ? $q->farmer->name : 'Unknown';
@@ -331,7 +331,7 @@
               <div style="font-weight: 700; color: #1a2b1e; font-size: 14px;">{{ $q->farmer?->name ?? 'Unknown Farmer' }}</div>
               <div style="font-size: 12px; color: #879a8c; text-transform: capitalize;">{{ $q->crop_type }} — {{ $q->land_area }} ha — {{ $q->season }} season</div>
             </div>
-            <div style="text-align: right;">
+            <div class="q-amount" style="text-align: right;">
               <div style="font-weight: 700; color: #143d23; font-size: 14px;">₱{{ number_format($q->estimated_total_cost, 0) }}</div>
               <div style="font-size: 11px; color: #b0b8b3;">{{ $q->created_at->diffForHumans() }}</div>
             </div>
@@ -342,8 +342,8 @@
           <div class="empty-icon">
             <svg viewBox="0 0 24 24" width="28" height="28" stroke-width="1.5" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
-          <p style="font-size: 15px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Activity Yet</p>
-          <p style="font-size: 13px; color: #879a8c; margin: 0;">When farmers generate quotations using your products, they'll appear here.</p>
+          <p style="font-size: 15px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Requests Yet</p>
+          <p style="font-size: 13px; color: #879a8c; margin: 0;">When a farmer makes a cost estimate using your products, it will show up here.</p>
         </div>
       @endif
     </div>
@@ -363,18 +363,18 @@
     :sorts="[
         ['key' => 'date', 'dir' => -1, 'type' => 'date', 'label' => 'Date (newest)'],
         ['key' => 'date', 'dir' => 1, 'type' => 'date', 'label' => 'Date (oldest)'],
-        ['key' => 'value', 'dir' => -1, 'type' => 'num', 'label' => 'Est. value (highest)'],
-        ['key' => 'value', 'dir' => 1, 'type' => 'num', 'label' => 'Est. value (lowest)'],
+        ['key' => 'value', 'dir' => -1, 'type' => 'num', 'label' => 'Estimated cost (highest)'],
+        ['key' => 'value', 'dir' => 1, 'type' => 'num', 'label' => 'Estimated cost (lowest)'],
         ['key' => 'farmer', 'dir' => 1, 'type' => 'str', 'label' => 'Farmer (A–Z)'],
         ['key' => 'crop', 'dir' => 1, 'type' => 'str', 'label' => 'Crop (A–Z)'],
     ]"
   />
 
 <div class="table-card">
-  <div style="padding: 20px 24px; border-bottom: 1px solid #f0f2f1; display: flex; justify-content: space-between; align-items: center; background: #fafdfb;">
+  <div class="table-card-head" style="padding: 20px 24px; border-bottom: 1px solid #f0f2f1; display: flex; justify-content: space-between; align-items: center; background: #fafdfb;">
     <div>
-      <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">All Farmer Quotations</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 2px 0 0 0;">Every quote that includes your products</p>
+      <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">All Requests From Farmers</h2>
+      <p style="font-size: 13px; color: #879a8c; margin: 2px 0 0 0;">Every request that included your products</p>
     </div>
     <span style="font-size: 13px; color: #879a8c; font-weight: 600; background: #f0f2f1; padding: 4px 12px; border-radius: 8px;">{{ $totalQuotations }} total</span>
   </div>
@@ -383,12 +383,12 @@
       <table id="storeQuotesTable" class="data-table">
       <thead>
         <tr>
-          <th>Reference</th>
+          <th>Request No.</th>
           <th>Farmer</th>
           <th>Crop / Season</th>
           <th>Land Area</th>
-          <th>Your Products</th>
-          <th>Estimated Value</th>
+          <th>Products Included</th>
+          <th>Estimated Cost</th>
           <th>Date</th>
           <th style="text-align: right;">Action</th>
         </tr>
@@ -422,7 +422,7 @@
               <div style="font-size: 12px; color: #879a8c; text-transform: capitalize;">{{ $q->season }} season</div>
             </td>
             <td><span style="font-weight: 600;">{{ number_format($q->land_area, 1) }}</span> <span style="color: #879a8c; font-size: 12px;">ha</span></td>
-            <td><span class="product-count-badge">{{ $storeItems->count() }} product(s)</span></td>
+            <td><span class="product-count-badge">{{ $storeItems->count() }} product{{ $storeItems->count() === 1 ? '' : 's' }}</span></td>
             <td>
               @if($q->estimated_total_cost > 0)
                 <span style="font-weight: 700; color: #1a2b1e;">₱{{ number_format($q->estimated_total_cost, 2) }}</span>
@@ -445,8 +445,8 @@
                 <div class="empty-icon">
                   <svg viewBox="0 0 24 24" width="28" height="28" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 </div>
-                <p style="font-size: 16px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Farmer Quotations Yet</p>
-                <p style="font-size: 13px; color: #879a8c; margin: 0;">When farmers generate quotations using your products, they'll appear here.</p>
+                <p style="font-size: 16px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Requests Yet</p>
+                <p style="font-size: 13px; color: #879a8c; margin: 0;">When a farmer makes a cost estimate that includes your products, it will appear here.</p>
               </div>
             </td>
           </tr>
@@ -463,16 +463,16 @@
 
 <div class="ai-floating" id="aiFloatingLoading" hidden>
   <span class="ai-spin"></span>
-  <span>Generating your AI store overview&hellip;</span>
+  <span>Preparing your store summary&hellip;</span>
 </div>
 
 <div class="ai-modal" id="aiModal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" aria-hidden="true">
   <div class="ai-modal-head">
     <div>
-      <h3 id="aiModalTitle">AI Store Overview</h3>
-      <p>AI summary of what farmers are asking for</p>
+      <h3 id="aiModalTitle">Smart Store Summary</h3>
+      <p>What farmers are asking for, in plain words</p>
     </div>
-    <button type="button" class="ai-modal-close" id="aiModalClose" aria-label="Close AI overview" title="Close">
+    <button type="button" class="ai-modal-close" id="aiModalClose" aria-label="Close summary" title="Close">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
@@ -568,8 +568,8 @@
     lastAiOverview = String(data.overview || '');
     var html = '<div class="ai-narrative">' +
       '<div class="ai-narrative-head">' +
-      '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#7c3aed" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>' +
-      '<h4>AI Quotation Demand Trends</h4></div><div class="ai-narrative-body">' + renderAiMarkdown(lastAiOverview) + '</div></div>' +
+      '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#166534" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>' +
+      '<h4>Your Store Summary</h4></div><div class="ai-narrative-body">' + renderAiMarkdown(lastAiOverview) + '</div></div>' +
       '<div class="ai-modal-foot">' +
       '<button type="button" class="ai-chat-link" onclick="openAiChat()">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
@@ -594,7 +594,7 @@
   function setAiBtnState(btn, busy) {
     var label = btn.querySelector('span');
     btn.disabled = busy;
-    label.textContent = busy ? 'Generating\u2026' : 'Regenerate Overview';
+    label.textContent = busy ? 'Generating\u2026' : 'Regenerate Summary';
   }
   function generateAiOverview(btn) {
     setAiBtnState(btn, true);
