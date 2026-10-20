@@ -97,7 +97,8 @@ class AccountActivationFlowTest extends TestCase
         Mail::assertSent(ActivationOtpMail::class, function ($mail) use ($user) {
             return $mail->hasTo($user->email)
                 && $mail->otp !== $user->emailOtps()->first()->otp_hash
-                && preg_match('/^\d{6}$/', $mail->otp) === 1;
+                && preg_match('/^\d{6}$/', $mail->otp) === 1
+                && str_contains($mail->envelope()->subject, $mail->otp);
         });
     }
 
@@ -505,6 +506,10 @@ class AccountActivationFlowTest extends TestCase
 
         $code = Mail::sent(PasswordResetOtpMail::class)->last()->otp;
         $this->assertMatchesRegularExpression('/^\d{6}$/', $code);
+
+        // The code must be readable without opening the email (subject line)
+        // and the body must open straight on the code-entry page.
+        $this->assertStringContainsString($code, Mail::sent(PasswordResetOtpMail::class)->last()->envelope()->subject);
 
         // The email must link to the code-entry page, not back to the
         // email-only forgot-password form.

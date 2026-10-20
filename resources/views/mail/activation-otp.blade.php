@@ -3,13 +3,23 @@
 
     <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#143d23;font-weight:800;">Verify your account</h1>
 
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#334155;">
+    {{-- Code first: visible from the notification and inbox list without
+         opening the email, and one tap from the button to the page that
+         asks for it. --}}
+    <x-mail.otp-block
+        :otp="$otp"
+        :expires-at="$expiresAt"
+        button-url="{{ url('/activate') }}"
+        button-label="Activate my account"
+    />
+
+    <p style="margin:0 0 8px;font-size:15px;line-height:1.65;color:#334155;">
         Hello <strong style="color:#143d23;">{{ $userName }}</strong>,
     </p>
 
     <p style="margin:0 0 20px;font-size:15px;line-height:1.65;color:#334155;">
         You have been given an account for <strong style="color:#143d23;">{{ config('app.name') }}</strong>.
-        Use the 6-digit verification code below to confirm your email address, create your password,
+        Enter the 6-digit code above to confirm your email address, create your password,
         and activate your account.
     </p>
 
@@ -26,21 +36,6 @@
             </td>
         </tr>
     </table>
-
-    {{-- OTP code --}}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">
-        <tr>
-            <td align="center">
-                <div style="display:inline-block;background-color:#f0f7f0;border:1px solid #cfe6cf;border-radius:12px;padding:18px 26px;">
-                    <div style="font-size:11px;color:#64748b;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Your verification code</div>
-                    <div style="font-size:34px;font-weight:800;letter-spacing:10px;color:#143d23;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">{{ $otp }}</div>
-                </div>
-            </td>
-        </tr>
-    </table>
-    <p style="margin:0 0 24px;text-align:center;font-size:13px;color:#64748b;">
-        This code expires on <strong style="color:#143d23;">{{ $expiresAt }}</strong> and can be used only once.
-    </p>
 
     {{-- How to use --}}
     <h2 style="margin:0 0 12px;font-size:15px;color:#143d23;font-weight:800;">How to activate your account</h2>

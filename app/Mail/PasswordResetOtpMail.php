@@ -28,7 +28,9 @@ class PasswordResetOtpMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Reset Your Aquilala Account Password',
+            // The code rides in the subject so it is readable from the lock
+            // screen notification and inbox list — no need to open the email.
+            subject: $this->otp.' is your '.config('app.name').' password reset code',
         );
     }
 

@@ -72,7 +72,8 @@ class InitialAdminSetupTest extends TestCase
         Mail::assertSent(AdminEmailVerificationMail::class, function ($mail) use ($admin, $otpRow) {
             return $mail->hasTo($admin->email)
                 && $mail->otp !== $otpRow->otp_hash
-                && preg_match('/^\d{6}$/', $mail->otp) === 1;
+                && preg_match('/^\d{6}$/', $mail->otp) === 1
+                && str_contains($mail->envelope()->subject, $mail->otp);
         });
 
         $this->assertDatabaseHas('activity_logs', [
