@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\NovuService;
 use App\Services\UserInvitationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -124,6 +125,11 @@ class AuthController extends Controller
         }
 
         ActivityLogger::userLoggedIn($user, $method === 'phone' ? 'phone number' : 'email');
+
+        // Keep this account's Novu subscriber (the in-app Inbox feed) in
+        // step with its name/email. Fire-and-forget inside the service —
+        // never a reason for a sign-in to fail.
+        NovuService::identify($user);
 
         return redirect()->route('dashboard.redirect', ['role' => $user->role]);
     }

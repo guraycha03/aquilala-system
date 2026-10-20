@@ -479,8 +479,14 @@
     .burger-btn { background: none; border: none; color: var(--sb-fg); font-size: 24px; cursor: pointer; padding: 0; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; }
     .burger-btn:active { background: rgba(255, 255, 255, 0.08); }
 
-    .desktop-notif-wrap { position: fixed; top: 26px; right: 20px; z-index: 200; transition: transform 0.3s ease; }
+    .desktop-notif-wrap { position: fixed; top: 26px; right: 20px; z-index: 200; transition: transform 0.3s ease; display: flex; align-items: flex-start; gap: 10px; }
     .desktop-notif-wrap.hidden { transform: translateY(-80px); }
+    /* Novu Inbox bell (partial novu-inbox) sits beside ours. Its trigger
+       button is nested a few elements deep, so we style the trigger itself —
+       same 40px white circle as our bell (dark-on-dark would vanish on the
+       green mobile header). */
+    .novu-inbox-mount { display: flex; align-items: center; flex: 0 0 auto; }
+    .novu-inbox-mount .nv-popoverTrigger { width: 40px; height: 40px; border-radius: 50%; padding: 0; background: #ffffff; border: 1px solid #eef1f4; box-shadow: 0 2px 10px rgba(16, 24, 40, 0.10); color: #6d7d46; }
     .desktop-notif {
       width: 40px; height: 40px; border-radius: 50%;
       background: #ffffff; border: 1px solid #eef1f4;
@@ -1235,15 +1241,52 @@
     @yield('content')
   </main>
 
-  @if($notifBellUrl)
+  @php
+      // Novu (in-app Inbox feed + FCM push plumbing) renders only when the
+      // account is signed in AND the keys exist in .env — a missing config
+      // changes nothing on the page.
+      $novuInboxOn = config('novu.app_id') && config('novu.api_key') && auth()->check();
+      $novuPushOn  = $novuInboxOn && config('novu.firebase.api_key');
+  @endphp
+  @if($notifBellUrl || $novuInboxOn)
   <div class="desktop-notif-wrap">
+    @if($notifBellUrl)
     <a class="desktop-notif" id="desktopNotifBtn" href="{{ $notifBellUrl }}" aria-label="Notifications" title="Notifications">
       <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       @if($notifUnreadCount > 0)
         <span class="notif-badge" id="desktopNotifBadge">{{ $notifUnreadCount }}</span>
       @endif
     </a>
+    @endif
+    @if($novuInboxOn)
+      @include('partials.novu-inbox')
+    @endif
   </div>
+  @endif
+
+  @if($novuPushOn)
+  @php
+      // Firebase web config (public by design) + enrol endpoint for the
+      // FCM push half. novu-push.js reads this and self-gates. The array is
+      // built here because Blade's @json cannot take a comma-laden inline
+      // expression — it must receive a single variable.
+      $novuPushConfig = [
+          'firebase' => [
+              'apiKey'            => config('novu.firebase.api_key'),
+              'authDomain'        => config('novu.firebase.auth_domain'),
+              'projectId'         => config('novu.firebase.project_id'),
+              'storageBucket'     => config('novu.firebase.storage_bucket'),
+              'messagingSenderId' => config('novu.firebase.messaging_sender_id'),
+              'appId'             => config('novu.firebase.app_id'),
+              'vapidKey'          => config('novu.firebase.vapid_key'),
+          ],
+          'tokenUrl' => '/push/novu-token',
+      ];
+  @endphp
+  <script>
+      window.AquilalaNovuPushConfig = @json($novuPushConfig);
+  </script>
+  <script src="{{ asset('js/novu-push.js') }}?v=1" defer></script>
   @endif
 
   <script>

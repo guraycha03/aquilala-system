@@ -91,6 +91,8 @@ class ActivityLogger
      */
     private static function notifyStoresOfQuotation(Quotation $quotation, string $type, string $description): void
     {
+        $storeIds = [];
+
         foreach ($quotation->getInvolvedStoreIds() as $storeId) {
             $store = User::find($storeId);
             if ($store === null || $store->id === Auth::id()) {
@@ -112,7 +114,23 @@ class ActivityLogger
                 ],
                 'ip_address'   => self::currentIp(),
             ]);
+
+            $storeIds[] = $store->id;
         }
+
+        // Same anonymous notice into the Novu feed (the in-app Inbox bell)
+        // for those same stores — the title and body never name the farmer,
+        // exactly like the row above. Fire-and-forget, never throws.
+        NovuService::triggerNotice(
+            match ($type) {
+                ActivityLog::TYPE_QUOTATION_CREATED => 'New cost estimate',
+                ActivityLog::TYPE_QUOTATION_DELETED => 'Cost estimate deleted',
+                default                             => 'Cost estimate update',
+            },
+            $description,
+            $storeIds,
+            route('store.quotations.index')
+        );
     }
 
     // ── Auth shortcuts ────────────────────────────────────────────
@@ -471,14 +489,21 @@ class ActivityLogger
             self::eventNotice($event, $label)
         );
 
+        // The outside-the-app push. While NOVU_PUSH_ENABLED stays false the
+        // original VAPID sender keeps delivering (Novu then only feeds the
+        // in-app bell); once the workflow's Push step is switched on, set
+        // NOVU_PUSH_ENABLED=true and this sender retires — both active would
+        // reach every device twice.
         $memberIds = User::whereIn('role', ['farmer', 'store_owner'])->pluck('id');
-        PushService::sendToUsers(
-            $memberIds,
-            "{$label}: {$event->title}",
-            self::eventPushBody($event),
-            route('farmer.calendar.index'),
-            'event-' . $event->id
-        );
+        if (! config('novu.push_enabled')) {
+            PushService::sendToUsers(
+                $memberIds,
+                "{$label}: {$event->title}",
+                self::eventPushBody($event),
+                route('farmer.calendar.index'),
+                'event-' . $event->id
+            );
+        }
 
         return $row;
     }
@@ -537,9 +562,22 @@ class ActivityLogger
             'location'   => $event->location,
         ];
 
-        foreach (User::whereIn('role', ['farmer', 'store_owner'])->get() as $member) {
+        $members = User::whereIn('role', ['farmer', 'store_owner'])->get();
+
+        foreach ($members as $member) {
             self::log($type, $description, $event, $meta, $member);
         }
+
+        // The same notice into the Novu feed (the in-app Inbox bell). One
+        // trigger fans out to every member; the payload feeds the workflow
+        // templates — subject {{payload.title}}, body {{payload.body}} —
+        // and its Push step once that channel is switched on. Never throws.
+        NovuService::triggerNotice(
+            $event->title,
+            $description,
+            $members->pluck('id'),
+            route('farmer.calendar.index')
+        );
     }
 
     private static function eventNotice(AssociationEvent $event, string $prefix): string

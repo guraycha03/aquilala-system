@@ -117,7 +117,11 @@
             return getRegistration().then(function (registration) {
                 return registration.pushManager.getSubscription();
             }).then(function (sub) {
-                return sub ? 'enabled' : 'off';
+                if (sub) return 'enabled';
+                // FCM-only mode (Novu push, no VAPID keys on this install):
+                // the device counts as enrolled while it holds an FCM token.
+                if (window.AquilalaNovuPush && window.AquilalaNovuPush.enrolled()) return 'enabled';
+                return 'off';
             }).catch(function () {
                 return 'off';
             });
@@ -132,8 +136,24 @@
                     return Promise.reject(new Error('denied'));
                 }
                 return fetchKey().then(function (key) {
-                    if (!key) return Promise.reject(new Error('not-configured'));
-                    return subscribe(key);
+                    if (!key) {
+                        // No VAPID keys on this install: with Novu/FCM set up
+                        // the just-granted permission alone is enough to
+                        // enroll this device for browser push instead.
+                        if (window.AquilalaNovuPush) {
+                            return window.AquilalaNovuPush.enroll(false).then(function (ok) {
+                                if (ok) return null;
+                                return Promise.reject(new Error('not-configured'));
+                            });
+                        }
+                        return Promise.reject(new Error('not-configured'));
+                    }
+                    return subscribe(key).then(function (subscription) {
+                        // VAPID registered — mirror the device to Novu/FCM as
+                        // well (silent, and harmless if it fails).
+                        if (window.AquilalaNovuPush) window.AquilalaNovuPush.enroll(false);
+                        return subscription;
+                    });
                 });
             });
         },
@@ -145,7 +165,11 @@
             return getRegistration().then(function (registration) {
                 return registration.pushManager.getSubscription();
             }).then(function (sub) {
-                if (!sub) return null;
+                // THIS device stops receiving either way — revoke its FCM
+                // token (Novu push) beside the VAPID subscription below.
+                var novuOff = window.AquilalaNovuPush ? window.AquilalaNovuPush.revoke() : Promise.resolve();
+
+                if (!sub) return novuOff;
                 var endpoint = sub.endpoint;
                 return fetch(cfg.unsubscribeUrl, {
                     method: 'POST',
@@ -158,6 +182,8 @@
                     body: JSON.stringify({ endpoint: endpoint })
                 }).then(function () {
                     return sub.unsubscribe();
+                }).then(function () {
+                    return novuOff;
                 });
             }).catch(function () {
                 // Already gone server-side or offline — treat as disabled.
@@ -173,12 +199,19 @@
             }
 
             return fetchKey().then(function (key) {
-                if (!key) return null;
+                if (!key) {
+                    // FCM-only setup: keep this device's Novu token fresh.
+                    if (window.AquilalaNovuPush) window.AquilalaNovuPush.enroll(false);
+                    return null;
+                }
                 return getRegistration().then(function (registration) {
                     return registration.pushManager.getSubscription().then(function (sub) {
                         if (sub) return registerWithServer(sub);
                         return subscribe(key);
                     });
+                }).then(function (result) {
+                    if (window.AquilalaNovuPush) window.AquilalaNovuPush.enroll(false);
+                    return result;
                 });
             }).catch(function () {
                 // Quiet by design.

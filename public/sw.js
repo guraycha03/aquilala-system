@@ -85,8 +85,10 @@ self.addEventListener('message', (event) => {
 
 // ── Web Push ──────────────────────────────────────────────────────
 // A push is shown by the service worker itself, so the notification
-// appears even when the app is closed. The server payload is JSON:
-// { title, body, url, tag } — url is the in-app page a click opens.
+// appears even when the app is closed. Two senders land here:
+//   { title, body, url, tag }                 — our VAPID sender
+//   { notification, data, fcmOptions: {link} } — FCM (Novu's push step)
+// Both are normalised below so a click always opens the notice's page.
 self.addEventListener('push', (event) => {
     let data = { title: 'Aquilala', body: '', url: '/', tag: 'aquilala' };
 
@@ -94,11 +96,14 @@ self.addEventListener('push', (event) => {
         try {
             const parsed = event.data.json();
             if (parsed && typeof parsed === 'object') {
+                const notif = parsed.notification || {};
+                const extra = parsed.data || {};
+                const fcm   = parsed.fcmOptions || {};
                 data = {
-                    title: parsed.title || data.title,
-                    body:  parsed.body  || data.body,
-                    url:   parsed.url   || data.url,
-                    tag:   parsed.tag   || data.tag
+                    title: parsed.title || notif.title || data.title,
+                    body:  parsed.body  || notif.body  || data.body,
+                    url:   parsed.url   || parsed.link || extra.url || extra.link || fcm.link || data.url,
+                    tag:   parsed.tag   || extra.tag   || data.tag
                 };
             }
         } catch (err) {

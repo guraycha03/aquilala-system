@@ -12,7 +12,10 @@
        the notification page itself is important notices only.
 --}}
 @php
-    $pushConfigured = \App\Services\PushService::available();
+    // The toggle card shows when EITHER sender is configured: the original
+    // VAPID keys, or the Novu/Firebase (FCM) setup — whichever is live.
+    $pushConfigured = \App\Services\PushService::available()
+        || (bool) config('novu.firebase.api_key');
     $activityRoute  = match (auth()->user()?->role) {
         'admin'       => 'admin.activity.index',
         'store_owner' => 'store.activity.index',
