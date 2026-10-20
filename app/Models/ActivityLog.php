@@ -285,11 +285,11 @@ class ActivityLog extends Model
     }
 
     /**
-     * The row's text as it should read TODAY: the "Upcoming event" prefix
-     * baked in at creation time is corrected to the event's live status
-     * ("Past event" / "Happening now"), so the wording can never go stale
-     * as the date passes. Rows without that prefix — and rows for non-
-     * event notices — come through untouched.
+     * The row's text as it should read TODAY: the status prefix baked in at
+     * creation time is corrected to the event's live status ("Past event" /
+     * "Happening now"), so the wording can never go stale as the date
+     * passes — including legacy rows that still open with "Upcoming event".
+     * Rows for non-event notices come through untouched.
      */
     public function getDisplayDescriptionAttribute(): string
     {
@@ -303,7 +303,7 @@ class ActivityLog extends Model
             return (string) $this->description;
         }
 
-        return preg_replace('/^Upcoming event:/', $prefix . ':', (string) $this->description, 1)
+        return preg_replace('/^(?:Upcoming event|Happening now|Past event):/', $prefix . ':', (string) $this->description, 1)
             ?: (string) $this->description;
     }
 

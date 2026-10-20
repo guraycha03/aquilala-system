@@ -405,9 +405,10 @@ class RoleNotificationsTest extends TestCase
     {
         // Three events covering every state: finished yesterday, an all-day
         // event happening today, and one still days ahead. The logger bakes
-        // "Upcoming event" into the row at creation time — the pages must
-        // correct that wording to the event's status when they render, so a
-        // notice from last week can never keep calling its event upcoming.
+        // the event's status INTO the row and push at creation time ("Past
+        // event" / "Happening now" / "Upcoming event"), and the pages rewrite
+        // the prefix again whenever they render — so a notice can never keep
+        // calling its event upcoming once the date has passed.
         $past = \App\Models\AssociationEvent::create([
             'title'      => 'Seed Distribution Wrap-up',
             'event_type' => 'free_input',
@@ -452,13 +453,20 @@ class RoleNotificationsTest extends TestCase
         $this->assertSame('upcoming', $futureRow->event_state);
         $this->assertSame('Upcoming', $futureRow->event_state_label);
 
-        // The stored row keeps its historical wording (the log records what
-        // was true at creation); the rendered text never goes stale.
-        $this->assertStringStartsWith('Upcoming event', $pastRow->description);
+        // The stored row already leads with the event's status at creation;
+        // the rendered text is corrected once more so it can never go stale.
+        $this->assertStringStartsWith('Past event:', $pastRow->description);
+        $this->assertStringStartsWith('Happening now:', $todayRow->description);
+        $this->assertStringStartsWith('Upcoming event:', $futureRow->description);
         $this->assertStringNotContainsString('Upcoming event', $pastRow->display_description);
         $this->assertStringStartsWith('Past event:', $pastRow->display_description);
         $this->assertStringStartsWith('Happening now:', $todayRow->display_description);
         $this->assertSame($futureRow->description, $futureRow->display_description);
+
+        // A legacy row written before this fix — "Upcoming event" stored for
+        // an event that has since finished — is still corrected at render.
+        $pastRow->description = 'Upcoming event: "' . $past->title . '" on ' . $past->event_date->format('M d, Y');
+        $this->assertStringStartsWith('Past event:', $pastRow->display_description);
 
         // The notification page shows a live status chip on every notice.
         $this->actingAs($this->farmer)

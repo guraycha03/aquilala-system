@@ -453,16 +453,27 @@ class ActivityLogger
             ]
         );
 
+        // The notice leads with the event's status AT THIS MOMENT: an event
+        // created for a slot that has already started — or already finished —
+        // never reaches farmers as "Upcoming". The pages additionally rewrite
+        // the prefix at render time (ActivityLog::display_description), so the
+        // wording stays correct as the date passes.
+        $label = match ($event->state()) {
+            AssociationEvent::STATE_DONE    => 'Past event',
+            AssociationEvent::STATE_ONGOING => 'Happening now',
+            default                         => 'Upcoming event',
+        };
+
         self::notifyFarmersOfEvent(
             $event,
             ActivityLog::TYPE_EVENT_CREATED,
-            self::eventNotice($event, 'Upcoming event')
+            self::eventNotice($event, $label)
         );
 
         $farmerIds = User::where('role', 'farmer')->pluck('id');
         PushService::sendToUsers(
             $farmerIds,
-            "Upcoming event: {$event->title}",
+            "{$label}: {$event->title}",
             self::eventPushBody($event),
             route('farmer.calendar.index'),
             'event-' . $event->id

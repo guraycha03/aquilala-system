@@ -170,9 +170,17 @@
         /* Field border weight — match the app's 1.5px fields (the calm,
            substantial weight of the harvest-report forms); 1px read as
            thin and sharp. The login phone wrapper matches separately. */
-        input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+        input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="hidden"]),
         select, textarea {
             border-width: 1.5px !important;
+        }
+
+        /* At-rest field border colour — fields that never declare one would
+           fall back to the browser's dark gray default. Element-level, so
+           every page's own field styling still wins. */
+        input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="hidden"]),
+        textarea {
+            border-color: #e2e8f0;
         }
 
         /* Global select/dropdown styling — white field, rounded corners, custom arrow,

@@ -131,7 +131,7 @@
   <script src="{{ asset('js/alpine.min.js') }}" defer></script>
   {{-- Display theme: every rule is scoped to [data-theme="dark"], so this file
        costs nothing while the user is in light mode. --}}
-  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=8">
+  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=9">
   {{-- App lockdown: kills text selection, copy/cut, long-press & right-click
        browser menus, and printing outside form fields — applies to every page
        and role, so the portal behaves like a native app and long-press is
@@ -175,9 +175,17 @@
        sharp and unsettling on focus. Applied at rest (not only :focus) so
        focused fields don't shift by a half-pixel. Native checkbox/radio/
        range widgets keep their own geometry. */
-    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="hidden"]),
     select, textarea {
       border-width: 1.5px !important;
+    }
+
+    /* At-rest field border colour — a field whose CSS never declares one
+       falls back to the browser's dark gray (#767676), which reads as the
+       unwanted thin dark border. Element-level, so any page rule still wins. */
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="hidden"]),
+    select, textarea {
+      border-color: #cbd5c8;
     }
 
     /* Global: consistent, readable letter-spacing on all validation / feedback text */

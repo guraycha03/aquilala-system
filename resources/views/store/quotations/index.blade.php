@@ -4,163 +4,18 @@
 
 @section('content')
 <style>
-  .stats-grid {
+  /* Top-of-page metrics reuse the dashboard KPI card (components/kpi-card)
+     inside the shared responsive `kpi-strip` grid — flat white, sage chips,
+     no gradients, so this page reads like every other dashboard. */
+
+  /* ── Panels ─────────────────────────────────────────────────── */
+  .trend-panels {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
   }
-  @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 560px) { .stats-grid { grid-template-columns: 1fr; } }
-
-  .stat-card {
-    position: relative;
-    border-radius: 14px;
-    padding: 22px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    overflow: hidden;
-    min-height: 140px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-  .stat-card::after {
-    content: ''; position: absolute; top: 0; right: 0; width: 80px; height: 80px;
-    border-radius: 50%; opacity: 0.07; transform: translate(20px, -20px);
-  }
-  .stat-card.blue   { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; }
-  .stat-card.blue::after  { background: #2563eb; }
-  .stat-card.amber  { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde68a; }
-  .stat-card.amber::after { background: #d97706; }
-  .stat-card.green  { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #bbf7d0; }
-  .stat-card.green::after { background: #16a34a; }
-  .stat-card.violet { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border: 1px solid #ddd6fe; }
-  .stat-card.violet::after { background: #7c3aed; }
-
-  .stat-card .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
-  .stat-card.blue .stat-value  { color: #1e40af; }
-  .stat-card.amber .stat-value { color: #92400e; }
-  .stat-card.green .stat-value { color: #166534; }
-  .stat-card.violet .stat-value { color: #5b21b6; }
-  .stat-card .stat-label { font-size: 12px; color: #6b7c6e; margin-top: 10px; font-weight: 500; }
-  .stat-sub { font-size: 12px; color: #6b7c6e; margin-top: 7px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
-  .stat-sub b { color: #1a2b1e; font-weight: 800; }
-  .stat-sub .trend-up { color: #15803d; }
-  .stat-sub .trend-down { color: #b91c1c; }
-  .stat-sub svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-
-  .stat-card.violet.ai-overview { flex-direction: column; align-items: stretch; justify-content: space-between; }
-  .stat-card.violet .ai-title { font-size: 20px; letter-spacing: -0.02em; }
-  .ai-overview-head { position: relative; min-height: 42px; padding-right: 48px; }
-  .ai-icon {
-    position: absolute; top: 0; right: 0;
-    width: 38px; height: 38px; border-radius: 11px;
-    background: rgba(124,58,237,0.12);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .ai-icon svg { width: 19px; height: 19px; stroke: #7c3aed; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .ai-overview-btn { align-self: flex-start; padding: 8px 13px; font-size: 11.5px; }
-
-  .ai-btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-    color: #ffffff; border: none; cursor: pointer;
-    padding: 9px 14px; border-radius: 10px;
-    font-size: 12px; font-weight: 700; font-family: inherit;
-    box-shadow: 0 2px 8px rgba(109, 40, 217, 0.28);
-    transition: all 0.2s ease;
-  }
-  .ai-btn:hover:not(:disabled) { box-shadow: 0 5px 14px rgba(109, 40, 217, 0.36); transform: translateY(-1px); }
-  .ai-btn:active:not(:disabled) { transform: scale(0.97); }
-  .ai-btn:disabled { opacity: 0.65; cursor: wait; }
-  .ai-spin { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #ffffff; border-radius: 50%; animation: aiSpin 0.7s linear infinite; }
-  @keyframes aiSpin { to { transform: rotate(360deg); } }
-
-  .ai-output {
-    margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(124,58,237,0.25);
-    font-size: 13px; color: #4c1d95; max-height: 340px; overflow-y: auto;
-    scrollbar-width: thin;
-  }
-  .ai-output p, .ai-output li { color: #4c1d95; }
-  .ai-output .ai-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; border-radius: 10px; padding: 12px 14px; font-size: 12.5px; line-height: 1.5; display: flex; gap: 8px; align-items: flex-start; }
-
-  /* Floating AI loading indicator (outside the KPI card, no overlay) */
-  .ai-floating {
-    position: fixed; bottom: 26px; right: 26px; z-index: 1300;
-    display: flex; align-items: center; gap: 10px;
-    background: #ffffff; border: 1px solid #ede9fe; border-radius: 999px;
-    padding: 12px 18px;
-    box-shadow: 0 12px 32px rgba(109, 40, 217, 0.18);
-    font-size: 13px; font-weight: 700; color: #5b21b6;
-  }
-  .ai-floating[hidden] { display: none; }
-  .ai-floating .ai-spin { border-color: rgba(124,58,237,0.25); border-top-color: #7c3aed; }
-
-  /* Floating result modal — centered, no dark overlay behind */
-  .ai-modal {
-    position: fixed; top: 50%; left: 50%;
-    transform: translate(-50%, -50%) scale(0.96);
-    width: min(660px, calc(100vw - 32px)); max-height: 78vh; overflow-y: auto;
-    background: #ffffff; border: 1px solid #ede9fe; border-radius: 18px;
-    box-shadow: 0 28px 70px rgba(30, 15, 60, 0.32);
-    z-index: 1400;
-    opacity: 0; visibility: hidden;
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
-    scrollbar-width: thin;
-  }
-  .ai-modal.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
-  .ai-modal-head {
-    display: flex; justify-content: space-between; align-items: center; gap: 12px;
-    padding: 16px 20px; border-bottom: 1px solid #f0f2f1;
-    position: sticky; top: 0; background: #fafafd; border-radius: 18px 18px 0 0; z-index: 1;
-  }
-  .ai-modal-head h3 { font-size: 15px; margin: 0; color: #1a2b1e; }
-  .ai-modal-head p { font-size: 12px; color: #879a8c; margin: 2px 0 0 0; }
-  .ai-modal-close {
-    width: 30px; height: 30px; border-radius: 9px; border: none; cursor: pointer;
-    background: #f0f2f1; color: #6b7c6e; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s ease; font-size: 16px; line-height: 1;
-  }
-  .ai-modal-close:hover { background: #fee2e2; color: #b91c1c; }
-  .ai-modal-body { padding: 20px; font-size: 13.5px; color: #3f3f46; }
-
-  .ai-narrative {
-    background: linear-gradient(135deg, #faf5ff 0%, #f6efff 100%);
-    border: 1px solid #ede9fe; border-radius: 12px; padding: 16px 18px;
-  }
-  .ai-narrative-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .ai-narrative-head h4 { font-size: 15px; font-weight: 700; color: #5b21b6; margin: 0; }
-  .ai-narrative-body { font-size: 14px; color: #3b2a63; line-height: 1.7; }
-  .ai-narrative-body p { margin: 8px 0 0 0; }
-  .ai-narrative-body ul, .ai-narrative-body ol { margin: 10px 0 0 18px; padding: 0; }
-  .ai-narrative-body li { margin-bottom: 7px; line-height: 1.6; }
-  .ai-narrative-body strong { color: #6d28d9; }
-  .ai-narrative-body h1, .ai-narrative-body h2, .ai-narrative-body h3, .ai-narrative-body h4 {
-    margin: 16px 0 6px; font-weight: 700; color: #4c1d95; line-height: 1.35;
-  }
-  .ai-narrative-body h1 { font-size: 16px; }
-  .ai-narrative-body h2 { font-size: 15px; }
-  .ai-narrative-body h3 { font-size: 14.5px; }
-  .ai-narrative-body h4 { font-size: 14px; }
-  .ai-narrative-body > *:first-child { margin-top: 0; }
-  .ai-narrative-body table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
-  .ai-narrative-body th { background: #f3e8ff; text-align: left; font-weight: 700; color: #4c1d95; }
-  .ai-narrative-body th, .ai-narrative-body td { border: 1px solid #e9d5ff; padding: 7px 9px; }
-  .ai-narrative-body blockquote { margin: 10px 0; padding: 9px 13px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; color: #78350f; }
-  .ai-narrative-body .table-wrap { overflow-x: auto; max-width: 100%; }
-  .ai-narrative-body .warn-icon-img { width: 16px; height: 16px; display: inline-block; margin-right: 6px; vertical-align: -3px; }
-
-  .ai-modal-foot { margin-top: 16px; display: flex; justify-content: flex-end; }
-  .ai-chat-link {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: #7c3aed; color: #ffffff; border: none; border-radius: 10px;
-    padding: 10px 16px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif;
-    cursor: pointer; transition: background 0.2s ease;
-  }
-  .ai-chat-link:hover { background: #6d28d9; }
-  .ai-chat-link svg { width: 15px; height: 15px; }
+  @media (max-width: 980px) { .trend-panels { grid-template-columns: 1fr; } }
 
   .panel {
     background: #ffffff;
@@ -176,7 +31,7 @@
   .demand-bar { height: 8px; background: #f0f2f1; border-radius: 4px; overflow: hidden; }
   .demand-bar-fill {
     height: 100%; border-radius: 4px;
-    background: linear-gradient(90deg, #16a34a, #22c55e);
+    background: #16a34a;
     transition: width 0.6s ease;
   }
 
@@ -184,8 +39,122 @@
     width: 36px; height: 36px;
     border-radius: 10px; display: flex; align-items: center; justify-content: center;
     font-weight: 700; font-size: 13px; flex-shrink: 0;
+    background: #EDF1E9; color: #648268; border: 1px solid #E0E5DB;
   }
   .farmer-cell { display: flex; align-items: center; gap: 12px; }
+
+  /* ── The AI card — same shape as the KPI cards around it ────── */
+  .ai-kpi-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    border: 1px solid #E0E5DB;
+    background: #fff;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  .ai-kpi-card .kpi-desc { margin-bottom: 14px; }
+  .ai-kpi-card .ai-btn { align-self: flex-start; }
+  [data-theme="dark"] .ai-kpi-card { background: #111827; border-color: #334155 !important; }
+
+  .ai-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    background: #166534;
+    color: #ffffff; border: none; cursor: pointer;
+    padding: 9px 14px; border-radius: 10px;
+    font-size: 12px; font-weight: 700; font-family: inherit;
+    transition: all 0.2s ease;
+  }
+  .ai-btn:hover:not(:disabled) { background: #14532d; transform: translateY(-1px); }
+  .ai-btn:active:not(:disabled) { transform: scale(0.97); }
+  .ai-btn:disabled { opacity: 0.65; cursor: wait; }
+  .ai-spin { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #ffffff; border-radius: 50%; animation: aiSpin 0.7s linear infinite; }
+  @keyframes aiSpin { to { transform: rotate(360deg); } }
+
+  .ai-output {
+    margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(22,163,74,0.25);
+    font-size: 13px; color: #3f4f44; max-height: 340px; overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .ai-output p, .ai-output li { color: #3f4f44; }
+  .ai-output .ai-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; border-radius: 10px; padding: 12px 14px; font-size: 12.5px; line-height: 1.5; display: flex; gap: 8px; align-items: flex-start; }
+
+  /* Floating AI loading indicator (outside the KPI card, no overlay) */
+  .ai-floating {
+    position: fixed; bottom: 26px; right: 26px; z-index: 1300;
+    display: flex; align-items: center; gap: 10px;
+    background: #ffffff; border: 1px solid #E0E5DB; border-radius: 999px;
+    padding: 12px 18px;
+    box-shadow: 0 12px 32px rgba(20, 61, 35, 0.14);
+    font-size: 13px; font-weight: 700; color: #344B38;
+  }
+  .ai-floating[hidden] { display: none; }
+  .ai-floating .ai-spin { border-color: rgba(22,163,74,0.25); border-top-color: #166534; }
+
+  /* Floating result modal — centered, no dark overlay behind */
+  .ai-modal {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.96);
+    width: min(660px, calc(100vw - 32px)); max-height: 78vh; overflow-y: auto;
+    background: #ffffff; border: 1px solid #E0E5DB; border-radius: 18px;
+    box-shadow: 0 28px 70px rgba(15, 23, 42, 0.25);
+    z-index: 1400;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    scrollbar-width: thin;
+  }
+  .ai-modal.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+  .ai-modal-head {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 16px 20px; border-bottom: 1px solid #f0f2f1;
+    position: sticky; top: 0; background: #fafdfb; border-radius: 18px 18px 0 0; z-index: 1;
+  }
+  .ai-modal-head h3 { font-size: 15px; margin: 0; color: #1a2b1e; }
+  .ai-modal-head p { font-size: 12px; color: #879a8c; margin: 2px 0 0 0; }
+  .ai-modal-close {
+    width: 30px; height: 30px; border-radius: 9px; border: none; cursor: pointer;
+    background: #f0f2f1; color: #6b7c6e; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s ease; font-size: 16px; line-height: 1;
+  }
+  .ai-modal-close:hover { background: #fee2e2; color: #b91c1c; }
+  .ai-modal-body { padding: 20px; font-size: 13.5px; color: #3f3f46; }
+
+  .ai-narrative {
+    background: #F3F5F0;
+    border: 1px solid #E0E5DB; border-radius: 12px; padding: 16px 18px;
+  }
+  .ai-narrative-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .ai-narrative-head h4 { font-size: 15px; font-weight: 700; color: #344B38; margin: 0; }
+  .ai-narrative-body { font-size: 14px; color: #3b4a3f; line-height: 1.7; }
+  .ai-narrative-body p { margin: 8px 0 0 0; }
+  .ai-narrative-body ul, .ai-narrative-body ol { margin: 10px 0 0 18px; padding: 0; }
+  .ai-narrative-body li { margin-bottom: 7px; line-height: 1.6; }
+  .ai-narrative-body strong { color: #166534; }
+  .ai-narrative-body h1, .ai-narrative-body h2, .ai-narrative-body h3, .ai-narrative-body h4 {
+    margin: 16px 0 6px; font-weight: 700; color: #25392b; line-height: 1.35;
+  }
+  .ai-narrative-body h1 { font-size: 16px; }
+  .ai-narrative-body h2 { font-size: 15px; }
+  .ai-narrative-body h3 { font-size: 14.5px; }
+  .ai-narrative-body h4 { font-size: 14px; }
+  .ai-narrative-body > *:first-child { margin-top: 0; }
+  .ai-narrative-body table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+  .ai-narrative-body th { background: #EDF1E9; text-align: left; font-weight: 700; color: #25392b; }
+  .ai-narrative-body th, .ai-narrative-body td { border: 1px solid #dbe5df; padding: 7px 9px; }
+  .ai-narrative-body blockquote { margin: 10px 0; padding: 9px 13px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; color: #78350f; }
+  .ai-narrative-body .table-wrap { overflow-x: auto; max-width: 100%; }
+  .ai-narrative-body .warn-icon-img { width: 16px; height: 16px; display: inline-block; margin-right: 6px; vertical-align: -3px; }
+
+  .ai-modal-foot { margin-top: 16px; display: flex; justify-content: flex-end; }
+  .ai-chat-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #166534; color: #ffffff; border: none; border-radius: 10px;
+    padding: 10px 16px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: background 0.2s ease;
+  }
+  .ai-chat-link:hover { background: #14532d; }
+  .ai-chat-link svg { width: 15px; height: 15px; }
 
   .table-card {
     background: #ffffff;
@@ -198,16 +167,15 @@
   /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
 
   .action-btn {
-    background: linear-gradient(135deg, #143d23 0%, #1a5230 100%);
+    background: #14532d;
     color: white; border: none;
     padding: 7px 16px; border-radius: 8px;
     font-size: 12px; font-weight: 700;
     cursor: pointer; text-decoration: none;
     display: inline-flex; align-items: center; gap: 5px;
-    transition: all 0.2s; box-shadow: 0 2px 6px rgba(20,61,35,0.2);
+    transition: all 0.2s;
   }
-  .action-btn:hover { box-shadow: 0 4px 12px rgba(20,61,35,0.3); transform: translateY(-1px); }
-  .action-btn:active { transform: scale(0.97); }
+  .action-btn:hover { background: #166534; }
 
   .product-count-badge {
     background: #f0fdf4; color: #166534;
@@ -217,25 +185,39 @@
     border: 1px solid #bbf7d0;
   }
 
-  .empty-state {
-    text-align: center; padding: 56px 24px;
-    background: linear-gradient(180deg, #fafdfb 0%, #f5f7f6 100%);
-  }
+  .empty-state { text-align: center; padding: 56px 24px; }
   .empty-icon {
     width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 16px;
-    background: linear-gradient(135deg, #eff6ff, #dbeafe);
-    border: 1px solid #bfdbfe;
+    background: #EDF1E9; border: 1px solid #E0E5DB;
     display: flex; align-items: center; justify-content: center;
+  }
+  .empty-icon svg { stroke: #648268; }
+
+  /* ── Phone sizing ─────────────────────────────────────────────
+     The panels already collapse to one column at 980px; these steps
+     trim padding and type so the page reads comfortably on a phone
+     instead of feeling like a squeezed desktop. */
+  @media (max-width: 640px) {
+    .trend-panels { gap: 14px; margin-bottom: 18px; }
+    .panel-header { padding: 15px 16px; }
+    .panel-header h2 { font-size: 15px; }
+    .panel-body { padding: 16px; }
+    .quote-row { padding: 13px 16px; gap: 10px; }
+    .quote-row .q-amount { font-size: 13px; white-space: nowrap; }
+    .table-card-head { padding: 15px 16px; flex-wrap: wrap; gap: 10px; }
+    .empty-state { padding: 40px 16px; }
+    .ai-modal { max-height: 82vh; width: calc(100vw - 20px); }
+    .ai-floating { bottom: 16px; right: 16px; left: 16px; justify-content: center; }
   }
 </style>
 
 <div style="margin-bottom: 28px;">
   <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">Quotation Demand Trends</h1>
-  <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">See which farmers are asking about your products. For information only — no action required.</p>
+  <p class="keep-sub" style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">See which of your products farmers are asking about. Just so you know — no action needed.</p>
 </div>
 
 @if(session('success'))
-  <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(22,163,74,0.06);">
+  <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
     <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(22,163,74,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
       <svg viewBox="0 0 24 24" width="16" height="16" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
@@ -243,66 +225,62 @@
   </div>
 @endif
 
-<div class="stats-grid kpi-strip">
-  <div class="stat-card blue">
-    <div>
-      <div class="stat-value">{{ $totalQuotations }}</div>
-      <div class="stat-label">Farmer Quotations</div>
-      <div class="stat-sub">From <b>{{ $uniqueFarmers }}</b> interested farmers</div>
-    </div>
-    <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(37,99,235,0.1); display: flex; align-items: center; justify-content: center;">
-      <svg viewBox="0 0 24 24" width="24" height="24" stroke="#2563eb" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    </div>
-  </div>
-  <div class="stat-card amber">
-    <div>
-      <div class="stat-value">{{ $recentQuotations }}</div>
-      <div class="stat-label">Quotations This Week</div>
-      <div class="stat-sub">
-        @if($weekTrend > 0)
-          <svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-          <span class="trend-up">+{{ $weekTrend }}% vs last week</span>
-        @elseif($weekTrend < 0)
-          <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          <span class="trend-down">{{ $weekTrend }}% vs last week</span>
-        @else
-          <span style="color:#94a3b8;">{{ $priorQuotations }} last week</span>
-        @endif
-      </div>
-    </div>
-    <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(217,119,6,0.1); display: flex; align-items: center; justify-content: center;">
-      <svg viewBox="0 0 24 24" width="24" height="24" stroke="#d97706" stroke-width="2" fill="none"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-    </div>
-  </div>
-  <div class="stat-card green">
-    <div>
-      <div class="stat-value">₱{{ number_format($ownDemandValue, 0) }}</div>
-      <div class="stat-label">Your Products' Quoted Value</div>
-      <div class="stat-sub">Across <b>{{ $demandProductCount }}</b> of your products</div>
-    </div>
-    <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(22,163,74,0.1); display: flex; align-items: center; justify-content: center;">
-      <x-peso-icon :size="24" color="#16a34a" />
-    </div>
-  </div>
-  <div class="stat-card violet ai-overview">
-    <div class="ai-overview-head">
-      <div class="stat-value ai-title">AI Store Overview</div>
-      <div class="ai-icon">
+@php
+    // Plain-language trend wording — an ordinary store owner should read
+    // "5 more than last week", never a bare percentage against a baseline.
+    $weekPill = match (true) {
+        $weekTrend > 0 && $priorQuotations > 0 => $weekTrend . '% more than last week',
+        $weekTrend < 0 => abs($weekTrend) . '% less than last week',
+        $priorQuotations > 0 => 'Same as last week',
+        $recentQuotations > 0 => 'New this week',
+        default => 'None yet',
+    };
+    $weekDirection = match (true) {
+        $weekTrend > 0 => 'up',
+        $weekTrend < 0 => 'down',
+        default => 'neutral',
+    };
+@endphp
+
+<section class="kpi-strip">
+  <x-kpi-card title="Farmer Quotations" value="{{ $totalQuotations }}" trendValue="From {{ $uniqueFarmers }} farmer{{ $uniqueFarmers === 1 ? '' : 's' }}" trendLabel="Quotes that include your products">
+    <x-slot:icon>
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </x-slot:icon>
+  </x-kpi-card>
+
+  <x-kpi-card title="Quotations This Week" value="{{ $recentQuotations }}" trendValue="{{ $weekPill }}" trendDirection="{{ $weekDirection }}" trendLabel="Received in the last 7 days">
+    <x-slot:icon>
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    </x-slot:icon>
+  </x-kpi-card>
+
+  <x-kpi-card title="Your Products' Worth" value="₱{{ number_format($ownDemandValue, 0) }}" trendLabel="Total of your items across these quotes">
+    <x-slot:icon>
+      <svg viewBox="0 0 24 24"><path d="M9 21V4h4.5a4.5 4.5 0 0 1 0 9H9"/><line x1="6" y1="11" x2="15" y2="11"/><line x1="6" y1="15" x2="15" y2="15"/></svg>
+    </x-slot:icon>
+  </x-kpi-card>
+
+  <div class="ai-kpi-card">
+    <div class="kpi-top">
+      <div class="kpi-icon-chip">
         <svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
       </div>
     </div>
-    <button type="button" class="ai-btn ai-overview-btn" id="aiOverviewBtn" onclick="generateAiOverview(this)">
+    <h3 class="kpi-title">AI Store Overview</h3>
+    <p class="kpi-desc">Let AI explain what farmers are asking for, in plain words.</p>
+    <button type="button" class="ai-btn" id="aiOverviewBtn" onclick="generateAiOverview(this)">
       <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
       <span>Generate Overview</span>
     </button>
   </div>
-</div>
+</section>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+<div class="trend-panels">
   <div class="panel">
     <div class="panel-header">
       <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">Your Products in Demand</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">Which products farmers are exploring</p>
+      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">How often each product shows up in farmers' quotes</p>
     </div>
     <div class="panel-body">
       @if(count($productDemand) > 0)
@@ -317,15 +295,15 @@
               <div class="demand-bar-fill" style="width: {{ ($data['count'] / $maxCount) * 100 }}%;"></div>
             </div>
             <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: #b0b8b3;">
-              <span>{{ number_format($data['total_qty'], 1) }} units total</span>
-              <span style="font-weight: 600; color: #4b5c50;">₱{{ number_format($data['total_value'], 0) }} value</span>
+              <span>{{ number_format($data['total_qty'], 1) }} unit(s) total</span>
+              <span style="font-weight: 600; color: #4b5c50;">₱{{ number_format($data['total_value'], 0) }} total</span>
             </div>
           </div>
         @endforeach
       @else
         <div style="text-align: center; padding: 40px 20px;">
           <div class="empty-icon" style="margin-bottom: 12px;">
-            <svg viewBox="0 0 24 24" width="28" height="28" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+            <svg viewBox="0 0 24 24" width="28" height="28" stroke-width="1.5" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
           </div>
           <p style="margin: 0; font-size: 14px; color: #879a8c; line-height: 1.5;">No quotations yet. As farmers generate quotations using your products, you'll see trends here.</p>
         </div>
@@ -336,13 +314,13 @@
   <div class="panel">
     <div class="panel-header">
       <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">Recent Farmer Activity</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">Farmers who recently explored your products</p>
+      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">The latest quotes that included your products</p>
     </div>
     <div class="panel-body-flush">
       @if($totalQuotations > 0)
         @foreach($recentActivity as $q)
-          <div style="padding: 14px 20px; {{ !$loop->last ? 'border-bottom: 1px solid #f5f7f6;' : '' }} display: flex; align-items: center; gap: 12px; transition: background 0.15s;" onmouseover="this.style.background='#fafdfb'" onmouseout="this.style.background='transparent'">
-            <div class="farmer-avatar" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1d4ed8; border: 1px solid #bfdbfe;">
+          <div style="padding: 14px 20px; {{ !$loop->last ? 'border-bottom: 1px solid #f5f7f6;' : '' }} display: flex; align-items: center; gap: 12px;">
+            <div class="farmer-avatar">
               @php
                 $name = $q->farmer ? $q->farmer->name : 'Unknown';
                 $words = explode(' ', trim($name));
@@ -361,8 +339,8 @@
         @endforeach
       @else
         <div style="text-align: center; padding: 48px 20px;">
-          <div style="width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 16px; background: linear-gradient(135deg, #f5f5f5, #f0f0f0); border: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: center;">
-            <svg viewBox="0 0 24 24" width="28" height="28" stroke="#9ca3af" stroke-width="1.5" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" width="28" height="28" stroke-width="1.5" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
           <p style="font-size: 15px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Activity Yet</p>
           <p style="font-size: 13px; color: #879a8c; margin: 0;">When farmers generate quotations using your products, they'll appear here.</p>
@@ -376,8 +354,8 @@
     uid="store-quotes"
     work-table="storeQuotesTable"
     per-page="10"
-    noun="signals"
-    search-placeholder="Search by reference, farmer, crop, or season…"
+    noun="quotations"
+    search-placeholder="Search by farmer, crop, or season…"
     :filters="[
         ['key' => 'crop', 'label' => 'All crops', 'options' => collect($quotations->pluck('crop_type')->unique()->values())->map(fn($c) => [strtolower($c), $c])->all()],
         ['key' => 'season', 'label' => 'All seasons', 'options' => collect($quotations->pluck('season')->unique()->values())->map(fn($s) => [strtolower($s), ucfirst($s)])->all()],
@@ -396,7 +374,7 @@
   <div style="padding: 20px 24px; border-bottom: 1px solid #f0f2f1; display: flex; justify-content: space-between; align-items: center; background: #fafdfb;">
     <div>
       <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">All Farmer Quotations</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 2px 0 0 0;">Every cost quotation that includes your products</p>
+      <p style="font-size: 13px; color: #879a8c; margin: 2px 0 0 0;">Every quote that includes your products</p>
     </div>
     <span style="font-size: 13px; color: #879a8c; font-weight: 600; background: #f0f2f1; padding: 4px 12px; border-radius: 8px;">{{ $totalQuotations }} total</span>
   </div>
@@ -410,7 +388,7 @@
           <th>Crop / Season</th>
           <th>Land Area</th>
           <th>Your Products</th>
-          <th>Est. Value</th>
+          <th>Estimated Value</th>
           <th>Date</th>
           <th style="text-align: right;">Action</th>
         </tr>
@@ -429,7 +407,7 @@
             <td><span style="font-weight: 700; color: #143d23; font-family: 'SF Mono', ui-monospace, monospace; font-size: 13px;">{{ $q->quotation_number }}</span></td>
             <td>
               <div class="farmer-cell">
-                <div class="farmer-avatar" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1d4ed8; border: 1px solid #bfdbfe; width: 32px; height: 32px; border-radius: 8px; font-size: 12px;">
+                <div class="farmer-avatar" style="width: 32px; height: 32px; border-radius: 8px; font-size: 12px;">
                   @php
                     $name = $q->farmer ? $q->farmer->name : 'Unknown';
                     $words = explode(' ', trim($name));
@@ -465,7 +443,7 @@
             <td colspan="8">
               <div class="empty-state">
                 <div class="empty-icon">
-                  <svg viewBox="0 0 24 24" width="28" height="28" stroke="#94a3b8" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <svg viewBox="0 0 24 24" width="28" height="28" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 </div>
                 <p style="font-size: 16px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Farmer Quotations Yet</p>
                 <p style="font-size: 13px; color: #879a8c; margin: 0;">When farmers generate quotations using your products, they'll appear here.</p>
@@ -520,7 +498,7 @@
     function closeOl() { if (inOl) { html += '</ol>'; inOl = false; } }
     function closeBq() { if (inBq) { html += '</blockquote>'; inBq = false; } }
     function renderTable(buf) {
-      var rows = buf.map(function (r) { return r.slice(1, -1).split('|').map(function (c) { return c.trim(); }); })
+      var rows = buf.map(function (r) { return r.slice(1, -1).split('|').map(function (c) { return c.trim() }); })
         .filter(function (cells) { return !cells.every(function (c) { return /^:?-+:?$/.test(c); }); });
       if (!rows.length) return;
       html += '<div class="table-wrap"><table>';
