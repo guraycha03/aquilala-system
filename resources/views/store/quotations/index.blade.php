@@ -35,6 +35,27 @@
     transition: width 0.6s ease;
   }
 
+  /* Collapsible demand list — the top 3 show first; the rest open with a
+     toggle so a store with many products doesn't get a half-page list.
+     Separators ride on the sibling selector so hidden items never leave a
+     stray line behind. */
+  .demand-item + .demand-item { border-top: 1px solid #f0f2f1; padding-top: 20px; margin-top: 20px; }
+  .demand-item.is-collapsed { display: none; }
+  .demand-toggle {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    width: 100%; margin-top: 18px; padding: 9px 14px;
+    background: #ffffff; border: 1px solid #E0E5DB; border-radius: 10px;
+    font-family: inherit; font-size: 12.5px; font-weight: 700; color: #166534;
+    cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .demand-toggle:hover { background: #f0fdf4; border-color: #c8d5c5; }
+  .demand-toggle svg {
+    width: 14px; height: 14px; stroke: currentColor; fill: none;
+    stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+    transition: transform 0.2s ease;
+  }
+  .demand-toggle.is-open svg { transform: rotate(180deg); }
+
   .farmer-avatar {
     width: 36px; height: 36px;
     border-radius: 10px; display: flex; align-items: center; justify-content: center;
@@ -213,7 +234,7 @@
 
 <div style="margin-bottom: 28px;">
   <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">Quotation Demand Trends</h1>
-  <p class="keep-sub" style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">See which of your products farmers are asking about. Just so you know — no action needed.</p>
+  <p class="keep-sub" style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">See which of your products appear in farmers' quotations — no action needed.</p>
 </div>
 
 @if(session('success'))
@@ -243,19 +264,19 @@
 @endphp
 
 <section class="kpi-strip">
-  <x-kpi-card title="Requests Received" value="{{ $totalQuotations }}" trendValue="From {{ $uniqueFarmers }} farmer{{ $uniqueFarmers === 1 ? '' : 's' }}" trendLabel="Cost estimates from farmers that include your products">
+  <x-kpi-card title="Farmer Quotations" value="{{ $totalQuotations }}" trendValue="From {{ $uniqueFarmers }} farmer{{ $uniqueFarmers === 1 ? '' : 's' }}" trendLabel="Quotations that include your products">
     <x-slot:icon>
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     </x-slot:icon>
   </x-kpi-card>
 
-  <x-kpi-card title="New Requests This Week" value="{{ $recentQuotations }}" trendValue="{{ $weekPill }}" trendDirection="{{ $weekDirection }}" trendLabel="Requests that came in over the last 7 days">
+  <x-kpi-card title="New Quotations This Week" value="{{ $recentQuotations }}" trendValue="{{ $weekPill }}" trendDirection="{{ $weekDirection }}" trendLabel="Made in the last 7 days">
     <x-slot:icon>
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
     </x-slot:icon>
   </x-kpi-card>
 
-  <x-kpi-card title="Worth of Your Products" value="₱{{ number_format($ownDemandValue, 0) }}" trendLabel="Combined value of your items in these requests">
+  <x-kpi-card title="Worth of Your Products" value="₱{{ number_format($ownDemandValue, 0) }}" trendLabel="Your products in these quotations">
     <x-slot:icon>
       <svg viewBox="0 0 24 24"><path d="M9 21V4h4.5a4.5 4.5 0 0 1 0 9H9"/><line x1="6" y1="11" x2="15" y2="11"/><line x1="6" y1="15" x2="15" y2="15"/></svg>
     </x-slot:icon>
@@ -268,7 +289,7 @@
       </div>
     </div>
     <h3 class="kpi-title">Smart Store Summary</h3>
-    <p class="kpi-desc">Let the numbers explain, in plain words, what farmers are looking for.</p>
+    <p class="kpi-desc">What farmers' quotations say, in plain words.</p>
     <button type="button" class="ai-btn" id="aiOverviewBtn" onclick="generateAiOverview(this)">
       <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
       <span>Create Summary</span>
@@ -280,16 +301,16 @@
   <div class="panel">
     <div class="panel-header">
       <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">Your Products in Demand</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">How often each of your products appears in farmers' requests</p>
+      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">How often each product appears in quotations</p>
     </div>
     <div class="panel-body">
       @if(count($productDemand) > 0)
         @php $maxCount = max(array_column($productDemand, 'count')); @endphp
         @foreach($productDemand as $productName => $data)
-          <div style="{{ !$loop->last ? 'margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #f0f2f1;' : '' }}">
+          <div class="demand-item{{ $loop->index >= 3 ? ' is-collapsed' : '' }}" data-demand-item>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-weight: 700; color: #1a2b1e; font-size: 14px;">{{ $productName }}</span>
-              <span style="font-size: 12px; color: #879a8c; font-weight: 600;">{{ $data['count'] }} request{{ $data['count'] == 1 ? '' : 's' }}</span>
+              <span style="font-size: 12px; color: #879a8c; font-weight: 600;">{{ $data['count'] }} quotation{{ $data['count'] == 1 ? '' : 's' }}</span>
             </div>
             <div class="demand-bar">
               <div class="demand-bar-fill" style="width: {{ ($data['count'] / $maxCount) * 100 }}%;"></div>
@@ -300,12 +321,18 @@
             </div>
           </div>
         @endforeach
+        @if(count($productDemand) > 3)
+          <button type="button" class="demand-toggle" id="demandToggle" data-total="{{ count($productDemand) }}" aria-expanded="false">
+            <span>Show all {{ count($productDemand) }} products</span>
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        @endif
       @else
         <div style="text-align: center; padding: 40px 20px;">
           <div class="empty-icon" style="margin-bottom: 12px;">
             <svg viewBox="0 0 24 24" width="28" height="28" stroke-width="1.5" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
           </div>
-          <p style="margin: 0; font-size: 14px; color: #879a8c; line-height: 1.5;">Nothing here yet. Once farmers start making cost estimates that include your products, you'll see them here.</p>
+          <p style="margin: 0; font-size: 14px; color: #879a8c; line-height: 1.5;">Nothing here yet. Once farmers create quotations that include your products, you'll see them here.</p>
         </div>
       @endif
     </div>
@@ -313,8 +340,8 @@
 
   <div class="panel">
     <div class="panel-header">
-      <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">Latest Requests</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">The newest requests that included your products</p>
+      <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">Latest Quotations</h2>
+      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">The newest quotations with your products</p>
     </div>
     <div class="panel-body-flush">
       @if($totalQuotations > 0)
@@ -342,8 +369,8 @@
           <div class="empty-icon">
             <svg viewBox="0 0 24 24" width="28" height="28" stroke-width="1.5" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
-          <p style="font-size: 15px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Requests Yet</p>
-          <p style="font-size: 13px; color: #879a8c; margin: 0;">When a farmer makes a cost estimate using your products, it will show up here.</p>
+          <p style="font-size: 15px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Quotations Yet</p>
+          <p style="font-size: 13px; color: #879a8c; margin: 0;">When a farmer creates a quotation using your products, it will show up here.</p>
         </div>
       @endif
     </div>
@@ -373,8 +400,8 @@
 <div class="table-card">
   <div class="table-card-head" style="padding: 20px 24px; border-bottom: 1px solid #f0f2f1; display: flex; justify-content: space-between; align-items: center; background: #fafdfb;">
     <div>
-      <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">All Requests From Farmers</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 2px 0 0 0;">Every request that included your products</p>
+      <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">All Farmer Quotations</h2>
+      <p style="font-size: 13px; color: #879a8c; margin: 2px 0 0 0;">Every quotation that includes your products</p>
     </div>
     <span style="font-size: 13px; color: #879a8c; font-weight: 600; background: #f0f2f1; padding: 4px 12px; border-radius: 8px;">{{ $totalQuotations }} total</span>
   </div>
@@ -383,7 +410,7 @@
       <table id="storeQuotesTable" class="data-table">
       <thead>
         <tr>
-          <th>Request No.</th>
+          <th>Quotation No.</th>
           <th>Farmer</th>
           <th>Crop / Season</th>
           <th>Land Area</th>
@@ -445,8 +472,8 @@
                 <div class="empty-icon">
                   <svg viewBox="0 0 24 24" width="28" height="28" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 </div>
-                <p style="font-size: 16px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Requests Yet</p>
-                <p style="font-size: 13px; color: #879a8c; margin: 0;">When a farmer makes a cost estimate that includes your products, it will appear here.</p>
+                <p style="font-size: 16px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Quotations Yet</p>
+                <p style="font-size: 13px; color: #879a8c; margin: 0;">When a farmer creates a quotation that includes your products, it will appear here.</p>
               </div>
             </td>
           </tr>
@@ -631,6 +658,24 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') closeAiModal();
   });
+
+  // Collapsible demand list — expand/collapse the items past the top 3.
+  // The hidden set is captured once, so the same nodes toggle back and forth.
+  (function () {
+    var toggle = document.getElementById('demandToggle');
+    if (!toggle) return;
+    var total = parseInt(toggle.getAttribute('data-total'), 10) || 0;
+    var hidden = document.querySelectorAll('[data-demand-item].is-collapsed');
+    var label = toggle.querySelector('span');
+
+    toggle.addEventListener('click', function () {
+      var expanded = toggle.getAttribute('aria-expanded') === 'true';
+      hidden.forEach(function (el) { el.classList.toggle('is-collapsed', expanded); });
+      toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      toggle.classList.toggle('is-open', !expanded);
+      label.textContent = expanded ? 'Show all ' + total + ' products' : 'Show fewer';
+    });
+  })();
 </script>
 
 @endsection

@@ -151,8 +151,8 @@ class StoreOwnerActivityController extends Controller
             'notifications' => $notifications,
             'unreadCount'   => $unreadCount,
             'routePrefix'   => 'store.notifications',
-            'subtitle'      => "News that reaches your store — farmer requests for your products and upcoming association events.",
-            'emptyText'     => "There's nothing new right now. When a farmer makes a cost estimate that includes your products, or the association posts an event, it will appear here.",
+            'subtitle'      => "News that reaches your store — farmer quotations that include your products, and upcoming association events.",
+            'emptyText'     => "There's nothing new right now. When a farmer creates a quotation that includes your products, or the association posts an event, it will appear here.",
         ]);
     }
 

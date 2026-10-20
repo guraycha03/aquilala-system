@@ -876,22 +876,22 @@ PROMPT;
             ]);
         }
 
-        $system = 'You are a friendly business adviser for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Farmers generate cost quotations, and stores see the ones that include their products as requests from farmers - for information only, no action required. Write a COMPLETE report for the store owner using ONLY the JSON telemetry provided. Report total_signals, this_week and last_week EXACTLY as given - this_week/last_week are the last 7 and previous 7 days respectively, distinct from total_signals. Never invent numbers.
+        $system = 'You are a friendly business adviser for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Farmers create their own cost quotations; stores simply see the ones that include their products - for information only, no action required and no approval involved. Write a COMPLETE report for the store owner using ONLY the JSON telemetry provided. Report total_signals, this_week and last_week EXACTLY as given - this_week/last_week are the last 7 and previous 7 days respectively, distinct from total_signals. Never invent numbers.
 
-PLAIN LANGUAGE: the reader is an ordinary store owner, not a business analyst. Use short, everyday words. Never use jargon such as "demand signals", "telemetry", "intelligence", "momentum" or "week-over-week" - say "requests from farmers", "this week", "compared with last week" instead.
+PLAIN LANGUAGE: the reader is an ordinary store owner, not a business analyst. Use short, everyday words. Never use jargon such as "demand signals", "telemetry", "intelligence", "momentum" or "week-over-week" - say "farmer quotations", "this week", "compared with last week" instead. Farmers CREATE quotations on their own; never imply the farmer asked the store for anything or that the store must respond.
 
 STRUCTURE YOUR RESPONSE WITH THESE SECTIONS (use markdown headings exactly as shown):
 ### In One Sentence
-ONE punchy sentence that sums up what farmers are asking for.
+ONE punchy sentence that sums up what farmers are quoting for.
 
-### What Farmers Asked For
-4-6 short bullet points (- ) covering: how many requests came in and from how many farmers, how this week compares with last week, the total peso value of your products in these requests, and one practical read.
+### What Farmers Quote
+4-6 short bullet points (- ) covering: how many quotations were created and by how many farmers, how this week compares with last week, the total peso value of your products in these quotations, and one practical read.
 
-### Your Most Requested Products
+### Your Most Quoted Products
 Short bullets on your top 3-6 products (quote quantities and PHP peso values) and top crops (quote land area), plus 1 sentence of context.
 
 ### Worth Stocking Up
-Recommend 2-4 specific products this store should stock or restock based on the requests. Use a small markdown table: Product | How Much Farmers Ask For | Suggested Action. Add 2 short bullet takeaways if useful.
+Recommend 2-4 specific products this store should stock or restock based on the quotations. Use a small markdown table: Product | How Often Quoted | Suggested Action. Add 2 short bullet takeaways if useful.
 
 ### Next Step
 ONE closing sentence with a practical next action (e.g. restock, check prices, or watch a crop).
@@ -963,15 +963,15 @@ FORMATTING RULES:
 
         if ($signals === 0) {
             return '### In One Sentence'."\n"
-                .'No requests from farmers have reached your store yet — this report fills in as farmers include your products in their cost estimates.'."\n\n"
-                .'### What Farmers Asked For'."\n"
-                .'- **0** requests from **0** farmers so far, with nothing to compare against last week yet.'."\n\n"
-                .'### Your Most Requested Products'."\n"
-                .'- Nothing requested yet — your most requested products appear here once requests arrive.'."\n\n"
+                .'No farmer quotations include your products yet — this report fills in as farmers create quotations with your items.'."\n\n"
+                .'### What Farmers Quote'."\n"
+                .'- **0** quotations from **0** farmers so far, with nothing to compare against last week yet.'."\n\n"
+                .'### Your Most Quoted Products'."\n"
+                .'- Nothing quoted yet — your most quoted products appear here once quotations arrive.'."\n\n"
                 .'### Worth Stocking Up'."\n"
-                .'- Share your store with association farmers; their cost estimates become your guide to what to keep in stock.'."\n\n"
+                .'- Share your store with association farmers; their quotations become your guide to what to keep in stock.'."\n\n"
                 .'### Next Step'."\n"
-                .'Let farmers know your store is listed so their requests start landing here.';
+                .'Let farmers know your store is listed so their quotations start landing here.';
         }
 
         if ($lastWeek > 0) {
@@ -987,40 +987,40 @@ FORMATTING RULES:
         }
 
         $lines = '### In One Sentence'."\n"
-            .'**'.$signals.'** requests from **'.$farmers.'** farmer(s), worth **₱'.number_format($quotedValue, 2).'** in total.'."\n\n"
-            .'### What Farmers Asked For'."\n"
-            .'- This week brought **'.$thisWeek.'** new requests vs **'.$lastWeek.'** last week — '.$trend.'.'."\n"
-            .'- Farmers asked for **₱'.number_format($quotedValue, 2).'** worth of goods; **₱'.number_format($ownValue, 2).'** of that is your own products.'."\n";
+            .'**'.$signals.'** quotations from **'.$farmers.'** farmer(s), worth **₱'.number_format($quotedValue, 2).'** in total.'."\n\n"
+            .'### What Farmers Quote'."\n"
+            .'- This week brought **'.$thisWeek.'** new quotations vs **'.$lastWeek.'** last week — '.$trend.'.'."\n"
+            .'- Farmers quoted **₱'.number_format($quotedValue, 2).'** overall; **₱'.number_format($ownValue, 2).'** of that is your own products.'."\n";
 
         if ($topProducts->isNotEmpty()) {
-            $lines .= '- Most requested right now: **'.$topProducts->first()['name'].'** ('.$topProducts->first()['count'].' request(s)).'."\n";
+            $lines .= '- Most quoted right now: **'.$topProducts->first()['name'].'** ('.$topProducts->first()['count'].' quotation(s)).'."\n";
         }
 
-        $lines .= "\n".'### Your Most Requested Products'."\n";
+        $lines .= "\n".'### Your Most Quoted Products'."\n";
         if ($topProducts->isEmpty() && $topCrops->isEmpty()) {
-            $lines .= '- No requests recorded yet.'."\n";
+            $lines .= '- Nothing quoted yet.'."\n";
         } else {
             foreach ($topProducts->take(5) as $product) {
-                $lines .= '- **'.$product['name'].'** — '.$product['count'].' request(s), ₱'.number_format((float) $product['value'], 2).' worth.'."\n";
+                $lines .= '- **'.$product['name'].'** — '.$product['count'].' quotation(s), ₱'.number_format((float) $product['value'], 2).' worth.'."\n";
             }
             foreach ($topCrops->take(3) as $crop) {
-                $lines .= '- **'.$crop['crop'].'** — '.$crop['count'].' request(s) covering '.round((float) $crop['area'], 2).' ha.'."\n";
+                $lines .= '- **'.$crop['crop'].'** — '.$crop['count'].' quotation(s) covering '.round((float) $crop['area'], 2).' ha.'."\n";
             }
         }
 
         $lines .= "\n".'### Worth Stocking Up'."\n";
         if ($topProducts->isEmpty()) {
-            $lines .= '- Nothing to suggest yet — tips appear once farmers ask for your products.'."\n";
+            $lines .= '- Nothing to suggest yet — tips appear once farmers quote your products.'."\n";
         } else {
             foreach ($topProducts->take(3) as $product) {
-                $lines .= '- Keep **'.$product['name'].'** well stocked — '.$product['count'].' farmer request(s) already lean on it.'."\n";
+                $lines .= '- Keep **'.$product['name'].'** well stocked — '.$product['count'].' farmer quotation(s) already lean on it.'."\n";
             }
         }
 
         $lines .= "\n".'### Next Step'."\n"
             .($topProducts->isNotEmpty()
-                ? 'Check stock on **'.$topProducts->first()['name'].'** first — it is what farmers ask for most.'
-                : 'Share your store with association farmers so their requests start arriving.');
+                ? 'Check stock on **'.$topProducts->first()['name'].'** first — it is what farmers quote most.'
+                : 'Share your store with association farmers so their quotations start arriving.');
 
         $keywords = $topProducts->take(3)
             ->map(fn ($product) => trim(str_replace(',', '', strtolower((string) $product['name']))))

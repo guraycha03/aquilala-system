@@ -133,7 +133,8 @@
         color: #647263;
     }
     /* Same pill the farmer cards use. The wording carries the meaning
-       ("reorder soon"), so no red badge competes with it. */
+       ("reorder soon"), so no red badge competes with it. Wraps onto a
+       second line instead of spilling outside a narrow card on phones. */
     .kpi-trend-pill {
         display: inline-flex;
         align-items: center;
@@ -144,13 +145,25 @@
         font-size: 12px;
         font-weight: 500;
         color: #71816F;
-        white-space: nowrap;
+        max-width: 100%;
+        min-width: 0;
+        text-align: right;
+        white-space: normal;
+        overflow-wrap: break-word;
     }
     .kpi-trend-pill svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
     @media (max-width: 640px) {
         .kpi-value { margin-top: 12px; }
         .kpi-trend-pill { padding: 3px 8px; }
+        /* Keep the card short on phones: the description never runs past
+           two lines (the wording is short; this is the safety net). */
+        .kpi-card .kpi-desc {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     }
 
     [data-theme="dark"] .kpi-card { background: #111827; border-color: #334155; }
