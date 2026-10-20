@@ -436,9 +436,10 @@ class ActivityLogger
 
     /**
      * The admin's own audit row (unchanged), plus one recipient row per
-     * farmer and a Web Push to every farmer who opted a device in — the
-     * association's events are the notices farmers most need outside the
-     * app. Pushes are fire-and-forget: PushService never throws.
+     * farmer and store owner, and a Web Push to every farmer who opted a
+     * device in — the association's events are the notices members most
+     * need outside the app. Pushes are fire-and-forget: PushService never
+     * throws.
      */
     public static function eventCreated(AssociationEvent $event): ActivityLog
     {
@@ -455,7 +456,7 @@ class ActivityLogger
 
         // The notice leads with the event's status AT THIS MOMENT: an event
         // created for a slot that has already started — or already finished —
-        // never reaches farmers as "Upcoming". The pages additionally rewrite
+        // never reaches members as "Upcoming". The pages additionally rewrite
         // the prefix at render time (ActivityLog::display_description), so the
         // wording stays correct as the date passes.
         $label = match ($event->state()) {
@@ -464,15 +465,15 @@ class ActivityLogger
             default                         => 'Upcoming event',
         };
 
-        self::notifyFarmersOfEvent(
+        self::notifyMembersOfEvent(
             $event,
             ActivityLog::TYPE_EVENT_CREATED,
             self::eventNotice($event, $label)
         );
 
-        $farmerIds = User::where('role', 'farmer')->pluck('id');
+        $memberIds = User::whereIn('role', ['farmer', 'store_owner'])->pluck('id');
         PushService::sendToUsers(
-            $farmerIds,
+            $memberIds,
             "{$label}: {$event->title}",
             self::eventPushBody($event),
             route('farmer.calendar.index'),
@@ -483,7 +484,7 @@ class ActivityLogger
     }
 
     /**
-     * A rescheduled/edited event reaches the same farmers in-app. No push:
+     * A rescheduled/edited event reaches the same members in-app. No push:
      * the creation notice already carried the event, and in-app rows keep
      * the update visible without nagging devices.
      */
@@ -499,7 +500,7 @@ class ActivityLogger
             ]
         );
 
-        self::notifyFarmersOfEvent(
+        self::notifyMembersOfEvent(
             $event,
             ActivityLog::TYPE_EVENT_UPDATED,
             "Updated event: \"{$event->title}\" is now on {$event->event_date->format('M d, Y')}"
@@ -522,10 +523,11 @@ class ActivityLogger
     }
 
     /**
-     * One in-app row per farmer for a calendar event. Rows belong to the
-     * farmer (independent read state); the acting admin is the actor.
+     * One in-app row per farmer and store owner for a calendar event.
+     * Rows belong to the recipient (independent read state); the acting
+     * admin is the actor. Admins authored the event, so they get no copy.
      */
-    private static function notifyFarmersOfEvent(AssociationEvent $event, string $type, string $description): void
+    private static function notifyMembersOfEvent(AssociationEvent $event, string $type, string $description): void
     {
         $meta = [
             'event_type' => $event->event_type,
@@ -535,8 +537,8 @@ class ActivityLogger
             'location'   => $event->location,
         ];
 
-        foreach (User::where('role', 'farmer')->get() as $farmer) {
-            self::log($type, $description, $event, $meta, $farmer);
+        foreach (User::whereIn('role', ['farmer', 'store_owner'])->get() as $member) {
+            self::log($type, $description, $event, $meta, $member);
         }
     }
 

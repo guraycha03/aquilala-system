@@ -25,8 +25,9 @@ use Tests\TestCase;
  *                 request (confirmed/rejected) and association events.
  *                 Their own actions (planting batches, harvest reports,
  *                 quotations) are history — Settings → Activity.
- *   store_owner — anonymous demand signals for quotations involving their
- *                 products (no farmer name, no actor, ever)
+ *   store_owner — news arriving FROM other people: anonymous notices for
+ *                 quotations involving their products (no farmer name, no
+ *                 actor, ever) plus the association's calendar events
  *   admin       — rows fanned out for quotations, planting requests and
  *                 harvest reports across the association
  */
@@ -397,8 +398,13 @@ class RoleNotificationsTest extends TestCase
             $this->assertNull($row->read_at);
         }
 
-        // Stores are not association members for events — no row for them.
-        $this->assertSame(0, ActivityLog::forUser($this->store->id)->where('type', ActivityLog::TYPE_EVENT_CREATED)->count());
+        // Store owners are association members too — the same event notice
+        // reaches their bell (anonymous quotation rows sit alongside it).
+        $storeRow = ActivityLog::forUser($this->store->id)->storeNotifications()
+            ->ofType(ActivityLog::TYPE_EVENT_CREATED)->sole();
+        $this->assertStringContainsString('Upcoming event', $storeRow->description);
+        $this->assertStringContainsString('Free Corn Seeds Distribution', $storeRow->description);
+        $this->assertNull($storeRow->read_at);
     }
 
     public function test_event_notices_reflect_the_events_live_status_not_stale_upcoming(): void

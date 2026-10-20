@@ -126,10 +126,12 @@ class StoreOwnerActivityController extends Controller
     }
 
     /**
-     * Store owner's notifications — cost estimates that involve this
-     * store's products (demand signals), newest first. Farmer identities
-     * are never shown here: stores learn that demand exists, not who
-     * generated it.
+     * Store owner's notifications — news that reaches the store from
+     * other people: farmers making cost estimates that include this
+     * store's products, and the association's upcoming events. The
+     * store's own actions are history, not notifications, and live
+     * under Settings → Activity history. Farmer identities are never
+     * shown here: stores learn that demand exists, not who generated it.
      */
     public function notifications(): View
     {
@@ -149,8 +151,8 @@ class StoreOwnerActivityController extends Controller
             'notifications' => $notifications,
             'unreadCount'   => $unreadCount,
             'routePrefix'   => 'store.notifications',
-            'subtitle'      => 'Demand signals for your store — cost estimates that include your products.',
-            'emptyText'     => "There's nothing here right now. When a farmer generates a cost estimate that includes your products, it will appear here — the farmer's identity stays private.",
+            'subtitle'      => "News that reaches your store — farmer requests for your products and upcoming association events.",
+            'emptyText'     => "There's nothing new right now. When a farmer makes a cost estimate that includes your products, or the association posts an event, it will appear here.",
         ]);
     }
 

@@ -211,16 +211,21 @@ class ActivityLog extends Model
     }
 
     /**
-     * Store-owner notifications: cost estimates that involve this store's
-     * products (demand signals). QuotationController fans one recipient row
-     * out to every involved store when an estimate is created or deleted —
-     * strictly anonymously (no farmer name or actor, see ActivityLogger).
+     * Store-owner notifications: what happens TO the store, never its own
+     * history. Two kinds of notice live here — requests from farmers (cost
+     * estimates that involve this store's products, fanned out by
+     * QuotationController strictly anonymously: no farmer name or actor)
+     * and the association's calendar events (fanned out by ActivityLogger),
+     * exactly what the farmer bell carries. The store's own actions stay
+     * under Settings → Activity history.
      */
     public function scopeStoreNotifications($query)
     {
         return $query->whereIn('type', [
             self::TYPE_QUOTATION_CREATED,
             self::TYPE_QUOTATION_DELETED,
+            self::TYPE_EVENT_CREATED,
+            self::TYPE_EVENT_UPDATED,
         ]);
     }
 
