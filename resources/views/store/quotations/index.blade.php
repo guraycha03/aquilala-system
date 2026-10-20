@@ -276,9 +276,13 @@
     </x-slot:icon>
   </x-kpi-card>
 
-  <x-kpi-card title="Worth of Your Products" value="₱{{ number_format($ownDemandValue, 0) }}" trendLabel="Your products in these quotations">
+  {{-- Not a peso figure: the sum of quoted item values is not sales, not
+       orders, and not money on the way — showing it as "worth" feeds false
+       hope. The honest, hope-free number is how many of the store's own
+       products farmers actually put in their quotations. --}}
+  <x-kpi-card title="Your Products Quoted" value="{{ $demandProductCount }}" trendLabel="Your products that appeared in these quotations">
     <x-slot:icon>
-      <svg viewBox="0 0 24 24"><path d="M9 21V4h4.5a4.5 4.5 0 0 1 0 9H9"/><line x1="6" y1="11" x2="15" y2="11"/><line x1="6" y1="15" x2="15" y2="15"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
     </x-slot:icon>
   </x-kpi-card>
 
@@ -317,7 +321,7 @@
             </div>
             <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: #b0b8b3;">
               <span>{{ number_format($data['total_qty'], 1) }} units total</span>
-              <span style="font-weight: 600; color: #4b5c50;">₱{{ number_format($data['total_value'], 0) }} total</span>
+              <span style="font-weight: 600; color: #4b5c50;">₱{{ number_format($data['total_value'], 0) }} quoted</span>
             </div>
           </div>
         @endforeach
@@ -360,7 +364,7 @@
             </div>
             <div class="q-amount" style="text-align: right;">
               <div style="font-weight: 700; color: #143d23; font-size: 14px;">₱{{ number_format($q->estimated_total_cost, 0) }}</div>
-              <div style="font-size: 11px; color: #b0b8b3;">{{ $q->created_at->diffForHumans() }}</div>
+              <div style="font-size: 11px; color: #b0b8b3;">estimated cost · {{ $q->created_at->diffForHumans() }}</div>
             </div>
           </div>
         @endforeach
