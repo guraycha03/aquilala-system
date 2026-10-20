@@ -12,10 +12,9 @@
        the notification page itself is important notices only.
 --}}
 @php
-    // The toggle card shows when EITHER sender is configured: the original
-    // VAPID keys, or the Novu/Firebase (FCM) setup — whichever is live.
-    $pushConfigured = \App\Services\PushService::available()
-        || (bool) config('novu.firebase.api_key');
+    // The toggle card shows only when the server has VAPID keys —
+    // otherwise the feature is simply not offered and nothing breaks.
+    $pushConfigured = \App\Services\PushService::available();
     $activityRoute  = match (auth()->user()?->role) {
         'admin'       => 'admin.activity.index',
         'store_owner' => 'store.activity.index',
@@ -118,7 +117,7 @@
   .push-status.is-error { color: #b91c1c; }
 </style>
 
-<script src="{{ asset('js/push-subscribe.js') }}?v=1" defer></script>
+<script src="{{ asset('js/push-subscribe.js') }}?v=2" defer></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var row         = document.getElementById('push-row');

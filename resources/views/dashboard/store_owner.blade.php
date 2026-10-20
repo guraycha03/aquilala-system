@@ -104,15 +104,6 @@
         :title="$greeting . ', ' . $storeName"
         :subtitle="'Here\'s your store overview for ' . $now->format('l, F j') . ($user->store_name && $user->store_name !== $user->name ? '. Managed by <strong>' . e($user->name) . '</strong>' : '')"
     >
-        <x-slot:panelIcon>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M3 9l1-5h16l1 5"/>
-                <path d="M5 9v11h14V9"/>
-                <path d="M9 20v-6h6v6"/>
-            </svg>
-        </x-slot:panelIcon>
-
         <x-slot:panelHeading>Your store is live to farmers.</x-slot:panelHeading>
         <x-slot:panelText>Keep your listings and stock current so farmers see accurate prices.</x-slot:panelText>
 

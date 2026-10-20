@@ -32,13 +32,6 @@
         <env name="GROQ_API_KEY" value="" force="true"/>
         <env name="PUSH_VAPID_PUBLIC_KEY" value="" force="true"/>
         <env name="PUSH_VAPID_PRIVATE_KEY" value="" force="true"/>
-        <!-- The developer .env carries real Novu credentials; tests must
-             never hit the API by accident. Tests that exercise the
-             integration set the config and Http::fake explicitly. -->
-        <env name="NOVU_API_KEY" value="" force="true"/>
-        <env name="NOVU_APP_ID" value="" force="true"/>
-        <env name="NOVU_HMAC_SECRET" value="" force="true"/>
-        <env name="NOVU_PUSH_ENABLED" value="false" force="true"/>
         <env name="FIREBASE_API_KEY" value="" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>

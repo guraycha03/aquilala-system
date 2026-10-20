@@ -66,17 +66,70 @@ class ActivityLogger
     // ── Notification fan-out ─────────────────────────────────────
 
     /**
+     * The OS-level twin of a bell row: one Web Push per recipient device,
+     * so the popup reaches them even when the app is closed. Only notice
+     * types the recipient's bell actually shows are mirrored — a popup must
+     * never announce something the user would not find in-app. Landing on
+     * the role's notification page keeps every link valid for the receiver.
+     * Fire-and-forget: PushService never throws, and neither does the route
+     * resolution around it.
+     *
+     * @param array<int> $userIds
+     */
+    private static function pushNotice(array $userIds, string $title, string $body, string $routeName, string $tag): void
+    {
+        if ($userIds === []) {
+            return;
+        }
+
+        try {
+            PushService::sendToUsers($userIds, $title, $body, route($routeName), $tag);
+        } catch (\Throwable) {
+            // A notice that cannot be pushed still exists in the bell.
+        }
+    }
+
+    /**
+     * Short popup headline per notice type — the body carries the full
+     * sentence the bell shows.
+     */
+    private static function pushTitle(string $type): string
+    {
+        return match ($type) {
+            ActivityLog::TYPE_QUOTATION_CREATED => 'New cost estimate',
+            ActivityLog::TYPE_QUOTATION_DELETED => 'Cost estimate removed',
+            ActivityLog::TYPE_CROP_PLANTED      => 'New planting request',
+            ActivityLog::TYPE_CROP_CONFIRMED    => 'Planting confirmed',
+            ActivityLog::TYPE_CROP_REJECTED     => 'Planting not confirmed',
+            ActivityLog::TYPE_HARVEST_CREATED   => 'New harvest report',
+            default                             => 'Aquilala notice',
+        };
+    }
+
+    /**
      * File the event for every admin account. The row belongs to the
      * recipient (user_id = admin), so each admin's bell badges it and can
      * be marked read independently; the acting user stays recorded as the
      * actor. Scopes on ActivityLog decide which rows surface as
-     * notifications for the signed-in role.
+     * notifications for the signed-in role — and the same rows are pushed
+     * to the admin's opted-in devices.
      */
     private static function notifyAdmins(string $type, string $description, $subject = null, array $metadata = []): void
     {
+        $adminIds = [];
+
         foreach (User::where('role', 'admin')->get() as $admin) {
             self::log($type, $description, $subject, $metadata, $admin);
+            $adminIds[] = $admin->id;
         }
+
+        self::pushNotice(
+            $adminIds,
+            self::pushTitle($type),
+            $description,
+            'admin.notifications.index',
+            $type . '-' . ($subject?->id ?? 'admin')
+        );
     }
 
     /**
@@ -118,18 +171,15 @@ class ActivityLogger
             $storeIds[] = $store->id;
         }
 
-        // Same anonymous notice into the Novu feed (the in-app Inbox bell)
-        // for those same stores — the title and body never name the farmer,
-        // exactly like the row above. Fire-and-forget, never throws.
-        NovuService::triggerNotice(
-            match ($type) {
-                ActivityLog::TYPE_QUOTATION_CREATED => 'New cost estimate',
-                ActivityLog::TYPE_QUOTATION_DELETED => 'Cost estimate deleted',
-                default                             => 'Cost estimate update',
-            },
-            $description,
+        // The same anonymous demand signal as an outside-the-app popup on
+        // each store's own devices — wording never names the farmer, and the
+        // landing page is the store's notification list.
+        self::pushNotice(
             $storeIds,
-            route('store.quotations.index')
+            self::pushTitle($type),
+            $description,
+            'store.notifications.index',
+            $type . '-' . $quotation->id
         );
     }
 
@@ -335,9 +385,11 @@ class ActivityLogger
     {
         $farmer = $farmerCrop->user ?? \App\Models\User::find($farmerCrop->user_id);
 
-        return self::log(
+        $description = "Confirmed planting of {$farmerCrop->crop?->name} ({$farmerCrop->batch_name}) — {$farmerCrop->land_area} {$farmerCrop->land_area_unit}";
+
+        $row = self::log(
             ActivityLog::TYPE_CROP_CONFIRMED,
-            "Confirmed planting of {$farmerCrop->crop?->name} ({$farmerCrop->batch_name}) — {$farmerCrop->land_area} {$farmerCrop->land_area_unit}",
+            $description,
             $farmerCrop,
             [
                 'crop_name'  => $farmerCrop->crop?->name,
@@ -347,16 +399,32 @@ class ActivityLogger
             ],
             $farmer
         );
+
+        // The decision pops up on the farmer's device even with the app
+        // closed — this is the notice they are most waiting for.
+        if ($farmer) {
+            self::pushNotice(
+                [$farmer->id],
+                self::pushTitle(ActivityLog::TYPE_CROP_CONFIRMED),
+                $description,
+                'farmer.notifications.index',
+                ActivityLog::TYPE_CROP_CONFIRMED . '-' . $farmerCrop->id
+            );
+        }
+
+        return $row;
     }
 
     public static function cropRejected($farmerCrop, ?string $remarks): ActivityLog
     {
         $farmer = $farmerCrop->user ?? \App\Models\User::find($farmerCrop->user_id);
 
-        return self::log(
+        $description = "Rejected planting of {$farmerCrop->crop?->name} ({$farmerCrop->batch_name})"
+            . ($remarks ? " — {$remarks}" : '');
+
+        $row = self::log(
             ActivityLog::TYPE_CROP_REJECTED,
-            "Rejected planting of {$farmerCrop->crop?->name} ({$farmerCrop->batch_name})"
-                . ($remarks ? " — {$remarks}" : ''),
+            $description,
             $farmerCrop,
             [
                 'crop_name' => $farmerCrop->crop?->name,
@@ -365,6 +433,18 @@ class ActivityLogger
             ],
             $farmer
         );
+
+        if ($farmer) {
+            self::pushNotice(
+                [$farmer->id],
+                self::pushTitle(ActivityLog::TYPE_CROP_REJECTED),
+                $description,
+                'farmer.notifications.index',
+                ActivityLog::TYPE_CROP_REJECTED . '-' . $farmerCrop->id
+            );
+        }
+
+        return $row;
     }
 
     // ── Harvest report shortcuts ─────────────────────────────────
@@ -489,21 +569,27 @@ class ActivityLogger
             self::eventNotice($event, $label)
         );
 
-        // The outside-the-app push. While NOVU_PUSH_ENABLED stays false the
-        // original VAPID sender keeps delivering (Novu then only feeds the
-        // in-app bell); once the workflow's Push step is switched on, set
-        // NOVU_PUSH_ENABLED=true and this sender retires — both active would
-        // reach every device twice.
-        $memberIds = User::whereIn('role', ['farmer', 'store_owner'])->pluck('id');
-        if (! config('novu.push_enabled')) {
-            PushService::sendToUsers(
-                $memberIds,
-                "{$label}: {$event->title}",
-                self::eventPushBody($event),
-                route('farmer.calendar.index'),
-                'event-' . $event->id
-            );
-        }
+        // The outside-the-app pop-up: one OS-level push per member device,
+        // delivered whether the app is open or closed. Each role lands on a
+        // page its own account may open — the farmer's calendar, the store's
+        // notification list (stores have no calendar screen).
+        $farmerIds  = User::where('role', 'farmer')->pluck('id');
+        $storeIds   = User::where('role', 'store_owner')->pluck('id');
+
+        self::pushNotice(
+            $farmerIds->all(),
+            "{$label}: {$event->title}",
+            self::eventPushBody($event),
+            'farmer.calendar.index',
+            'event-' . $event->id
+        );
+        self::pushNotice(
+            $storeIds->all(),
+            "{$label}: {$event->title}",
+            self::eventPushBody($event),
+            'store.notifications.index',
+            'event-' . $event->id
+        );
 
         return $row;
     }
@@ -530,6 +616,15 @@ class ActivityLogger
             ActivityLog::TYPE_EVENT_UPDATED,
             "Updated event: \"{$event->title}\" is now on {$event->event_date->format('M d, Y')}"
         );
+
+        // A moved date or start time is a NEW schedule: clear a reminder
+        // that already fired so events:remind can announce the new time
+        // (it stays quiet on its own until the fresh start is within the
+        // 30-minute window). Edits that don't move the time keep the
+        // fired marker — no second popup for a typo fix.
+        if ($event->wasChanged(['event_date', 'start_time'])) {
+            $event->forceFill(['reminded_at' => null])->save();
+        }
 
         return $row;
     }
@@ -567,17 +662,6 @@ class ActivityLogger
         foreach ($members as $member) {
             self::log($type, $description, $event, $meta, $member);
         }
-
-        // The same notice into the Novu feed (the in-app Inbox bell). One
-        // trigger fans out to every member; the payload feeds the workflow
-        // templates — subject {{payload.title}}, body {{payload.body}} —
-        // and its Push step once that channel is switched on. Never throws.
-        NovuService::triggerNotice(
-            $event->title,
-            $description,
-            $members->pluck('id'),
-            route('farmer.calendar.index')
-        );
     }
 
     private static function eventNotice(AssociationEvent $event, string $prefix): string

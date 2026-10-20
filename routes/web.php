@@ -182,10 +182,6 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         ->name('push.subscribe')->middleware('throttle:30,1');
     Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'unsubscribe'])
         ->name('push.unsubscribe')->middleware('throttle:30,1');
-    // Novu/FCM token for this device (browser push via Firebase — Novu's
-    // web push provider). Same opt-in family as the VAPID routes above.
-    Route::post('/push/novu-token', [PushSubscriptionController::class, 'novuToken'])
-        ->name('push.novu-token')->middleware('throttle:30,1');
 
     // Save / unsave a product for later — every signed-in role may keep their
     // own list. There is no saved-products page yet; the toggle just syncs the

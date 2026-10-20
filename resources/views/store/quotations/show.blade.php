@@ -5,8 +5,8 @@
 @section('content')
 <style>
   .page-header-card {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #eff6ff 100%);
-    border: 1px solid #bfdbfe;
+    background: #F3F5F0;
+    border: 1px solid #E0E5DB;
     border-radius: 16px;
     padding: 24px 28px;
     margin-bottom: 24px;
@@ -41,34 +41,86 @@
   .info-item .value { font-size: 15px; font-weight: 700; color: #1a2b1e; }
 
   /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
-  tr.yours td { background: #f0fdf4; }
-  tr.yours td:first-child { box-shadow: inset 3px 0 0 #16a34a; }
+  tr.yours td { background: #F7FAF6; }
+  tr.yours td:first-child { box-shadow: inset 3px 0 0 #A8C9B0; }
 
+  /* The tag sits next to a product name, so it must never break onto a
+     second line — nowrap keeps it one short chip however narrow the
+     column gets. */
   .your-product-tag {
-    background: linear-gradient(135deg, #143d23, #1a5230);
-    color: white; padding: 2px 8px; border-radius: 6px;
+    display: inline-block;
+    background: #EDF1E9; color: #4b5c50;
+    border: 1px solid #C8D5C5;
+    padding: 2px 8px; border-radius: 6px;
     font-size: 10px; font-weight: 700; margin-left: 8px;
     letter-spacing: 0.04em;
+    white-space: nowrap;
   }
+
+  /* The deferred marker wears the same shape but its own colour, so the
+     two never read as the same thing. */
+  .your-product-tag--deferred {
+    background: #FAF6E8; color: #7A6A3A; border-color: #EDE4C8;
+  }
+
+  /* The table's total rows. A class (not an inline style) so the dark
+     theme can repaint them. */
+  .quotation-total-row { background: #fafdfb; }
+  .quotation-total-row--deferred { background: #FAF8F0; }
 
   .total-badge {
     display: inline-flex; align-items: baseline; gap: 6px;
-    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-    border: 1px solid #bbf7d0;
+    background: #F3F5F0;
+    border: 1px solid #E0E5DB;
     border-radius: 12px;
     padding: 10px 18px;
   }
-  .total-badge .total-label { font-size: 12px; font-weight: 600; color: #15803d; text-transform: uppercase; letter-spacing: 0.04em; }
-  .total-badge .total-value { font-size: 22px; font-weight: 800; color: #166534; letter-spacing: -0.02em; }
+  .total-badge .total-label { font-size: 12px; font-weight: 600; color: #647263; text-transform: uppercase; letter-spacing: 0.04em; }
+  .total-badge .total-value { font-size: 22px; font-weight: 800; color: #25392b; letter-spacing: -0.02em; }
 
-  .info-banner {
-    background: linear-gradient(135deg, #eff6ff, #dbeafe);
-    border: 1px solid #bfdbfe;
-    border-radius: 14px;
-    padding: 18px 22px;
-    display: flex; align-items: flex-start; gap: 14px;
-    margin-top: 4px;
+  /* The tables keep a floor width so a phone scrolls the TABLE sideways
+     instead of crushing every column into a two-word stack. The shared
+     .app-scroll wrapper provides the sideways scroll. */
+  .quotation-table { min-width: 560px; }
+  .quotation-table--wide { min-width: 680px; }
+
+  /* ── Phone sizing ───────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .page-header-card { padding: 18px 16px; border-radius: 14px; }
+    .page-header-card h1 { font-size: 21px; }
+    .detail-card-header { padding: 15px 16px; }
+    .detail-card-body { padding: 16px; }
+    .info-grid { gap: 14px; }
+    .total-badge { padding: 8px 14px; }
+    .total-badge .total-value { font-size: 19px; }
   }
+
+  /* ── Type colours ───────────────────────────────────────────────
+     Every colour on this page lives in a class, never in an inline
+     style, so the dark theme has a handle to repaint it. */
+  .q-title { font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 6px 0; letter-spacing: -0.02em; }
+  .q-subtitle { color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5; }
+  .q-heading { font-size: 16px; font-weight: 700; color: #1a2b1e; margin: 0; }
+  .q-note { font-size: 13px; color: #879a8c; margin: 3px 0 0 0; }
+  .q-product-name { font-weight: 600; color: #1a2b1e; }
+  .q-product-name--yours { color: #143d23; }
+  .q-money { text-align: right; font-weight: 700; color: #143d23; }
+  .q-money--big { font-size: 18px; font-weight: 800; }
+  .q-total-label { font-weight: 700; color: #1a2b1e; }
+  .q-total-label--right { text-align: right; font-weight: 700; color: #6b7c6e; }
+  .q-muted { font-size: 13px; color: #6b7c6e; }
+  .q-sku { font-size: 11px; color: #879a8c; font-family: 'SF Mono', ui-monospace, monospace; }
+  .q-unit { font-weight: 500; font-size: 13px; color: #879a8c; }
+  .q-notes { font-weight: 400; font-size: 14px; color: #4b5c50; line-height: 1.5; }
+  .q-deferred-label { font-weight: 600; color: #7A6A3A; font-size: 13px; }
+  .q-deferred-money { text-align: right; font-weight: 700; color: #7A6A3A; font-size: 14px; }
+  .q-empty { text-align: center; padding: 40px; color: #879a8c; }
+  .q-flash-text { font-size: 14px; color: #3f5c46; font-weight: 600; }
+  .q-flash { background: #F4F8F4; border: 1px solid #D6E6D8; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+
+  /* The status chip takes its colours from the model as variables, so the
+     dark theme can repaint the whole chip in one place. */
+  .q-status-badge { background: var(--badge-bg, #F3F5F0); color: var(--badge-fg, #4b5c50); }
 </style>
 
 <x-breadcrumb :items="[
@@ -79,15 +131,15 @@
 <div class="page-header-card">
   <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
     <div>
-      <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 6px 0; letter-spacing: -0.02em;">
+      <h1 class="q-title">
         Cost Quotation {{ $quotation->quotation_number }}
       </h1>
-      <p class="keep-sub" style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5;">
+      <p class="keep-sub q-subtitle">
         Farmer: <strong>{{ $quotation->farmer?->name ?? 'Unknown' }}</strong> — includes products from your store
       </p>
     </div>
-    @php $badgeStyle = 'background:' . $quotation->status_bg . ';color:' . $quotation->status_color . ';'; @endphp
-    <span class="badge" style="{{ $badgeStyle }} padding: 7px 16px; border-radius: 24px; font-size: 13px; font-weight: 700;">
+    @php $badgeStyle = '--badge-bg:' . $quotation->status_bg . ';--badge-fg:' . $quotation->status_color . ';'; @endphp
+    <span class="badge q-status-badge" style="{{ $badgeStyle }} padding: 7px 16px; border-radius: 24px; font-size: 13px; font-weight: 700;">
       <span style="width:8px;height:8px;border-radius:50%;display:inline-block;background:currentColor;"></span>
       {{ $quotation->status_label }}
     </span>
@@ -95,18 +147,18 @@
 </div>
 
 @if(session('success'))
-  <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(22,163,74,0.06);">
-    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(22,163,74,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+  <div class="q-flash">
+    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(100,130,104,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#648268" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
-    <span style="font-size: 14px; color: #166534; font-weight: 600;">{{ session('success') }}</span>
+    <span class="q-flash-text">{{ session('success') }}</span>
   </div>
 @endif
 
 <!-- Farmer Quotation Details -->
 <div class="detail-card">
   <div class="detail-card-header">
-    <h2 style="font-size: 16px; font-weight: 700; color: #1a2b1e; margin: 0;">Farmer Quotation Details</h2>
+    <h2 class="q-heading">Farmer Quotation Details</h2>
   </div>
   <div class="detail-card-body">
     <div class="info-grid">
@@ -118,15 +170,15 @@
         <label>Season</label>
         <div class="value" style="text-transform: capitalize; display: flex; align-items: center; gap: 8px;">
           @if($quotation->season === 'wet')
-            <span style="width: 10px; height: 10px; background: linear-gradient(135deg, #38bdf8, #0284c7); border-radius: 50%;"></span> Wet Season
+            <span style="width: 10px; height: 10px; background: #7f9dae; border-radius: 50%; flex-shrink: 0;"></span> Wet Season
           @else
-            <span style="width: 10px; height: 10px; background: linear-gradient(135deg, #fbbf24, #d97706); border-radius: 50%;"></span> Dry Season
+            <span style="width: 10px; height: 10px; background: #bfa262; border-radius: 50%; flex-shrink: 0;"></span> Dry Season
           @endif
         </div>
       </div>
       <div class="info-item">
         <label>Land Area</label>
-        <div class="value">{{ number_format($quotation->land_area, 2) }} <span style="font-weight: 500; font-size: 13px; color: #879a8c;">hectares</span></div>
+        <div class="value">{{ number_format($quotation->land_area, 2) }} <span class="q-unit">hectares</span></div>
       </div>
       <div class="info-item">
         <label>Generated On</label>
@@ -135,7 +187,7 @@
       @if($quotation->notes)
       <div class="info-item" style="grid-column: 1 / -1;">
         <label>Farmer Notes</label>
-        <div class="value" style="font-weight: 400; font-size: 14px; color: #4b5c50; line-height: 1.5;">{{ $quotation->notes }}</div>
+        <div class="value q-notes">{{ $quotation->notes }}</div>
       </div>
       @endif
     </div>
@@ -153,11 +205,11 @@
 <div class="detail-card">
   <div class="detail-card-header">
     <div>
-      <h2 style="font-size: 16px; font-weight: 700; color: #1a2b1e; margin: 0;">Your Products in This Quotation</h2>
+      <h2 class="q-heading">Your Products in This Quotation</h2>
       @php
         $sFitted = $storeItems->where('is_deferred', false);
       @endphp
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">
+      <p class="q-note">
         {{ $sFitted->count() }} of your product(s) were included
         @if($storeItems->count() !== $sFitted->count())
           &middot; {{ $storeItems->count() - $sFitted->count() }} deferred to fit the farmer&rsquo;s budget
@@ -167,59 +219,67 @@
   </div>
   <div style="padding: 0;">
     @if($storeItems->count() > 0)
-      <table id="storeShowMineTable" class="data-table">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Your Price</th>
-            <th>Quantity Needed</th>
-            <th style="text-align: right;">Est. Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($storeItems as $item)
-            <tr @if($item->is_deferred) style="opacity: 0.62;" @endif>
-              <td>
-                <div style="font-weight: 600; color: #1a2b1e;">
-                  {{ $item->product_name }}
-                  @if($item->is_deferred)
-                    <span style="display: inline-block; margin-left: 7px; padding: 2px 8px; border-radius: 8px; background: #fdf0c8; color: #85620f; font-size: 10.5px; font-weight: 700; vertical-align: middle;">DEFERRED</span>
+      <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+        <div class="app-scroll">
+          <table id="storeShowMineTable" class="data-table quotation-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Your Price</th>
+              <th>Quantity Needed</th>
+              <th style="text-align: right;">Est. Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach($storeItems as $item)
+              <tr @if($item->is_deferred) style="opacity: 0.62;" @endif>
+                <td>
+                  <div class="q-product-name">
+                    {{ $item->product_name }}
+                    @if($item->is_deferred)
+                      <span class="your-product-tag your-product-tag--deferred" style="margin-left: 7px;">DEFERRED</span>
+                    @endif
+                  </div>
+                  @if($item->product)
+                    <div class="q-sku">SKU: {{ $item->product->sku }}</div>
                   @endif
-                </div>
-                @if($item->product)
-                  <div style="font-size: 11px; color: #b0b8b3; font-family: 'SF Mono', ui-monospace, monospace;">SKU: {{ $item->product->sku }}</div>
-                @endif
-              </td>
-              <td>₱{{ number_format($item->price_at_generation, 2) }}</td>
-              <td><span style="font-weight: 600;">{{ number_format($item->calculated_quantity, 2) }}</span></td>
-              <td style="text-align: right; font-weight: 700; color: #143d23;">
-                ₱{{ number_format($item->subtotal, 2) }}
-              </td>
-            </tr>
-          @endforeach
-        </tbody>
-        <tfoot>
-          <tr style="background: #fafdfb;">
-            <td colspan="3" style="font-weight: 700; color: #1a2b1e;">Total from Your Store</td>
-            <td style="text-align: right; font-weight: 800; color: #143d23; font-size: 18px;">
-              ₱{{ number_format((float) $sFitted->sum('subtotal'), 2) }}
-            </td>
-          </tr>
-          @php
-            $sDeferred = $storeItems->where('is_deferred', true);
-          @endphp
-          @if($sDeferred->isNotEmpty())
-            <tr style="background: #fdf9ec;">
-              <td colspan="3" style="font-weight: 600; color: #85620f; font-size: 13px;">Deferred to fit the farmer&rsquo;s budget &mdash; kept as demand signal, not in the current plan</td>
-              <td style="text-align: right; font-weight: 700; color: #85620f; font-size: 14px;">
-                ₱{{ number_format((float) $sDeferred->sum('subtotal'), 2) }}
+                </td>
+                <td>₱{{ number_format($item->price_at_generation, 2) }}</td>
+                <td><span style="font-weight: 600;">{{ number_format($item->calculated_quantity, 2) }}</span></td>
+                <td class="q-money">
+                  ₱{{ number_format($item->subtotal, 2) }}
+                </td>
+              </tr>
+            @endforeach
+          </tbody>
+          <tfoot>
+            <tr class="quotation-total-row">
+              <td colspan="3" class="q-total-label">Total from Your Store</td>
+              <td class="q-money q-money--big">
+                ₱{{ number_format((float) $sFitted->sum('subtotal'), 2) }}
               </td>
             </tr>
-          @endif
-        </tfoot>
-      </table>
+            @php
+              $sDeferred = $storeItems->where('is_deferred', true);
+            @endphp
+            @if($sDeferred->isNotEmpty())
+              <tr class="quotation-total-row quotation-total-row--deferred">
+                <td colspan="3" class="q-deferred-label">Deferred to fit the farmer&rsquo;s budget &mdash; kept as demand signal, not in the current plan</td>
+                <td class="q-deferred-money">
+                  ₱{{ number_format((float) $sDeferred->sum('subtotal'), 2) }}
+                </td>
+              </tr>
+            @endif
+          </tfoot>
+          </table>
+        </div>
+        <div class="app-scrollbar">
+          <div class="app-scrollbar-track"></div>
+          <div class="app-scrollbar-thumb"></div>
+        </div>
+      </div>
     @else
-      <div style="text-align: center; padding: 40px; color: #879a8c;">
+      <div class="q-empty">
         <p style="margin: 0;">No items from your store in this quotation.</p>
       </div>
     @endif
@@ -236,7 +296,7 @@
   />
 <div class="detail-card">
   <div class="detail-card-header">
-    <h2 style="font-size: 16px; font-weight: 700; color: #1a2b1e; margin: 0;">Full Cost Breakdown</h2>
+    <h2 class="q-heading">Full Cost Breakdown</h2>
     <div class="total-badge">
       <div class="total-label">Farmer's Total</div>
       <div class="total-value">₱{{ number_format($quotation->estimated_total_cost, 2) }}</div>
@@ -244,70 +304,62 @@
   </div>
   <div style="padding: 0;">
     @if($quotation->items->count() > 0)
-      <table id="storeShowAllTable" class="data-table">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Store</th>
-            <th>Price</th>
-            <th>Quantity</th>
-            <th style="text-align: right;">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($quotation->items as $item)
-            @php $isYours = $item->product && $item->product->user_id === Auth::id(); @endphp
-            <tr class="{{ $isYours ? 'yours' : '' }}" @if($item->is_deferred) style="opacity: 0.62;" @endif>
-              <td>
-                <div style="font-weight: 600; {{ $isYours ? 'color: #143d23;' : '' }}">
-                  {{ $item->product_name }}
-                  @if($isYours)
-                    <span class="your-product-tag">YOUR PRODUCT</span>
-                  @endif
-                  @if($item->is_deferred)
-                    <span class="your-product-tag" style="background: #fdf0c8; color: #85620f;">DEFERRED</span>
-                  @endif
-                </div>
-              </td>
-              <td style="font-size: 13px; color: #6b7c6e;">
-                {{ $item->product?->storeOwner?->name ?? '—' }}
-              </td>
-              <td>₱{{ number_format($item->price_at_generation, 2) }}</td>
-              <td><span style="font-weight: 600;">{{ number_format($item->calculated_quantity, 2) }}</span></td>
-              <td style="text-align: right; font-weight: 600;">₱{{ number_format($item->subtotal, 2) }}</td>
+      <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+        <div class="app-scroll">
+          <table id="storeShowAllTable" class="data-table quotation-table quotation-table--wide">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Store</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th style="text-align: right;">Subtotal</th>
             </tr>
-          @endforeach
-        </tbody>
-        <tfoot>
-          <tr style="background: #fafdfb;">
-            <td colspan="4" style="text-align: right; font-weight: 700; color: #6b7c6e;">Grand Total</td>
-            <td style="text-align: right; font-weight: 800; color: #143d23; font-size: 18px;">
-              ₱{{ number_format($quotation->estimated_total_cost, 2) }}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+          </thead>
+          <tbody>
+            @foreach($quotation->items as $item)
+              @php $isYours = $item->product && $item->product->user_id === Auth::id(); @endphp
+              <tr class="{{ $isYours ? 'yours' : '' }}" @if($item->is_deferred) style="opacity: 0.62;" @endif>
+                <td>
+                  <div class="q-product-name{{ $isYours ? ' q-product-name--yours' : '' }}">
+                    {{ $item->product_name }}
+                    @if($isYours)
+                      <span class="your-product-tag">YOUR PRODUCT</span>
+                    @endif
+                    @if($item->is_deferred)
+                      <span class="your-product-tag your-product-tag--deferred">DEFERRED</span>
+                    @endif
+                  </div>
+                </td>
+                <td class="q-muted">
+                  {{ $item->product?->storeOwner?->name ?? '—' }}
+                </td>
+                <td>₱{{ number_format($item->price_at_generation, 2) }}</td>
+                <td><span style="font-weight: 600;">{{ number_format($item->calculated_quantity, 2) }}</span></td>
+                <td style="text-align: right; font-weight: 600;">₱{{ number_format($item->subtotal, 2) }}</td>
+              </tr>
+            @endforeach
+          </tbody>
+          <tfoot>
+            <tr class="quotation-total-row">
+              <td colspan="4" class="q-total-label--right">Grand Total</td>
+              <td class="q-money q-money--big">
+                ₱{{ number_format($quotation->estimated_total_cost, 2) }}
+              </td>
+            </tr>
+          </tfoot>
+          </table>
+        </div>
+        <div class="app-scrollbar">
+          <div class="app-scrollbar-track"></div>
+          <div class="app-scrollbar-thumb"></div>
+        </div>
+      </div>
     @else
-      <div style="text-align: center; padding: 40px; color: #879a8c;">
+      <div class="q-empty">
         <p style="margin: 0;">No computed items in this quotation.</p>
       </div>
     @endif
-  </div>
-</div>
-
-<!-- Info Banner -->
-<div class="info-banner">
-  <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(37,99,235,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
-    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#2563eb" stroke-width="2" fill="none">
-      <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-    </svg>
-  </div>
-  <div>
-    <div style="font-weight: 700; font-size: 14px; color: #1e40af; margin-bottom: 4px;">Read Only — No Action Needed</div>
-    <p style="margin: 0; font-size: 13px; color: #1e40af; line-height: 1.6;">
-      This quotation was auto-generated by the farmer. It shows what products and quantities farmers in your area are asking for.
-      Use this to see which products are in demand and plan your inventory accordingly. No action is required on your part.
-    </p>
   </div>
 </div>
 @endsection

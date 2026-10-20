@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FcmToken;
 use App\Models\PushSubscription;
-use App\Services\NovuService;
 use App\Services\PushService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -72,52 +70,6 @@ class PushSubscriptionController extends Controller
         PushSubscription::where('user_id', Auth::id())
             ->where('endpoint', $data['endpoint'])
             ->delete();
-
-        return response()->json(['ok' => true]);
-    }
-
-    /**
-     * Novu / FCM half of device opt-in: store this browser's Firebase
-     * Cloud Messaging token, then push the account's full token list to
-     * Novu so phones and desktops merge instead of overwriting each other.
-     * `revoke` drops just this browser's token (disable on this device).
-     *
-     * With Novu or Firebase not configured it answers not-configured and
-     * touches nothing — the VAPID flow beside it is unaffected either way.
-     */
-    public function novuToken(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'token'  => ['nullable', 'string', 'max:512'],
-            'revoke' => ['nullable', 'boolean'],
-        ]);
-
-        if (! NovuService::enabled() || ! NovuService::firebaseConfigured()) {
-            return response()->json(['ok' => false, 'reason' => 'not-configured']);
-        }
-
-        $userId = Auth::id();
-        $token  = trim((string) ($data['token'] ?? ''));
-
-        if ($data['revoke'] ?? false) {
-            if ($token !== '') {
-                FcmToken::where('user_id', $userId)->where('token', $token)->delete();
-            }
-        } elseif ($token !== '') {
-            FcmToken::updateOrCreate(
-                ['user_id' => $userId, 'token' => $token],
-                [
-                    'user_agent'   => Str::limit((string) $request->userAgent(), 250, ''),
-                    'last_used_at' => now(),
-                ]
-            );
-        } else {
-            return response()->json(['ok' => false, 'reason' => 'missing-token'], 422);
-        }
-
-        // One source of truth per account: whatever rows remain is exactly
-        // what Novu should hold for this subscriber.
-        NovuService::setDeviceTokens((string) $userId, FcmToken::where('user_id', $userId)->pluck('token')->all());
 
         return response()->json(['ok' => true]);
     }

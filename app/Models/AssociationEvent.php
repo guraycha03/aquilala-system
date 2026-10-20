@@ -63,6 +63,7 @@ class AssociationEvent extends Model
         'event_date' => 'date',
         'start_time' => 'datetime',
         'end_time'   => 'datetime',
+        'reminded_at' => 'datetime',
     ];
 
     // ── Relations ────────────────────────────────────────────────

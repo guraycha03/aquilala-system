@@ -81,16 +81,23 @@ class Quotation extends Model
         };
     }
 
+    /**
+     * Status colours for the store's read-only quotation view.
+     *
+     * Muted on purpose: the page is a reference sheet, not an alert board,
+     * so a status chip should sit on the page rather than shout across it.
+     * These two accessors are read by that page only.
+     */
     public function getStatusColorAttribute(): string
     {
         return match ($this->effective_status) {
-            self::STATUS_COMPUTED   => '#0284c7',
-            self::STATUS_VIEWED     => '#7c3aed',
+            self::STATUS_COMPUTED   => '#5b7f92',
+            self::STATUS_VIEWED     => '#4b5c50',
             self::STATUS_EXPIRED    => '#94a3b8',
-            self::STATUS_PENDING    => '#d97706',
-            self::STATUS_DISPATCHED => '#7c3aed',
-            self::STATUS_ACCEPTED   => '#16a34a',
-            self::STATUS_REJECTED   => '#dc2626',
+            self::STATUS_PENDING    => '#7A6A3A',
+            self::STATUS_DISPATCHED => '#5b7f92',
+            self::STATUS_ACCEPTED   => '#3f6b4a',
+            self::STATUS_REJECTED   => '#a34a4a',
             default                 => '#6b7280',
         };
     }
@@ -98,13 +105,13 @@ class Quotation extends Model
     public function getStatusBgAttribute(): string
     {
         return match ($this->effective_status) {
-            self::STATUS_COMPUTED   => '#e0f2fe',
-            self::STATUS_VIEWED     => '#f3e8ff',
+            self::STATUS_COMPUTED   => '#EDF1F0',
+            self::STATUS_VIEWED     => '#F3F5F0',
             self::STATUS_EXPIRED    => '#f1f5f9',
-            self::STATUS_PENDING    => '#fef3c7',
-            self::STATUS_DISPATCHED => '#f3e8ff',
-            self::STATUS_ACCEPTED   => '#f0fdf4',
-            self::STATUS_REJECTED   => '#fef2f2',
+            self::STATUS_PENDING    => '#FAF6E8',
+            self::STATUS_DISPATCHED => '#EDF1F0',
+            self::STATUS_ACCEPTED   => '#EDF1E9',
+            self::STATUS_REJECTED   => '#F8EDED',
             default                 => '#f9fafb',
         };
     }
@@ -164,5 +171,26 @@ class Quotation extends Model
         return $query->whereHas('items.product', function ($q) use ($storeUserId) {
             $q->where('products.user_id', $storeUserId);
         });
+    }
+
+    /**
+     * Order by how far along a quotation is: a fresh estimate first, then one
+     * the store has already seen, then an expired one — anything else last.
+     *
+     * Written as a CASE instead of MySQL's FIELD() so the same query runs on
+     * every driver the app is tested against. FIELD() has no SQLite
+     * equivalent and made this page untestable there. The numbers match
+     * FIELD()'s exactly: 1, 2, 3 for the three listed statuses and 0 for
+     * anything else, so an unknown status still sorts ahead of them.
+     */
+    public function scopeOrderedByStatusPriority($query)
+    {
+        return $query->orderByRaw(
+            "CASE status"
+            . " WHEN '" . self::STATUS_COMPUTED . "' THEN 1"
+            . " WHEN '" . self::STATUS_VIEWED . "' THEN 2"
+            . " WHEN '" . self::STATUS_EXPIRED . "' THEN 3"
+            . " ELSE 0 END"
+        );
     }
 }

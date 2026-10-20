@@ -9,13 +9,14 @@
      no gradients, so this page reads like every other dashboard. */
 
   /* ── Panels ─────────────────────────────────────────────────── */
+  /* One panel lives on this page now (the demand list), so the strip is a
+     single column — the panel gets the full width of the page. */
   .trend-panels {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 20px;
     margin-bottom: 24px;
   }
-  @media (max-width: 980px) { .trend-panels { grid-template-columns: 1fr; } }
 
   .panel {
     background: #ffffff;
@@ -26,12 +27,11 @@
   }
   .panel-header { padding: 20px 24px; border-bottom: 1px solid #f0f2f1; background: #fafdfb; }
   .panel-body { padding: 20px 24px; }
-  .panel-body-flush { padding: 0; }
 
-  .demand-bar { height: 8px; background: #f0f2f1; border-radius: 4px; overflow: hidden; }
+  .demand-bar { height: 8px; background: #F0F2F1; border-radius: 4px; overflow: hidden; }
   .demand-bar-fill {
     height: 100%; border-radius: 4px;
-    background: #16a34a;
+    background: #7FA886;
     transition: width 0.6s ease;
   }
 
@@ -56,14 +56,6 @@
   }
   .demand-toggle.is-open svg { transform: rotate(180deg); }
 
-  .farmer-avatar {
-    width: 36px; height: 36px;
-    border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 13px; flex-shrink: 0;
-    background: #EDF1E9; color: #648268; border: 1px solid #E0E5DB;
-  }
-  .farmer-cell { display: flex; align-items: center; gap: 12px; }
-
   /* ── The AI card — same shape as the KPI cards around it ────── */
   .ai-kpi-card {
     display: flex;
@@ -75,20 +67,74 @@
     box-sizing: border-box;
   }
   .ai-kpi-card .kpi-desc { margin-bottom: 14px; }
+  .ai-kpi-card .kpi-title { margin-top: 20px; }
   .ai-kpi-card .ai-btn { align-self: flex-start; }
   [data-theme="dark"] .ai-kpi-card { background: #111827; border-color: #334155 !important; }
 
+  /* The AI card sits outside `.kpi-card`, so the chip's --chip-bg /
+     --chip-color never reach it — the tile lost its sage fill and the
+     sparkle fell back to the inherited text colour. Give it a green tint
+     of its own; dark mode keeps the shared chip skin. */
+  [data-theme="light"] .ai-kpi-card .kpi-icon-chip {
+    --chip-bg: #E8F0E6;
+    --chip-color: #4E7D57;
+    --chip-glow: 78, 125, 87;
+  }
+  [data-theme="dark"] .ai-kpi-card .kpi-icon-chip {
+    --chip-glow: 110, 231, 160;
+  }
+
+  /* The sparkle tile: one flat green background with a crisp edge that
+     brightens on a slow loop. No glow, no blur, no second layer — an
+     overlay gradient on a 40px tile just reads as a smudge. */
+  .ai-kpi-card .kpi-icon-chip {
+    position: relative;
+    animation: aiChipEdge 3.6s ease-in-out infinite;
+  }
+  .ai-kpi-card .kpi-icon-chip svg {
+    position: relative;
+    z-index: 1;
+    animation: aiChipTwinkle 3.6s ease-in-out infinite;
+  }
+  @keyframes aiChipEdge {
+    0%, 100% { box-shadow: inset 0 0 0 1px rgba(var(--chip-glow), 0.22); }
+    50%      { box-shadow: inset 0 0 0 1px rgba(var(--chip-glow), 0.62); }
+  }
+  @keyframes aiChipTwinkle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.86; transform: scale(1.06); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ai-kpi-card .kpi-icon-chip,
+    .ai-kpi-card .kpi-icon-chip svg { animation: none; }
+    .ai-btn.is-loading .ai-btn-icon { animation: none; }
+  }
+
+  /* Matte, low-saturation sage — the old forest green was the one
+     loud thing on the page. Flat fill, no glow, white text at 5.7:1. */
   .ai-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    background: #166534;
-    color: #ffffff; border: none; cursor: pointer;
-    padding: 9px 14px; border-radius: 10px;
+    background: #5A6B5C;
+    color: #ffffff; border: 1px solid #556658; cursor: pointer;
+    padding: 9px 14px; border-radius: 10px; white-space: nowrap;
+    /* The label changes while the summary is written. A fixed width keeps
+       the button the same size through every state — a label swap that
+       resizes the button makes the card next to it jump. */
+    min-width: 156px; max-width: 100%;
     font-size: 12px; font-weight: 700; font-family: inherit;
-    transition: all 0.2s ease;
+    box-shadow: none;
+    transition: background 0.2s ease, transform 0.2s ease;
   }
-  .ai-btn:hover:not(:disabled) { background: #14532d; transform: translateY(-1px); }
+  .ai-btn:hover:not(:disabled) { background: #4E5D50; border-color: #47554A; transform: translateY(-1px); }
   .ai-btn:active:not(:disabled) { transform: scale(0.97); }
   .ai-btn:disabled { opacity: 0.65; cursor: wait; }
+
+  /* While the summary is being written the button is disabled, so the
+     sparkle itself is the only thing that still moves — it turns like a
+     spinner to say "working" without adding a second icon. */
+  .ai-btn .ai-btn-icon { transform-origin: 50% 50%; }
+  .ai-btn.is-loading .ai-btn-icon { animation: aiBtnSpin 0.9s linear infinite; }
+  @keyframes aiBtnSpin { to { transform: rotate(360deg); } }
   .ai-spin { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #ffffff; border-radius: 50%; animation: aiSpin 0.7s linear infinite; }
   @keyframes aiSpin { to { transform: rotate(360deg); } }
 
@@ -167,8 +213,54 @@
   .ai-narrative-body .table-wrap { overflow-x: auto; max-width: 100%; }
   .ai-narrative-body .warn-icon-img { width: 16px; height: 16px; display: inline-block; margin-right: 6px; vertical-align: -3px; }
 
-  .ai-modal-foot { margin-top: 16px; display: flex; justify-content: flex-end; }
-  .ai-chat-link {
+  /* One card per quoted product. The products are the point of the
+     report, so each one gets its own tile instead of a line of prose. */
+  .ai-product-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 10px;
+    margin: 10px 0 2px;
+  }
+  .ai-product-card {
+    background: #ffffff;
+    border: 1px solid #E0E5DB;
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .ai-product-name { font-size: 13.5px; font-weight: 700; color: #25392b; line-height: 1.35; }
+  .ai-product-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; font-size: 12px; color: #879a8c; }
+  .ai-product-value { margin-top: 8px; font-size: 13px; font-weight: 700; color: #4b5c50; }
+  .ai-crop-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+  .ai-crop-label { font-size: 11px; font-weight: 700; color: #6b7c6e; text-transform: uppercase; letter-spacing: .06em; }
+  .ai-crop-chip { font-size: 12px; font-weight: 600; color: #4b5c50; background: #EDF1E9; border: 1px solid #E0E5DB; border-radius: 999px; padding: 4px 11px; }
+  .ai-crop-name { text-transform: capitalize; }
+  [data-theme="dark"] .ai-product-card { background: rgba(15, 23, 42, 0.72); border-color: #334155; }
+  [data-theme="dark"] .ai-product-name { color: #d6f5e3; }
+  [data-theme="dark"] .ai-product-value { color: #a7f3d0; }
+  [data-theme="dark"] .ai-crop-chip { background: #16301f; border-color: #334155; color: #a7f3d0; }
+  [data-theme="dark"] .ai-crop-label { color: #9fb3a6; }
+
+  /* The failure state of the summary: a plain icon, a plain headline and
+     the reason, centred — not a raw red box in the corner of the modal. */
+  .ai-modal-error {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; text-align: center; padding: 38px 24px;
+    background: #F7F9F7; border: 1px solid #E0E5DB; border-radius: 14px;
+  }
+  .ai-modal-error-icon {
+    width: 46px; height: 46px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: #FBEDED; border: 1px solid #F0D2D2; color: #B04A42;
+  }
+  .ai-modal-error-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .ai-modal-error-title { font-size: 14.5px; font-weight: 700; color: #1a2b1e; }
+  .ai-modal-error-text { font-size: 13px; color: #6b7c6e; max-width: 380px; line-height: 1.55; }
+  [data-theme="dark"] .ai-modal-error { background: rgba(15, 23, 42, 0.72); border-color: #334155; }
+  [data-theme="dark"] .ai-modal-error-icon { background: rgba(127, 29, 29, 0.35); border-color: #7f1d1d; color: #fca5a5; }
+  [data-theme="dark"] .ai-modal-error-title { color: #d6f5e3; }
+  [data-theme="dark"] .ai-modal-error-text { color: #9fb3a6; }
+
+  .ai-modal-foot { margin-top: 16px; display: flex; justify-content: flex-end; }  .ai-chat-link {
     display: inline-flex; align-items: center; gap: 8px;
     background: #166534; color: #ffffff; border: none; border-radius: 10px;
     padding: 10px 16px; font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif;
@@ -177,6 +269,39 @@
   .ai-chat-link:hover { background: #14532d; }
   .ai-chat-link svg { width: 15px; height: 15px; }
 
+  /* ── Tabs ───────────────────────────────────────────────────────
+     Two views of the same page: the demand read on the left, the
+     full table on the right. A tab bar keeps them one click apart
+     instead of one whole page apart. */
+  .tab-bar {
+    display: flex; align-items: center; gap: 4px;
+    margin-bottom: 20px; border-bottom: 1px solid #f0f2f1;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 16px; margin-bottom: -1px;
+    background: none; border: none; border-bottom: 2px solid transparent;
+    font-family: inherit; font-size: 13.5px; font-weight: 700; color: #879a8c;
+    cursor: pointer; white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .tab-btn:hover { color: #344B38; }
+  .tab-btn.is-active { color: #1a2b1e; border-bottom-color: #5A6B5C; }
+  .tab-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .tab-count {
+    font-size: 11px; font-weight: 700; color: #4b5c50;
+    background: #F0F2F1; border-radius: 999px; padding: 2px 8px;
+  }
+  .tab-panel[hidden] { display: none; }
+  [data-theme="dark"] .tab-bar { border-bottom-color: #334155; }
+  [data-theme="dark"] .tab-btn { color: #9fb3a6; }
+  [data-theme="dark"] .tab-btn:hover { color: #d6f5e3; }
+  [data-theme="dark"] .tab-btn.is-active { color: #d6f5e3; border-bottom-color: #6ee7a0; }
+  [data-theme="dark"] .tab-count { background: #1f2937; color: #a7f3d0; }
+
+  /* ── The table (All Farmer Quotations tab) ──────────────────── */
   .table-card {
     background: #ffffff;
     border-radius: 16px;
@@ -185,7 +310,20 @@
     overflow: hidden;
   }
 
+  /* A floor width for the table: on a phone the TABLE scrolls sideways
+     (the shared .app-scroll wrapper) instead of every column being
+     crushed into a two-word stack. */
+  .quotations-table { min-width: 900px; }
+
   /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
+
+  .farmer-avatar {
+    width: 36px; height: 36px;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; flex-shrink: 0;
+    background: #EDF1E9; color: #648268; border: 1px solid #E0E5DB;
+  }
+  .farmer-cell { display: flex; align-items: center; gap: 12px; }
 
   .action-btn {
     background: #14532d;
@@ -199,11 +337,12 @@
   .action-btn:hover { background: #166534; }
 
   .product-count-badge {
-    background: #f0fdf4; color: #166534;
+    background: #F3F5F0; color: #4b5c50;
     padding: 3px 10px; border-radius: 8px;
     font-size: 12px; font-weight: 700;
     display: inline-flex; align-items: center; gap: 4px;
-    border: 1px solid #bbf7d0;
+    white-space: nowrap;
+    border: 1px solid #E0E5DB;
   }
 
   .empty-state { text-align: center; padding: 56px 24px; }
@@ -223,12 +362,12 @@
     .panel-header { padding: 15px 16px; }
     .panel-header h2 { font-size: 15px; }
     .panel-body { padding: 16px; }
-    .quote-row { padding: 13px 16px; gap: 10px; }
-    .quote-row .q-amount { font-size: 13px; white-space: nowrap; }
+    .tab-btn { padding: 10px 12px; font-size: 12.5px; }
     .table-card-head { padding: 15px 16px; flex-wrap: wrap; gap: 10px; }
     .empty-state { padding: 40px 16px; }
     .ai-modal { max-height: 82vh; width: calc(100vw - 20px); }
     .ai-floating { bottom: 16px; right: 16px; left: 16px; justify-content: center; }
+    .ai-kpi-card .ai-btn { padding: 9px 12px; font-size: 11.5px; }
   }
 </style>
 
@@ -238,29 +377,30 @@
 </div>
 
 @if(session('success'))
-  <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(22,163,74,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+  <div style="background: #F4F8F4; border: 1px solid #D6E6D8; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(100,130,104,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#648268" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
-    <span style="font-size: 14px; color: #166534; font-weight: 600;">{{ session('success') }}</span>
+    <span style="font-size: 14px; color: #3f5c46; font-weight: 600;">{{ session('success') }}</span>
   </div>
 @endif
 
 @php
     // Plain-language trend wording — an ordinary store owner should read
-    // "5 more than last week", never a bare percentage against a baseline.
+    // "2 more than last week", never a bare percentage against a baseline.
+    $weekDiff = $recentQuotations - $priorQuotations;
     $weekPill = match (true) {
-        $weekTrend > 0 && $priorQuotations > 0 => $weekTrend . '% more than last week',
-        $weekTrend < 0 => abs($weekTrend) . '% less than last week',
+        $weekDiff > 0 => $weekDiff . ' more than last week',
+        $weekDiff < 0 => abs($weekDiff) . ' less than last week',
         $priorQuotations > 0 => 'Same as last week',
         $recentQuotations > 0 => 'New this week',
         default => 'None yet',
     };
-    $weekDirection = match (true) {
-        $weekTrend > 0 => 'up',
-        $weekTrend < 0 => 'down',
-        default => 'neutral',
-    };
+
+    // The demand list opens with only the top 3 products on screen; the
+    // rest wait behind the "Show all" toggle, so a store with dozens of
+    // products doesn't get a half-page list of bars.
+    $demandTopCount = 3;
 @endphp
 
 <section class="kpi-strip">
@@ -270,7 +410,10 @@
     </x-slot:icon>
   </x-kpi-card>
 
-  <x-kpi-card title="New Quotations This Week" value="{{ $recentQuotations }}" trendValue="{{ $weekPill }}" trendDirection="{{ $weekDirection }}" trendLabel="Made in the last 7 days">
+  {{-- The week-on-week comparison rides on the description line, not on a
+       second pill — the card already carries the count, so a pill repeated
+       the same card in three places. --}}
+  <x-kpi-card title="New This Week" value="{{ $recentQuotations }}" trendLabel="Quotations made in the last 7 days{{ $weekPill !== 'None yet' ? ' — ' . lcfirst($weekPill) : '' }}">
     <x-slot:icon>
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
     </x-slot:icon>
@@ -289,29 +432,48 @@
   <div class="ai-kpi-card">
     <div class="kpi-top">
       <div class="kpi-icon-chip">
-        <svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
+        {{-- Lucide "square-sparkles" (1.48.0), inlined verbatim. The bundled
+             lucide.min.js is 1.47.0 — one release short — so <i data-lucide>
+             would leave an empty tag; the glyph is copied here instead. --}}
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 15H7"/><path d="M15.41 2.49a.6.6 0 011.18 0l.63 3.334a1.2 1.2 0 00.956.955l3.334.631a.6.6 0 010 1.18l-3.334.63a1.2 1.2 0 00-.955.956l-.631 3.334a.6.6 0 01-1.18 0l-.63-3.334a1.2 1.2 0 00-.956-.955L10.49 8.59a.6.6 0 010-1.18l3.334-.63a1.2 1.2 0 00.955-.956z"/><path d="M21 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h6"/><path d="M9 13v4"/></svg>
       </div>
     </div>
     <h3 class="kpi-title">Smart Store Summary</h3>
-    <p class="kpi-desc">What farmers' quotations say, in plain words.</p>
+    <p class="kpi-desc">A short read on what farmers are quoting for.</p>
     <button type="button" class="ai-btn" id="aiOverviewBtn" onclick="generateAiOverview(this)">
-      <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
+      <svg class="ai-btn-icon" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
       <span>Create Summary</span>
     </button>
   </div>
 </section>
 
+{{-- Two views of the same page: the demand read on the left, the full
+     table on the right. Tabs keep them one click apart instead of one
+     whole page apart. --}}
+<div class="tab-bar" role="tablist" aria-label="Quotation views">
+  <button type="button" class="tab-btn is-active" role="tab" id="tabDemand" data-tab="demand" aria-controls="panelDemand" aria-selected="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+    Your Products in Demand
+  </button>
+  <button type="button" class="tab-btn" role="tab" id="tabQuotes" data-tab="quotes" aria-controls="panelQuotes" aria-selected="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+    All Farmer Quotations
+    <span class="tab-count">{{ $totalQuotations }}</span>
+  </button>
+</div>
+
+<div class="tab-panel" id="panelDemand" role="tabpanel" aria-labelledby="tabDemand">
 <div class="trend-panels">
   <div class="panel">
     <div class="panel-header">
       <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">Your Products in Demand</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">How often each product appears in quotations</p>
+      <p id="demandPanelSub" style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">How often each product appears in quotations — top {{ $demandTopCount }} shown first</p>
     </div>
     <div class="panel-body">
       @if(count($productDemand) > 0)
         @php $maxCount = max(array_column($productDemand, 'count')); @endphp
         @foreach($productDemand as $productName => $data)
-          <div class="demand-item{{ $loop->index >= 3 ? ' is-collapsed' : '' }}" data-demand-item>
+          <div class="demand-item{{ $loop->index >= $demandTopCount ? ' is-collapsed' : '' }}" data-demand-item>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <span style="font-weight: 700; color: #1a2b1e; font-size: 14px;">{{ $productName }}</span>
               <span style="font-size: 12px; color: #879a8c; font-weight: 600;">{{ $data['count'] }} quotation{{ $data['count'] == 1 ? '' : 's' }}</span>
@@ -325,7 +487,7 @@
             </div>
           </div>
         @endforeach
-        @if(count($productDemand) > 3)
+        @if(count($productDemand) > $demandTopCount)
           <button type="button" class="demand-toggle" id="demandToggle" data-total="{{ count($productDemand) }}" aria-expanded="false">
             <span>Show all {{ count($productDemand) }} products</span>
             <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -341,46 +503,10 @@
       @endif
     </div>
   </div>
-
-  <div class="panel">
-    <div class="panel-header">
-      <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">Latest Quotations</h2>
-      <p style="font-size: 13px; color: #879a8c; margin: 3px 0 0 0;">The newest quotations with your products</p>
-    </div>
-    <div class="panel-body-flush">
-      @if($totalQuotations > 0)
-        @foreach($recentActivity as $q)
-          <div class="quote-row" style="padding: 14px 20px; {{ !$loop->last ? 'border-bottom: 1px solid #f5f7f6;' : '' }} display: flex; align-items: center; gap: 12px;">
-            <div class="farmer-avatar">
-              @php
-                $name = $q->farmer ? $q->farmer->name : 'Unknown';
-                $words = explode(' ', trim($name));
-                echo count($words) >= 2 ? mb_substr($words[0], 0, 1) . mb_substr(end($words), 0, 1) : mb_substr($name, 0, 2);
-              @endphp
-            </div>
-            <div style="flex: 1; min-width: 0;">
-              <div style="font-weight: 700; color: #1a2b1e; font-size: 14px;">{{ $q->farmer?->name ?? 'Unknown Farmer' }}</div>
-              <div style="font-size: 12px; color: #879a8c; text-transform: capitalize;">{{ $q->crop_type }} — {{ $q->land_area }} ha — {{ $q->season }} season</div>
-            </div>
-            <div class="q-amount" style="text-align: right;">
-              <div style="font-weight: 700; color: #143d23; font-size: 14px;">₱{{ number_format($q->estimated_total_cost, 0) }}</div>
-              <div style="font-size: 11px; color: #b0b8b3;">estimated cost · {{ $q->created_at->diffForHumans() }}</div>
-            </div>
-          </div>
-        @endforeach
-      @else
-        <div style="text-align: center; padding: 48px 20px;">
-          <div class="empty-icon">
-            <svg viewBox="0 0 24 24" width="28" height="28" stroke-width="1.5" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </div>
-          <p style="font-size: 15px; font-weight: 600; color: #6b7c6e; margin: 0 0 4px 0;">No Quotations Yet</p>
-          <p style="font-size: 13px; color: #879a8c; margin: 0;">When a farmer creates a quotation using your products, it will show up here.</p>
-        </div>
-      @endif
-    </div>
-  </div>
+</div>
 </div>
 
+<div class="tab-panel" id="panelQuotes" role="tabpanel" aria-labelledby="tabQuotes" hidden>
 <x-table-toolbar
     uid="store-quotes"
     work-table="storeQuotesTable"
@@ -411,7 +537,7 @@
   </div>
   <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
     <div class="app-scroll">
-      <table id="storeQuotesTable" class="data-table">
+      <table id="storeQuotesTable" class="data-table quotations-table">
       <thead>
         <tr>
           <th>Quotation No.</th>
@@ -491,6 +617,7 @@
     </div>
   </div>
 </div>
+</div>
 
 <div class="ai-floating" id="aiFloatingLoading" hidden>
   <span class="ai-spin"></span>
@@ -501,7 +628,7 @@
   <div class="ai-modal-head">
     <div>
       <h3 id="aiModalTitle">Smart Store Summary</h3>
-      <p>What farmers are asking for, in plain words</p>
+      <p>A short read on what farmers are quoting for</p>
     </div>
     <button type="button" class="ai-modal-close" id="aiModalClose" aria-label="Close summary" title="Close">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -585,22 +712,85 @@
   }
   var lastAiOverview = '';
   function openAiChat() {
-    try { sessionStorage.setItem('aiSeedOverview', lastAiOverview || ''); } catch (e) {}
+    try {
+      // The placeholder for the product cards is a page concern, not part
+      // of the report — it must never reach the chat as text.
+      var seed = String(lastAiOverview || '').replace(/\[\[PRODUCT_CARDS\]\]/g, '').replace(/\n{3,}/g, '\n\n');
+      sessionStorage.setItem('aiSeedOverview', seed);
+    } catch (e) {}
     window.location.href = '{{ route('store.ai-chat.index') }}';
+  }
+
+  // One card per quoted product, drawn straight from the metrics so the
+  // numbers are the store's own and not the model's paraphrase.
+  function buildProductCards(metrics) {
+    if (!metrics) return '';
+    var products = metrics.top_products || [];
+    var crops = metrics.top_crops || [];
+    if (!products.length && !crops.length) return '';
+
+    var html = '<h4>Your Most Quoted Products</h4>';
+
+    if (products.length) {
+      html += '<div class="ai-product-cards">';
+      products.forEach(function (p) {
+        var count = Number(p.count) || 0;
+        var qty = Number(p.qty) || 0;
+        var value = Number(p.value) || 0;
+        html += '<div class="ai-product-card">' +
+          '<div class="ai-product-name">' + escapeAiHtml(String(p.name || 'Unnamed product')) + '</div>' +
+          '<div class="ai-product-meta">' +
+            '<span>' + count + ' quotation' + (count === 1 ? '' : 's') + '</span>' +
+            '<span>' + qty.toLocaleString('en-PH', { maximumFractionDigits: 1 }) + ' units</span>' +
+          '</div>' +
+          '<div class="ai-product-value">₱' + value.toLocaleString('en-PH', { maximumFractionDigits: 0 }) + ' quoted</div>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+
+    if (crops.length) {
+      html += '<div class="ai-crop-row"><span class="ai-crop-label">Top crops</span>';
+      crops.slice(0, 4).forEach(function (c) {
+        var count = Number(c.count) || 0;
+        html += '<span class="ai-crop-chip"><span class="ai-crop-name">' + escapeAiHtml(String(c.crop || '')) + '</span> · ' + count + ' quotation' + (count === 1 ? '' : 's') + '</span>';
+      });
+      html += '</div>';
+    }
+
+    return html;
   }
   function openAiModal(data) {
     if (data && typeof data === 'object' && data.error) {
-      document.getElementById('aiModalBody').innerHTML = '<div class="ai-error"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>' + escapeAiHtml(data.error) + '</span></div>';
+      document.getElementById('aiModalBody').innerHTML =
+        '<div class="ai-modal-error">' +
+          '<div class="ai-modal-error-icon"><i data-lucide="circle-alert"></i></div>' +
+          '<div class="ai-modal-error-title">We couldn\'t build your summary</div>' +
+          '<div class="ai-modal-error-text">' + escapeAiHtml(data.error) + '</div>' +
+        '</div>';
+      // The icon is injected after Lucide has already swept the page.
+      if (typeof renderLucideIcons === 'function') renderLucideIcons();
       var modal = document.getElementById('aiModal');
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
+      lockPageScroll(true);
       return;
     }
     lastAiOverview = String(data.overview || '');
+    var body = renderAiMarkdown(lastAiOverview);
+    var cards = buildProductCards(data.metrics);
+    if (body.indexOf('[[PRODUCT_CARDS]]') !== -1) {
+      // The placeholder always goes: with products it becomes the cards,
+      // without them it simply leaves no gap behind.
+      body = body.replace(/<p>\s*\[\[PRODUCT_CARDS\]\]\s*<\/p>/, function () { return cards; });
+      body = body.replace(/\[\[PRODUCT_CARDS\]\]/g, function () { return cards; });
+    } else if (cards) {
+      body += cards;
+    }
     var html = '<div class="ai-narrative">' +
       '<div class="ai-narrative-head">' +
       '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#166534" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>' +
-      '<h4>Your Store Summary</h4></div><div class="ai-narrative-body">' + renderAiMarkdown(lastAiOverview) + '</div></div>' +
+      '<h4>Your Store Summary</h4></div><div class="ai-narrative-body">' + body + '</div></div>' +
       '<div class="ai-modal-foot">' +
       '<button type="button" class="ai-chat-link" onclick="openAiChat()">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
@@ -609,11 +799,25 @@
     var modal = document.getElementById('aiModal');
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
+    lockPageScroll(true);
+  }
+  // A modal that sits on top of the page must not let the page scroll
+  // underneath it — the wheel would move content the reader cannot see.
+  function lockPageScroll(lock) {
+    var body = document.body;
+    if (lock) {
+      body.dataset.scrollLocked = '1';
+      body.style.overflow = 'hidden';
+    } else if (body.dataset.scrollLocked) {
+      delete body.dataset.scrollLocked;
+      body.style.overflow = '';
+    }
   }
   function closeAiModal() {
     var modal = document.getElementById('aiModal');
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
+    lockPageScroll(false);
   }
   function showAiLoading() {
     var el = document.getElementById('aiFloatingLoading');
@@ -622,10 +826,16 @@
   function hideAiLoading() {
     document.getElementById('aiFloatingLoading').hidden = true;
   }
-  function setAiBtnState(btn, busy) {
+  function setAiBtnState(btn, busy, done) {
     var label = btn.querySelector('span');
     btn.disabled = busy;
-    label.textContent = busy ? 'Generating\u2026' : 'Regenerate Summary';
+    // The sparkle turns while the summary is being written, so the button
+    // reads as working even though it can't be pressed again.
+    btn.classList.toggle('is-loading', busy);
+    // Short labels on purpose: the button sits in a card with room for
+    // about one word and a half, so a long one spills out of it. A failed
+    // run keeps "Create Summary" — nothing was created to do again.
+    label.textContent = busy ? 'Generating\u2026' : (done ? 'Create Again' : 'Create Summary');
   }
   function generateAiOverview(btn) {
     setAiBtnState(btn, true);
@@ -643,18 +853,20 @@
     .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
     .then(function (res) {
       hideAiLoading();
-      setAiBtnState(btn, false);
       if (res.ok && res.data && res.data.overview) {
+        setAiBtnState(btn, false, true);
         openAiModal(res.data);
       } else if (res.data && res.data.error) {
+        setAiBtnState(btn, false, false);
         openAiModal({ error: res.data.error });
       } else {
+        setAiBtnState(btn, false, false);
         openAiModal({ error: 'The AI service could not generate an overview right now. Please try again.' });
       }
     })
     .catch(function () {
       hideAiLoading();
-      setAiBtnState(btn, false);
+      setAiBtnState(btn, false, false);
       openAiModal({ error: 'Connection failed. Please try again.' });
     });
   }
@@ -662,6 +874,28 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') closeAiModal();
   });
+
+  // Tabs — the demand read and the full table are one click apart.
+  (function () {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab-btn'));
+    var panels = Array.prototype.slice.call(document.querySelectorAll('.tab-panel'));
+    if (!tabs.length) return;
+
+    function show(name) {
+      tabs.forEach(function (btn) {
+        var on = btn.dataset.tab === name;
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      panels.forEach(function (panel) {
+        panel.hidden = panel.id !== 'panel' + name.charAt(0).toUpperCase() + name.slice(1);
+      });
+    }
+
+    tabs.forEach(function (btn) {
+      btn.addEventListener('click', function () { show(btn.dataset.tab); });
+    });
+  })();
 
   // Collapsible demand list — expand/collapse the items past the top 3.
   // The hidden set is captured once, so the same nodes toggle back and forth.
@@ -671,6 +905,9 @@
     var total = parseInt(toggle.getAttribute('data-total'), 10) || 0;
     var hidden = document.querySelectorAll('[data-demand-item].is-collapsed');
     var label = toggle.querySelector('span');
+    var sub = document.getElementById('demandPanelSub');
+    var topText = 'How often each product appears in quotations — top ' + {{ $demandTopCount }} + ' shown first';
+    var allText = 'How often each product appears in quotations — all ' + total + ' products shown';
 
     toggle.addEventListener('click', function () {
       var expanded = toggle.getAttribute('aria-expanded') === 'true';
@@ -678,6 +915,7 @@
       toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
       toggle.classList.toggle('is-open', !expanded);
       label.textContent = expanded ? 'Show all ' + total + ' products' : 'Show fewer';
+      if (sub) sub.textContent = expanded ? topText : allText;
     });
   })();
 </script>

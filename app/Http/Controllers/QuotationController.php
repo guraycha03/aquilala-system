@@ -21,6 +21,13 @@ use Illuminate\Support\Str;
 
 class QuotationController extends Controller
 {
+    /**
+     * Placeholder that marks where the page should render the product
+     * cards. The report arrives as markdown; the products are drawn from
+     * the metrics instead, so each one gets its own card.
+     */
+    private const PRODUCT_CARDS_TOKEN = '[[PRODUCT_CARDS]]';
+
     // ────────────────────────────────────────────────────────────────
     //  FARMER — Generate Cost Quotation (auto-computed instantly)
     // ────────────────────────────────────────────────────────────────
@@ -715,7 +722,7 @@ PROMPT;
         // Full dataset for metrics and recent activity
         $allQuotations = Quotation::involvingStore($storeUserId)
             ->with(['farmer', 'items.product'])
-            ->orderByRaw("FIELD(status, 'computed', 'viewed', 'expired')")
+            ->orderedByStatusPriority()
             ->latest()
             ->get();
 
@@ -731,9 +738,6 @@ PROMPT;
         $recentQuotations = $allQuotations->where('created_at', '>=', now()->subDays(7))->count();
         $priorQuotations = $allQuotations->filter(fn ($q) => $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
         )->count();
-        $weekTrend = $priorQuotations > 0
-            ? (int) round(($recentQuotations - $priorQuotations) / $priorQuotations * 100)
-            : ($recentQuotations > 0 ? 100 : 0);
 
         $ownDemandValue = $storeItems->sum('subtotal');
         $demandProductCount = $storeItems->pluck('product_id')->unique()->count();
@@ -750,28 +754,17 @@ PROMPT;
             ->take(10)
             ->toArray();
 
-        // Recent farmer activity (top 8)
-        $recentActivity = $allQuotations->take(8);
-
-        // Full dataset for the main table
-        $quotations = Quotation::involvingStore($storeUserId)
-            ->with(['farmer', 'items.product'])
-            ->orderByRaw("FIELD(status, 'computed', 'viewed', 'expired')")
-            ->latest()
-            ->get();
-
-        return view('store.quotations.index', compact(
-            'quotations',
-            'recentActivity',
-            'totalQuotations',
-            'uniqueFarmers',
-            'recentQuotations',
-            'priorQuotations',
-            'weekTrend',
-            'ownDemandValue',
-            'demandProductCount',
-            'productDemand'
-        ));
+        return view('store.quotations.index', [
+            // The quotations tab reuses the dataset the metrics were read
+            // from — the same rows, no second query.
+            'quotations' => $allQuotations,
+            'totalQuotations' => $totalQuotations,
+            'uniqueFarmers' => $uniqueFarmers,
+            'recentQuotations' => $recentQuotations,
+            'priorQuotations' => $priorQuotations,
+            'demandProductCount' => $demandProductCount,
+            'productDemand' => $productDemand,
+        ]);
     }
 
     /**
@@ -865,7 +858,7 @@ PROMPT;
         // Deterministic report first: the store always gets a real report.
         // No key, dead network, or rejected call all land here instead of
         // an error the page would have to explain away.
-        $fallback = $this->buildStoreSmartFallback($context);
+        $fallback = $this->shapeStoreOverview($this->buildStoreSmartFallback($context));
 
         $apiKey = config('services.groq.key');
         if (! $apiKey) {
@@ -881,14 +874,11 @@ PROMPT;
 PLAIN LANGUAGE: the reader is an ordinary store owner, not a business analyst. Use short, everyday words. Never use jargon such as "demand signals", "telemetry", "intelligence", "momentum" or "week-over-week" - say "farmer quotations", "this week", "compared with last week" instead. Farmers CREATE quotations on their own; never imply the farmer asked the store for anything or that the store must respond.
 
 STRUCTURE YOUR RESPONSE WITH THESE SECTIONS (use markdown headings exactly as shown):
-### In One Sentence
-ONE punchy sentence that sums up what farmers are quoting for.
-
 ### What Farmers Quote
 4-6 short bullet points (- ) covering: how many quotations were created and by how many farmers, how this week compares with last week, the total peso value of your products in these quotations, and one practical read.
 
 ### Your Most Quoted Products
-Short bullets on your top 3-6 products (quote quantities and PHP peso values) and top crops (quote land area), plus 1 sentence of context.
+ONE short sentence of context about your most quoted products. Do NOT list the products or repeat their numbers - the page shows every product as its own card, so a list would say twice what the reader can already see.
 
 ### Worth Stocking Up
 Recommend 2-4 specific products this store should stock or restock based on the quotations. Use a small markdown table: Product | How Often Quoted | Suggested Action. Add 2 short bullet takeaways if useful.
@@ -931,7 +921,7 @@ FORMATTING RULES:
             }
 
             return response()->json([
-                'overview' => $overview,
+                'overview' => $this->shapeStoreOverview($overview),
                 'source' => 'ai',
                 'metrics' => $context,
             ]);
@@ -942,6 +932,66 @@ FORMATTING RULES:
                 'metrics' => $context,
             ]);
         }
+    }
+
+    /**
+     * Shape the report for the page it lands on.
+     *
+     * Two rules, both about how the report reads rather than what it says:
+     *   1. The "In One Sentence" opener is dropped — the modal header
+     *      already says what the card is, so the line only repeated it.
+     *   2. The products section keeps its heading and a line of context,
+     *      but the model's product list is replaced by a placeholder:
+     *      the page renders every product as its own card, straight from
+     *      the metrics, so a list would only say it twice — and less
+     *      accurately.
+     */
+    private function shapeStoreOverview(string $overview): string
+    {
+        $sections = preg_split('/(?m)^(?=#{1,4}\s)/', $overview);
+        $shaped = [];
+
+        foreach ($sections as $section) {
+            $section = trim($section);
+            if ($section === '') {
+                continue;
+            }
+
+            if (preg_match('/^#{1,4}\s*In One Sentence\b/i', $section)) {
+                continue;
+            }
+
+            if (preg_match('/^#{1,4}\s*Your Most Quoted Products\b/i', $section)) {
+                $lines = preg_split('/\R/', $section);
+                // The heading goes too: the page draws its own above the
+                // cards, and two of them would read as a duplicate.
+                array_shift($lines);
+                $context = [];
+
+                foreach ($lines as $line) {
+                    $trimmed = trim($line);
+                    if ($trimmed === '' || $trimmed === self::PRODUCT_CARDS_TOKEN) {
+                        continue;
+                    }
+                    // A bullet or a table row is the model listing products
+                    // in sentences — the cards do that better.
+                    if (preg_match('/^([-*+]|\d+[.)])\s+/', $trimmed) || str_starts_with($trimmed, '|')) {
+                        continue;
+                    }
+                    $context[] = $trimmed;
+                }
+
+                $piece = $context ? implode("\n", $context) : '';
+                $piece = trim($piece . "\n" . self::PRODUCT_CARDS_TOKEN);
+                $shaped[] = $piece;
+
+                continue;
+            }
+
+            $shaped[] = $section;
+        }
+
+        return implode("\n\n", $shaped);
     }
 
     /**
@@ -959,15 +1009,11 @@ FORMATTING RULES:
         $quotedValue = (float) $context['signals_total_value'];
         $ownValue = (float) $context['own_products_value'];
         $topProducts = collect($context['top_products']);
-        $topCrops = collect($context['top_crops']);
 
         if ($signals === 0) {
-            return '### In One Sentence'."\n"
-                .'No farmer quotations include your products yet — this report fills in as farmers create quotations with your items.'."\n\n"
-                .'### What Farmers Quote'."\n"
+            return '### What Farmers Quote'."\n"
                 .'- **0** quotations from **0** farmers so far, with nothing to compare against last week yet.'."\n\n"
-                .'### Your Most Quoted Products'."\n"
-                .'- Nothing quoted yet — your most quoted products appear here once quotations arrive.'."\n\n"
+                .self::PRODUCT_CARDS_TOKEN."\n\n"
                 .'### Worth Stocking Up'."\n"
                 .'- Share your store with association farmers; their quotations become your guide to what to keep in stock.'."\n\n"
                 .'### Next Step'."\n"
@@ -986,27 +1032,13 @@ FORMATTING RULES:
             $trend = 'quiet this week';
         }
 
-        $lines = '### In One Sentence'."\n"
-            .'**'.$signals.'** quotations from **'.$farmers.'** farmer(s), worth **₱'.number_format($quotedValue, 2).'** in total.'."\n\n"
-            .'### What Farmers Quote'."\n"
+        $lines = '### What Farmers Quote'."\n"
             .'- This week brought **'.$thisWeek.'** new quotations vs **'.$lastWeek.'** last week — '.$trend.'.'."\n"
-            .'- Farmers quoted **₱'.number_format($quotedValue, 2).'** overall; **₱'.number_format($ownValue, 2).'** of that is your own products.'."\n";
+            .'- Farmers quoted **₱'.number_format($quotedValue, 2).'** overall; **₱'.number_format($ownValue, 2).'** of that is your own products.'."\n\n";
 
-        if ($topProducts->isNotEmpty()) {
-            $lines .= '- Most quoted right now: **'.$topProducts->first()['name'].'** ('.$topProducts->first()['count'].' quotation(s)).'."\n";
-        }
-
-        $lines .= "\n".'### Your Most Quoted Products'."\n";
-        if ($topProducts->isEmpty() && $topCrops->isEmpty()) {
-            $lines .= '- Nothing quoted yet.'."\n";
-        } else {
-            foreach ($topProducts->take(5) as $product) {
-                $lines .= '- **'.$product['name'].'** — '.$product['count'].' quotation(s), ₱'.number_format((float) $product['value'], 2).' worth.'."\n";
-            }
-            foreach ($topCrops->take(3) as $crop) {
-                $lines .= '- **'.$crop['crop'].'** — '.$crop['count'].' quotation(s) covering '.round((float) $crop['area'], 2).' ha.'."\n";
-            }
-        }
+        // The products are cards on the page, not bullets in a sentence.
+        $lines .= '### Your Most Quoted Products'."\n"
+            .self::PRODUCT_CARDS_TOKEN."\n\n";
 
         $lines .= "\n".'### Worth Stocking Up'."\n";
         if ($topProducts->isEmpty()) {

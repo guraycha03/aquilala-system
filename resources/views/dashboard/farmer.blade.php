@@ -110,16 +110,6 @@
         :title="$greeting . ', ' . $farmerName"
         :subtitle="$seasonName . ($seasonMonths ? ' &middot; ' . $seasonMonths : '')"
     >
-        <x-slot:panelIcon>
-            <svg viewBox="0 0 24 24"
-                 fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" stroke-linejoin="round"
-                 aria-hidden="true">
-                <path d="M12 20v-8"/>
-                <path d="M12 12C12 7 8 4 3 4c0 6 3 10 9 10"/>
-                <path d="M12 10c0-5 4-8 9-8 0 6-3 10-9 10"/>
-            </svg>
-        </x-slot:panelIcon>
 
         <x-slot:panelHeading>Ready for your next farming activity?</x-slot:panelHeading>
         <x-slot:panelText>Estimate your input costs or explore supplies from local stores.</x-slot:panelText>
