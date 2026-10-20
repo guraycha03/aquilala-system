@@ -22,8 +22,8 @@
     background: #ffffff; transition: border-color 0.2s, box-shadow 0.2s;
   }
   .input-field:focus {
-    outline: none; border-color: #143d23;
-    box-shadow: 0 0 0 3px rgba(20, 61, 35, 0.1);
+    outline: none; border-color: #648268;
+    box-shadow: 0 0 0 3px rgba(100, 130, 104, 0.12);
   }
   select.input-field {
     appearance: none;

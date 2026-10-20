@@ -118,12 +118,12 @@
     width: 100%; padding: 10px 12px 10px 36px; border: 1px solid #cbd5e1; border-radius: 9px;
     font-size: 14px; color: #1e293b; outline: none; transition: all .2s;
   }
-  .search-box input:focus { border-color: #14532d; box-shadow: 0 0 0 3px rgba(20,83,45,.1); }
+  .search-box input:focus { border-color: #648268; box-shadow: 0 0 0 3px rgba(100,130,104,.12); }
   .filter-select {
     padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 9px; background: #fff;
     font-size: 14px; color: #334155; font-weight: 500; outline: none; cursor: pointer;
   }
-  .filter-select:focus { border-color: #14532d; }
+  .filter-select:focus { border-color: #648268; }
 
   /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
 
@@ -188,7 +188,7 @@
     width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 9px;
     font-size: 14px; color: #1e293b; outline: none; transition: all .2s;
   }
-  .field input:focus { border-color: #14532d; box-shadow: 0 0 0 3px rgba(20,83,45,.1); }
+  .field input:focus { border-color: #648268; box-shadow: 0 0 0 3px rgba(100,130,104,.12); }
   .field .hint { font-size: 11px; color: #94a3b8; margin-top: 5px; }
   .modal-foot { padding: 16px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
   .btn { padding: 10px 18px; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all .2s; }
