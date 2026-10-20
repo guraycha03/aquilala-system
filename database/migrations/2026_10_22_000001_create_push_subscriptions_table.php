@@ -18,7 +18,10 @@ return new class extends Migration
         Schema::create('push_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->text('endpoint');
+            // VARCHAR, not TEXT: MySQL refuses a unique index on a TEXT
+            // column without a key length, and push endpoints (FCM/Mozilla
+            // URLs) sit well inside 500 characters.
+            $table->string('endpoint', 500);
             $table->string('p256dh', 128);
             $table->string('auth', 64);
             $table->string('user_agent')->nullable();
