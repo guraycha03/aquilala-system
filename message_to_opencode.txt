@@ -43,10 +43,13 @@ DONE — Form / text field borders:
 Issue to fix later on -
 
 The images on products doesnt show or load deployed webapp, its a broken image. But images shows fine on local testing (127.0.0.1:8000)
-  -> Most likely cause: the server is missing the storage symlink. Run
-     "php artisan storage:link" on the deployed app (the public/storage
-     link is gitignored, so it never travels with a deploy). Also confirm
-     .env APP_URL there matches the real domain.
+  -> FIXED (Oct 20): the deployed app was missing the public/storage
+     symlink AND had no image files on the server. Created the symlink
+     (php artisan storage:link), uploaded the 68 image files from local
+     storage/app/public/products to the server, and fixed ownership to
+     www-data. Verified: image URLs now return 200 on aquilala.me.
+     NOTE for future uploads made ON the live site: they now save
+     correctly (storage is writable by the web server again).
 
 do not show or put the entire history or activity log on the notification page, notification page is for notifing users of upcoming events, receiving data or action from other users directly to them.
   -> Done, see STATUS above.
@@ -56,9 +59,9 @@ do not show or put the entire history or activity log on the notification page, 
 extra notes -
 
 the forms/ text fields still shows a thin dark border, i dont want this dark borders, so im asking you to hide this if ever its a browser default style. if its in the style in code, change the active borders in text feilds to softer matte color, not very dark
-  -> Done, see STATUS above. If a dark border still shows on the deployed
-     site, redeploy first — the fixes are in the code but the live app
-     may still be serving the old version.
+  -> Done, see STATUS above. Deployed to aquilala.me on Oct 20 — if a
+     dark border still appears afterwards, hard-refresh the page (Ctrl+F5)
+     or clear the browser cache.
 
 
 
