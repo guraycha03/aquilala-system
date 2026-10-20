@@ -76,6 +76,13 @@ class InitialAdminSetupTest extends TestCase
                 && str_contains($mail->envelope()->subject, $mail->otp);
         });
 
+        // The rendered body must actually build (shared OTP block component)
+        // and open straight on the verification page.
+        $verificationMail = Mail::sent(AdminEmailVerificationMail::class)->last();
+        $verificationHtml = $verificationMail->render();
+        $this->assertStringContainsString('/verify-email', $verificationHtml);
+        $this->assertStringContainsString($verificationMail->otp, $verificationHtml);
+
         $this->assertDatabaseHas('activity_logs', [
             'user_id' => $admin->id,
             'type' => ActivityLog::TYPE_ADMIN_CREATED,

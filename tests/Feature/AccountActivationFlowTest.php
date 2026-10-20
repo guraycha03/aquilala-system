@@ -100,6 +100,13 @@ class AccountActivationFlowTest extends TestCase
                 && preg_match('/^\d{6}$/', $mail->otp) === 1
                 && str_contains($mail->envelope()->subject, $mail->otp);
         });
+
+        // The rendered body must actually build (shared OTP block component)
+        // and open straight on the activation page.
+        $activationMail = Mail::sent(ActivationOtpMail::class)->last();
+        $activationHtml = $activationMail->render();
+        $this->assertStringContainsString('/activate', $activationHtml);
+        $this->assertStringContainsString($activationMail->otp, $activationHtml);
     }
 
     #[Test]
