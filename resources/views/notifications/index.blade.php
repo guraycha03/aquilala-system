@@ -47,6 +47,19 @@
   .nf-icon svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .nf-mid { flex: 1; min-width: 0; }
   .nf-title { font-size: 14px; font-weight: 600; color: #0f172a; line-height: 1.45; }
+
+  /* Live status chip: where the notified event sits right now. The state is
+     recomputed on every render, so a finished event reads "Done" instead of
+     keeping the "Upcoming" wording it was born with. */
+  .nf-state {
+    display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px;
+    border: 1px solid transparent; font-size: 10.5px; font-weight: 700; line-height: 1.5;
+    letter-spacing: 0.02em; margin-right: 8px; vertical-align: middle; white-space: nowrap;
+  }
+  .nf-state--upcoming { background: #f0f9ff; color: #0369a1; border-color: #e0f2fe; }
+  .nf-state--ongoing  { background: #f0fdf4; color: #15803d; border-color: #dcfce7; }
+  .nf-state--done     { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+
   .nf-meta { font-size: 12px; color: #94a3b8; margin-top: 5px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-weight: 500; }
   .nf-meta svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .nf-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; flex-shrink: 0; }
@@ -121,7 +134,12 @@
                 {!! $notification->icon ?? '' !!}
               </div>
               <div class="nf-mid">
-                <div class="nf-title">{{ $notification->description }}</div>
+                <div class="nf-title">
+                  @if($notification->event_state)
+                    <span class="nf-state nf-state--{{ $notification->event_state }}">{{ $notification->event_state_label }}</span>
+                  @endif
+                  {{ $notification->display_description }}
+                </div>
                 <div class="nf-meta">
                   <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   <span>{{ optional($notification->created_at)->diffForHumans() }}</span>

@@ -401,6 +401,85 @@ class RoleNotificationsTest extends TestCase
         $this->assertSame(0, ActivityLog::forUser($this->store->id)->where('type', ActivityLog::TYPE_EVENT_CREATED)->count());
     }
 
+    public function test_event_notices_reflect_the_events_live_status_not_stale_upcoming(): void
+    {
+        // Three events covering every state: finished yesterday, an all-day
+        // event happening today, and one still days ahead. The logger bakes
+        // "Upcoming event" into the row at creation time — the pages must
+        // correct that wording to the event's status when they render, so a
+        // notice from last week can never keep calling its event upcoming.
+        $past = \App\Models\AssociationEvent::create([
+            'title'      => 'Seed Distribution Wrap-up',
+            'event_type' => 'free_input',
+            'event_date' => now()->subDay()->toDateString(),
+            'location'   => 'Association Warehouse',
+            'created_by' => $this->admin->id,
+        ]);
+        $today = \App\Models\AssociationEvent::create([
+            'title'      => 'Water Scheduling Today',
+            'event_type' => 'water_schedule',
+            'event_date' => now()->toDateString(),
+            'location'   => 'Canal Gate 2',
+            'created_by' => $this->admin->id,
+        ]);
+        $future = \App\Models\AssociationEvent::create([
+            'title'      => 'General Assembly Planning',
+            'event_type' => 'meeting',
+            'event_date' => now()->addDays(3)->toDateString(),
+            'location'   => 'Association Office',
+            'created_by' => $this->admin->id,
+        ]);
+
+        $this->actingAs($this->admin);
+        ActivityLogger::eventCreated($past);
+        ActivityLogger::eventCreated($today);
+        ActivityLogger::eventCreated($future);
+
+        $rowFor = fn ($event) => ActivityLog::forUser($this->farmer->id)
+            ->ofType(ActivityLog::TYPE_EVENT_CREATED)
+            ->where('subject_id', $event->id)
+            ->sole();
+
+        $pastRow   = $rowFor($past);
+        $todayRow  = $rowFor($today);
+        $futureRow = $rowFor($future);
+
+        // Each row knows the event's state without ever storing it.
+        $this->assertSame('done', $pastRow->event_state);
+        $this->assertSame('Done', $pastRow->event_state_label);
+        $this->assertSame('ongoing', $todayRow->event_state);
+        $this->assertSame('Happening now', $todayRow->event_state_label);
+        $this->assertSame('upcoming', $futureRow->event_state);
+        $this->assertSame('Upcoming', $futureRow->event_state_label);
+
+        // The stored row keeps its historical wording (the log records what
+        // was true at creation); the rendered text never goes stale.
+        $this->assertStringStartsWith('Upcoming event', $pastRow->description);
+        $this->assertStringNotContainsString('Upcoming event', $pastRow->display_description);
+        $this->assertStringStartsWith('Past event:', $pastRow->display_description);
+        $this->assertStringStartsWith('Happening now:', $todayRow->display_description);
+        $this->assertSame($futureRow->description, $futureRow->display_description);
+
+        // The notification page shows a live status chip on every notice.
+        $this->actingAs($this->farmer)
+            ->get(route('farmer.notifications.index'))
+            ->assertOk()
+            ->assertSee('nf-state--done', false)
+            ->assertSee('nf-state--ongoing', false)
+            ->assertSee('nf-state--upcoming', false);
+
+        // The farmer's activity history carries the same corrected text.
+        $this->actingAs($this->farmer)
+            ->get(route('farmer.activity.index'))
+            ->assertOk()
+            ->assertSee('Past event:', false);
+
+        // A deleted event leaves its notice behind — the row must still
+        // recognise the state from the metadata it stored itself.
+        $past->delete();
+        $this->assertSame('done', ActivityLog::find($pastRow->id)->event_state);
+    }
+
     public function test_editing_an_event_updates_the_farmers_in_app_rows(): void
     {
         $event = \App\Models\AssociationEvent::create([

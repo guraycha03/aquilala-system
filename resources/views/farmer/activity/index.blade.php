@@ -530,7 +530,7 @@
         </div>
         <div style="flex: 1; min-width: 0;">
           <div style="font-size: 14px; color: #0f172a; line-height: 1.4; font-weight: 500;">
-            {{ $activity->description ?? '' }}
+            {{ $activity->display_description ?? '' }}
           </div>
           @if(isset($activity->created_at))
             <div style="font-size: 12px; color: #64748b; margin-top: 4px; display: flex; align-items: center; gap: 6px; font-weight: 500;">

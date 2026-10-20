@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class ActivityLog extends Model
 {
@@ -239,6 +240,73 @@ class ActivityLog extends Model
     }
 
     // ── Accessors ─────────────────────────────────────────────────
+
+    /**
+     * Where the association event this row announces sits right now:
+     * 'upcoming', 'ongoing' or 'done'. Null for rows that do not announce
+     * a calendar event. Read at render time (never stored) so a notice
+     * written when the event was still ahead stops claiming that once the
+     * date passes. When the event itself has been deleted the state is
+     * rebuilt from the row's own metadata instead.
+     */
+    public function getEventStateAttribute(): ?string
+    {
+        if (! str_starts_with((string) $this->type, 'event.')) {
+            return null;
+        }
+
+        if ($this->subject_type === AssociationEvent::class && $event = $this->subject) {
+            return $event->state();
+        }
+
+        // Event deleted: fall back to what this row stored at creation.
+        $date = $this->metadata['event_date'] ?? null;
+
+        if (! $date) {
+            return null;
+        }
+
+        $start = $this->metadata['start_time'] ?? null;
+        $end   = $this->metadata['end_time'] ?? null;
+
+        return AssociationEvent::computeState(
+            Carbon::parse($date),
+            $start ? Carbon::parse($start) : null,
+            $end ? Carbon::parse($end) : null,
+        );
+    }
+
+    /** "Upcoming" / "Happening now" / "Done" for the status chip. */
+    public function getEventStateLabelAttribute(): ?string
+    {
+        $state = $this->event_state;
+
+        return $state !== null ? (AssociationEvent::STATE_LABELS[$state] ?? null) : null;
+    }
+
+    /**
+     * The row's text as it should read TODAY: the "Upcoming event" prefix
+     * baked in at creation time is corrected to the event's live status
+     * ("Past event" / "Happening now"), so the wording can never go stale
+     * as the date passes. Rows without that prefix — and rows for non-
+     * event notices — come through untouched.
+     */
+    public function getDisplayDescriptionAttribute(): string
+    {
+        $prefix = match ($this->event_state) {
+            AssociationEvent::STATE_DONE     => 'Past event',
+            AssociationEvent::STATE_ONGOING  => 'Happening now',
+            default                          => null,
+        };
+
+        if ($prefix === null) {
+            return (string) $this->description;
+        }
+
+        return preg_replace('/^Upcoming event:/', $prefix . ':', (string) $this->description, 1)
+            ?: (string) $this->description;
+    }
+
     public function getIconAttribute(): string
     {
         return match (true) {

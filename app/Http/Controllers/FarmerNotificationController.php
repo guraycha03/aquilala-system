@@ -20,7 +20,7 @@ class FarmerNotificationController extends Controller
     {
         $notifications = ActivityLog::forUser(Auth::id())
             ->farmerNotifications()
-            ->with(['user', 'actor'])
+            ->with(['user', 'actor', 'subject'])
             ->latest()
             ->paginate(12)
             ->withQueryString();
@@ -35,7 +35,7 @@ class FarmerNotificationController extends Controller
             'unreadCount'   => $unreadCount,
             'routePrefix'   => 'farmer.notifications',
             'subtitle'      => 'Important notices — planting decisions and association events.',
-            'emptyText'     => "There's nothing here right now. Decisions on your planting requests and upcoming association events will appear here.",
+            'emptyText'     => "There's nothing here right now. Decisions on your planting requests and association events will appear here.",
         ]);
     }
 

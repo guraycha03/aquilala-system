@@ -520,6 +520,7 @@ class ActivityLogger
             'event_type' => $event->event_type,
             'event_date' => $event->event_date->toDateString(),
             'start_time' => $event->start_time?->format('H:i:s'),
+            'end_time'   => $event->end_time?->format('H:i:s'),
             'location'   => $event->location,
         ];
 

@@ -661,7 +661,9 @@ PROMPT;
             $query->where('type', $type);
         }
 
-        $activities = $query->latest()->paginate(10)->withQueryString();
+        // subject: the event-status accessors resolve each row's subject
+        // (and rebuild state for deleted events), so load them in one query.
+        $activities = $query->with('subject')->latest()->paginate(10)->withQueryString();
 
         // ── Aggregate stats from the farmer's FULL (unfiltered) history ──
         // So the summary cards reflect their real totals regardless of active filters.
