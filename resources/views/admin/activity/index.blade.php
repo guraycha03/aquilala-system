@@ -100,7 +100,7 @@
     @foreach($activities as $activity)
       <div class="activity-item">
         <div class="activity-icon" style="background: {{ $activity->bg }}; color: {{ $activity->color }};">
-          {!! $activity->icon !!}
+          <i data-lucide="{{ $activity->icon ?? 'history' }}" width="16" height="16" stroke-width="2" aria-hidden="true"></i>
         </div>
         <div style="flex: 1; min-width: 0;">
           <div class="activity-desc">

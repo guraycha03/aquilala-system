@@ -506,8 +506,8 @@
   @if(isset($activities) && $activities->count() > 0)
     @foreach($activities as $activity)
       <div class="activity-item">
-        <div class="activity-icon" style="background: {{ $activity->bg ?? '#f8fafc' }}; color: {{ $activity->color ?? '#475569' }};">
-          {!! $activity->icon ?? '' !!}
+        <div class="activity-icon" style="background: {{ $activity->bg ?? '#EDF1E9' }}; color: {{ $activity->color ?? '#4A7A54' }};">
+          <i data-lucide="{{ $activity->icon ?? 'history' }}" width="16" height="16" stroke-width="2" aria-hidden="true"></i>
         </div>
         <div style="flex: 1; min-width: 0;">
           <div style="font-size: 14px; color: #0f172a; line-height: 1.4; font-weight: 500;">

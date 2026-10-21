@@ -82,8 +82,13 @@ class StoreOwnerActivityController extends Controller
         // ── Build the filtered query ──
         // Sign-in/sign-out rows belong to the admin audit trail; the store
         // history is about work done on the store (products, formulas, …).
+        //
+        // A deleted cost estimate is not in it either. The farmer's
+        // withdrawal is their own business, and the store has nothing to do
+        // with it once the estimate is gone - so the store never sees it.
         $query = ActivityLog::where('user_id', $userId)
-            ->where('type', 'not like', 'auth.%');
+            ->where('type', 'not like', 'auth.%')
+            ->where('type', '!=', ActivityLog::TYPE_QUOTATION_DELETED);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -111,6 +116,7 @@ class StoreOwnerActivityController extends Controller
 
         $uniqueTypes = ActivityLog::where('user_id', $userId)
             ->where('type', 'not like', 'auth.%')
+            ->where('type', '!=', ActivityLog::TYPE_QUOTATION_DELETED)
             ->select('type')
             ->distinct()
             ->pluck('type')

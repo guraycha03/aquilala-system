@@ -337,68 +337,85 @@ class ActivityLog extends Model
             ?: (string) $this->description;
     }
 
+    /**
+     * The Lucide icon that stands for this activity.
+     *
+     * One icon per type, so the reader can tell a created product from an
+     * updated one without reading the sentence. The name is handed to
+     * Lucide by the page, which turns it into the official glyph.
+     */
     public function getIconAttribute(): string
     {
-        return match (true) {
-            str_starts_with($this->type, 'quotation') => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-            str_starts_with($this->type, 'crop')     => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-            str_starts_with($this->type, 'product')  => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
-            str_starts_with($this->type, 'formula')  => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="m9 17 6-10"/><path d="m5 11 4 4"/><path d="m9 11 4 4"/></svg>',
-            str_starts_with($this->type, 'review')   => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
-            str_starts_with($this->type, 'event')    => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-            str_starts_with($this->type, 'land')      => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
-            str_starts_with($this->type, 'auth')      => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>',
-            str_starts_with($this->type, 'user')
-                || str_starts_with($this->type, 'admin')
-                || str_starts_with($this->type, 'account')
-                || str_starts_with($this->type, 'email') => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-            default => '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/></svg>',
+        return match ($this->type) {
+            self::TYPE_QUOTATION_CREATED  => 'file-plus',
+            self::TYPE_QUOTATION_VIEWED   => 'file-text',
+            self::TYPE_QUOTATION_DELETED  => 'file-x',
+
+            self::TYPE_CROP_PLANTED       => 'sprout',
+            self::TYPE_CROP_UPDATED       => 'leaf',
+            self::TYPE_CROP_HARVESTED     => 'wheat',
+            self::TYPE_CROP_DELETED       => 'trash-2',
+            self::TYPE_CROP_CONFIRMED     => 'circle-check',
+            self::TYPE_CROP_REJECTED      => 'circle-x',
+
+            self::TYPE_LAND_UPDATED       => 'map',
+
+            self::TYPE_PRODUCT_CREATED    => 'package-plus',
+            self::TYPE_PRODUCT_UPDATED    => 'package',
+            self::TYPE_PRODUCT_DELETED    => 'package-x',
+            self::TYPE_PRODUCT_RESTORED   => 'package-check',
+            self::TYPE_PRODUCT_IMPORTED   => 'package-plus',
+
+            self::TYPE_FORMULA_CREATED    => 'calculator',
+            self::TYPE_FORMULA_UPDATED    => 'calculator',
+            self::TYPE_FORMULA_DELETED    => 'calculator',
+
+            self::TYPE_REVIEW_CREATED     => 'badge-info',
+            self::TYPE_REVIEW_APPROVED    => 'badge-check',
+            self::TYPE_REVIEW_REJECTED    => 'circle-x',
+            self::TYPE_REVIEW_DELETED     => 'trash-2',
+
+            self::TYPE_HARVEST_CREATED    => 'wheat',
+            self::TYPE_HARVEST_DELETED    => 'trash-2',
+
+            self::TYPE_WEATHER_CREATED    => 'cloud-sun',
+
+            self::TYPE_EVENT_CREATED      => 'calendar-plus',
+            self::TYPE_EVENT_UPDATED      => 'calendar',
+            self::TYPE_EVENT_DELETED      => 'calendar-x',
+
+            self::TYPE_LOGIN              => 'log-in',
+            self::TYPE_LOGOUT             => 'log-out',
+            self::TYPE_LOGIN_FAILED       => 'circle-alert',
+
+            self::TYPE_USER_INVITED       => 'user-plus',
+            self::TYPE_USER_APPROVED      => 'user-check',
+            self::TYPE_USER_REJECTED      => 'circle-x',
+            self::TYPE_USER_IMPORTED      => 'users',
+            self::TYPE_USER_ACTIVATED     => 'user-check',
+            self::TYPE_ADMIN_CREATED      => 'user',
+            self::TYPE_EMAIL_VERIFIED     => 'mail',
+            self::TYPE_ACCOUNT_PROVISIONED => 'key',
+
+            default => 'history',
         };
     }
 
+    /**
+     * One colour for every activity.
+     *
+     * The rows used to be tinted by what happened - green for a creation,
+     * red for a deletion, blue for a harvest. A wall of colours says
+     * nothing once there are twenty rows, so the whole history now speaks
+     * in one voice and the wording does the work.
+     */
     public function getColorAttribute(): string
     {
-        return match (true) {
-            str_ends_with($this->type, 'created') => '#16a34a',
-            str_ends_with($this->type, 'approved') => '#16a34a',
-            str_ends_with($this->type, 'confirmed') => '#16a34a',
-            str_ends_with($this->type, 'planted')  => '#16a34a',
-            str_ends_with($this->type, 'restored') => '#16a34a',
-            str_ends_with($this->type, 'activated') => '#16a34a',
-            str_ends_with($this->type, 'updated')  => '#d97706',
-            str_ends_with($this->type, 'imported') => '#d97706',
-            str_ends_with($this->type, 'harvested') => '#0284c7',
-            str_ends_with($this->type, 'invited')  => '#0284c7',
-            str_ends_with($this->type, 'deleted')  => '#dc2626',
-            str_ends_with($this->type, 'rejected') => '#dc2626',
-            str_ends_with($this->type, 'failed')   => '#dc2626',
-            str_ends_with($this->type, 'viewed')   => '#7c3aed',
-            str_ends_with($this->type, 'login')    => '#64748b',
-            str_ends_with($this->type, 'logout')   => '#64748b',
-            default => '#64748b',
-        };
+        return '#4A7A54';
     }
 
     public function getBgAttribute(): string
     {
-        return match (true) {
-            str_ends_with($this->type, 'created') => '#f0fdf4',
-            str_ends_with($this->type, 'approved') => '#f0fdf4',
-            str_ends_with($this->type, 'confirmed') => '#f0fdf4',
-            str_ends_with($this->type, 'planted')  => '#f0fdf4',
-            str_ends_with($this->type, 'restored') => '#f0fdf4',
-            str_ends_with($this->type, 'activated') => '#f0fdf4',
-            str_ends_with($this->type, 'updated')  => '#fffbeb',
-            str_ends_with($this->type, 'imported') => '#fffbeb',
-            str_ends_with($this->type, 'harvested') => '#f0f9ff',
-            str_ends_with($this->type, 'invited')  => '#f0f9ff',
-            str_ends_with($this->type, 'deleted')  => '#fef2f2',
-            str_ends_with($this->type, 'rejected') => '#fef2f2',
-            str_ends_with($this->type, 'failed')   => '#fef2f2',
-            str_ends_with($this->type, 'viewed')   => '#faf5ff',
-            str_ends_with($this->type, 'login')    => '#f8fafc',
-            str_ends_with($this->type, 'logout')   => '#f8fafc',
-            default => '#f8fafc',
-        };
+        return '#EDF1E9';
     }
 }
