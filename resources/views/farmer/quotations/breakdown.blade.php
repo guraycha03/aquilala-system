@@ -8,6 +8,8 @@
   $landArea  = (float) $quotation->land_area;
   $perHectare = $landArea > 0 ? round($total / $landArea, 2) : $total;
   $effStatus = $quotation->effective_status;
+  // The farmer sees two states: the estimate is live, or it has expired.
+  $pillStatus = $effStatus === 'expired' ? 'expired' : 'active';
   $daysLeft  = $quotation->valid_until ? (int) max(0, now()->diffInDays($quotation->valid_until, false)) : null;
   $discreteUnits = ['sack','sacks','bag','bags','piece','pieces','unit','units','carton','cartons','box','boxes','pack','packs','bottle','bottles','sachet','sachets','kit','kits','length','lengths','set','sets'];
 @endphp
@@ -35,6 +37,7 @@
     padding: 7px 16px; border-radius: 24px;
     font-size: 13px; font-weight: 700; letter-spacing: 0.01em;
   }
+  .status-pill.active   { background: #edf1e9; color: #648268; }
   .status-pill.computed { background: #edf1e9; color: #648268; }
   .status-pill.viewed   { background: #edf1e9; color: #648268; }
   .status-pill.expired  { background: #f5f5f5; color: #9ca3af; }
@@ -126,7 +129,7 @@
   <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
     <div>
       <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;">
-        <span class="status-pill {{ $effStatus }}"><span class="dot"></span>{{ $quotation->status_label }}</span>
+        <span class="status-pill {{ $pillStatus }}"><span class="dot"></span>{{ $quotation->status_label }}</span>
         <span style="font-size: 12px; color: #879a8c;">
           @if($quotation->valid_until)
             @if($effStatus === 'expired')

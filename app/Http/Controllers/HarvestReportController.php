@@ -44,7 +44,7 @@ class HarvestReportController extends Controller
      */
     public function farmerCreate()
     {
-        $cropTypes = Crop::orderBy('name')->pluck('name');
+        $cropTypes = Crop::where('is_category_placeholder', false)->orderBy('name')->pluck('name');
 
         $batches = FarmerCrop::with('crop')
             ->where('user_id', Auth::id())

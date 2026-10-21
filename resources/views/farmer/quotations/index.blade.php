@@ -81,6 +81,7 @@
     font-size: 12px; font-weight: 600;
     letter-spacing: 0.01em;
   }
+  .status-badge.active   { background: #edf1e9; color: #648268; }
   .status-badge.computed { background: #edf1e9; color: #648268; }
   .status-badge.viewed   { background: #edf1e9; color: #648268; }
   .status-badge.expired  { background: #f5f5f5; color: #9ca3af; }
@@ -224,10 +225,10 @@
       search-placeholder="Search by reference, crop, or season…"
       :filters="[
           ['key' => 'status', 'label' => 'All statuses', 'options' => [
-              ['computed', 'Active'],
+              ['active', 'Active'],
               ['expired', 'Expired'],
           ]],
-          ['key' => 'crop', 'label' => 'All crops', 'options' => collect($quotations->pluck('crop_type')->unique()->values())->map(fn($c) => [strtolower($c), $c])->all()],
+          ['key' => 'crop', 'label' => 'All crops', 'options' => $cropOptions],
           ['key' => 'season', 'label' => 'All seasons', 'options' => collect($quotations->pluck('season')->unique()->values())->map(fn($s) => [strtolower($s), ucfirst($s)])->all()],
       ]"
       :sorts="[
@@ -260,8 +261,14 @@
         </thead>
         <tbody>
           @foreach($quotations as $quote)
-            <tr data-search="{{ strtolower(($quote->quotation_number ?? '') . ' ' . ($quote->crop_type ?? '') . ' ' . ($quote->season ?? '') . ' ' . ($quote->effective_status ?? '')) }}"
-                data-status="{{ strtolower($quote->effective_status ?? '') }}"
+            @php
+              // Two states the farmer can act on: the estimate is still live,
+              // or it has expired. Whether a store has opened it is not one
+              // of them, and the filter agrees with the table.
+              $rowStatus = $quote->effective_status === 'expired' ? 'expired' : 'active';
+            @endphp
+            <tr data-search="{{ strtolower(($quote->quotation_number ?? '') . ' ' . ($quote->crop_type ?? '') . ' ' . ($quote->season ?? '') . ' ' . $rowStatus) }}"
+                data-status="{{ $rowStatus }}"
                 data-crop="{{ strtolower($quote->crop_type ?? '') }}"
                 data-season="{{ strtolower($quote->season ?? '') }}"
                 data-cost="{{ (float) ($quote->estimated_total_cost ?? 0) }}"
@@ -285,7 +292,7 @@
               </td>
               <td style="color: #879a8c; font-size: 13px; white-space: nowrap;">{{ $quote->created_at->format('M d, Y') }}</td>
               <td>
-                <span class="status-badge {{ $quote->effective_status }}">
+                <span class="status-badge {{ $rowStatus }}">
                   <span class="status-badge-dot"></span>
                   {{ $quote->status_label }}
                 </span>

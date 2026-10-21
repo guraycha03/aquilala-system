@@ -175,6 +175,67 @@ class CropLibraryService
     }
 
     /**
+     * Every crop the system offers, in one list.
+     *
+     * The Sorsogon library is the source of truth, plus the crop types the
+     * association has decision formulas of its own, so a crop the
+     * association works with is never missing from a dropdown. Group labels
+     * ("Vegetables", "Fruits") are not crops and are left out.
+     *
+     * Every crop picker in the application reads this, so the set is written
+     * once and nowhere else.
+     *
+     * @return array<int, string>
+     */
+    public function offeredNames(): array
+    {
+        $names = $this->names();
+
+        $formulaTypes = collect(app(CropService::class)->formulaCrops())
+            ->pluck('name')
+            ->map(fn ($name) => trim((string) $name))
+            ->filter()
+            ->unique(fn ($name) => mb_strtolower($name))
+            ->values()
+            ->all();
+
+        // The words the library knows a crop by: its name and its aliases.
+        $words = [];
+        foreach ($this->all() as $entry) {
+            $name = mb_strtolower(trim((string) ($entry['name'] ?? '')));
+            if ($name !== '') {
+                $words[] = $name;
+            }
+            foreach ((array) ($entry['aliases'] ?? []) as $alias) {
+                $alias = mb_strtolower(trim((string) $alias));
+                if ($alias !== '') {
+                    $words[] = $alias;
+                }
+            }
+        }
+
+        $extra = array_values(array_filter($formulaTypes, function (string $name) use ($words) {
+            $lower = mb_strtolower($name);
+
+            foreach ($words as $word) {
+                if ($lower === $word) {
+                    return false;
+                }
+                // "Pechay (bok Choy)" is the library's "Pechay" written the
+                // old way - the same crop, so it is not a second choice.
+                // "Sweet Corn" is not: it is a crop of its own.
+                if (preg_match('/^' . preg_quote($word, '/') . '\b(?:\s*\([^)]*\))?$/u', $lower) === 1) {
+                    return false;
+                }
+            }
+
+            return true;
+        }));
+
+        return array_values(array_merge($names, $extra));
+    }
+
+    /**
      * Variety options for a crop. The universal "Local / General variety"
      * default always comes first, so the Add Crop form can preselect it.
      * Unknown crops get only the default.

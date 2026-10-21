@@ -53,10 +53,18 @@ class QuotationController extends Controller
         $computedCount = $allQuotes->filter(fn ($q) => ! $q->is_expired && $q->status === 'computed')->count();
         $totalValue = $allQuotes->sum('estimated_total_cost');
 
+        // The crop filter offers the crops the system knows - the Sorsogon
+        // library - not just the ones that happen to be in this farmer's
+        // rows, so the picker is the same everywhere.
+        $cropOptions = collect(app(CropLibraryService::class)->offeredNames())
+            ->map(fn ($crop) => [mb_strtolower($crop), $crop])
+            ->all();
+
         // No "seen by stores" figure: a farmer should not be measured by
         // how often a store looked at their prices.
         return view('farmer.quotations.index', compact(
-            'quotations', 'totalQuotes', 'computedCount', 'totalValue'
+            'quotations', 'totalQuotes', 'computedCount', 'totalValue',
+            'cropOptions'
         ));
     }
 
@@ -413,19 +421,9 @@ PROMPT;
      */
     public function farmerCreate()
     {
-        // Crop choices come from the Sorsogon crop library; formula crop types
-        // are merged so legacy/custom crops stay selectable.
-        $predefinedCrops = app(CropLibraryService::class)->names();
-
-        $dbCrops = DecisionFormula::select('crop_type')
-            ->distinct()
-            ->pluck('crop_type')
-            ->toArray();
-
-        $allCrops = collect($predefinedCrops)
-            ->merge($dbCrops)
-            ->unique(fn ($item) => strtolower(trim($item)))
-            ->values();
+        // One list of the crops the system offers, written once in the
+        // Sorsogon crop library.
+        $allCrops = app(CropLibraryService::class)->offeredNames();
 
         return view('farmer.quotations.request', ['cropTypes' => $allCrops]);
     }

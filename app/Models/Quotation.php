@@ -70,10 +70,11 @@ class Quotation extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->effective_status) {
+            // "Viewed" is not a state a farmer needs to see: it only ever
+            // meant "a store opened this once". The estimate is either live
+            // or it has expired, and that is the whole story.
             self::STATUS_COMPUTED   => 'Active',
-            // The state, not the watcher. A farmer should not feel a store
-            // is standing over their shoulder while they price an input.
-            self::STATUS_VIEWED     => 'Viewed',
+            self::STATUS_VIEWED     => 'Active',
             self::STATUS_EXPIRED    => 'Expired',
             self::STATUS_PENDING    => 'Pending',
             self::STATUS_DISPATCHED => 'Dispatched',

@@ -40,7 +40,7 @@ class FarmerCropController extends Controller
             'estimated_cost' => $totalEstimatedCost,
         ];
 
-        $allCrops = Crop::orderBy('name')->get();
+        $allCrops = Crop::where('is_category_placeholder', false)->orderBy('name')->get();
 
         [$cropDefaults, $seedProducts, $productYields, $productCosts, $cropProductSlugs, $cropProductKeywords, $cropVarieties, $cropInfo] = $this->buildYieldEstimatorData();
 

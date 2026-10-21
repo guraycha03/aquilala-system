@@ -121,8 +121,10 @@ class QuotationViewPrivacyTest extends TestCase
 
     public function test_the_viewed_status_stays_neutral(): void
     {
-        $quotation = new Quotation(['status' => Quotation::STATUS_VIEWED]);
-
-        $this->assertSame('Viewed', $quotation->status_label);
+        // "Viewed" only ever meant "a store opened this once". The farmer
+        // sees two states: the estimate is live, or it has expired.
+        $this->assertSame('Active', (new Quotation(['status' => Quotation::STATUS_COMPUTED]))->status_label);
+        $this->assertSame('Active', (new Quotation(['status' => Quotation::STATUS_VIEWED]))->status_label);
+        $this->assertSame('Expired', (new Quotation(['status' => Quotation::STATUS_EXPIRED]))->status_label);
     }
 }

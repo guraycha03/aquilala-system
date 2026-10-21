@@ -237,6 +237,18 @@
       margin-bottom: 22px;
     }
     @media (max-width: 640px) {
+      /* The filter dropdowns in two columns on a phone: status and crop on
+         the first row, the rest below. Stacked in one column they pushed
+         the table itself off the screen. The width is capped a little under
+         half so two always fit the row, with room for the gap. */
+      .ttb-filters { gap: 8px; }
+      .ttb-filters .ncb-group-inline {
+        min-width: 0;
+        flex: 1 1 calc(50% - 6px);
+        max-width: calc(50% - 6px);
+      }
+      .ttb-filters .ncb-select-trigger { padding: 0 10px; }
+
       body .kpi-strip {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
