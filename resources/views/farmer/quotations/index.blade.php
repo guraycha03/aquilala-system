@@ -27,39 +27,32 @@
     border-radius: 50%; opacity: 0.07;
     transform: translate(20px, -20px);
   }
-  .stat-card.green  { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #bbf7d0; }
-  .stat-card.green::after { background: #4A7A54; }
-  .stat-card.blue   { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; }
-  .stat-card.blue::after  { background: #2563eb; }
-  .stat-card.amber  { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde68a; }
-  .stat-card.amber::after { background: #d97706; }
-  .stat-card.violet { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border: 1px solid #ddd6fe; }
-  .stat-card.violet::after { background: #7c3aed; }
+  /* One look for every card: the same soft tile, the same icon colour.
+     A wall of tinted cards says nothing once there are more than two. */
+  .stat-card {
+    background: #ffffff;
+    border: 1px solid #E0E5DB;
+  }
+  .stat-card::after { display: none; }
 
   .stat-icon {
     width: 40px; height: 40px; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     margin-bottom: 12px;
+    background: #EDF1E9; color: #4A7A54;
   }
-  .stat-card.green .stat-icon  { background: rgba(74,122,84,0.12); color: #4A7A54; }
-  .stat-card.blue .stat-icon   { background: rgba(37,99,235,0.12); color: #2563eb; }
-  .stat-card.amber .stat-icon  { background: rgba(217,119,6,0.12); color: #d97706; }
-  .stat-card.violet .stat-icon { background: rgba(124,58,237,0.12); color: #7c3aed; }
 
   .stat-card .stat-label {
     font-size: 12px; font-weight: 600; text-transform: uppercase;
     letter-spacing: 0.05em; margin-bottom: 4px;
+    color: #647263;
   }
-  .stat-card.green .stat-label  { color: #15803d; }
-  .stat-card.blue .stat-label   { color: #1d4ed8; }
-  .stat-card.amber .stat-label  { color: #b45309; }
-  .stat-card.violet .stat-label { color: #6d28d9; }
 
-  .stat-card .stat-value { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
-  .stat-card.green .stat-value  { color: #166534; }
-  .stat-card.blue .stat-value   { color: #1e40af; }
-  .stat-card.amber .stat-value  { color: #92400e; }
-  .stat-card.violet .stat-value { color: #5b21b6; }
+  .stat-card .stat-value { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: #1a2b1e; }
+  [data-theme="dark"] .stat-card { background: #111827; border-color: #334155; }
+  [data-theme="dark"] .stat-icon { background: #16301f; color: #a7f3d0; }
+  [data-theme="dark"] .stat-card .stat-label { color: #9fb3a6; }
+  [data-theme="dark"] .stat-card .stat-value { color: #d6f5e3; }
 
   /* Table card */
   .table-card {
@@ -193,34 +186,26 @@
 @php
   $totalQuotes = $totalQuotes ?? $quotations->count();
   $computedCount = $computedCount ?? $quotations->where('status', 'computed')->count();
-  $viewedCount = $viewedCount ?? $quotations->where('status', 'viewed')->count();
   $totalValue = $totalValue ?? $quotations->sum('estimated_total_cost');
 @endphp
 
 <!-- Stats -->
 <div class="stats-grid kpi-strip">
-  <div class="stat-card green">
+  <div class="stat-card">
     <div class="stat-icon">
       <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     </div>
     <div class="stat-label">Total Quotations</div>
     <div class="stat-value">{{ $totalQuotes }}</div>
   </div>
-  <div class="stat-card blue">
+  <div class="stat-card">
     <div class="stat-icon">
       <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
     </div>
     <div class="stat-label">Ready to View</div>
     <div class="stat-value">{{ $computedCount }}</div>
   </div>
-  <div class="stat-card violet">
-    <div class="stat-icon">
-      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    </div>
-    <div class="stat-label">Seen by Stores</div>
-    <div class="stat-value">{{ $viewedCount }}</div>
-  </div>
-  <div class="stat-card amber">
+  <div class="stat-card">
     <div class="stat-icon">
       <x-peso-icon />
     </div>
@@ -240,7 +225,7 @@
       :filters="[
           ['key' => 'status', 'label' => 'All statuses', 'options' => [
               ['computed', 'Estimate Ready'],
-              ['viewed', 'Viewed by Store'],
+              ['viewed', 'Viewed'],
               ['expired', 'Expired'],
           ]],
           ['key' => 'crop', 'label' => 'All crops', 'options' => collect($quotations->pluck('crop_type')->unique()->values())->map(fn($c) => [strtolower($c), $c])->all()],
@@ -305,9 +290,6 @@
                   <span class="status-badge-dot"></span>
                   {{ $quote->status_label }}
                 </span>
-                @if($quote->effective_status === 'viewed' && $quote->viewed_at)
-                  <div style="font-size: 11px; color: #94a3b8; margin-top: 5px; white-space: nowrap;">Viewed {{ $quote->viewed_at->format('M d, Y · g:i A') }}</div>
-                @endif
               </td>
               <td style="text-align: right;">
                 <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">

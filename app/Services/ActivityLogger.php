@@ -290,15 +290,8 @@ class ActivityLogger
         return $row;
     }
 
-    public static function quotationViewed($quotation): ActivityLog
-    {
-        return self::log(
-            ActivityLog::TYPE_QUOTATION_VIEWED,
-            "Viewed cost estimate {$quotation->quotation_number}",
-            $quotation,
-            ['quotation_number' => $quotation->quotation_number]
-        );
-    }
+    // Looking at an estimate is not an activity, so it is not recorded.
+    // A farmer must never feel watched for checking what an input costs.
 
     // ── Crop shortcuts ───────────────────────────────────────────
 

@@ -51,11 +51,12 @@ class QuotationController extends Controller
 
         $totalQuotes = $allQuotes->count();
         $computedCount = $allQuotes->filter(fn ($q) => ! $q->is_expired && $q->status === 'computed')->count();
-        $viewedCount = $allQuotes->filter(fn ($q) => ! $q->is_expired && $q->status === 'viewed')->count();
         $totalValue = $allQuotes->sum('estimated_total_cost');
 
+        // No "seen by stores" figure: a farmer should not be measured by
+        // how often a store looked at their prices.
         return view('farmer.quotations.index', compact(
-            'quotations', 'totalQuotes', 'computedCount', 'viewedCount', 'totalValue'
+            'quotations', 'totalQuotes', 'computedCount', 'totalValue'
         ));
     }
 
@@ -785,13 +786,17 @@ PROMPT;
 
         $quotation->load(['farmer', 'items.product.storeOwner']);
 
-        // Mark as viewed by this store (first view only, records the timestamp)
+        // Mark as viewed by this store (first view only, records the timestamp).
+        // Looking at a price is not an activity worth recording: a farmer
+        // must never feel watched for checking what an input costs, and a
+        // store looking at an estimate a hundred times should not fill the
+        // history with a hundred rows. The estimate's own state still
+        // changes; nobody is told about it.
         if ($quotation->status === Quotation::STATUS_COMPUTED) {
             $quotation->update([
                 'status' => Quotation::STATUS_VIEWED,
                 'viewed_at' => $quotation->viewed_at ?? now(),
             ]);
-            ActivityLogger::quotationViewed($quotation);
         }
 
         // Get this store's items specifically

@@ -71,7 +71,9 @@ class Quotation extends Model
     {
         return match ($this->effective_status) {
             self::STATUS_COMPUTED   => 'Estimate Ready',
-            self::STATUS_VIEWED     => 'Viewed by Store',
+            // The state, not the watcher. A farmer should not feel a store
+            // is standing over their shoulder while they price an input.
+            self::STATUS_VIEWED     => 'Viewed',
             self::STATUS_EXPIRED    => 'Expired',
             self::STATUS_PENDING    => 'Pending',
             self::STATUS_DISPATCHED => 'Dispatched',
