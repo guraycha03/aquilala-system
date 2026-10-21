@@ -139,7 +139,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] [style*="background: rgb(172, 242, 121)" i] { background-color: hsl(95, 82%, 17%) !important }
 [data-theme="dark"] [style*="background: rgba(255,255,255,0.7)" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: rgba(255,255,255,0.86)" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] [style*="background:#93c5fd" i] { background-color: hsl(212, 96%, 17%) !important }
 [data-theme="dark"] [style*="background:#dbeafe" i] { background-color: hsl(214, 95%, 17%) !important }
 [data-theme="dark"] [style*="background:#e0f2fe" i] { background-color: hsl(204, 94%, 17%) !important }
 [data-theme="dark"] [style*="background:#edf0e8" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
@@ -605,12 +604,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .cd-card:hover { border-color: #334155 !important }
 [data-theme="dark"] .cd-card.expanded .cd-card-chevron { stroke: #a8cdb2 !important }
 [data-theme="dark"] .cd-empty h3 { color: #93c5fd !important }
-[data-theme="dark"] .cd-featured-card { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
-[data-theme="dark"] .cd-featured-card:hover { border-color: #2f5d3c !important }
-[data-theme="dark"] .cd-featured-header h2 { color: #93c5fd !important }
-[data-theme="dark"] .cd-featured-icon { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] .cd-featured-name { color: #93c5fd !important }
-[data-theme="dark"] .cd-featured-snippet { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .cd-filter-btn { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important; color: #93c5fd !important }
 [data-theme="dark"] .cd-filter-btn:hover { border-color: #334155 !important; color: #93c5fd !important }
 [data-theme="dark"] .cd-hero { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
@@ -620,7 +613,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .cd-info-item { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .cd-page { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .cd-search { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important; color: #93c5fd !important }
-[data-theme="dark"] .cd-variety-chip { color: #a8cdb2 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
+[data-theme="dark"] .cd-variety-chip { color: #e2e8f0 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
 [data-theme="dark"] .cell-muted { color: #93c5fd !important }
 [data-theme="dark"] .cell-strong { color: #a8cdb2 !important }
 [data-theme="dark"] .cf-bar { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }

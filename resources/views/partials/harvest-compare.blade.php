@@ -137,11 +137,6 @@
     </div>
     <div class="s">Actual ÷ estimated</div>
   </div>
-  <div class="cmp-kpi">
-    <div class="k">Harvest Pairs</div>
-    <div class="v">{{ $kpis['pairs'] }}</div>
-    <div class="s">{{ $kpis['over_count'] }} over · {{ $kpis['under_count'] }} under{{ $kpis['on_count'] ? ' · ' . $kpis['on_count'] . ' on target' : '' }}</div>
-  </div>
 </div>
 
 {{-- ── Chart ── --}}
@@ -157,8 +152,8 @@
         </p>
       </div>
       <div class="cmp-legend">
-        <span><span class="sw" style="background:#93c5fd;"></span>Estimate</span>
-        <span><span class="sw" style="background:#4A7A54;"></span>Actual</span>
+        <span><span class="sw" style="background:#9AA7B4;"></span>Estimate</span>
+        <span><span class="sw" style="background:#648268;"></span>Actual</span>
       </div>
     </div>
     <div class="cmp-chart">
@@ -187,7 +182,10 @@
   <div class="cmp-card-head">
     <div>
       <p class="cmp-card-title">Comparison Detail</p>
-      <p class="cmp-card-sub">Every pair behind the chart — newest harvest first.</p>
+      <p class="cmp-card-sub">
+        {{ number_format($kpis['pairs']) }} harvest pair{{ $kpis['pairs'] === 1 ? '' : 's' }}
+        — {{ $kpis['over_count'] }} over, {{ $kpis['under_count'] }} under{{ $kpis['on_count'] ? ', ' . $kpis['on_count'] . ' on target' : '' }}. Newest harvest first.
+      </p>
     </div>
   </div>
   @if(count($rows))
@@ -264,11 +262,13 @@
         labels: labels,
         datasets: [
           {
+            // Muted on purpose: the chart is a reading, not a poster.
+            // Estimate sits in soft grey-blue, actual in the app's sage.
             label: 'Estimate',
             data: estimate,
-            backgroundColor: 'rgba(147, 197, 253, 0.85)',
-            hoverBackgroundColor: 'rgba(96, 165, 250, 1)',
-            borderColor: 'rgba(59, 130, 246, 0.9)',
+            backgroundColor: 'rgba(154, 167, 180, 0.85)',
+            hoverBackgroundColor: 'rgba(133, 146, 159, 1)',
+            borderColor: 'rgba(120, 133, 145, 0.9)',
             borderWidth: 1,
             borderRadius: 5,
             barPercentage: 0.7,
@@ -277,9 +277,9 @@
           {
             label: 'Actual',
             data: actual,
-            backgroundColor: 'rgba(22, 163, 74, 0.85)',
-            hoverBackgroundColor: 'rgba(21, 128, 61, 1)',
-            borderColor: 'rgba(21, 128, 61, 0.9)',
+            backgroundColor: 'rgba(100, 130, 104, 0.88)',
+            hoverBackgroundColor: 'rgba(74, 122, 84, 1)',
+            borderColor: 'rgba(74, 122, 84, 0.9)',
             borderWidth: 1,
             borderRadius: 5,
             barPercentage: 0.7,

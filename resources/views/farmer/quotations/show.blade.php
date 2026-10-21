@@ -254,6 +254,9 @@
     letter-spacing: -0.025em; line-height: 1.05;
   }
   .fq-sum__sub { font-size: 13px; color: #6b7c6e; margin-top: 7px; }
+  /* On a wide screen the budget sits in line with the three facts: the
+     price on the left, then four tiles sharing one row. */
+  .fq-sum__right { display: flex; align-items: stretch; gap: 12px; flex-wrap: wrap; }
   .fq-sum__stats { display: flex; gap: 12px; flex-wrap: wrap; }
   .fq-stat {
     display: flex; align-items: center; gap: 11px;
@@ -291,29 +294,28 @@
   /* ── The budget ───────────────────────────────────────────────
      A button in the corner of the total cost card, and a window
      with the reasoning. The button states the budget; the window
-     explains it. */
-  .fq-sum__right { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; }
-
+     explains it. It wears the same tile as the three facts beside
+     it, so the four read as one row. */
   .fq-budget-pill {
-    display: inline-flex; align-items: center; gap: 10px;
-    background: #F3F5F0; border: 1px solid #E0E5DB; border-radius: 12px;
-    padding: 8px 12px; cursor: pointer; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 11px;
+    background: #F3F5F0; border: 1px solid #E4E9E0; border-radius: 13px;
+    padding: 12px 16px; min-width: 148px;
+    cursor: pointer; font-family: inherit; text-align: left;
     transition: background 0.15s, border-color 0.15s, transform 0.15s;
   }
   .fq-budget-pill:hover { background: #E9EEE5; border-color: #C4D0C0; }
   .fq-budget-pill:active { transform: scale(0.98); }
   .fq-budget-pill__ic {
-    width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0;
+    width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
   }
-  .fq-budget-pill__ic svg { width: 15px; height: 15px; }
-  .fq-budget-pill__text { text-align: left; }
+  .fq-budget-pill__ic svg { width: 16px; height: 16px; }
   .fq-budget-pill__label {
-    display: block; font-size: 10px; font-weight: 700;
+    display: block; font-size: 10.5px; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.06em; color: #879a8c;
   }
-  .fq-budget-pill__value { display: block; font-size: 13.5px; font-weight: 800; color: #1a2b1e; margin-top: 1px; }
-  .fq-budget-pill__chev { width: 15px; height: 15px; color: #879a8c; flex-shrink: 0; }
+  .fq-budget-pill__value { display: block; font-size: 15.5px; font-weight: 800; color: #1a2b1e; margin-top: 1px; }
+  .fq-budget-pill__chev { width: 15px; height: 15px; color: #879a8c; flex-shrink: 0; margin-left: auto; }
 
   .fq-budget-pill--fitted  .fq-budget-pill__ic { background: #E7EDE5; color: #648268; }
   .fq-budget-pill--trimmed .fq-budget-pill__ic { background: #F2EEDF; color: #8A7C3E; }
@@ -549,7 +551,8 @@
       gap: 18px; padding: 20px 16px;
     }
     .fq-sum__value { font-size: 31px; }
-    .fq-sum__right { align-items: stretch; }
+    /* On a phone the budget keeps its own line above the three facts. */
+    .fq-sum__right { flex-direction: column; align-items: stretch; }
     .fq-budget-pill { width: 100%; }
     .fq-sum__stats {
       display: grid; grid-template-columns: repeat(3, 1fr);
@@ -687,7 +690,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
           @endif
         </span>
-        <span class="fq-budget-pill__text">
+        <span>
           <span class="fq-budget-pill__label">Your budget</span>
           <span class="fq-budget-pill__value">₱{{ number_format($budgetCap, 2) }}</span>
         </span>
@@ -716,7 +719,8 @@
     </div>
     <div class="fq-stat">
       <span class="fq-stat__ic">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="m2 7 3-3h14l3 3"/></svg>
+        {{-- Lucide "store" --}}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2 2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-1.82 0A2.7 2.7 0 0 1 15 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-1.82 0A2.7 2.7 0 0 1 10 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-1.82 0A2.7 2.7 0 0 1 5 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-1.82 0A2.7 2.7 0 0 1 3 11V7"/></svg>
       </span>
       <span>
         <span class="fq-stat__label">Stores</span>

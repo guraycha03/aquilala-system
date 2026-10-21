@@ -196,25 +196,18 @@
                                 <path d="M14 2v6h6M8 13h8M8 17h8"/>
                             </svg>
                         @elseif ($stat['icon'] === 'store')
-                            {{-- Storefront icon.
-                                 stroke-width scaled from the source's 2.5:
-                                 this renders at 20px on a 100-unit viewBox,
-                                 so 2.5 would be a 0.5px hairline. 5 =>
-                                 1px effective, matching the sibling cards'
-                                 24-unit/1.7 icons. --}}
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 viewBox="0 0 100 100"
+                            {{-- Lucide "store": the same storefront glyph the
+                                 rest of the app uses, on the sibling cards'
+                                 24-unit grid with a 1.7 stroke. --}}
+                            <svg viewBox="0 0 24 24"
                                  fill="none" stroke="currentColor"
-                                 stroke-width="5" stroke-linecap="round"
+                                 stroke-width="1.7" stroke-linecap="round"
                                  stroke-linejoin="round" aria-hidden="true">
-                                <path d="M20 39 L25 19 H75 L80 39"/>
-                                <path d="M20 39 C20 47 32 47 32 39 C32 47 44 47 44 39 C44 47 56 47 56 39 C56 47 68 47 68 39 C68 47 80 47 80 39"/>
-                                <path d="M24 46 V82 H76 V46"/>
-                                <path d="M35 82 V56 H65 V82"/>
-                                <path d="M50 56 V82"/>
-                                <path d="M39 61 H46"/>
-                                <path d="M54 61 H61"/>
-                                <path d="M24 82 H76"/>
+                                <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/>
+                                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                                <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/>
+                                <path d="M2 7h20"/>
+                                <path d="M22 7v3a2 2 0 0 1-2 2 2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-1.82 0A2.7 2.7 0 0 1 15 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-1.82 0A2.7 2.7 0 0 1 10 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-1.82 0A2.7 2.7 0 0 1 5 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-1.82 0A2.7 2.7 0 0 1 3 11V7"/>
                             </svg>
                         @endif
                     </x-slot:icon>

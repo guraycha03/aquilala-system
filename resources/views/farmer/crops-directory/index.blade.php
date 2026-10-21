@@ -6,15 +6,18 @@
 @php
     $fallbackImage = 'images/crop.png';
 
+    // The category label is a quiet tag, not a colour code: one pale
+    // ground and one muted ink for every crop, so the guide reads as a
+    // list of crops and not as a bag of sweets.
     $tagBg = [
-        'grain' => '#fef9c3', 'vegetable' => '#dcfce7', 'fruit' => '#fce7f3',
-        'root' => '#ffedd5', 'herb' => '#dbeafe', 'fiber' => '#f3e8ff',
-        'legume' => '#fef3c7',
+        'grain' => '#F1F4F0', 'vegetable' => '#F1F4F0', 'fruit' => '#F1F4F0',
+        'root' => '#F1F4F0', 'herb' => '#F1F4F0', 'fiber' => '#F1F4F0',
+        'legume' => '#F1F4F0',
     ];
     $tagFg = [
-        'grain' => '#a16207', 'vegetable' => '#15803d', 'fruit' => '#be185d',
-        'root' => '#c2410c', 'herb' => '#1d4ed8', 'fiber' => '#7e22ce',
-        'legume' => '#b45309',
+        'grain' => '#5F6F62', 'vegetable' => '#5F6F62', 'fruit' => '#5F6F62',
+        'root' => '#5F6F62', 'herb' => '#5F6F62', 'fiber' => '#5F6F62',
+        'legume' => '#5F6F62',
     ];
     $categoryLabels = [
         'grain' => 'Grain', 'vegetable' => 'Vegetable', 'fruit' => 'Fruit',
@@ -63,8 +66,6 @@
         }
         return '#C8E6C9';
     };
-
-    $featuredCrops = array_filter($crops, function($c) { return $c['featured'] ?? false; });
 @endphp
 
 <style>
@@ -172,112 +173,6 @@
     width: 16px; height: 16px;
     stroke: currentColor; fill: none; stroke-width: 2;
     stroke-linecap: round; stroke-linejoin: round;
-  }
-
-  /* ── Featured crops section ── */
-  .cd-featured-section {
-    margin-bottom: 28px;
-  }
-  .cd-featured-header {
-    margin-bottom: 16px;
-  }
-  .cd-featured-header h2 {
-    font-size: 20px;
-    font-weight: 800;
-    color: #0f172a;
-    margin: 0 0 4px 0;
-  }
-  .cd-featured-header p {
-    font-size: 13px;
-    color: #94a3b8;
-    margin: 0;
-    line-height: 1.5;
-  }
-  .cd-featured-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
-  }
-
-  .cd-featured-card {
-    background: #ffffff;
-    border: 1px solid #e8eaed;
-    border-radius: 14px;
-    overflow: hidden;
-    transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
-    cursor: default;
-  }
-  .cd-featured-card:hover {
-    border-color: #c8e6c9;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    transform: translateY(-3px);
-  }
-  .cd-featured-top {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 18px 18px 0;
-  }
-  .cd-featured-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-    border: 1px solid rgba(74,122,84,0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    overflow: hidden;
-  }
-  .cd-featured-icon img {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
-  }
-  .cd-featured-meta {
-    flex: 1;
-    min-width: 0;
-  }
-  .cd-featured-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 5px;
-    line-height: 1.25;
-  }
-  .cd-featured-tag {
-    display: inline-block;
-    font-size: 10.5px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 20px;
-    border: 1px solid;
-  }
-  .cd-featured-body {
-    padding: 14px 18px 18px;
-  }
-  .cd-featured-snippets {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-  .cd-featured-snippet {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 12px;
-    padding: 6px 10px;
-    background: #f8faf9;
-    border-radius: 8px;
-  }
-  .cd-featured-snippet-label {
-    color: #94a3b8;
-    font-weight: 500;
-  }
-  .cd-featured-snippet-value {
-    color: #cbd5e1;
-    font-weight: 600;
   }
 
   /* ── Search + Filter controls ── */
@@ -494,9 +389,9 @@
     display: inline-block;
     font-size: 11px;
     font-weight: 600;
-    color: #15803d;
-    background: #ecfdf5;
-    border: 1px solid #bbf7d0;
+    color: #5F6F62;
+    background: #F1F4F0;
+    border: 1px solid #E4E9E0;
     padding: 3px 9px;
     border-radius: 20px;
   }
@@ -531,7 +426,6 @@
     .cd-hero { padding: 22px; }
     .cd-hero h1 { font-size: 22px; }
     .cd-grid { grid-template-columns: 1fr; gap: 10px; }
-    .cd-featured-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
   }
 </style>
 
@@ -561,56 +455,7 @@
       </div>
     </div>
 
-    {{-- ═══ 3. Featured crops section ═══ --}}
-    @if(!empty($featuredCrops))
-    <div class="cd-featured-section">
-      <div class="cd-featured-header">
-        <h2>Most Planted &amp; Quoted</h2>
-        <p>Crops most frequently used in cost quotations and harvest tracking in Bulan, Sorsogon</p>
-      </div>
-      <div class="cd-featured-grid">
-        @foreach($crops as $crop)
-          @if(!($crop['featured'] ?? false))
-            @continue
-          @endif
-          @php
-              $category = $crop['category'] ?? 'vegetable';
-              $imgSrc = $crop['image'] ? "images/{$crop['image']}" : $fallbackImage;
-              $label = $categoryLabels[$category] ?? ucfirst($category);
-              $bg = $tagBg[$category] ?? '#f1f5f9';
-              $fg = $tagFg[$category] ?? '#475569';
-              $borderColor = $fg . '30';
-              $cropColor = $getCropColor($crop['name']);
-          @endphp
-          <div class="cd-featured-card">
-            <div class="cd-featured-top">
-              <div class="cd-featured-icon" style="background:{{ $cropColor }}; border-color: rgba(0,0,0,0.12);">
-                <img src="{{ asset($imgSrc) }}" alt="{{ $crop['name'] }}">
-              </div>
-              <div class="cd-featured-meta">
-                <div class="cd-featured-name">{{ $crop['name'] }}</div>
-                <span class="cd-featured-tag" style="background:{{ $bg }};color:{{ $fg }};border-color:{{ $borderColor }};">{{ $label }}</span>
-              </div>
-            </div>
-            <div class="cd-featured-body">
-              <div class="cd-featured-snippets">
-                <div class="cd-featured-snippet">
-                  <span class="cd-featured-snippet-label">Days to Harvest</span>
-                  <span class="cd-featured-snippet-value" style="color:#94a3b8;">—</span>
-                </div>
-                <div class="cd-featured-snippet">
-                  <span class="cd-featured-snippet-label">Best Season</span>
-                  <span class="cd-featured-snippet-value" style="color:#94a3b8;">—</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        @endforeach
-      </div>
-    </div>
-    @endif
-
-    {{-- ═══ 4. Search + filter choices behind the shared funnel button ═══ --}}
+    {{-- ═══ 3. Search + filter choices behind the shared funnel button ═══ --}}
     <div class="cd-controls" data-fc>
       <div class="cd-search-wrap">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -637,7 +482,7 @@
       </div>
     </div>
 
-    {{-- ═══ 5. Full Crop Grid ═══ --}}
+    {{-- ═══ 4. Full Crop Grid ═══ --}}
     <div id="cdCropGrid" class="cd-grid">
       @foreach($crops as $crop)
         @php
