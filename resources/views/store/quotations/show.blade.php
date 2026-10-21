@@ -135,7 +135,9 @@
         Cost Quotation {{ $quotation->quotation_number }}
       </h1>
       <p class="keep-sub q-subtitle">
-        Farmer: <strong>{{ $quotation->farmer?->name ?? 'Unknown' }}</strong> — includes products from your store
+        {{-- The farmer's name is masked here too: a store learns that the
+             demand exists, not who created it. --}}
+        Farmer: <strong>{{ $quotation->farmer?->maskedName() ?? 'Axxx' }}</strong> — includes products from your store
       </p>
     </div>
     @php $badgeStyle = '--badge-bg:' . $quotation->status_bg . ';--badge-fg:' . $quotation->status_color . ';'; @endphp

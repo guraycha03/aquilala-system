@@ -129,7 +129,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] [style*="background: #fffbeb" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: #ffffff" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: linear-gradient(135deg, #e0f2fe, #dbeafe)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] [style*="background: linear-gradient(135deg, #eff6ff, #dbeafe)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: linear-gradient(135deg, #f0fdf4, #dcfce7)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: linear-gradient(135deg, #f0fdf4, #ecfdf5)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: linear-gradient(135deg, #f3e8ff, #ede9fe)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
@@ -805,7 +804,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .farm-fs-zoom-btn:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important }
 [data-theme="dark"] .farm-fs-zoom-label { color: #93c5fd !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
 [data-theme="dark"] .farm-fullscreen-box { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] .farmer-avatar { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important; border-color: #2f5d3c !important }
 [data-theme="dark"] .fd-action { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important }
 [data-theme="dark"] .fd-action svg { color: #a8cdb2 !important }
 [data-theme="dark"] .fd-action:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
@@ -1189,6 +1187,10 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .pf-chip svg { color: #a8cdb2 !important }
 [data-theme="dark"] .phone-prefix { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
 [data-theme="dark"] .phone-row { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
+[data-theme="dark"] .photo-btn { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important; border-color: #2f5d3c !important }
+[data-theme="dark"] .photo-btn:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
+[data-theme="dark"] .photo-btn.danger { color: #fca5a5 !important }
+[data-theme="dark"] .photo-btn.danger:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #7f1d1d !important }
 [data-theme="dark"] .pick-meta { color: #93c5fd !important }
 [data-theme="dark"] .pick-meta .sku { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .pick-name { color: #93c5fd !important }
@@ -1256,6 +1258,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .profile-chip.warn { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #fcd34d !important }
 [data-theme="dark"] .profile-hero { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .profile-hero .p-name { color: #93c5fd !important }
+[data-theme="dark"] .profile-hero-avatar { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important; border-color: #2f5d3c !important }
 [data-theme="dark"] .profile-hero-info h1 { color: #93c5fd !important }
 [data-theme="dark"] .profile-hero-meta { color: #93c5fd !important }
 [data-theme="dark"] .profile-hero-role { color: #a8cdb2 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
@@ -1607,7 +1610,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .unit-opt input:checked + .uo-box { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .unit-opt input:checked + .uo-box .uo-name { color: #a8cdb2 !important }
 [data-theme="dark"] .unit-opt:hover .uo-box { border-color: #2f5d3c !important }
-[data-theme="dark"] .user-avatar { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important }
+[data-theme="dark"] .user-avatar { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important; border-color: #2f5d3c !important }
 [data-theme="dark"] .user-cell .u-name { color: #93c5fd !important }
 [data-theme="dark"] .user-chip { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important; color: #a8cdb2 !important }
 [data-theme="dark"] .user-contact { color: #93c5fd !important }

@@ -195,6 +195,15 @@
         return '<img src="' + aiAvatarUrl + '" alt="AI" data-ai-avatar>';
     }
 
+    // The signed-in member's own picture, or their initials when they
+    // have not set one. The same account avatar the profile page and the
+    // side menu show.
+    function getUserAvatarHtml() {
+        @if($myPhoto)
+            return '<img src="{{ $myPhoto }}" alt="{{ $myName }}" data-user-avatar>';
+        @endif
+        return '<span class="user-avatar" style="width:34px;height:34px;font-size:12px;" title="{{ $myName }}">{{ $myInitials }}</span>';
+    }
     // ─── Per-account AI avatar ──────────────────────────────────
     // The header avatar is a button: it opens the picker, the reader picks
     // one of the system's avatars, and the account remembers which one so it
@@ -377,13 +386,10 @@
         return row;
     }
 
-    function addUserMessage(text) {
-        const row = document.createElement('div');
+    function addUserMessage(text) {        const row = document.createElement('div');
         row.className = 'message-row user';
         row.innerHTML =
-            '<div class="message-avatar" style="background:#8b9184;">' +
-            '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>' +
-            '</div>' +
+            '<div class="message-avatar">' + getUserAvatarHtml() + '</div>' +
             '<div class="message-bubble" style="background:#edf0e8;border-color:#e1e5da;"><div>' + escapeHtml(text).replace(/\n/g, '<br>') + '</div></div>';
         chatMessages.appendChild(row);
         scrollToBottom();

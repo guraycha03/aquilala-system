@@ -588,9 +588,7 @@
         @if($storeOwners->count() > 0)
           @foreach($storeOwners as $store)
             <div class="store-chip" style="{{ !$loop->last ? 'margin-bottom: 10px;' : '' }}">
-              <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1d4ed8; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; border: 1px solid #bfdbfe;">
-                @php $w = explode(' ', trim($store->name)); echo count($w) >= 2 ? mb_substr($w[0],0,1).mb_substr(end($w),0,1) : mb_substr($store->name,0,2); @endphp
-              </div>
+              <x-user-avatar :user="$store" :size="40" />
               <div style="flex: 1; min-width: 0;">
                 <div style="font-weight: 700; color: #1a2b1e; font-size: 13.5px;">{{ $store->name }}</div>
                 @php

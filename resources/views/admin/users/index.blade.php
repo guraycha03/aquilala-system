@@ -328,9 +328,7 @@
                       data-joined="{{ $u->created_at?->format('Y-m-d') ?? '' }}">
                     <td>
                       <div class="user-cell">
-                        <div class="user-avatar">
-                          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        </div>
+                        <x-user-avatar :user="$u" :size="36" />
                         <div style="min-width:0;">
                           <div class="u-name">{{ $u->name }}</div>
                           <div class="u-mail">{{ $u->email }}</div>
@@ -543,11 +541,14 @@
       function openProfile(id) {
         var p = profiles[id];
         if (!p) { showToast('Profile data not found.'); return; }
-        var initials = (p.name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) {
+        var initials = p.initials || (p.name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) {
           return w.charAt(0).toUpperCase();
         }).join('');
+        var avatar = p.photo
+          ? '<img src="' + p.photo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">'
+          : initials;
         var hero = '<div class="profile-hero">' +
-          '<div class="profile-avatar">' + initials + '</div>' +
+          '<div class="profile-avatar">' + avatar + '</div>' +
           '<div><div class="p-name">' + p.name + '</div>' +
           '<div class="p-mail">' + p.email + '</div></div></div>';
         var statusKey = p.status;

@@ -10,16 +10,6 @@
   .data-table-container { background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 20px; }
   .table-head { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 
-  .avatar {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 10px;
-    flex-shrink: 0;
-  }
   .season-badge {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 5px 12px; border-radius: 20px;
@@ -113,9 +103,7 @@
                   data-month="{{ $report->harvest_date?->month }}">
                 <td>
                   <div style="display: flex; align-items: center; gap: 8px;">
-                    <div class="avatar" style="background: #dbeafe; color: #1e40af;">
-                      @php $w = explode(' ', trim($report->farmer?->name ?? '?')); echo count($w) >= 2 ? mb_substr($w[0], 0, 1).mb_substr(end($w), 0, 1) : '?'; @endphp
-                    </div>
+                    <x-user-avatar :user="$report->farmer" :size="32" />
                     <span style="font-weight: 600; color: #1e293b;">{{ $report->farmer?->name ?? 'Unknown' }}</span>
                   </div>
                 </td>

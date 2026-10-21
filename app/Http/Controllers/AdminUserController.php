@@ -58,6 +58,8 @@ class AdminUserController extends Controller
                     'must_change_password' => $u->mustChangePassword(),
                     'joined' => $u->created_at?->format('M d, Y'),
                     'products' => $u->products_count,
+                    'photo' => $u->profilePhotoUrl(),
+                    'initials' => $u->initials(),
                 ],
             ];
         })->all();

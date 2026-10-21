@@ -24,6 +24,7 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PasswordSetupController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductImportController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\StoreDirectoryController;
@@ -136,6 +137,11 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
     Route::get('/profile', function () {
         return view('profile.index', ['me' => auth()->user()]);
     })->name('profile.index');
+
+    // The member's own picture: upload it, replace it, or remove it and
+    // go back to the initials. It follows the account on every device.
+    Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.photo.update');
+    Route::delete('/profile/photo', [ProfileController::class, 'removePhoto'])->name('profile.photo.remove');
 
     // Personal UI preferences (side menu theme) — available to all roles
     Route::post('/settings/ui', function (Request $request) {

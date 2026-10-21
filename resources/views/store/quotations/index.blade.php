@@ -317,12 +317,8 @@
 
   /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
 
-  .farmer-avatar {
-    width: 36px; height: 36px;
-    border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 13px; flex-shrink: 0;
-    background: #EDF1E9; color: #648268; border: 1px solid #E0E5DB;
-  }
+  /* The farmer's tile is the shared account avatar, so it carries the
+     same look as everywhere else. */
   .farmer-cell { display: flex; align-items: center; gap: 12px; }
 
   .action-btn {
@@ -554,9 +550,13 @@
         @forelse($quotations as $q)
           @php
             $storeItems = $q->items->filter(fn ($item) => $item->product && $item->product->user_id === Auth::id());
+            // A store learns that the demand exists, not who created it. The
+            // farmer's name is masked, and it is left out of the search
+            // index too, so the name cannot be read back out of the page.
+            $farmerName = $q->farmer?->maskedName() ?? 'Axxx';
           @endphp
-          <tr data-search="{{ strtolower(($q->quotation_number ?? '') . ' ' . ($q->farmer?->name ?? '') . ' ' . ($q->crop_type ?? '') . ' ' . ($q->season ?? '')) }}"
-            data-farmer="{{ strtolower($q->farmer?->name ?? '') }}"
+          <tr data-search="{{ strtolower(($q->quotation_number ?? '') . ' ' . $farmerName . ' ' . ($q->crop_type ?? '') . ' ' . ($q->season ?? '')) }}"
+            data-farmer="{{ strtolower($farmerName) }}"
             data-crop="{{ strtolower($q->crop_type ?? '') }}"
             data-season="{{ strtolower($q->season ?? '') }}"
             data-value="{{ (float) ($q->estimated_total_cost ?? 0) }}"
@@ -564,14 +564,8 @@
             <td><span style="font-weight: 700; color: #143d23; font-family: 'SF Mono', ui-monospace, monospace; font-size: 13px;">{{ $q->quotation_number }}</span></td>
             <td>
               <div class="farmer-cell">
-                <div class="farmer-avatar" style="width: 32px; height: 32px; border-radius: 8px; font-size: 12px;">
-                  @php
-                    $name = $q->farmer ? $q->farmer->name : 'Unknown';
-                    $words = explode(' ', trim($name));
-                    echo count($words) >= 2 ? mb_substr($words[0], 0, 1) . mb_substr(end($words), 0, 1) : mb_substr($name, 0, 2);
-                  @endphp
-                </div>
-                <span style="font-weight: 500;">{{ $q->farmer?->name ?? 'Unknown Farmer' }}</span>
+                <x-user-avatar :user="$q->farmer" :size="32" :mask="true" />
+                <span style="font-weight: 500;">{{ $farmerName }}</span>
               </div>
             </td>
             <td>

@@ -53,6 +53,7 @@ class User extends Authenticatable
         'sidebar_theme',
         'theme_mode',
         'ai_avatar',
+        'profile_photo',
         'activation_completed_at',
         'must_change_password',
     ];
@@ -117,6 +118,63 @@ class User extends Authenticatable
         }
 
         return \App\Services\AiAvatars::url(\App\Services\AiAvatars::defaultKey());
+    }
+
+    /**
+     * This account's own picture, if it has one.
+     *
+     * The file lives on the public disk; the row holds its path. A picture
+     * that has gone missing is treated as no picture, so the account falls
+     * back to its initials rather than showing a broken image.
+     */
+    public function profilePhotoUrl(): ?string
+    {
+        if (! $this->profile_photo) {
+            return null;
+        }
+
+        if (! Storage::disk('public')->exists($this->profile_photo)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->profile_photo);
+    }
+
+    /**
+     * The initials for this account: the first letter of the first and the
+     * last name. Used wherever there is no picture.
+     */
+    public function initials(): string
+    {
+        $name = trim((string) $this->name);
+        $words = preg_split('/\s+/', $name) ?: [];
+        $words = array_values(array_filter($words, fn ($word) => $word !== ''));
+
+        if (count($words) >= 2) {
+            return mb_strtoupper(mb_substr($words[0], 0, 1) . mb_substr(end($words), 0, 1));
+        }
+
+        return mb_strtoupper(mb_substr($words[0] ?? '?', 0, 2));
+    }
+
+    /**
+     * The name as a store owner is allowed to see it: the first letter of
+     * every part and nothing else. "Juan Cruz" becomes "Jxxx Cxxx".
+     *
+     * A farmer who creates a quotation must never feel watched, and a
+     * store must never sit on a false hope that the farmer is coming to
+     * buy. The store learns that the demand exists, not who it belongs to.
+     */
+    public function maskedName(): string
+    {
+        $words = preg_split('/\s+/', trim((string) $this->name)) ?: [];
+        $words = array_values(array_filter($words, fn ($word) => $word !== ''));
+
+        if ($words === []) {
+            return 'Axxx';
+        }
+
+        return implode(' ', array_map(fn ($word) => mb_substr($word, 0, 1) . 'xxx', $words));
     }
 
     public function isPending(): bool

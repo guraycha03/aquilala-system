@@ -462,7 +462,17 @@
     }
     .user-profile-badge:hover { background: rgba(255, 255, 255, 0.06); border-bottom-color: rgba(255, 255, 255, 0.12); }
     .profile-chevron { margin-left: auto; width: 15px; height: 15px; stroke: var(--sb-muted); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-    .avatar { width: 36px; height: 36px; background: #1b4d2e; color: #c8e6c9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; text-transform: uppercase; }
+    /* One avatar for the whole system: the member's own picture when they
+       have one, their initials when they do not. Soft sage, never a loud
+       tile. */
+    .user-avatar {
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden; border-radius: 50%;
+      background: #EDF1E9; color: #4A7A54; border: 1px solid #E0E5DB;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    [data-theme="dark"] .user-avatar { background: #16301f; color: #a7f3d0; border-color: #334155; }
     .user-info { display: flex; flex-direction: column; min-width: 0; }
     .user-name { font-size: 14px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .user-role { font-size: 11px; color: #87a992; text-transform: capitalize; }
@@ -849,7 +859,6 @@
     .dropdown-chevron { stroke: var(--sb-muted); }
     .sub-nav-links li a { color: var(--sb-muted); }
     .user-profile-badge { border-bottom-color: var(--sb-border-soft); }
-    .avatar { background: var(--sb-avatar-bg); color: var(--sb-avatar-fg); }
     .user-name { color: var(--sb-fg); }
     .user-role { color: var(--sb-muted); }
     /* Weather card uses the active sidebar theme's translucent "glass" colors */
@@ -1328,16 +1337,7 @@
     <div class="sidebar-footer">
       <div class="profile-card">
         <a href="{{ route('profile.index') }}" class="user-profile-badge" title="View my profile">
-          <div class="avatar">
-            @php
-              $words = explode(' ', trim(auth()->user()->name));
-              if (count($words) >= 2) {
-                  echo mb_substr($words[0], 0, 1) . mb_substr(end($words), 0, 1);
-              } else {
-                  echo mb_substr(auth()->user()->name, 0, 2);
-              }
-            @endphp
-          </div>
+          <x-user-avatar :user="auth()->user()" :size="36" />
           <div class="user-info">
             <span class="user-name">{{ auth()->user()->name }}</span>
             <span class="user-role">{{ str_replace('_', ' ', auth()->user()->role) }}</span>

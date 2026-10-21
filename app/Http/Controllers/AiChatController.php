@@ -34,6 +34,10 @@ class AiChatController extends Controller
                 ? $user->ai_avatar
                 : \App\Services\AiAvatars::defaultKey(),
             'aiAvatars' => \App\Services\AiAvatars::choices(),
+            // The member's own picture, for the messages they send.
+            'myPhoto' => $user?->profilePhotoUrl(),
+            'myInitials' => $user?->initials() ?? '?',
+            'myName' => $user?->name ?? '',
         ];
 
         if ($user?->role === 'store_owner') {
