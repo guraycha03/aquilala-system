@@ -1765,7 +1765,13 @@
 
       bell.addEventListener('click', function (e) {
         e.preventDefault();
-        open();
+        // The bell is a switch: the same icon that opened the panel closes
+        // it again, so the reader never has to hunt for a way out.
+        if (modal.hidden) {
+          open();
+        } else {
+          close();
+        }
       });
 
       modal.addEventListener('click', function (e) {

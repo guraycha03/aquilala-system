@@ -70,7 +70,20 @@ class ActivityHistoryTest extends TestCase
         $page->assertSee('background: #EDF1E9', false);
         $page->assertSee('data-lucide="package-plus"', false);
         $page->assertSee('data-lucide="package-x"', false);
-        $page->assertSee('data-lucide="calendar-plus"', false);
+
+        // An event belongs to the members, so its icon is on the farmer's
+        // history and not on the store's.
+        $farmer = $this->makeUser('Juan Cruz', 'farmer');
+
+        ActivityLog::create([
+            'user_id' => $farmer->id,
+            'type'    => ActivityLog::TYPE_EVENT_CREATED,
+            'description' => 'Upcoming event: "Water" on Oct 21, 2026',
+        ]);
+
+        $this->actingAs($farmer)->get(route('farmer.activity.index'))
+            ->assertOk()
+            ->assertSee('data-lucide="calendar-plus"', false);
     }
 
     public function test_each_activity_type_has_its_own_icon(): void
@@ -113,6 +126,27 @@ class ActivityHistoryTest extends TestCase
 
         // The filter dropdown does not offer it either.
         $page->assertDontSee('quotation.deleted', false);
+    }
+
+    public function test_a_store_never_sees_an_association_event(): void
+    {
+        $store = $this->makeUser('Oakridge Store', 'store_owner');
+        $admin = $this->makeUser('Chairperson', 'admin');
+
+        // The event notice a store used to be sent.
+        ActivityLog::create([
+            'user_id' => $store->id,
+            'actor_id' => $admin->id,
+            'type'    => ActivityLog::TYPE_EVENT_CREATED,
+            'description' => 'Upcoming event: "Water" on Oct 21, 2026 at 11:17 AM',
+        ]);
+
+        $page = $this->actingAs($store)->get(route('store.activity.index'))->assertOk();
+
+        // A store owner is not a member of the association: no event, and
+        // no offer to filter by one.
+        $page->assertDontSee('Upcoming event', false);
+        $page->assertDontSee('event.created', false);
     }
 
     public function test_a_farmer_still_sees_their_own_withdrawal(): void
