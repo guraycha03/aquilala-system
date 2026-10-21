@@ -3,7 +3,7 @@
 @section('page-styles')
     {{-- One shared skin for every AI chat page: mute warm-sage palette and a
          viewport-locked layout so the composer is always on screen. --}}
-    <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=1" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=2" data-turbo-track="dynamic">
 @endsection
 
 @section('content')
