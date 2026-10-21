@@ -155,9 +155,9 @@ body:has(.chat-page) {
 .avatar-picker-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(16, 24, 40, 0.38);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
+    /* A light dim, no blur: the page behind stays readable, and the
+       modal never looks like a filtered photograph. */
+    background: rgba(16, 24, 40, 0.22);
 }
 
 .avatar-picker-card {

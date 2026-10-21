@@ -48,7 +48,7 @@ class AiChatAvatarTest extends TestCase
 
         $farmer->refresh();
         $this->assertSame('leaf', $farmer->ai_avatar);
-        $this->assertStringContainsString('leaf.svg', (string) $response->json('url'));
+        $this->assertStringContainsString(AiAvatars::all()['leaf']['file'], (string) $response->json('url'));
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
@@ -81,12 +81,12 @@ class AiChatAvatarTest extends TestCase
         $farmer = $this->makeUser('Dan Farmer', 'farmer');
 
         $this->actingAs($farmer)->postJson(route('farmer.ai-chat.avatar'), [
-            'avatar' => 'sun',
+            'avatar' => 'leaf',
         ])->assertOk();
 
         $this->actingAs($farmer->fresh())->get(route('farmer.ai-chat.index'))
             ->assertOk()
-            ->assertSee('sun.svg', false)
+            ->assertSee(AiAvatars::all()['leaf']['file'], false)
             ->assertSee('data-ai-avatar', false)
             ->assertSee('avatarPicker', false);
 
@@ -105,9 +105,11 @@ class AiChatAvatarTest extends TestCase
     {
         $farmer = $this->makeUser('Eva Farmer', 'farmer');
 
+        $default = AiAvatars::all()[AiAvatars::defaultKey()]['file'];
+
         $this->actingAs($farmer)->get(route('farmer.ai-chat.index'))
             ->assertOk()
-            ->assertSee(AiAvatars::defaultKey() . '.svg', false);
+            ->assertSee($default, false);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
@@ -116,10 +118,10 @@ class AiChatAvatarTest extends TestCase
         $store = $this->makeUser('Green Store', 'store_owner');
 
         $this->actingAs($store)->postJson(route('store.ai-chat.avatar'), [
-            'avatar' => 'basket',
+            'avatar' => 'sprout',
         ])->assertOk()->assertJson(['ok' => true]);
 
-        $this->assertSame('basket', $store->fresh()->ai_avatar);
+        $this->assertSame('sprout', $store->fresh()->ai_avatar);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]

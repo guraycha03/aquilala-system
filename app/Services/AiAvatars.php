@@ -15,30 +15,34 @@ namespace App\Services;
 class AiAvatars
 {
     /**
-     * key => [label, file]
+     * The choices, in the order the picker shows them.
+     *
+     * These are the pictures the application already owns, in
+     * public/images. They stand in until a proper assistant picture is
+     * dropped in there: the account stores the key, the file is ours.
      *
      * @return array<string, array{label: string, file: string}>
      */
     public static function all(): array
     {
         return [
-            'sprout'  => ['label' => 'Sprout',    'file' => 'sprout.svg'],
-            'leaf'    => ['label' => 'Leaf',      'file' => 'leaf.svg'],
-            'sun'     => ['label' => 'Sun',       'file' => 'sun.svg'],
-            'droplet' => ['label' => 'Rain',      'file' => 'droplet.svg'],
-            'store'   => ['label' => 'Storefront', 'file' => 'store.svg'],
-            'basket'  => ['label' => 'Basket',    'file' => 'basket.svg'],
-            'wheat'   => ['label' => 'Rice',      'file' => 'wheat.svg'],
-            'tractor' => ['label' => 'Tractor',   'file' => 'tractor.svg'],
+            'robot'    => ['label' => 'Robot',    'file' => 'ai-avatar.png'],
+            'aquilala' => ['label' => 'Aquilala', 'file' => 'logo.png'],
+            'water'    => ['label' => 'Water',    'file' => 'logo_.png'],
+            'leaf'     => ['label' => 'Leaf',     'file' => 'logo_2.png'],
+            'sprout'   => ['label' => 'Sprout',   'file' => 'crop.png'],
+            'store'    => ['label' => 'Store',    'file' => 'store.png'],
+            'farmer'   => ['label' => 'Farmer',   'file' => 'farmer.png'],
+            'product'  => ['label' => 'Product',  'file' => 'product.png'],
         ];
     }
 
     /**
-     * The default: the association's own mark.
+     * The default: the assistant's own picture.
      */
     public static function defaultKey(): string
     {
-        return 'sprout';
+        return 'robot';
     }
 
     /**
@@ -60,7 +64,7 @@ class AiAvatars
             $key = self::defaultKey();
         }
 
-        return asset('images/ai-avatars/' . $avatars[$key]['file']);
+        return asset('images/' . $avatars[$key]['file']);
     }
 
     /**
