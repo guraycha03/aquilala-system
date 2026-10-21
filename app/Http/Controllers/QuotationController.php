@@ -10,6 +10,7 @@ use App\Models\Quotation;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\CostQuotationEngine;
+use App\Services\StoreDemandService;
 use App\Services\CropLibraryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -27,6 +28,10 @@ class QuotationController extends Controller
      * the metrics instead, so each one gets its own card.
      */
     private const PRODUCT_CARDS_TOKEN = '[[PRODUCT_CARDS]]';
+
+    public function __construct(private readonly StoreDemandService $storeDemand)
+    {
+    }
 
     // ────────────────────────────────────────────────────────────────
     //  FARMER — Generate Cost Quotation (auto-computed instantly)
@@ -805,54 +810,20 @@ PROMPT;
 
         $storeUserId = Auth::id();
 
-        $quotations = Quotation::involvingStore($storeUserId)
-            ->with(['items.product'])
-            ->latest()
-            ->get();
-
-        $storeItems = $quotations->pluck('items')
-            ->flatten()
-            ->filter(fn ($item) => $item->product && $item->product->user_id === $storeUserId);
-
-        $recentQuotations = $quotations->where('created_at', '>=', now()->subDays(7))->count();
-        $priorQuotations = $quotations->filter(fn ($q) => $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
-        )->count();
-
-        $topProducts = $storeItems
-            ->groupBy('product_name')
-            ->map(fn ($items) => [
-                'name' => $items->first()->product_name,
-                'count' => $items->count(),
-                'qty' => round($items->sum('calculated_quantity'), 1),
-                'value' => round($items->sum('subtotal'), 2),
-            ])
-            ->sortByDesc('count')
-            ->take(6)
-            ->values()
-            ->toArray();
-
-        $topCrops = $quotations
-            ->groupBy('crop_type')
-            ->map(fn ($qs, $crop) => [
-                'crop' => $crop,
-                'count' => $qs->count(),
-                'area' => $qs->sum('land_area'),
-            ])
-            ->sortByDesc('count')
-            ->take(5)
-            ->values()
-            ->toArray();
+        // One service works the demand figures out, so the report on the page
+        // and the answer in the store owner's chat are the same numbers.
+        $demand = $this->storeDemand->summary($storeUserId);
 
         $context = [
             'store' => Auth::user()->name,
-            'total_signals' => $quotations->count(),
-            'unique_farmers' => $quotations->pluck('user_id')->filter()->unique()->count(),
-            'this_week' => $recentQuotations,
-            'last_week' => $priorQuotations,
-            'own_products_value' => round($storeItems->sum('subtotal'), 2),
-            'signals_total_value' => round($quotations->sum('estimated_total_cost'), 2),
-            'top_products' => $topProducts,
-            'top_crops' => $topCrops,
+            'total_signals' => $demand['total_quotations'],
+            'unique_farmers' => $demand['unique_farmers'],
+            'this_week' => $demand['this_week'],
+            'last_week' => $demand['last_week'],
+            'own_products_value' => $demand['own_products_value'],
+            'signals_total_value' => $demand['total_value'],
+            'top_products' => $demand['top_products'],
+            'top_crops' => $demand['top_crops'],
         ];
 
         // Deterministic report first: the store always gets a real report.

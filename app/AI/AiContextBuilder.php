@@ -3,12 +3,14 @@
 namespace App\AI;
 
 use App\Helpers\SeasonHelper;
+use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\User;
 use App\Rules\CropRecommendationEngine;
 use App\Services\CropService;
 use App\Services\FarmingKnowledgeService;
 use App\Services\ProductSearchService;
+use App\Services\StoreDemandService;
 use Illuminate\Support\Collection;
 
 /**
@@ -33,6 +35,7 @@ class AiContextBuilder
         private readonly CropRecommendationEngine $recommendations,
         private readonly FarmingKnowledgeService $knowledge,
         private readonly CropService $crops,
+        private readonly StoreDemandService $storeDemand,
     ) {
     }
 
@@ -117,6 +120,20 @@ class AiContextBuilder
             case AiIntent::QUOTATION:
                 $quotation = $this->retrieveQuotation($user);
                 $missing = $quotation === null ? ['quotation'] : [];
+                break;
+
+            // A store owner's own demand: the quotations farmers created that
+            // include this store's products. The same figures the demand
+            // trends page shows, read from one service so the chat and the
+            // page cannot disagree.
+            case AiIntent::STORE_DEMAND:
+                $facts['store_demand'] = $user === null
+                    ? null
+                    : $this->storeDemand->summary((int) $user->id);
+                $missing = [];
+                // The trending products are the store's own products, so they
+                // can be shown as cards and the model may name them.
+                $retrieved = $this->storeDemandProducts($facts['store_demand'] ?? null, $user);
                 break;
 
             case AiIntent::CROP_ADVICE:
@@ -208,6 +225,35 @@ class AiContextBuilder
             'assumptions'    => $assumptions,
             'quotation'      => $quotation,
         ];
+    }
+
+    /**
+     * The store's own products behind its demand, as cards.
+     *
+     * @param  array<string, mixed>|null  $demand
+     * @return Collection<int, Product>
+     */
+    private function storeDemandProducts(?array $demand, ?User $user): Collection
+    {
+        if (! is_array($demand) || ($demand['top_products'] ?? []) === []) {
+            return new Collection();
+        }
+
+        $ids = collect($demand['top_products'])
+            ->pluck('product_id')
+            ->filter(fn ($id) => (int) $id > 0)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return new Collection();
+        }
+
+        return Product::query()
+            ->whereIn('id', $ids)
+            ->when($user?->role === 'store_owner', fn ($query) => $query->where('user_id', $user->id))
+            ->with(['storeOwner', 'images'])
+            ->get();
     }
 
     /**

@@ -35,6 +35,54 @@ use Illuminate\Support\Facades\Log;
  */
 class AquilalaAssistant
 {
+    /**
+     * The words a store owner uses when they ask about their own demand:
+     * what is trending, what to restock, what the quotations say.
+     *
+     * @var array<int, string>
+     */
+    private const STORE_DEMAND_PATTERNS = [
+        '/\btrending\b/',
+        '/\bin\s+demand\b/',
+        '/\bdemand\s+trends?\b/',
+        '/\bmost\s+(?:quoted|demanded|asked\s+for|requested)\b/',
+        '/\bwhat\s+are\s+farmers\s+(?:asking|quoting|requesting)\b/',
+        '/\bre-?stock(?:ing)?\b/',
+        '/\bwhat\s+should\s+i\s+(?:stock|order|carry|keep)\b/',
+        '/\bquotation\s+trends?\b/',
+        '/\bmy\s+(?:quotation|quote|quotations|quotes)\s+trends?\b/',
+        '/\bwhat\s+(?:is|are)\s+(?:hot|selling)\b/',
+    ];
+
+    /**
+     * The words that mark an answer about the assistant rather than about the
+     * subject: capabilities, instructions, context, access. An answer that
+     * talks about itself is not an answer to the question.
+     *
+     * @var array<int, string>
+     */
+    private const META_ANSWER_MARKERS = [
+        'my capabilities',
+        'my capabilities are',
+        'i cannot',
+        'i can only',
+        "i'm unable",
+        'i am unable',
+        'as an ai',
+        "i'm an ai",
+        'my instructions',
+        'the context provided',
+        'the verified context',
+        'the aquilala context',
+        'the data you gave me',
+        'i do not have access',
+        "i don't have access",
+        'i am grounded',
+        'i am verified',
+        'based on the provided context',
+        'according to my',
+    ];
+
     public function __construct(
         private readonly AiIntentRouter $router,
         private readonly AiContextBuilder $contextBuilder,
@@ -65,6 +113,18 @@ class AquilalaAssistant
         $context = AiConversationContext::fromArray($conversationContext);
         $routing = $this->router->route($message, $context, $history);
         $intent = $routing['intent'];
+
+        // A store owner asking about their own business is asking about the
+        // store's demand, and only the store's own quotations can answer it.
+        // The router reads the words; this reads who is asking.
+        if ($user?->role === 'store_owner' && $this->isStoreDemandQuestion($message, $intent)) {
+            $routing['intent'] = AiIntent::STORE_DEMAND;
+            // Whatever the router thought was missing — a season, a farm
+            // area — the store's own quotations do not need it. Leaving it
+            // behind would turn a demand question into a clarification.
+            $routing['missing'] = [];
+            $intent = AiIntent::STORE_DEMAND;
+        }
 
         $contextData = $this->contextBuilder->build($message, $routing, $user, $context);
         $fallback = $this->deterministicAnswer($intent, $contextData, $routing);
@@ -125,6 +185,38 @@ class AquilalaAssistant
     // ────────────────────────────────────────────────────────────
 
     /**
+     * Does this message ask the store about its own business?
+     *
+     * The words are what the router reads; the decision to treat them as a
+     * demand question belongs here, because only a store owner has demand to
+     * be asked about. A question about a specific product's price or a cost
+     * estimate is left alone — those are catalog questions with their own
+     * answers.
+     *
+     * @return bool
+     */
+    private function isStoreDemandQuestion(string $message, string $intent): bool
+    {
+        // A price, a cost or a specific product is the catalog's business.
+        if (in_array($intent, [
+            AiIntent::COST_ESTIMATION,
+            AiIntent::PRODUCT_SEARCH,
+        ], true)) {
+            return false;
+        }
+
+        $text = mb_strtolower($message);
+
+        foreach (self::STORE_DEMAND_PATTERNS as $pattern) {
+            if (preg_match($pattern, $text) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Ask the model to explain the verified context, then hold the result
      * against it.
      *
@@ -166,6 +258,21 @@ class AquilalaAssistant
 
         $answer = $validated['answer'] !== '' ? $validated['answer'] : $fallback;
 
+        // The model sometimes writes the same line again and again — the same
+        // bullet, the same sentence, the same closing note. It reads as a
+        // stuck record, so the repeats are removed before the reader sees
+        // them. The first occurrence is kept: it is the one that is in the
+        // right place.
+        $answer = $this->dedupeRepeatedLines($answer);
+
+        // An answer about the assistant instead of an answer to the question.
+        // "My capabilities are limited to the catalog" is not an answer to
+        // "do you have urea?", and reading it is exactly the experience this
+        // pipeline is meant to avoid — so Laravel's own answer takes over.
+        if ($this->isMetaAnswer($answer)) {
+            $answer = $fallback;
+        }
+
         // Laravel's wording wins outright on two grounds. A clarification the
         // model wrote is never used, because the router's question is the more
         // precise of the two and a reworded question is a way to slip an
@@ -181,6 +288,81 @@ class AquilalaAssistant
             'violations' => $validated['violations'],
             'source'     => 'ai',
         ];
+    }
+
+    /**
+     * Is this an answer about the assistant rather than about the subject?
+     *
+     * The model is told not to describe itself, and mostly listens. When it
+     * does not, the answer is recognisable: it talks about capabilities,
+     * instructions, context or access rather than about crops, products or
+     * prices.
+     */
+    private function isMetaAnswer(string $answer): bool
+    {
+        $text = mb_strtolower($answer);
+
+        foreach (self::META_ANSWER_MARKERS as $marker) {
+            if (str_contains($text, $marker)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Remove lines the model said more than once.
+     *
+     * A line counts as repeated when it says the same thing as an earlier
+     * line, ignoring bullet markers, emphasis, punctuation and case. The
+     * first copy stays where it is; later copies are dropped.
+     */
+    private function dedupeRepeatedLines(string $answer): string
+    {
+        $lines = preg_split('/\R/', $answer);
+        if ($lines === false) {
+            return $answer;
+        }
+
+        $seen = [];
+        $kept = [];
+
+        foreach ($lines as $line) {
+            $key = $this->lineKey($line);
+
+            if ($key !== '') {
+                if (isset($seen[$key])) {
+                    continue;
+                }
+                $seen[$key] = true;
+            }
+
+            $kept[] = $line;
+        }
+
+        return implode("\n", $kept);
+    }
+
+    /**
+     * A comparable form of a line: the words, with the decoration taken off.
+     */
+    private function lineKey(string $line): string
+    {
+        $text = trim($line);
+        if ($text === '') {
+            return '';
+        }
+
+        // Bullet and heading markers, emphasis, code ticks and links.
+        $text = preg_replace('/^\s*(?:[-*+]|\d+[.)]|#{1,6})\s+/u', '', $text) ?? $text;
+        $text = str_replace(['**', '__', '*', '`', '#'], '', $text);
+        $text = preg_replace('/\[([^\]]*)\]\([^)]*\)/u', '$1', $text) ?? $text;
+        $text = mb_strtolower(trim($text));
+        $text = preg_replace('/[^\p{L}\p{N}\s]+/u', '', $text) ?? $text;
+        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
+
+        return trim($text);
     }
 
     // ────────────────────────────────────────────────────────────
@@ -218,6 +400,7 @@ class AquilalaAssistant
             AiIntent::FERTILIZER_ADVICE => $this->recommendationAnswer($products, $crop, $missing, $routing),
             AiIntent::COST_ESTIMATION => $this->costAnswer($contextData, $crop, $missing),
             AiIntent::QUOTATION => $this->quotationAnswer($contextData['quotation']),
+            AiIntent::STORE_DEMAND => $this->storeDemandAnswer($contextData),
             AiIntent::CROP_ADVICE => $this->cropAdviceAnswer($crop, $missing, $routing),
             AiIntent::GREETING => $this->greetingAnswer($contextData),
             AiIntent::CROP_DISCOVERY,
@@ -480,9 +663,9 @@ class AquilalaAssistant
 
             $lines[] = '';
             $lines[] = 'That is general farming practice, not an Aquilala recommendation. '
-                . 'Aquilala has no step-by-step guide for ' . $crop . ', so I am not giving you an exact planting distance, '
-                . 'seed rate or spray schedule — those come from the association\'s decision formulas, which need your crop, '
-                . 'season and farm area.';
+                . 'I am not giving you an exact planting distance, seed rate or spray schedule — those come from the '
+                . 'association\'s decision formulas, which need your crop, season and farm area. '
+                . 'Aquilala\'s own numbers for **' . $crop . '** are below.';
 
             $base = $this->cropAdviceAnswer($crop, $missing, $routing);
 
@@ -520,9 +703,7 @@ class AquilalaAssistant
         }
 
         $lines[] = '';
-        $lines[] = '> **IMPORTANT:** I can give you general planting practice, but Aquilala has no step-by-step guide, '
-            . 'so I will not give you an exact planting distance, seed rate or spray schedule. Those come from the '
-            . 'association\'s decision formulas, which work from your crop, season and farm area.';
+        $lines[] = 'Name the crop you are growing and I will give you its Aquilala record and the general planting process for it.';
 
         return implode("\n", $lines);
     }
@@ -819,6 +1000,70 @@ class AquilalaAssistant
     }
 
     /**
+     * A store owner's own demand, in their own numbers.
+     *
+     * The store's quotations are the only source for this, so the answer is
+     * built from them and never padded with a capability list. A store owner
+     * asking what is trending wants the products and the crops, not a
+     * description of the assistant.
+     *
+     * @param  array<string, mixed>  $contextData
+     */
+    private function storeDemandAnswer(array $contextData): string
+    {
+        $demand = $contextData['facts']['store_demand'] ?? null;
+
+        if (! is_array($demand) || ($demand['total_quotations'] ?? 0) === 0) {
+            return 'No farmer has quoted your products yet, so there is nothing trending to report. '
+                . 'As soon as a farmer creates a quotation that includes your items, the numbers land here.';
+        }
+
+        $total = (int) $demand['total_quotations'];
+        $farmers = (int) $demand['unique_farmers'];
+        $thisWeek = (int) $demand['this_week'];
+        $lastWeek = (int) $demand['last_week'];
+        $products = $demand['top_products'] ?? [];
+        $crops = $demand['top_crops'] ?? [];
+
+        $lines = [];
+
+        $lines[] = $total . ' farmer quotation' . ($total === 1 ? '' : 's')
+            . ' from ' . $farmers . ' farmer' . ($farmers === 1 ? '' : 's')
+            . ' include your products.';
+
+        if ($thisWeek > 0 || $lastWeek > 0) {
+            $lines[] = 'This week: **' . $thisWeek . '**, last week: **' . $lastWeek . '**.';
+        }
+
+        if ($products !== []) {
+            $lines[] = '';
+            $lines[] = '### Most quoted products';
+            foreach (array_slice($products, 0, 5) as $product) {
+                $lines[] = '- **' . $product['name'] . '** — ' . $product['count'] . ' quotation'
+                    . ($product['count'] === 1 ? '' : 's')
+                    . ', ₱' . number_format((float) $product['value'], 0) . ' quoted.';
+            }
+        }
+
+        if ($crops !== []) {
+            $lines[] = '';
+            $lines[] = '### Crops in demand';
+            foreach (array_slice($crops, 0, 3) as $crop) {
+                $lines[] = '- **' . $crop['crop'] . '** — ' . $crop['count'] . ' quotation'
+                    . ($crop['count'] === 1 ? '' : 's')
+                    . ' over ' . round((float) $crop['area'], 1) . ' ha.';
+            }
+        }
+
+        if ($products !== []) {
+            $lines[] = '';
+            $lines[] = 'Keep **' . $products[0]['name'] . '** well stocked — it is what farmers quote most.';
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
      * @param  array<string, mixed>  $contextData
      */
     private function generalAnswer(array $contextData): string
@@ -826,22 +1071,15 @@ class AquilalaAssistant
         $facts = $contextData['facts'] ?? [];
         $season = $facts['current_season'] ?? [];
 
-        $lines = [
-            '### What I can help with',
-            '',
-            '- Search the **Aquilala product catalog** and show what is actually listed, with live prices and stock.',
-            '- Explain the recommendation the **Aquilala rule engine** produces for a crop and season.',
-            '- Explain a **cost estimate** Aquilala calculated, and what each line is for.',
-            '- Explain the approved **crop and season guidance** for Bulan, Sorsogon.',
-        ];
+        $lines = [];
 
         if (! empty($season['label'])) {
+            $lines[] = 'It is **' . $season['label'] . '**' . ($season['typical_weather'] ? ' — ' . $season['typical_weather'] : '') . '.';
             $lines[] = '';
-            $lines[] = 'Right now it is **' . $season['label'] . '** (' . ($season['sub_season'] ?? '') . ') — ' . ($season['typical_weather'] ?? '');
         }
 
-        $lines[] = '';
-        $lines[] = 'Tell me your **crop**, **season** and **farm area** and I will work from the Aquilala data.';
+        $lines[] = 'Ask me about a crop, a product, a price, a cost estimate, or how to grow something, '
+            . 'and I will answer it.';
 
         return implode("\n", $lines);
     }
@@ -854,12 +1092,7 @@ class AquilalaAssistant
         $crops = $contextData['facts']['supported_crops'] ?? [];
 
         $lines = [
-            '### I am the Aquilala farm assistant',
-            '',
-            'I answer from this system\'s own data — the product catalog, the decision formulas and the cost engine. '
-                . 'I explain what they produce; I do not make up products, prices or dosages.',
-            '',
-            '**Ask me things like:**',
+            'Ask me anything about farming and inputs, for example:',
             '',
             '- "Do you have urea products?"',
             '- "What fertilizers for rice?"',
@@ -869,11 +1102,8 @@ class AquilalaAssistant
 
         if ($crops !== []) {
             $lines[] = '';
-            $lines[] = 'Crops with Aquilala formulas: ' . implode(', ', $crops) . '.';
+            $lines[] = 'Crops Aquilala has formulas for: ' . implode(', ', $crops) . '.';
         }
-
-        $lines[] = '';
-        $lines[] = 'I cannot change prices or stock, create products, place orders, or browse the web.';
 
         return implode("\n", $lines);
     }

@@ -57,16 +57,11 @@
                 </div>
                 <div class="message-bubble">
                     <div>
-                        Hello! I'm your AI assistant for Aquilala stores. I can help you with:
+                        Hello! I'm the Aquilala assistant for stores.
                     </div>
-                    <ul>
-                        <li>Reading farmer quotations to see what they need</li>
-                        <li>Spotting product and crop trends in your area</li>
-                        <li>Deciding what to stock or restock</li>
-                        <li>Pricing and quoting guidance</li>
-                    </ul>
-                    <div style="margin-top: 10px;">
-                        Ask me anything about your store!
+                    <div style="margin-top: 6px;">
+                        Ask me about your store — what farmers are quoting from it, what to restock, your prices and
+                        stock — or ask me anything about farming and farm inputs.
                     </div>
                 </div>
             </div>

@@ -165,7 +165,7 @@ class AiResponseValidator
         // A price that contradicts the database is the single most damaging
         // thing a model can say here, because a farmer may act on it. Drop the
         // prose and use Laravel's own wording.
-        if ($this->hasPriceConflict($answer, $trustedPrices)) {
+        if ($this->hasPriceConflict($answer, $trustedPrices, $deterministicAnswer)) {
             $violations[] = self::VIOLATION_PRICE_MISMATCH;
             $answer = $deterministicAnswer ?? '';
         }
@@ -354,8 +354,11 @@ class AiResponseValidator
      * here would reject correct answers.
      *
      * @param  array<string, float>  $trustedPrices  Product name => database price.
+     * @param  string|null  $deterministicAnswer  Laravel's own wording, which
+     *         carries the figures the system printed. An amount that appears
+     *         in it is one of our totals, not a price the model made up.
      */
-    private function hasPriceConflict(string $answer, array $trustedPrices): bool
+    private function hasPriceConflict(string $answer, array $trustedPrices, ?string $deterministicAnswer = null): bool
     {
         if ($answer === '' || $trustedPrices === []) {
             return false;
@@ -375,9 +378,41 @@ class AiResponseValidator
             foreach ($this->amountsAfter($answer, $name) as $claimed) {
                 // Half a peso of tolerance absorbs rounding in prose without
                 // letting a materially different price through.
-                if (abs($claimed - $price) > 0.5) {
-                    return true;
+                if (abs($claimed - $price) <= 0.5) {
+                    continue;
                 }
+
+                // A total the system itself printed is not a price claim.
+                // "₱51,600 quoted" is the demand figure for a product, and
+                // Laravel printed it in the answer beside it.
+                if ($this->amountAppearsIn($deterministicAnswer, $claimed)) {
+                    continue;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Does this figure appear in Laravel's own wording?
+     *
+     * @param  string|null  $text
+     */
+    private function amountAppearsIn(?string $text, float $amount): bool
+    {
+        if ($text === null || $text === '' || $amount <= 0) {
+            return false;
+        }
+
+        $plain = rtrim(rtrim(number_format($amount, 2, '.', ''), '0'), '.');
+        $whole = number_format($amount, 0, '.', '');
+
+        foreach (array_unique([$plain, $whole, number_format((float) $whole, 0)]) as $figure) {
+            if ($figure !== '' && str_contains($text, $figure)) {
+                return true;
             }
         }
 

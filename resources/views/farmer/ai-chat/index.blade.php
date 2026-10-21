@@ -57,16 +57,11 @@
                 </div>
                 <div class="message-bubble">
                     <div>
-                        Hello! I'm your AI farming assistant for Bulan, Sorsogon. I can help you with:
+                        Hello! I'm the Aquilala farming assistant for Bulan, Sorsogon.
                     </div>
-                    <ul>
-                        <li>Finding the right fertilizers and inputs for your crops</li>
-                        <li>Understanding application rates and timing</li>
-                        <li>Seasonal recommendations</li>
-                        <li>Cost estimation for your farm</li>
-                    </ul>
-                    <div style="margin-top: 10px;">
-                        Tell me about your farm or ask me anything!
+                    <div style="margin-top: 6px;">
+                        Ask me what to plant, what to use on it, what it will cost, or how to grow something — and I will
+                        answer from the association's own records and from general farming practice.
                     </div>
                 </div>
             </div>

@@ -66,6 +66,13 @@ final class AiIntent
      */
     public const FARMING_ADVICE = 'FARMING_ADVICE';
 
+    /**
+     * A store owner's own business question: what farmers are quoting from
+     * this shop, what is trending, what to restock. The data is the store's
+     * own quotations, which only a store owner has.
+     */
+    public const STORE_DEMAND = 'STORE_DEMAND';
+
     public const UNSUPPORTED = 'UNSUPPORTED';
 
     /** @return array<int, string> */
@@ -79,6 +86,7 @@ final class AiIntent
             self::CROP_RECOMMENDATION,
             self::SEASONAL_RECOMMENDATION,
             self::FARMING_ADVICE,
+            self::STORE_DEMAND,
             self::CROP_ADVICE,
             self::FERTILIZER_ADVICE,
             self::COST_ESTIMATION,
