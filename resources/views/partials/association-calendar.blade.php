@@ -55,8 +55,8 @@
     .cal-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid #e5e7eb; }
     .cal-toolbar-title { font-size: 16.5px; font-weight: 800; color: #1e2922; margin: 0; }
     .cal-nav { display: flex; gap: 8px; }
-    .cal-nav a { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; border: 1.5px solid #e2e8f0; background: #f8fafc; color: #475569; text-decoration: none; font-weight: 700; }
-    .cal-nav a:hover { background: #f0fdf4; border-color: #86efac; color: #16a34a; }
+    .cal-nav a { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; border: 1.5px solid #e2e8f0; background: #edf1e9; color: #648268; text-decoration: none; font-weight: 700; }
+    .cal-nav a:hover { background: #f0fdf4; border-color: #86efac; color: #4A7A54; }
 
     .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
     .cal-wd { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; text-align: center; padding: 10px 4px; background: #f8fafc; border-bottom: 1px solid #e5e7eb; }
@@ -64,13 +64,13 @@
     .cal-cell { box-sizing: border-box; height: 96px; padding: 8px 7px; overflow: hidden; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; cursor: default; }
     .cal-cell:nth-child(7n) { border-right: 0; }
     .cal-cell.outside { background: #fafafa; }
-    .cal-cell.is-today { background: #f0fdf4; box-shadow: inset 0 0 0 2px #16a34a; }
+    .cal-cell.is-today { background: #f0fdf4; box-shadow: inset 0 0 0 2px #4A7A54; }
     .cal-cell.has-events { cursor: pointer; }
     .cal-cell.has-events:hover, .cal-cell.has-events:focus-visible { background: #ecfdf5; outline: none; }
 
     .cal-daynum { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 5px; border-radius: 12px; font-size: 12.5px; font-weight: 700; color: #475569; background: #f1f5f9; margin-bottom: 7px; }
     .cal-cell.outside .cal-daynum { color: #cbd5e1; }
-    .cal-cell.is-today .cal-daynum { background: #16a34a; color: #fff; font-weight: 800; }
+    .cal-cell.is-today .cal-daynum { background: #4A7A54; color: #fff; font-weight: 800; }
     .cal-cell.has-events .cal-daynum { background: var(--ev, #334155); color: #fff; font-weight: 800; }
     .cal-cell.outside.has-events .cal-daynum { opacity: .6; }
 

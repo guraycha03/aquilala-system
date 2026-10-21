@@ -283,12 +283,9 @@ class ActivityLogger
             $meta
         );
 
-        // Anonymous copy for stores (see quotationCreated).
-        self::notifyStoresOfQuotation(
-            $quotation,
-            ActivityLog::TYPE_QUOTATION_DELETED,
-            "Cost estimate {$quotation->quotation_number} that included your products was deleted"
-        );
+        // No copy for the stores, and no push. A withdrawal is the farmer's
+        // undo: it belongs in that farmer's activity history, and a popup
+        // about a row that no longer exists is noise, not news.
 
         return $row;
     }
@@ -570,24 +567,16 @@ class ActivityLogger
         );
 
         // The outside-the-app pop-up: one OS-level push per member device,
-        // delivered whether the app is open or closed. Each role lands on a
-        // page its own account may open — the farmer's calendar, the store's
-        // notification list (stores have no calendar screen).
-        $farmerIds  = User::where('role', 'farmer')->pluck('id');
-        $storeIds   = User::where('role', 'store_owner')->pluck('id');
+        // delivered whether the app is open or closed. Farmers land on the
+        // calendar they can open. Store owners are not members and have no
+        // calendar, so no event notice reaches them.
+        $farmerIds = User::where('role', 'farmer')->pluck('id');
 
         self::pushNotice(
             $farmerIds->all(),
             "{$label}: {$event->title}",
             self::eventPushBody($event),
             'farmer.calendar.index',
-            'event-' . $event->id
-        );
-        self::pushNotice(
-            $storeIds->all(),
-            "{$label}: {$event->title}",
-            self::eventPushBody($event),
-            'store.notifications.index',
             'event-' . $event->id
         );
 
@@ -643,9 +632,12 @@ class ActivityLogger
     }
 
     /**
-     * One in-app row per farmer and store owner for a calendar event.
+     * One in-app row per farmer for a calendar event.
      * Rows belong to the recipient (independent read state); the acting
      * admin is the actor. Admins authored the event, so they get no copy.
+     *
+     * Store owners are not on the association's calendar and have no
+     * calendar screen: an event notice is not for them.
      */
     private static function notifyMembersOfEvent(AssociationEvent $event, string $type, string $description): void
     {
@@ -657,7 +649,7 @@ class ActivityLogger
             'location'   => $event->location,
         ];
 
-        $members = User::whereIn('role', ['farmer', 'store_owner'])->get();
+        $members = User::where('role', 'farmer')->get();
 
         foreach ($members as $member) {
             self::log($type, $description, $event, $meta, $member);

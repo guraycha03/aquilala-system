@@ -10,7 +10,7 @@
     transition: all 0.2s ease;
   }
   .stat-card.clickable:hover { border-color: #cbd5e1; box-shadow: 0 4px 14px rgba(15, 23, 42, .06); transform: translateY(-1px); }
-  .stat-card.active-filter { border-color: #16a34a; box-shadow: 0 0 0 2px rgba(22, 163, 74, .15); }
+  .stat-card.active-filter { border-color: #4A7A54; box-shadow: 0 0 0 2px rgba(22, 163, 74, .15); }
   .stat-value { font-size: 26px; font-weight: 800; color: #143d23; line-height: 1; }
   .stat-label { font-size: 13px; color: #64748b; margin-top: 4px; font-weight: 500; }
 
@@ -22,7 +22,7 @@
   .pr-crop-ic {
     width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
     display: inline-flex; align-items: center; justify-content: center;
-    background: #f0fdf4; color: #16a34a;
+    background: #edf1e9; color: #648268;
   }
   .pr-crop-name { font-weight: 700; color: #1a2b1e; }
   .pr-crop-sub { font-size: 12px; color: #94a3b8; margin-top: 1px; }
@@ -31,8 +31,8 @@
     display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px;
     border-radius: 20px; font-size: 11.5px; font-weight: 700; white-space: nowrap;
   }
-  .pr-badge.pending  { background: #fffbeb; color: #b45309; border: 1px dashed #f59e0b; }
-  .pr-badge.confirmed { background: #ecfdf5; color: #15803d; }
+  .pr-badge.pending  { background: #edf1e9; color: #648268; border: 1px dashed #f59e0b; }
+  .pr-badge.confirmed { background: #edf1e9; color: #648268; }
   .pr-badge.rejected { background: #fef2f2; color: #dc2626; }
 
   .pr-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
@@ -43,11 +43,11 @@
     font-size: 12.5px; font-weight: 700; text-decoration: none;
     transition: all .15s ease;
   }
-  .btn-act.ok { background: #16a34a; color: #fff; box-shadow: 0 3px 8px rgba(22, 163, 74, .25); }
+  .btn-act.ok { background: #4A7A54; color: #fff; box-shadow: 0 3px 8px rgba(22, 163, 74, .25); }
   .btn-act.ok:hover { background: #15803d; transform: translateY(-1px); }
   .btn-act.no { background: #fff; color: #b91c1c; border: 1.5px solid #fecaca; }
   .btn-act.no:hover { background: #fef2f2; }
-  .btn-act.ghost { background: #f8fafc; color: #475569; border: 1.5px solid #e2e8f0; }
+  .btn-act.ghost { background: #edf1e9; color: #648268; border: 1.5px solid #e2e8f0; }
   .btn-act.ghost:hover { background: #f1f5f9; }
 
   .pr-remarks { font-size: 12px; color: #92400e; margin-top: 4px; max-width: 260px; }
@@ -78,7 +78,7 @@
     font-size: 13.5px; font-family: inherit; resize: vertical; min-height: 84px;
     box-sizing: border-box; color: #0f172a;
   }
-  .pr-modal-body textarea:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, .12); }
+  .pr-modal-body textarea:focus { outline: none; border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(22, 163, 74, .12); }
   .pr-modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 
   @media (max-width: 760px) {
@@ -119,7 +119,7 @@
       <div class="stat-value">{{ $stats['confirmed'] }}</div>
       <div class="stat-label">Confirmed</div>
     </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#16a34a" stroke-width="1.5" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#4A7A54" stroke-width="1.5" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
   </a>
   <a href="{{ route('admin.plantings.index', ['status' => 'rejected']) }}"
      class="stat-card clickable {{ $status === 'rejected' ? 'active-filter' : '' }}" style="text-decoration: none;">

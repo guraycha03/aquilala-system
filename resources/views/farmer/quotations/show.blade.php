@@ -97,7 +97,7 @@
   .budget-banner.fitted { background: #f0fdf4; border-color: #bbf7d0; }
   .budget-banner.fitted .bb-title { color: #166534; }
   .budget-banner.fitted .bb-text { color: #3f6b4d; }
-  .budget-banner.fitted .bb-icon { background: #dcfce7; color: #166534; }
+  .budget-banner.fitted .bb-icon { background: #edf1e9; color: #648268; }
 
   .budget-banner.trimmed { background: #fdf9ec; border-color: #f0e0ad; }
   .budget-banner.trimmed .bb-title { color: #85620f; }
@@ -122,8 +122,8 @@
     padding: 7px 16px; border-radius: 24px;
     font-size: 13px; font-weight: 700; letter-spacing: 0.01em;
   }
-  .status-pill.computed { background: #eff6ff; color: #1d4ed8; }
-  .status-pill.viewed   { background: #f5f3ff; color: #6d28d9; }
+  .status-pill.computed { background: #edf1e9; color: #648268; }
+  .status-pill.viewed   { background: #edf1e9; color: #648268; }
   .status-pill.expired  { background: #f5f5f5; color: #9ca3af; }
   .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 
@@ -221,7 +221,7 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 800;
   }
-  .how-badge.green { background: #dcfce7; color: #166534; }
+  .how-badge.green { background: #edf1e9; color: #648268; }
   .how-badge.blue  { background: #dbeafe; color: #1d4ed8; }
   .how-badge.amber { background: #fef3c7; color: #b45309; }
   .how-badge.violet{ background: #ede9fe; color: #6d28d9; }
@@ -318,9 +318,9 @@
 ]"/>
 
 @if(session('success'))
-  <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(22,163,74,0.06);">
-    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(22,163,74,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+  <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(74,122,84,0.06);">
+    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(74,122,84,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#4A7A54" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <span style="font-size: 14px; color: #166534; font-weight: 600;">{{ session('success') }}</span>
   </div>
@@ -628,8 +628,8 @@
 
 <!-- Info banner -->
 <div class="info-banner">
-  <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(22,163,74,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
-    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#16a34a" stroke-width="2" fill="none">
+  <div style="width: 32px; height: 32px; border-radius: 10px; background: rgba(74,122,84,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#4A7A54" stroke-width="2" fill="none">
       <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
     </svg>
   </div>

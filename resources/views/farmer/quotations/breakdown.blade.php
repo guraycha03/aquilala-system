@@ -35,8 +35,8 @@
     padding: 7px 16px; border-radius: 24px;
     font-size: 13px; font-weight: 700; letter-spacing: 0.01em;
   }
-  .status-pill.computed { background: #eff6ff; color: #1d4ed8; }
-  .status-pill.viewed   { background: #f5f3ff; color: #6d28d9; }
+  .status-pill.computed { background: #edf1e9; color: #648268; }
+  .status-pill.viewed   { background: #edf1e9; color: #648268; }
   .status-pill.expired  { background: #f5f5f5; color: #9ca3af; }
   .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 

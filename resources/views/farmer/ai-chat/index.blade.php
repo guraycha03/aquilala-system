@@ -24,7 +24,27 @@
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 0 1 2-2h1.5l1-1.5h9l1 1.5H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" /><circle cx="12" cy="13" r="3.2" /></svg>
                 </span>
             </button>
-            <input type="file" id="aiAvatarInput" accept="image/jpeg,image/png,image/webp" hidden>
+            {{-- The avatars belong to the system: the reader picks one of
+                 them, and the account remembers which. --}}
+            <div class="avatar-picker" id="avatarPicker" role="dialog" aria-modal="true" aria-label="Choose an AI avatar" hidden>
+                <div class="avatar-picker-backdrop" data-avatar-close></div>
+                <div class="avatar-picker-card">
+                    <div class="avatar-picker-head">
+                        <b>Choose an avatar</b>
+                        <button type="button" class="avatar-picker-close" data-avatar-close aria-label="Close">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="avatar-picker-grid">
+                        @foreach($aiAvatars as $choice)
+                            <button type="button" class="avatar-choice{{ $aiAvatarKey === $choice['key'] ? ' is-active' : '' }}" data-avatar-key="{{ $choice['key'] }}" data-avatar-url="{{ $choice['url'] }}" title="{{ $choice['label'] }}">
+                                <img src="{{ $choice['url'] }}" alt="{{ $choice['label'] }}">
+                                <span>{{ $choice['label'] }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
             <div class="header-info">
                 <div class="header-title">AI Assistant</div>
                 <div class="header-status">
@@ -176,11 +196,12 @@
     }
 
     // ─── Per-account AI avatar ──────────────────────────────────
-    // The header avatar is a button: pick a new image, preview it instantly,
-    // then persist it on the server so it follows this account everywhere.
+    // The header avatar is a button: it opens the picker, the reader picks
+    // one of the system's avatars, and the account remembers which one so it
+    // follows them to every device. Nothing is uploaded.
     let aiAvatarUrl = @json($aiAvatar);
     const aiAvatarBtn = document.getElementById('aiAvatarBtn');
-    const aiAvatarInput = document.getElementById('aiAvatarInput');
+    const avatarPicker = document.getElementById('avatarPicker');
 
     function setAiAvatar(url) {
         aiAvatarUrl = url;
@@ -189,35 +210,44 @@
         });
     }
 
-    if (aiAvatarBtn && aiAvatarInput) {
+    if (aiAvatarBtn && avatarPicker) {
         aiAvatarBtn.addEventListener('click', function () {
-            aiAvatarInput.click();
+            avatarPicker.hidden = false;
         });
 
-        aiAvatarInput.addEventListener('change', function () {
-            const file = this.files && this.files[0];
-            this.value = '';
-            if (!file) return;
-            if (file.size > 2 * 1024 * 1024) {
-                showToast('Please pick an image smaller than 2 MB');
+        avatarPicker.addEventListener('click', function (e) {
+            if (e.target.closest('[data-avatar-close]')) {
+                avatarPicker.hidden = true;
                 return;
             }
 
-            const previous = aiAvatarUrl;
-            setAiAvatar(URL.createObjectURL(file));
+            const choice = e.target.closest('.avatar-choice');
+            if (!choice) return;
 
-            const fd = new FormData();
-            fd.append('avatar', file);
+            const url = choice.getAttribute('data-avatar-url');
+            const key = choice.getAttribute('data-avatar-key');
+            const previous = aiAvatarUrl;
+
+            setAiAvatar(url);
+            avatarPicker.querySelectorAll('.avatar-choice').forEach(function (b) {
+                b.classList.toggle('is-active', b === choice);
+            });
+
             fetch('{{ route("farmer.ai-chat.avatar") }}', {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-                body: fd,
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ avatar: key }),
             })
                 .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
                 .then(function (res) {
                     if (res.ok && res.d && res.d.ok) {
                         setAiAvatar(res.d.url);
                         showToast('AI avatar updated');
+                        avatarPicker.hidden = true;
                     } else {
                         setAiAvatar(previous);
                         showToast((res.d && (res.d.message || res.d.error)) || 'Could not update avatar');
@@ -227,6 +257,10 @@
                     setAiAvatar(previous);
                     showToast('Could not update avatar');
                 });
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !avatarPicker.hidden) avatarPicker.hidden = true;
         });
     }
 

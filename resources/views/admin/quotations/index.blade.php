@@ -70,7 +70,7 @@
 
   .scroll-btn {
     width: 30px; height: 30px; border-radius: 8px; border: 1px solid #e2e8f0;
-    background: #ffffff; color: #475569; cursor: pointer;
+    background: #edf1e9; color: #648268; cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: all 0.15s ease; flex-shrink: 0;
   }

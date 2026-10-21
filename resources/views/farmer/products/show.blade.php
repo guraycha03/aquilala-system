@@ -67,12 +67,12 @@
     .price-unit { font-size: 14px; color: #87a992; font-weight: 400; margin-top: 2px; }
 
     .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-    .badge-green { background: #f0fdf4; color: #16a34a; }
+    .badge-green { background: #edf1e9; color: #648268; }
     .badge-red { background: #fef2f2; color: #dc2626; }
-    .badge-blue { background: #eff6ff; color: #2563eb; }
-    .badge-amber { background: #fffbeb; color: #d97706; }
+    .badge-blue { background: #edf1e9; color: #648268; }
+    .badge-amber { background: #edf1e9; color: #648268; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-    .status-dot-green { background: #16a34a; }
+    .status-dot-green { background: #4A7A54; }
     .status-dot-red { background: #dc2626; }
     .status-dot-amber { background: #d97706; }
 
@@ -98,7 +98,7 @@
     .fertilizer-npk { display: flex; gap: 16px; margin: 12px 0 16px; }
     .npk-pill { padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 18px; text-align: center; min-width: 60px; }
     .npk-n { background: #fef2f2; color: #dc2626; }
-    .npk-p { background: #eff6ff; color: #2563eb; }
+    .npk-p { background: #edf1e9; color: #648268; }
     .npk-k { background: #fefce8; color: #ca8a04; }
     .desc-text { color: #3d4a41; font-size: 14px; line-height: 1.8; margin: 0; }
 

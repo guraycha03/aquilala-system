@@ -25,7 +25,7 @@
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
     <tr>
         <td align="center">
-            <a href="{{ $buttonUrl }}" style="display:inline-block;background-color:#16a34a;color:#ffffff;font-size:15px;font-weight:700;letter-spacing:.05em;text-decoration:none;padding:14px 34px;border-radius:8px;">{{ $buttonLabel }}</a>
+            <a href="{{ $buttonUrl }}" style="display:inline-block;background-color:#4A7A54;color:#ffffff;font-size:15px;font-weight:700;letter-spacing:.05em;text-decoration:none;padding:14px 34px;border-radius:8px;">{{ $buttonLabel }}</a>
         </td>
     </tr>
 </table>

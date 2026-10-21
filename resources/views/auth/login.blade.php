@@ -35,7 +35,7 @@
         .auth-container .visual-pane p { letter-spacing: 0.03em; }
 
         /* Log In button — matches the app's primary green */
-        .login-btn { background: #16a34a; color: #ffffff; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); }
+        .login-btn { background: #4A7A54; color: #ffffff; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); }
         .login-btn:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(22, 163, 74, 0.3); }
 
         /* Letter-spacing on typed input text */
@@ -248,9 +248,9 @@
     // ── Inline validation helpers ──
     function setFieldState(inputEl, feedbackEl, isValid, message) {
         if (isValid) {
-            inputEl.style.border = '1px solid #16a34a';
+            inputEl.style.border = '1px solid #4A7A54';
             inputEl.style.boxShadow = 'none';
-            feedbackEl.style.color = '#16a34a';
+            feedbackEl.style.color = '#4A7A54';
             feedbackEl.textContent = message || '✓ Valid';
         } else {
             inputEl.style.border = '1px solid #e87070';
@@ -270,9 +270,9 @@
         const row = document.querySelector('#phone-group .phone-row');
         const fb = document.getElementById('login-phone-local-feedback');
         if (isValid) {
-            row.style.border = '1.5px solid #16a34a';
+            row.style.border = '1.5px solid #4A7A54';
             row.style.boxShadow = 'none';
-            fb.style.color = '#16a34a';
+            fb.style.color = '#4A7A54';
             fb.textContent = message || '✓ Valid';
         } else {
             row.style.border = '1.5px solid #e87070';

@@ -50,7 +50,7 @@
       width: 100%; background: #ffffff; border: 1px solid #e6ebe8; border-radius: 10px;
       padding: 10px 12px; font-size: 13px; color: #334155; outline: none; font-family: inherit;
     }
-    input[type="date"]:focus, select:focus, textarea:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.08); }
+    input[type="date"]:focus, select:focus, textarea:focus { border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(74,122,84,.08); }
     textarea { resize: vertical; min-height: 78px; }
     .wx-cta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
     .wx-link {
@@ -115,7 +115,7 @@
               <div class="set-card">
                 <div class="set-field">
                   <label>Falling inside harvest data</label>
-                  <div style="font-size:26px;font-weight:800;color:#16a34a;line-height:1;">{{ $stats['in_span'] }}</div>
+                  <div style="font-size:26px;font-weight:800;color:#4A7A54;line-height:1;">{{ $stats['in_span'] }}</div>
                   <div class="hint">Events dated within your recorded harvest range — these are the ones the AI can correlate.</div>
                 </div>
               </div>
@@ -230,7 +230,7 @@
                         @if($event->notes)<div class="wx-notes">{{ $event->notes }}</div>@endif
                       </td>
                       <td>{{ $event->typeLabel() }}</td>
-                      <td><span class="wx-badge" style="{{ $severities[$event->severity] === 'Extreme' || $severities[$event->severity] === 'Severe' ? 'background:#fef2f2;color:#b91c1c;' : ($severities[$event->severity] === 'Minor' ? 'background:#f1f5f9;color:#64748b;' : 'background:#fffbeb;color:#b45309;') }}"><span class="dot"></span>{{ $event->severityLabel() }}</span></td>
+                      <td><span class="wx-badge" style="{{ $severities[$event->severity] === 'Extreme' || $severities[$event->severity] === 'Severe' ? 'background:#fef2f2;color:#b91c1c;' : ($severities[$event->severity] === 'Minor' ? 'background: #edf1e9; color: #648268;' : 'background: #edf1e9; color: #648268;') }}"><span class="dot"></span>{{ $event->severityLabel() }}</span></td>
                       <td class="wx-dates">{{ $event->dateRangeLabel() }}</td>
                       <td class="wx-by">{{ $event->logger?->name ?? '—' }}</td>
                       <td style="text-align:right;"><button type="button" class="wx-del" data-url="{{ route('admin.settings.weather.destroy', $event) }}">Remove</button></td>
@@ -280,8 +280,8 @@
       var TYPE_LABELS = @json(\App\Models\WeatherLog::TYPES);
       var SEVERITY_LABELS = @json(\App\Models\WeatherLog::SEVERITIES);
       var SEVERITY_STYLE = {
-        minor:    'background:#f1f5f9;color:#64748b;',
-        moderate: 'background:#fffbeb;color:#b45309;',
+        minor:    'background: #edf1e9; color: #648268;',
+        moderate: 'background: #edf1e9; color: #648268;',
         severe:   'background:#fef2f2;color:#b91c1c;',
         extreme:  'background:#fef2f2;color:#b91c1c;'
       };

@@ -28,7 +28,13 @@ class AiChatController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $data = ['aiAvatar' => $user?->aiAvatarUrl() ?? asset('images/ai-avatar.png')];
+        $data = [
+            'aiAvatar' => $user?->aiAvatarUrl() ?? asset('images/ai-avatar.png'),
+            'aiAvatarKey' => $user?->ai_avatar && \App\Services\AiAvatars::has($user->ai_avatar)
+                ? $user->ai_avatar
+                : \App\Services\AiAvatars::defaultKey(),
+            'aiAvatars' => \App\Services\AiAvatars::choices(),
+        ];
 
         if ($user?->role === 'store_owner') {
             return view('store.ai-chat.index', $data);
@@ -38,33 +44,36 @@ class AiChatController extends Controller
     }
 
     /**
-     * Save this account's AI assistant avatar (chat header + AI messages).
-     * Stored on the public disk under ai-avatars/ and keyed to the user id
-     * via the users table, so it follows the account on every device.
+     * Save this account's choice of AI assistant avatar.
+     *
+     * The avatars belong to the system: the account stores which one it
+     * picked, never a file of its own. Nothing is uploaded, so nothing a
+     * member sends ends up on the server, and the avatar looks the same on
+     * every device.
      */
     public function updateAvatar(Request $request)
     {
         $validated = $request->validate([
-            'avatar' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'avatar' => ['required', 'string', \Illuminate\Validation\Rule::in(array_keys(\App\Services\AiAvatars::all()))],
         ], [
-            'avatar.required' => 'Please choose an image.',
-            'avatar.image' => 'Please choose an image file.',
-            'avatar.mimes' => 'Use a JPG, PNG, or WebP image.',
-            'avatar.max' => 'Image must be smaller than 2 MB.',
+            'avatar.required' => 'Please choose an avatar.',
+            'avatar.in' => 'That avatar is not one of ours.',
         ]);
 
         $user = $request->user();
+        $key = $validated['avatar'];
 
-        if ($user->ai_avatar) {
+        // An account that still carries an uploaded image from before the
+        // avatar set existed drops the file when it picks a system one.
+        if ($user->ai_avatar && ! \App\Services\AiAvatars::has($user->ai_avatar)) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($user->ai_avatar);
         }
 
-        $path = $request->file('avatar')->store('ai-avatars', ['disk' => 'public']);
-        $user->forceFill(['ai_avatar' => $path])->save();
+        $user->forceFill(['ai_avatar' => $key])->save();
 
         return response()->json([
             'ok' => true,
-            'url' => \Illuminate\Support\Facades\Storage::disk('public')->url($path),
+            'url' => \App\Services\AiAvatars::url($key),
         ]);
     }
 

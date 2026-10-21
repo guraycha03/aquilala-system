@@ -31,7 +31,7 @@
   }
   .stat-chip .stat-num { font-size: 20px; font-weight: 800; color: #143d23; }
   .stat-chip .stat-label { font-size: 12px; color: #64748b; font-weight: 600; }
-  .stat-chip svg { width: 20px; height: 20px; stroke: #16a34a; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .stat-chip svg { width: 20px; height: 20px; stroke: #4A7A54; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   /* Product grid */
   .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
@@ -56,7 +56,7 @@
   .quote-count {
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 11px; font-weight: 700;
-    background: #f0fdf4; color: #16a34a;
+    background: #edf1e9; color: #648268;
     border: 1px solid #bbf7d0;
     padding: 3px 8px; border-radius: 8px;
     white-space: nowrap;
@@ -65,7 +65,7 @@
   .store-name { font-size: 11.5px; color: #64748b; display: flex; align-items: center; gap: 5px; }
   .store-name svg { width: 12px; height: 12px; stroke: #94a3b8; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
-  .quote-link { font-size: 12px; font-weight: 700; color: #16a34a; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+  .quote-link { font-size: 12px; font-weight: 700; color: #4A7A54; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
   .quote-link:hover { text-decoration: underline; }
 
   /* Empty state */

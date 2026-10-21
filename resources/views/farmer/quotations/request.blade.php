@@ -258,7 +258,7 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 800;
   }
-  .im-step-badge.green { background: #dcfce7; color: #166534; }
+  .im-step-badge.green { background: #edf1e9; color: #648268; }
   .im-step-badge.blue  { background: #dbeafe; color: #1d4ed8; }
   .im-step-badge.teal  { background: #ccfbf1; color: #0f766e; }
   .im-step-badge.amber { background: #fef3c7; color: #b45309; }
@@ -386,8 +386,8 @@
 
 @if(session('success'))
   <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 11px; padding: 13px 17px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px;">
-    <div style="width: 26px; height: 26px; border-radius: 8px; background: rgba(22,163,74,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-      <svg viewBox="0 0 24 24" width="15" height="15" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+    <div style="width: 26px; height: 26px; border-radius: 8px; background: rgba(74,122,84,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="15" height="15" stroke="#4A7A54" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <span style="font-size: 14px; color: #166534; font-weight: 600;">{{ session('success') }}</span>
   </div>
@@ -910,7 +910,7 @@
             <div class="prod-meta">${escapeHtml(p.brand || '')} ${p.sku ? '· ' + escapeHtml(p.sku) : ''} ${p.category ? '· ' + escapeHtml(p.category) : ''}</div>
           </div>
           <div class="prod-price">₱${parseFloat(p.price).toFixed(2)}<span style="font-weight:400;font-size:11px;color:#94a3b8;">/${escapeHtml(p.price_unit || 'ea')}</span></div>
-          ${selectedIds.has(p.id) ? '<svg viewBox="0 0 24 24" width="16" height="16" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+          ${selectedIds.has(p.id) ? '<svg viewBox="0 0 24 24" width="16" height="16" stroke="#4A7A54" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
         </div>
       `).join('');
     }

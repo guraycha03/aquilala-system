@@ -9,7 +9,7 @@
     .register-page::after {
       content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
     }
-    .register-page::before { width: 300px; height: 300px; background: rgba(16,185,129,0.14); top: -70px; right: -60px; }
+    .register-page::before { width: 300px; height: 300px; background: rgba(94,144,112,0.14); top: -70px; right: -60px; }
     .register-page::after { width: 260px; height: 260px; background: rgba(93,194,87,0.10); bottom: -60px; left: -40px; }
 
     .header-row { position: relative; z-index: 1; margin-bottom: 20px; }
@@ -37,7 +37,7 @@
       font-size: 14px; background: #fafbfa; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
       box-sizing: border-box; color: #334155; font-family: inherit;
     }
-    .invite-field input:focus, .invite-field select:focus { border-color: #5DC257; box-shadow: 0 0 0 3px rgba(93,194,87,0.18); }
+    .invite-field input:focus, .invite-field select:focus { border-color: #8FB89A; box-shadow: 0 0 0 3px rgba(93,194,87,0.18); }
     .field-error { display: block; min-height: 16px; font-size: 11px; color: #dc2626; margin-top: 4px; }
 
     /* Philippine mobile prefix (+639, locked) */
@@ -45,7 +45,7 @@
       display: flex; align-items: stretch; border: 1px solid #e2e8f0; border-radius: 9px;
       background: #fafbfa; overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .phone-row:focus-within { border-color: #5DC257; box-shadow: 0 0 0 3px rgba(93,194,87,0.18); }
+    .phone-row:focus-within { border-color: #8FB89A; box-shadow: 0 0 0 3px rgba(93,194,87,0.18); }
     .phone-prefix {
       display: inline-flex; align-items: center; gap: 7px; padding: 0 11px;
       background: #eef1ef; border-right: 1px solid #e6ebe8;
@@ -85,7 +85,7 @@
     }
     .btn-users:hover { background: #0f4228; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(20,61,35,0.08), 0 7px 16px rgba(20,61,35,0.14); }
     .btn-users:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(20,61,35,0.06); }
-    .btn-users:focus-visible { outline: 3px solid rgba(22,163,74,0.28); outline-offset: 2px; }
+    .btn-users:focus-visible { outline: 3px solid rgba(74,122,84,0.28); outline-offset: 2px; }
     .btn-users:disabled { opacity: 0.5; cursor: not-allowed; transform: none; background: #e6ece6; color: #8aa296; border-color: #d8e3db; box-shadow: none; }
     .btn-users svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .btn-users.ghost { background: #ffffff; color: #334c3e; border-color: #d8e3db; box-shadow: 0 1px 2px rgba(20,61,35,0.05); }

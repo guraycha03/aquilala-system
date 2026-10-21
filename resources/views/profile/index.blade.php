@@ -58,7 +58,7 @@
 
   .p-status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: capitalize; letter-spacing: 0.03em; }
   .p-status.active { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-  .p-status.pending { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .p-status.pending { background: #edf1e9; color: #648268; border: 1px solid #bfdbfe; }
   .p-status.disabled { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
 
   .field-row { grid-column: 1 / -1; display: flex; gap: 14px; justify-content: flex-end; align-items: center; }

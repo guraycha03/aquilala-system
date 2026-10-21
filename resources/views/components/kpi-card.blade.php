@@ -4,7 +4,7 @@
     'trendValue' => null,
     'trendDirection' => 'up',
     'trendLabel' => '',
-    'accent' => '#16a34a',
+    'accent' => '#4A7A54',
     'link' => null,
     'iconBg' => null,
     'iconColor' => null,
@@ -73,7 +73,7 @@
        flat white, sage icon tile, one calm tag, then the figure, the label
        and a one-line description. */
     .kpi-card {
-        --accent: #16a34a;
+        --accent: #4A7A54;
         --chip-bg: #EDF1E9;
         --chip-color: #648268;
         display: flex;
@@ -167,7 +167,7 @@
     }
 
     [data-theme="dark"] .kpi-card { background: #111827; border-color: #334155; }
-    [data-theme="dark"] .kpi-card:hover { border-color: #4ade80; }
+    [data-theme="dark"] .kpi-card:hover { border-color: #9CC4A3; }
     [data-theme="dark"] .kpi-icon-chip { background: #16301f; color: #6ee7a0; }
     [data-theme="dark"] .kpi-trend-pill { background: #1f2937; color: #9fb3a6; }
     [data-theme="dark"] .kpi-value { color: #d6f5e3; }

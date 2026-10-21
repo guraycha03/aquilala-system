@@ -56,10 +56,10 @@
     display: inline-flex; align-items: center; gap: 6px;
     padding: 4px 12px; border-radius: 999px;
     font-size: 12px; font-weight: 700;
-    background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe;
+    background: #edf1e9; color: #648268; border: 1px solid #ddd6fe;
     white-space: nowrap;
   }
-  .stage-badge-standard { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+  .stage-badge-standard { background: #edf1e9; color: #648268; border: 1px solid #e2e8f0; }
   .bounds-text {
     font-size: 12px; color: #94a3b8; margin-top: 4px; white-space: nowrap;
   }
@@ -108,7 +108,7 @@
     cursor: pointer; transition: all 0.2s; padding: 0;
   }
   .help-btn:hover { border-color: #143d23; color: #143d23; background: #f0fdf4; }
-  .help-btn:focus-visible { outline: 2px solid #16a34a; outline-offset: 2px; }
+  .help-btn:focus-visible { outline: 2px solid #4A7A54; outline-offset: 2px; }
 
   .btn-ghost {
     background: transparent; color: #475569; border: 1px solid #e2e8f0;
@@ -198,13 +198,13 @@
   .pagination-controls { display: flex; align-items: center; gap: 6px; }
   .page-btn {
     min-width: 34px; height: 34px; padding: 0 10px; border: 1.5px solid #e2e8f0;
-    border-radius: 8px; background: #ffffff; color: #475569; font-size: 13px;
+    border-radius: 8px; background: #edf1e9; color: #648268; font-size: 13px;
     font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
     display: inline-flex; align-items: center; justify-content: center;
   }
-  .page-btn:hover:not(:disabled) { border-color: #16a34a; color: #16a34a; }
+  .page-btn:hover:not(:disabled) { border-color: #4A7A54; color: #4A7A54; }
   .page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-  .page-btn.active { background: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700; }
+  .page-btn.active { background: #4A7A54; border-color: #4A7A54; color: #ffffff; font-weight: 700; }
   .page-ellipsis { color: #94a3b8; font-size: 13px; padding: 0 2px; }
 </style>
 
@@ -233,7 +233,7 @@
 
 @if(session('success'))
   <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#16a34a" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#4A7A54" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
     <span style="font-size: 14px; color: #166534; font-weight: 500;">{{ session('success') }}</span>
   </div>
 @endif

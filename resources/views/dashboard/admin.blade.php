@@ -35,7 +35,7 @@
   .queue-count { font-size: 22px; font-weight: 800; color: #143d23; font-variant-numeric: tabular-nums; }
   .queue-arrow { width: 16px; height: 16px; stroke: #94a3b8; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
   .queue-empty { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #40632d; font-weight: 600; }
-  .queue-empty svg { width: 16px; height: 16px; stroke: #16a34a; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .queue-empty svg { width: 16px; height: 16px; stroke: #4A7A54; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
   .dash-panel {
     background: rgba(255,255,255,0.84); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
@@ -64,9 +64,9 @@
 
   /* Stock pills */
   .stock-pill { display: inline-block; padding: 3px 8px; border-radius: 7px; font-size: 10px; font-weight: 700; }
-  .stock-ok { background: #f0fdf4; color: #16a34a; }
+  .stock-ok { background: #edf1e9; color: #648268; }
   .stock-low { background: #fef3c7; color: #d97706; }
-  .stock-out { background: #f1f5f9; color: #64748b; }
+  .stock-out { background: #edf1e9; color: #648268; }
 
   /* Table */
   .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -104,7 +104,7 @@
   .yield-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 26px 0; flex-wrap: wrap; }
   .yield-big { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
   .yield-big-value { font-size: 28px; font-weight: 800; color: #143d23; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: 0.02em; }
-  .yield-big-unit { font-size: 13px; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.08em; }
+  .yield-big-unit { font-size: 13px; font-weight: 700; color: #4A7A54; text-transform: uppercase; letter-spacing: 0.08em; }
 
   /* Harvest graph period filter (dropdown) */
   .harvest-head-actions { display: flex; align-items: center; gap: 8px; }
@@ -136,7 +136,7 @@
     white-space: nowrap;
   }
   .filter-option:hover { background: #f0fdf4; }
-  .filter-option.is-active { background: #dcfce7; color: #166534; font-weight: 800; }
+  .filter-option.is-active { background: #edf1e9; color: #648268; font-weight: 800; }
   .chart-empty {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     font-size: 12.5px; color: #64748b; font-weight: 600; text-align: center;
@@ -210,7 +210,7 @@
     @endphp
     <section class="kpi-strip">
       {{-- Who is in the association --}}
-      <x-kpi-card title="Total IA Members" value="{{ $farmersCount }}" trendLabel="Official farmer registry" accent="#16a34a" link="{{ route('admin.users.index') }}">
+      <x-kpi-card title="Total IA Members" value="{{ $farmersCount }}" trendLabel="Official farmer registry" accent="#4A7A54" link="{{ route('admin.users.index') }}">
         {{-- Local copy of the Icons8 farmer glyph (from message_to_opencode.txt),
              vendored to public/images so the card doesn't depend on a remote
              host. The source PNG is solid black, which fought the sage chips,

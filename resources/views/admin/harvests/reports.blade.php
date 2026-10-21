@@ -25,8 +25,8 @@
     padding: 5px 12px; border-radius: 20px;
     font-size: 12px; font-weight: 600; letter-spacing: 0.01em;
   }
-  .season-badge.wet { background: #eff6ff; color: #1d4ed8; }
-  .season-badge.dry { background: #fffbeb; color: #b45309; }
+  .season-badge.wet { background: #edf1e9; color: #648268; }
+  .season-badge.dry { background: #edf1e9; color: #648268; }
   .season-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 
   .yield-cell { font-variant-numeric: tabular-nums; }

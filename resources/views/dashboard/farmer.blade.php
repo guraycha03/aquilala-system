@@ -94,7 +94,7 @@
   [data-theme="dark"] .fd-viewall { color: #6ee7a0; }
   [data-theme="dark"] .fd-viewall:hover { color: #a7f3d0; }
   [data-theme="dark"] .fd-explore-card { background: #111827; border-color: #334155; }
-  [data-theme="dark"] .fd-explore-card:hover { border-color: #4ade80; }
+  [data-theme="dark"] .fd-explore-card:hover { border-color: #9CC4A3; }
   [data-theme="dark"] .fd-explore-text h3 { color: #d6f5e3; }
   [data-theme="dark"] .fd-explore-text p { color: #9fb3a6; }
   [data-theme="dark"] .fd-explore-icon { background: #16301f; color: #6ee7a0; }

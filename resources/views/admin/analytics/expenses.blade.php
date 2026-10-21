@@ -11,7 +11,7 @@
       content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
     }
     .exp-page::before { width: 340px; height: 340px; background: rgba(239,68,68,0.10); top: -80px; right: -80px; }
-    .exp-page::after { width: 300px; height: 300px; background: rgba(16,185,129,0.14); bottom: -60px; left: -60px; }
+    .exp-page::after { width: 300px; height: 300px; background: rgba(94,144,112,0.14); bottom: -60px; left: -60px; }
     .exp-content { position: relative; z-index: 1; }
 
     .exp-head { margin: 0 0 10px; }
@@ -27,7 +27,7 @@
     .exp-kpi .kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; }
     .exp-kpi .kpi-value { font-size: 22px; font-weight: 800; color: #143d23; margin-top: 6px; line-height: 1; }
     .exp-kpi .kpi-sub { font-size: 11.5px; color: #64748b; margin-top: 6px; }
-    .exp-kpi.variance .kpi-value.pos { color: #16a34a; }
+    .exp-kpi.variance .kpi-value.pos { color: #4A7A54; }
     .exp-kpi.variance .kpi-value.neg { color: #dc2626; }
 
     .exp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; }
@@ -43,7 +43,7 @@
     /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
     .exp-table td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
     .exp-table td.crop { font-weight: 600; color: #1e293b; text-transform: capitalize; }
-    .diff-ok { color: #16a34a; }
+    .diff-ok { color: #4A7A54; }
     .diff-over { color: #dc2626; }
 
     .exp-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 48px 20px; color: #94a3b8; font-size: 13px; text-align: center; }

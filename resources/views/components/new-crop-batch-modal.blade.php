@@ -49,7 +49,7 @@
     .ncb-body { padding: 20px 24px; background: #fff; overflow-y: auto; max-height: calc(100vh - 260px); max-height: calc(100dvh - 260px); scrollbar-width: none; -ms-overflow-style: none; }
     .ncb-body::-webkit-scrollbar { display: none; width: 0; }
     .ncb-footer { position: relative; z-index: 1; padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 10px; background: #fff; border-radius: 0 0 18px 18px; }
-    .ncb-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #16a34a; margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
+    .ncb-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #4A7A54; margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
     .ncb-section-label:first-child { margin-top: 0; }
     .ncb-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
     .ncb-group { margin-bottom: 12px; position: relative; }
@@ -60,7 +60,7 @@
         font-size: 13px; color: #1e293b; background-color: #fff; transition: all 0.2s ease;
         box-sizing: border-box; font-family: inherit;
     }
-    .ncb-group input:focus, .ncb-group textarea:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); }
+    .ncb-group input:focus, .ncb-group textarea:focus { outline: none; border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(74,122,84,0.08); }
     .ncb-group textarea { resize: vertical; min-height: 64px; }
     .ncb-group input.over-cap { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.08); }
     .ncb-group input.warn-cap { border-color: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.08); }
@@ -74,7 +74,7 @@
     }
     .ncb-select-trigger.placeholder { color: #94a3b8; }
     .ncb-select-trigger:hover { border-color: #cbd5e1; }
-    .ncb-select-trigger.active { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); outline: none; }
+    .ncb-select-trigger.active { border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(74,122,84,0.08); outline: none; }
     .ncb-select-arrow { transition: transform 0.2s ease; color: #64748b; flex-shrink: 0; }
     .ncb-select-arrow.rotate { transform: rotate(180deg); }
 
@@ -94,8 +94,8 @@
         padding: 8px 12px; font-size: 13px; color: #1e293b; border-radius: 6px;
         cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
     }
-    .ncb-select-option:hover { background: #f1f5f9; color: #16a34a; }
-    .ncb-select-option.selected { background: #f0fdf4; color: #16a34a; font-weight: 600; }
+    .ncb-select-option:hover { background: #edf1e9; color: #648268; }
+    .ncb-select-option.selected { background: #edf1e9; color: #648268; font-weight: 600; }
 
     /* Yield Unit search-as-you-type combobox */
     .ncb-unit-wrap { position: relative; }
@@ -116,14 +116,14 @@
         cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
         display: flex; align-items: center; justify-content: space-between; gap: 8px;
     }
-    .ncb-unit-option:hover { background: #f1f5f9; color: #16a34a; }
+    .ncb-unit-option:hover { background: #edf1e9; color: #648268; }
     .ncb-unit-option .ncb-unit-alias { font-size: 10.5px; color: #94a3b8; font-weight: 600; }
     .ncb-unit-empty { padding: 10px 12px; font-size: 12.5px; color: #94a3b8; font-style: italic; }
 
     /* ── CUSTOM FLATPICKR DATEPICKER POPUP STYLES ── */
     /* ── CUSTOM FLATPICKR DATEPICKER POPUP STYLES ── */
 .ncb-date-wrapper { position: relative; width: 100%; }
-.ncb-date-icon { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); color: #16a34a; pointer-events: none; }
+.ncb-date-icon { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); color: #4A7A54; pointer-events: none; }
 
 .flatpickr-calendar {
     background: #ffffff !important;
@@ -171,7 +171,7 @@
 }
 .flatpickr-current-month .flatpickr-monthDropdown-months { font-weight: 700 !important; color: #1e293b !important; }
 .flatpickr-current-month input.cur-year { font-weight: 700 !important; color: #1e293b !important; }
-.flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill: #16a34a !important; }
+.flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill: #4A7A54 !important; }
 
 /* Weekdays & Days spacing */
 span.flatpickr-weekday {
@@ -187,32 +187,32 @@ span.flatpickr-weekday {
     line-height: 36px !important;
     margin-top: 2px !important;
 }
-.flatpickr-day:hover { background: #f1f5f9 !important; border-color: transparent !important; color: #16a34a !important; }
-.flatpickr-day.selected, .flatpickr-day.selected:hover { background: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important; font-weight: 700 !important; }
-.flatpickr-day.today { border-color: #16a34a !important; font-weight: 700 !important; color: #16a34a !important; }
+.flatpickr-day:hover { background: #f1f5f9 !important; border-color: transparent !important; color: #4A7A54 !important; }
+.flatpickr-day.selected, .flatpickr-day.selected:hover { background: #4A7A54 !important; border-color: #4A7A54 !important; color: #ffffff !important; font-weight: 700 !important; }
+.flatpickr-day.today { border-color: #4A7A54 !important; font-weight: 700 !important; color: #4A7A54 !important; }
 .flatpickr-day.today.selected { color: #ffffff !important; }
 
 
     .ncb-btn-cancel { appearance: none; -webkit-appearance: none; padding: 10px 18px; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; color: #475569; cursor: pointer; transition: all 0.15s ease; }
     .ncb-btn-cancel:hover { background: #f8fafc; border-color: #cbd5e1; }
-    .ncb-btn-submit { appearance: none; -webkit-appearance: none; padding: 10px 22px; font-size: 13px; font-weight: 700; border-radius: 10px; border: none; background: #16a34a; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.25); transition: all 0.2s ease; }
-    .ncb-btn-submit:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(22,163,74,0.3); }
+    .ncb-btn-submit { appearance: none; -webkit-appearance: none; padding: 10px 22px; font-size: 13px; font-weight: 700; border-radius: 10px; border: none; background: #4A7A54; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(74,122,84,0.25); transition: all 0.2s ease; }
+    .ncb-btn-submit:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(74,122,84,0.3); }
 
     .ncb-cap-wrap { margin-bottom: 14px; }
     .ncb-cap-bar-track { width: 100%; height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden; position: relative; }
     .ncb-cap-bar-fill { height: 100%; border-radius: 5px; transition: width 0.4s ease, background 0.3s ease; }
-    .ncb-cap-bar-fill.ok { background: linear-gradient(90deg, #16a34a, #22c55e); }
+    .ncb-cap-bar-fill.ok { background: linear-gradient(90deg, #4A7A54, #7FA886); }
     .ncb-cap-bar-fill.warn { background: linear-gradient(90deg, #d97706, #f59e0b); }
     .ncb-cap-bar-fill.over { background: linear-gradient(90deg, #dc2626, #ef4444); }
     .ncb-cap-text { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: #64748b; font-weight: 600; }
-    .ncb-cap-remaining { color: #16a34a; font-weight: 700; }
+    .ncb-cap-remaining { color: #4A7A54; font-weight: 700; }
     .ncb-cap-remaining.warn { color: #d97706; }
     .ncb-cap-remaining.over { color: #dc2626; }
     .ncb-cap-warning { display: none; margin-top: 8px; margin-bottom: 14px; padding: 10px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; line-height: 1.4; }
     .ncb-cap-warning.warn { display: flex; align-items: center; gap: 6px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
     .ncb-cap-warning.over { display: flex; align-items: center; gap: 6px; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
-    .ncb-yield-hint { display: block; margin-top: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.55; color: #16a34a; font-weight: 600; min-height: 16px; }
+    .ncb-yield-hint { display: block; margin-top: 8px; margin-bottom: 8px; font-size: 13px; line-height: 1.55; color: #4A7A54; font-weight: 600; min-height: 16px; }
     .ncb-yield-hint:empty { min-height: 0; }
     .ncb-note { display: block; margin-top: 8px; margin-bottom: 8px; font-size: 12.5px; color: #64748b; line-height: 1.5; }
 

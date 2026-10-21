@@ -39,7 +39,7 @@ return [
                 'hover_strong'      => 'rgba(255,255,255,0.10)',
                 'active_bg'         => '#f3f6f4',
                 'active_fg'         => '#143d23',
-                'accent'            => '#6aeb2f',
+                'accent'            => '#8FB89A',
                 'avatar_bg'         => '#1b4d2e',
                 'avatar_fg'         => '#c8e6c9',
                 'border'            => 'rgba(255,255,255,0.08)',
@@ -74,7 +74,7 @@ return [
                 'hover_strong'      => 'rgba(51, 66, 29, 0.14)',
                 'active_bg'         => '#f3f6f4',
                 'active_fg'         => '#5f7c2e',
-                'accent'            => '#3ca811',
+                'accent'            => '#7FA886',
                 'avatar_bg'         => 'rgba(51, 66, 29, 0.12)',
 
                
@@ -111,7 +111,7 @@ return [
                 'hover_strong'      => 'rgba(255,255,255,0.20)',
                 'active_bg'         => '#f3f6f4',
                 'active_fg'         => '#5f6b28',
-                'accent'            => '#8af04f',
+                'accent'            => '#A8CDB2',
                 'avatar_bg'         => 'rgba(255,255,255,0.20)',
                 'avatar_fg'         => '#f4f8ea',
                 'border'            => 'rgba(255,255,255,0.18)',

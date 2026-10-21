@@ -34,7 +34,7 @@
   .btn-nav {
     appearance: none; -webkit-appearance: none; height: 42px; padding: 0 20px;
     font-size: 13px; font-weight: 700; border-radius: 10px;
-    background: #16a34a; color: #ffffff; cursor: pointer;
+    background: #4A7A54; color: #ffffff; cursor: pointer;
     display: inline-flex; align-items: center; gap: 8px;
     box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
     text-decoration: none;
@@ -43,7 +43,7 @@
   .btn-nav:hover { background: #15803d; transform: translateY(-1px); }
 
   .btn-nav.ghost {
-    background: #f5f3ff; color: #6d28d9; box-shadow: none;
+    background: #edf1e9; color: #648268; box-shadow: none;
     border: 1.5px solid #ddd6fe;
   }
   .btn-nav.ghost:hover { background: #ede9fe; border-color: #c4b5fd; }
@@ -114,7 +114,7 @@
     display: inline-flex; align-items: center; justify-content: center;
   }
   .hp-medal.gold   { background: #fef3c7; color: #b45309; box-shadow: inset 0 0 0 1.5px #fcd34d; }
-  .hp-medal.silver { background: #f1f5f9; color: #64748b; box-shadow: inset 0 0 0 1.5px #cbd5e1; }
+  .hp-medal.silver { background: #edf1e9; color: #648268; box-shadow: inset 0 0 0 1.5px #cbd5e1; }
   .hp-medal.bronze { background: #ffedd5; color: #9a3412; box-shadow: inset 0 0 0 1.5px #fdba74; }
   .hp-medal.other  { background: #f8fafc; color: #94a3b8; box-shadow: inset 0 0 0 1.5px #e2e8f0; }
   .hp-rank-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; color: #1e293b; }
@@ -135,13 +135,13 @@
   .hp-val { color: #143d23; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
 
   .hp-delta { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12.5px; font-weight: 700; }
-  .hp-delta.up { background: #ecfdf5; color: #15803d; }
+  .hp-delta.up { background: #edf1e9; color: #648268; }
   .hp-delta.down { background: #fef2f2; color: #b91c1c; }
-  .hp-delta.flat { background: #f1f5f9; color: #64748b; }
+  .hp-delta.flat { background: #edf1e9; color: #648268; }
 
   .pill { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
-  .pill.wet { background: #eff6ff; color: #1d4ed8; }
-  .pill.dry { background: #fffbeb; color: #b45309; }
+  .pill.wet { background: #edf1e9; color: #648268; }
+  .pill.dry { background: #edf1e9; color: #648268; }
 
   .hp-section-title { font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .04em; margin: 26px 0 12px; }
 </style>
@@ -170,7 +170,7 @@
 {{-- ── Harvest hub: the section's sub-pages at a glance ── --}}
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 24px;">
   <a href="{{ route('admin.harvests.reports') }}" style="text-decoration: none; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px 18px; display: flex; gap: 13px; align-items: center; transition: all .15s ease;">
-    <span style="width: 40px; height: 40px; border-radius: 11px; background: #f0fdf4; color: #16a34a; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+    <span style="width: 40px; height: 40px; border-radius: 11px; background: #edf1e9; color: #648268; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
       <svg viewBox="0 0 24 24" width="19" height="19" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </span>
     <span>
@@ -188,7 +188,7 @@
     </span>
   </a>
   <a href="{{ route('admin.harvests.ai') }}" style="text-decoration: none; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px 18px; display: flex; gap: 13px; align-items: center; transition: all .15s ease;">
-    <span style="width: 40px; height: 40px; border-radius: 11px; background: #f5f3ff; color: #6d28d9; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+    <span style="width: 40px; height: 40px; border-radius: 11px; background: #edf1e9; color: #648268; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
       <svg viewBox="0 0 24 24" width="19" height="19" stroke="currentColor" stroke-width="1.8" fill="none"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
     </span>
     <span>
@@ -212,7 +212,7 @@
       <div class="stat-value">{{ $stats['reports'] }}</div>
       <div class="stat-label">Harvest Reports</div>
     </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#16a34a" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#4A7A54" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path d="M12 20V10"/>
       <path d="M12 10C9 10 6 9 6 5c3 0 6 2 6 5"/>
       <path d="M12 14c3 0 6-1 6-5-3 0-6 2-6 5"/>

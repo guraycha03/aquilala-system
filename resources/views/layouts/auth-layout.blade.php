@@ -203,7 +203,7 @@
         }
         select:not([disabled]) { cursor: pointer; }
         select:focus {
-            border-color: #16a34a;
+            border-color: #4A7A54;
             box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
         }
 
@@ -250,7 +250,7 @@
             color: #143d23;
         }
         .form-brand-name span {
-            color: #5DC257;
+            color: #8FB89A;
         }
         .form-brand-sub {
             font-size: 11px;
@@ -304,7 +304,7 @@
             line-height: 1.2;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
-        .visual-pane h2 span { color: #6aeb2f; }
+        .visual-pane h2 span { color: #8FB89A; }
         .visual-pane p {
             color: #e2ebe5;
             font-size: 15px;

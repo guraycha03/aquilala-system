@@ -5,7 +5,7 @@
 <style>
     .cal-today { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px 20px; }
     .cal-today-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    .cal-today-badge { background: #16a34a; color: #fff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 3px 10px; border-radius: 20px; }
+    .cal-today-badge { background: #4A7A54; color: #fff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 3px 10px; border-radius: 20px; }
     .cal-today-head strong { font-size: 14.5px; color: #14532d; }
     .cal-today-row { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-top: 1px dashed #bbf7d0; }
     .cal-today-row:first-of-type { border-top: 0; }

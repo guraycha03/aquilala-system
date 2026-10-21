@@ -161,8 +161,8 @@
     .catalog-search.has-count input { padding-right: 110px; }
 
     .catalog-search input:focus {
-        border-color: #16a34a; background: #ffffff;
-        box-shadow: 0 0 0 3px rgba(22,163,74,.08);
+        border-color: #4A7A54; background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(74,122,84,.08);
     }
 
     .catalog-search input::placeholder { color: #94a3b8; }
@@ -181,8 +181,8 @@
     /* Filter clear button */
     .filter-clear {
         display: inline-flex; align-items: center; gap: 6px;
-        height: 42px; padding: 0 14px; border: 1.5px solid #16a34a; border-radius: 10px;
-        background: #16a34a; color: #ffffff; font-size: 13px; font-weight: 700;
+        height: 42px; padding: 0 14px; border: 1.5px solid #4A7A54; border-radius: 10px;
+        background: #4A7A54; color: #ffffff; font-size: 13px; font-weight: 700;
         cursor: pointer; font-family: inherit; transition: all 0.2s ease;
         box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
     }

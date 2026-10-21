@@ -71,7 +71,7 @@
     }
 
     .section-header svg {
-        color: #16a34a;
+        color: #4A7A54;
     }
 
     /* Field Labels & Inputs */

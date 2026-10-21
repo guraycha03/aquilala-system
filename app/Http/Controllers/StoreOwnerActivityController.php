@@ -3,12 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Services\NotificationFeed;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class StoreOwnerActivityController extends Controller
 {
+    public function __construct(private readonly NotificationFeed $feed)
+    {
+    }
     /**
      * Store owner's activity history with smart filters
      * (search, date period, and activity type).
@@ -133,23 +139,23 @@ class StoreOwnerActivityController extends Controller
      * under Settings → Activity history. Farmer identities are never
      * shown here: stores learn that demand exists, not who generated it.
      */
-    public function notifications(): View
+    public function notifications(Request $request): View|JsonResponse
     {
-        $notifications = ActivityLog::forUser(Auth::id())
-            ->storeNotifications()
+        $user = $request->user();
+
+        if ($request->expectsJson()) {
+            return response()->json($this->feedPayload($user));
+        }
+
+        $notifications = $this->feed->queryFor($user)
             ->with(['user', 'actor'])
             ->latest()
             ->paginate(12)
             ->withQueryString();
 
-        $unreadCount = ActivityLog::forUser(Auth::id())
-            ->storeNotifications()
-            ->unread()
-            ->count();
-
         return view('notifications.index', [
             'notifications' => $notifications,
-            'unreadCount'   => $unreadCount,
+            'unreadCount'   => $this->feed->unreadCount($user),
             'routePrefix'   => 'store.notifications',
             'subtitle'      => "News that reaches your store — farmer quotations that include your products, and upcoming association events.",
             'emptyText'     => "There's nothing new right now. When a farmer creates a quotation that includes your products, or the association posts an event, it will appear here.",
@@ -159,12 +165,14 @@ class StoreOwnerActivityController extends Controller
     /**
      * Mark every unread store notification as read.
      */
-    public function markAllRead(): RedirectResponse
+    public function markAllRead(Request $request): RedirectResponse|JsonResponse
     {
-        ActivityLog::forUser(Auth::id())
-            ->storeNotifications()
-            ->unread()
-            ->update(['read_at' => now()]);
+        $user = $request->user();
+        $this->feed->markAllRead($user);
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'unread' => 0]);
+        }
 
         return back()->with('success', 'All notifications marked as read.');
     }
@@ -173,12 +181,33 @@ class StoreOwnerActivityController extends Controller
      * Mark a single notification as read. Only rows owned by this store
      * owner can be marked.
      */
-    public function markRead(ActivityLog $activityLog): RedirectResponse
+    public function markRead(Request $request, ActivityLog $activityLog): RedirectResponse|JsonResponse
     {
-        abort_unless($activityLog->user_id === Auth::id(), 403);
+        $user = $request->user();
+        $this->feed->markRead($user, $activityLog);
 
-        $activityLog->forceFill(['read_at' => now()])->save();
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'unread' => $this->feed->unreadCount($user),
+            ]);
+        }
 
         return back();
+    }
+
+    /**
+     * The payload the bell's modal reads.
+     *
+     * @return array<string, mixed>
+     */
+    private function feedPayload($user): array
+    {
+        return [
+            'items'        => $this->feed->items($user, 8, 'store.notifications'),
+            'unread'       => $this->feed->unreadCount($user),
+            'read_all_url' => route('store.notifications.read-all'),
+            'all_url'      => route('store.notifications.index'),
+        ];
     }
 }

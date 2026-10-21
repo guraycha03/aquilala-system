@@ -15,7 +15,7 @@
     pointer-events: none;
     z-index: 0;
   }
-  .dash-page::before { width: 340px; height: 340px; background: rgba(22,163,74,0.18); top: -80px; right: -80px; }
+  .dash-page::before { width: 340px; height: 340px; background: rgba(74,122,84,0.18); top: -80px; right: -80px; }
   .dash-page::after { width: 280px; height: 280px; background: rgba(2,132,199,0.15); bottom: -60px; left: -60px; }
   .dash-content { position: relative; z-index: 1; }
   @media (min-width: 769px) {

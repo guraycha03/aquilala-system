@@ -46,11 +46,11 @@
   .stat-val { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
   .stat-lbl { font-size: 12px; font-weight: 600; margin-top: 3px; letter-spacing: 0.01em; }
 
-  .stat-pill.green .stat-icon  { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+  .stat-pill.green .stat-icon  { background: #edf1e9; color: #648268; border: 1px solid #dcfce7; }
   .stat-pill.green .stat-val   { color: #14532d; }
   .stat-pill.green .stat-lbl   { color: #166534; }
 
-  .stat-pill.amber .stat-icon { background: #fffbeb; color: #d97706; border: 1px solid #fef3c7; }
+  .stat-pill.amber .stat-icon { background: #edf1e9; color: #648268; border: 1px solid #fef3c7; }
   .stat-pill.amber .stat-val { color: #78350f; }
   .stat-pill.amber .stat-lbl { color: #92400e; }
 
@@ -58,7 +58,7 @@
   .stat-pill.red .stat-val   { color: #7f1d1d; }
   .stat-pill.red .stat-lbl   { color: #991b1b; }
 
-  .stat-pill.slate .stat-icon { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+  .stat-pill.slate .stat-icon { background: #edf1e9; color: #648268; border: 1px solid #e2e8f0; }
   .stat-pill.slate .stat-val { color: #0f172a; }
   .stat-pill.slate .stat-lbl { color: #475569; }
 
@@ -100,7 +100,7 @@
     transition: all 0.2s ease;
   }
   .af-search:focus-within {
-    border-color: #16a34a;
+    border-color: #4A7A54;
     background: #ffffff;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.08);
   }
@@ -139,7 +139,7 @@
   }
   .ncb-select-trigger.placeholder { color: #94a3b8; }
   .ncb-select-trigger:hover { border-color: #cbd5e1; }
-  .ncb-select-trigger.active { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); outline: none; }
+  .ncb-select-trigger.active { border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(74,122,84,0.08); outline: none; }
   .ncb-select-arrow { transition: transform 0.2s ease; color: #64748b; flex-shrink: 0; }
   .ncb-select-arrow.rotate { transform: rotate(180deg); }
 
@@ -154,8 +154,8 @@
     padding: 8px 12px; font-size: 13px; color: #1e293b; border-radius: 6px;
     cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
   }
-  .ncb-select-option:hover { background: #f1f5f9; color: #16a34a; }
-  .ncb-select-option.selected { background: #f0fdf4; color: #16a34a; font-weight: 600; }
+  .ncb-select-option:hover { background: #edf1e9; color: #648268; }
+  .ncb-select-option.selected { background: #edf1e9; color: #648268; font-weight: 600; }
 
   /* Date Inputs & Icon Wrappers */
   .af-range {
@@ -173,10 +173,10 @@
     box-sizing: border-box; font-family: inherit; cursor: pointer; outline: none;
   }
   .ncb-date-wrapper input.custom-datepicker:focus {
-    border-color: #16a34a;
+    border-color: #4A7A54;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.08);
   }
-  .ncb-date-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #16a34a; pointer-events: none; }
+  .ncb-date-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #4A7A54; pointer-events: none; }
 
   /* Custom Flatpickr Calendar Override Styles */
   .flatpickr-calendar {
@@ -199,12 +199,12 @@
   .flatpickr-current-month { padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; }
   .flatpickr-current-month .flatpickr-monthDropdown-months { font-weight: 700 !important; color: #1e293b !important; }
   .flatpickr-current-month input.cur-year { font-weight: 700 !important; color: #1e293b !important; }
-  .flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill: #16a34a !important; }
+  .flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-months .flatpickr-next-month:hover svg { fill: #4A7A54 !important; }
   span.flatpickr-weekday { color: #64748b !important; font-weight: 700 !important; font-size: 11px !important; }
   .flatpickr-day { border-radius: 8px !important; color: #334155 !important; font-weight: 500 !important; height: 36px !important; line-height: 36px !important; margin-top: 2px !important; }
-  .flatpickr-day:hover { background: #f1f5f9 !important; border-color: transparent !important; color: #16a34a !important; }
-  .flatpickr-day.selected, .flatpickr-day.selected:hover { background: #16a34a !important; border-color: #16a34a !important; color: #ffffff !important; font-weight: 700 !important; }
-  .flatpickr-day.today { border-color: #16a34a !important; font-weight: 700 !important; color: #16a34a !important; }
+  .flatpickr-day:hover { background: #f1f5f9 !important; border-color: transparent !important; color: #4A7A54 !important; }
+  .flatpickr-day.selected, .flatpickr-day.selected:hover { background: #4A7A54 !important; border-color: #4A7A54 !important; color: #ffffff !important; font-weight: 700 !important; }
+  .flatpickr-day.today { border-color: #4A7A54 !important; font-weight: 700 !important; color: #4A7A54 !important; }
   .flatpickr-day.today.selected { color: #ffffff !important; }
 
   /* Filter toggle wears the shared .btn-filter look (layouts.sidebar) —
@@ -219,7 +219,7 @@
     font-weight: 700;
     border-radius: 10px;
     border: none;
-    background: #16a34a;
+    background: #4A7A54;
     color: #ffffff;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
@@ -272,7 +272,7 @@
     border-radius: 8px;
     line-height: 1;
   }
-  .af-filter-summary svg { flex-shrink: 0; color: #16a34a; }
+  .af-filter-summary svg { flex-shrink: 0; color: #4A7A54; }
   .af-filter-clear {
     margin-left: auto;
     color: #dc2626;
@@ -520,7 +520,7 @@
               <span>&middot;</span>
               <span>{{ optional($activity->created_at)->format('M d, Y \a\t g:i A') }}</span>
               @if($activity->type === \App\Models\ActivityLog::TYPE_LOGIN && ($activity->metadata['via'] ?? false))
-                <span style="background:#f1f5f9;color:#475569;border-radius:6px;padding:2px 8px;font-size:11px;">via {{ $activity->metadata['via'] }}</span>
+                <span style="background: #edf1e9; color: #648268;border-radius:6px;padding:2px 8px;font-size:11px;">via {{ $activity->metadata['via'] }}</span>
               @endif
             </div>
           @endif

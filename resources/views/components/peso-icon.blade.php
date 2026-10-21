@@ -5,7 +5,7 @@
      new currency glyph: reuse <x-peso-icon> on every cost / money card.
 
      Usage: <x-peso-icon />                       20px, currentColor, stroke 2
-            <x-peso-icon :size="24" color="#16a34a" :stroke-width="1.5" /> --}}
+            <x-peso-icon :size="24" color="#4A7A54" :stroke-width="1.5" /> --}}
 @props(['size' => 20, 'color' => 'currentColor', 'strokeWidth' => 2])
 <svg viewBox="0 0 24 24" width="{{ $size }}" height="{{ $size }}" stroke="{{ $color }}"
      stroke-width="{{ $strokeWidth }}" fill="none" stroke-linecap="round" stroke-linejoin="round"

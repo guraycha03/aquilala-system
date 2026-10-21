@@ -10,7 +10,7 @@
     .audit-page::after {
       content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
     }
-    .audit-page::before { width: 320px; height: 320px; background: rgba(16,185,129,0.15); top: -80px; right: -80px; }
+    .audit-page::before { width: 320px; height: 320px; background: rgba(94,144,112,0.15); top: -80px; right: -80px; }
     .audit-page::after { width: 280px; height: 280px; background: rgba(59,130,246,0.12); bottom: -60px; left: -60px; }
     .audit-content { position: relative; z-index: 1; }
 
@@ -58,11 +58,11 @@
     .audit-ts { font-size: 12px; color: #64748b; font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .audit-actor { display: flex; align-items: center; gap: 10px; }
     .audit-avatar {
-      width: 32px; height: 32px; border-radius: 9px; background: #e6e6e6; color: #6f8f71;
+      width: 32px; height: 32px; border-radius: 9px; background: #edf1e9; color: #648268;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .audit-avatar svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .audit-role { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; background: #f1f5f9; color: #64748b; margin-left: 6px; }
+    .audit-role { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; background: #edf1e9; color: #648268; margin-left: 6px; }
     .audit-event { display: flex; align-items: center; gap: 9px; min-width: 0; }
     .audit-badge { display: inline-block; padding: 4px 12px; border-radius: 7px; font-size: 10px; font-weight: 700; white-space: nowrap; flex-shrink: 0; cursor: help; }
 

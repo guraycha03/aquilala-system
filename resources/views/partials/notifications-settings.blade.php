@@ -110,7 +110,7 @@
     border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
     transition: transform 0.2s ease;
   }
-  .push-toggle.is-on .push-toggle-track { background: #16a34a; }
+  .push-toggle.is-on .push-toggle-track { background: #4A7A54; }
   .push-toggle.is-on .push-toggle-thumb { transform: translateX(18px); }
   .push-toggle-label { font-size: 13.5px; font-weight: 600; }
   .push-status { font-size: 12px; color: #64748b; margin: 6px 0 0; min-height: 1em; }

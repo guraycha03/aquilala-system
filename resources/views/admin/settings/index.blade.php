@@ -232,7 +232,7 @@
       function makePin() {
         return L.divIcon({
           className: 'org-pin',
-          html: '<svg viewBox="0 0 24 24" width="36" height="36"><path fill="#143d23" stroke="#ffffff" stroke-width="1.4" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.6" fill="#6aeb2f"/></svg>',
+          html: '<svg viewBox="0 0 24 24" width="36" height="36"><path fill="#143d23" stroke="#ffffff" stroke-width="1.4" d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.6" fill="#8FB89A"/></svg>',
           iconSize: [36, 36],
           iconAnchor: [18, 36],
           popupAnchor: [0, -32]

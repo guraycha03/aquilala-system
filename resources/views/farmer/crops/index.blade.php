@@ -10,8 +10,8 @@
         content: ""; position: fixed; border-radius: 50%; filter: blur(80px);
         pointer-events: none; z-index: 0;
     }
-    .crops-page::before { width: 340px; height: 340px; background: rgba(22,163,74,0.10); top: -80px; right: -60px; }
-    .crops-page::after { width: 280px; height: 280px; background: rgba(132,204,22,0.08); bottom: -60px; left: -40px; }
+    .crops-page::before { width: 340px; height: 340px; background: rgba(74,122,84,0.10); top: -80px; right: -60px; }
+    .crops-page::after { width: 280px; height: 280px; background: rgba(143,184,154,0.08); bottom: -60px; left: -40px; }
     .crops-content { position: relative; z-index: 1; }
 
     /* ── Hero Banner ── */
@@ -22,7 +22,7 @@
     }
     .hero-band::before {
         content: ""; position: absolute; top: -80px; right: -40px; width: 220px; height: 220px;
-        border-radius: 50%; background: rgba(16,185,129,0.15);
+        border-radius: 50%; background: rgba(94,144,112,0.15);
     }
     .hero-band::after {
         content: ""; position: absolute; bottom: -70px; left: 20%; width: 180px; height: 180px;
@@ -66,7 +66,7 @@
     .filter-group { display: flex; gap: 6px; }
     .filter-btn {
         padding: 6px 14px; border-radius: 8px; border: 1px solid #e5e7eb;
-        background: #fff; color: #64748b; font-size: 12px; font-weight: 600;
+        background: #edf1e9; color: #648268; font-size: 12px; font-weight: 600;
         cursor: pointer; transition: all 0.15s ease;
     }
     .filter-btn:hover { border-color: #cbd5e1; color: #334155; }
@@ -85,15 +85,15 @@
     .crop-name-ic { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .crop-name-ic svg { width: 18px; height: 18px; }
     .crop-name { font-weight: 700; color: #1e293b; font-size: 14px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-    .crop-batch-chip { font-size: 11px; font-weight: 600; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 12px; white-space: nowrap; }
+    .crop-batch-chip { font-size: 11px; font-weight: 600; color: #4A7A54; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 12px; white-space: nowrap; }
     .crop-sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
     .stage-badge-mini { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
     .stage-badge-mini.confirm-badge { margin-left: 6px; }
     .confirm-badge.pending { border: 1px dashed #f59e0b; }
     .stage-dot-mini { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
     .season-badge-mini { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; text-transform: capitalize; }
-    .season-badge-mini.wet { background: #eff6ff; color: #1d4ed8; }
-    .season-badge-mini.dry { background: #fffbeb; color: #b45309; }
+    .season-badge-mini.wet { background: #edf1e9; color: #648268; }
+    .season-badge-mini.dry { background: #edf1e9; color: #648268; }
     .yield-cell b { font-variant-numeric: tabular-nums; }
     .yield-tons { font-size: 11.5px; color: #94a3b8; font-weight: 600; margin-top: 1px; }
     .row-progress { width: 110px; height: 6px; background: #eef2f1; border-radius: 99px; overflow: hidden; }
@@ -146,10 +146,10 @@
     .stepper-step::after { content: ""; position: absolute; top: 8px; left: 50%; width: 100%; height: 2px; background: #e2e8f0; z-index: 0; }
     .stepper-step:last-child::after { display: none; }
     .stepper-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #d1d5db; background: #fff; z-index: 1; position: relative; transition: all 0.3s ease; }
-    .stepper-dot.done { background: #16a34a; border-color: #16a34a; }
-    .stepper-dot.current { background: #fff; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
+    .stepper-dot.done { background: #4A7A54; border-color: #4A7A54; }
+    .stepper-dot.current { background: #fff; border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(74,122,84,0.2); }
     .stepper-label { font-size: 9px; font-weight: 600; color: #94a3b8; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
-    .stepper-label.active-label { color: #16a34a; font-weight: 700; }
+    .stepper-label.active-label { color: #4A7A54; font-weight: 700; }
 
     /* ── Progress ── */
     .progress-section { margin-top: 12px; }
@@ -165,7 +165,7 @@
 
     /* ── Buttons ── */
     .btn-sm { padding: 6px 13px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; border: none; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s ease; text-decoration: none; }
-    .btn-sm-green { background: #dcfce7; color: #166534; }
+    .btn-sm-green { background: #edf1e9; color: #648268; }
     .btn-sm-green:hover { background: #bbf7d0; }
     .btn-sm-red { background: #fee2e2; color: #991b1b; }
     .btn-sm-red:hover { background: #fecaca; }
@@ -173,12 +173,12 @@
     /* ── Empty State ── */
     .empty-wrap { padding: 32px 0; text-align: center; }
     .empty-card { background: #fff; border: 1px dashed #cbd5e1; border-radius: 20px; padding: 60px 32px; max-width: 520px; margin: 0 auto; box-shadow: 0 8px 32px -8px rgba(0,0,0,0.04); }
-    .empty-icon-wrap { width: 88px; height: 88px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #16a34a; box-shadow: 0 8px 24px -4px rgba(22,163,74,0.15); }
+    .empty-icon-wrap { width: 88px; height: 88px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #4A7A54; box-shadow: 0 8px 24px -4px rgba(74,122,84,0.15); }
     .empty-title { font-size: 18px; font-weight: 800; color: #1e293b; margin: 0 0 6px; }
     .empty-desc { color: #64748b; font-size: 13px; line-height: 1.6; max-width: 360px; margin: 0 auto 24px; }
     .empty-tips { display: flex; justify-content: center; gap: 24px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
     .empty-tip { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; font-weight: 500; }
-    .empty-tip svg { color: #16a34a; flex-shrink: 0; }
+    .empty-tip svg { color: #4A7A54; flex-shrink: 0; }
 
     /* ── Modal Overlay Fixed Target ── */
     .modal-overlay {
@@ -201,7 +201,7 @@
     .modal-body { padding: 20px 24px; }
     .modal-footer { padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 10px; }
 
-    .form-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #16a34a; margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
+    .form-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #4A7A54; margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
     .form-section-label:first-child { margin-top: 0; }
     .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
     .form-group { margin-bottom: 12px; }
@@ -211,13 +211,13 @@
         font-size: 13px; color: #1e293b; background: #fff; transition: all 0.2s ease;
         box-sizing: border-box; font-family: inherit;
     }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(74,122,84,0.08); }
     .form-group textarea { resize: vertical; min-height: 64px; }
 
-    .btn-cancel { padding: 10px 18px; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; transition: all 0.15s ease; }
+    .btn-cancel { padding: 10px 18px; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1px solid #e2e8f0; background: #edf1e9; color: #648268; cursor: pointer; transition: all 0.15s ease; }
     .btn-cancel:hover { background: #f8fafc; border-color: #cbd5e1; }
-    .btn-submit { padding: 10px 22px; font-size: 13px; font-weight: 700; border-radius: 10px; border: none; background: #16a34a; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.25); transition: all 0.2s ease; }
-    .btn-submit:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(22,163,74,0.3); }
+    .btn-submit { padding: 10px 22px; font-size: 13px; font-weight: 700; border-radius: 10px; border: none; background: #4A7A54; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(74,122,84,0.25); transition: all 0.2s ease; }
+    .btn-submit:hover { background: #15803d; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(74,122,84,0.3); }
 
     /* ── Toast ── */
     .toast {
@@ -247,7 +247,7 @@
     .land-plot-svg-wrap { position: relative; border-radius: 18px; background: #F8FAF9; border: 1px solid #E2E8F0; padding: 16px; overflow: hidden; }
     .plot-map-controls { position: absolute; top: 28px; right: 28px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
     .plot-map-btn { width: 32px; height: 32px; border-radius: 50%; background: #FFFFFF; border: 1px solid #E2E8F0; color: #475569; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; transition: all 0.15s ease; }
-    .plot-map-btn:hover { background: #F1F5F9; color: #0F172A; }
+    .plot-map-btn:hover { background: #edf1e9; color: #648268; }
     .plot-polygon { cursor: pointer; transform-box: fill-box; transform-origin: center; transition: opacity 0.15s ease; }
     .plot-polygon:hover { opacity: 0.85; }
     .plot-tooltip { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0F172A; color: #FFFFFF; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
@@ -269,7 +269,7 @@
     .farm-fs-body .farm-fs-svg { min-width: 100%; min-height: 100%; display: block; transition: transform 0.15s ease; transform-origin: center center; }
     .farm-fs-zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
     .farm-fs-zoom-btn { width: 38px; height: 38px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 18px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.15s ease; }
-    .farm-fs-zoom-btn:hover { background: #f1f5f9; color: #0f172a; }
+    .farm-fs-zoom-btn:hover { background: #edf1e9; color: #648268; }
     .farm-fs-zoom-label { text-align: center; font-size: 11px; font-weight: 700; color: #64748b; background: #fff; border-radius: 8px; padding: 3px 0; border: 1px solid #e2e8f0; min-width: 38px; }
 
 </style>
@@ -315,7 +315,7 @@
 <!-- ── Stats ── -->
 <div class="stats-strip kpi-strip">
     <div class="stat-pill">
-        <div class="stat-icon" style="background: #dcfce7; color: #16a34a;">
+        <div class="stat-icon" style="background: #dcfce7; color: #4A7A54;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
         </div>
         <div class="stat-text">
@@ -576,7 +576,7 @@
                 onclick="location.href='{{ route('farmer.crops.show', $fc) }}'">
                 <td>
                     <div class="crop-name-cell">
-                        <span class="crop-name-ic" style="background: {{ $fc->growth_stage_color }}14; color: #16a34a;">
+                        <span class="crop-name-ic" style="background: {{ $fc->growth_stage_color }}14; color: #4A7A54;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
                         </span>
                         <div>

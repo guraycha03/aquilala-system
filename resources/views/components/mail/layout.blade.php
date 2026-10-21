@@ -26,7 +26,7 @@
                     </tr>
                     {{-- Accent rule --}}
                     <tr>
-                        <td style="height:4px;background-color:#5DC257;line-height:4px;font-size:0;">&nbsp;</td>
+                        <td style="height:4px;background-color:#8FB89A;line-height:4px;font-size:0;">&nbsp;</td>
                     </tr>
                     {{-- Body --}}
                     <tr>

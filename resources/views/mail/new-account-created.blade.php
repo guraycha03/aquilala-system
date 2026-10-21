@@ -1,5 +1,5 @@
 <x-mail.layout :preheader="'Set a password for your ' . config('app.name') . ' account — the link expires in 60 minutes.'">
-    <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#5DC257;text-transform:uppercase;letter-spacing:1px;">New account</p>
+    <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#8FB89A;text-transform:uppercase;letter-spacing:1px;">New account</p>
 
     <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#143d23;font-weight:800;">Welcome to {{ config('app.name') }}</h1>
 
@@ -18,7 +18,7 @@
         <tr>
             <td align="center">
                 <a href="{{ $setupUrl }}"
-                   style="display:inline-block;background-color:#5DC257;color:#092b14;text-decoration:none;font-size:15px;font-weight:800;letter-spacing:0.05em;padding:14px 30px;border-radius:10px;">
+                   style="display:inline-block;background-color:#8FB89A;color:#092b14;text-decoration:none;font-size:15px;font-weight:800;letter-spacing:0.05em;padding:14px 30px;border-radius:10px;">
                     Set Your Password
                 </a>
             </td>
@@ -31,7 +31,7 @@
 
     {{-- Fallback: temporary password + manual sign-in --}}
     <h2 style="margin:0 0 12px;font-size:15px;color:#143d23;font-weight:800;">Prefer to sign in manually?</h2>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f7;border-left:3px solid #5DC257;border-radius:6px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f7;border-left:3px solid #8FB89A;border-radius:6px;">
         <tr>
             <td style="padding:12px 16px;">
                 <p style="margin:0;font-size:13px;line-height:1.6;color:#475569;">

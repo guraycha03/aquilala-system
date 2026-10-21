@@ -10,8 +10,8 @@
         content: ""; position: fixed; border-radius: 50%; filter: blur(80px);
         pointer-events: none; z-index: 0;
     }
-    .crops-page::before { width: 340px; height: 340px; background: rgba(22,163,74,0.10); top: -80px; right: -60px; }
-    .crops-page::after { width: 280px; height: 280px; background: rgba(132,204,22,0.08); bottom: -60px; left: -40px; }
+    .crops-page::before { width: 340px; height: 340px; background: rgba(74,122,84,0.10); top: -80px; right: -60px; }
+    .crops-page::after { width: 280px; height: 280px; background: rgba(143,184,154,0.08); bottom: -60px; left: -40px; }
     .crops-content { position: relative; z-index: 1; }
 
     /* ── Success Alert ── */
@@ -29,7 +29,7 @@
     }
     .hero-band::before {
         content: ""; position: absolute; top: -80px; right: -40px; width: 220px; height: 220px;
-        border-radius: 50%; background: rgba(16,185,129,0.15);
+        border-radius: 50%; background: rgba(94,144,112,0.15);
     }
     .hero-inner { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; }
     .hero-title { font-size: 23px; font-weight: 800; margin: 0; letter-spacing: -0.01em; color: #14532d; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -90,13 +90,13 @@
         content: ""; position: absolute; top: 14px; left: calc(50% + 14px); width: calc(100% - 28px);
         height: 3px; background: #eef2f1; border-radius: 99px;
     }
-    .stepper-step.done:not(:last-child)::after { background: #16a34a; }
+    .stepper-step.done:not(:last-child)::after { background: #4A7A54; }
     .stepper-dot {
         width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
         background: #fff; border: 2.5px solid #d7dedb; color: transparent; z-index: 1; font-size: 13px; font-weight: 800; transition: all 0.2s ease;
     }
-    .stepper-step.done .stepper-dot { background: #16a34a; border-color: #16a34a; color: #fff; }
-    .stepper-step.current .stepper-dot { color: #fff; box-shadow: 0 0 0 4px rgba(22,163,74,0.12); }
+    .stepper-step.done .stepper-dot { background: #4A7A54; border-color: #4A7A54; color: #fff; }
+    .stepper-step.current .stepper-dot { color: #fff; box-shadow: 0 0 0 4px rgba(74,122,84,0.12); }
     .stepper-label { font-size: 11px; font-weight: 600; color: #b0b8b3; text-align: center; text-transform: capitalize; }
     .stepper-step.done .stepper-label, .stepper-step.current .stepper-label { color: #374138; }
     .stepper-step.current .stepper-label { font-weight: 800; }
@@ -123,7 +123,7 @@
         flex: 1; min-width: 160px; border-radius: 12px; padding: 16px 18px;
         border: 1px solid #bbf7d0; background: #f0fdf4;
     }
-    .hs-tile .hs-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #16a34a; }
+    .hs-tile .hs-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #4A7A54; }
     .hs-tile .hs-value { font-size: 19px; font-weight: 800; color: #166534; margin-top: 3px; }
 
     /* ── Notes ── */
@@ -138,7 +138,7 @@
         width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px;
         font-size: 13px; color: #1e293b; background: #fff; font-family: inherit; outline: none; transition: all 0.2s ease;
     }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.08); }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.08); }
     .btn-submit {
         display: inline-flex; align-items: center; gap: 7px; background: #14532d; color: #fff;
         padding: 10px 22px; border-radius: 10px; font-size: 13px; font-weight: 700; border: 0;
@@ -146,7 +146,7 @@
     }
     .btn-submit:hover { background: #166534; }
     .btn-cancel {
-        display: inline-flex; align-items: center; gap: 6px; background: #fff; color: #64748b;
+        display: inline-flex; align-items: center; gap: 6px; background: #edf1e9; color: #648268;
         padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;
         border: 1px solid #e5e7eb; cursor: pointer; transition: all 0.15s; text-decoration: none; font-family: inherit;
     }
@@ -239,7 +239,7 @@ $unit = $farmerCrop->land_area_unit === 'ha' ? 'ha' : $farmerCrop->land_area_uni
 @endphp
 <div class="stats-strip kpi-strip">
     <div class="stat-pill">
-        <div class="stat-icon" style="background: #f0fdf4; color: #16a34a;">
+        <div class="stat-icon" style="background: #edf1e9; color: #648268;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
         <div class="stat-text">
@@ -248,7 +248,7 @@ $unit = $farmerCrop->land_area_unit === 'ha' ? 'ha' : $farmerCrop->land_area_uni
         </div>
     </div>
     <div class="stat-pill">
-        <div class="stat-icon" style="background: #eff6ff; color: #2563eb;">
+        <div class="stat-icon" style="background: #edf1e9; color: #648268;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         </div>
         <div class="stat-text">
@@ -257,7 +257,7 @@ $unit = $farmerCrop->land_area_unit === 'ha' ? 'ha' : $farmerCrop->land_area_uni
         </div>
     </div>
     <div class="stat-pill">
-        <div class="stat-icon" style="background: #fffbeb; color: #d97706;">
+        <div class="stat-icon" style="background: #edf1e9; color: #648268;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
         </div>
         <div class="stat-text">
@@ -291,7 +291,7 @@ $unit = $farmerCrop->land_area_unit === 'ha' ? 'ha' : $farmerCrop->land_area_uni
     </div>
     @else
     <div class="stat-pill">
-        <div class="stat-icon" style="background: #f1f5f9; color: #64748b;">
+        <div class="stat-icon" style="background: #edf1e9; color: #648268;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
         </div>
         <div class="stat-text">

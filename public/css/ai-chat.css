@@ -137,6 +137,108 @@ body:has(.chat-page) {
     opacity: 1;
 }
 
+/* ── Avatar picker ────────────────────────────────────────────────
+   The avatars belong to the system: the reader picks one of them from
+   this grid and the account remembers which. Nothing is uploaded. */
+.avatar-picker {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.avatar-picker[hidden] { display: none; }
+
+.avatar-picker-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(16, 24, 40, 0.38);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.avatar-picker-card {
+    position: relative;
+    z-index: 1;
+    width: min(420px, 100%);
+    background: #ffffff;
+    border: 1px solid #E0E5DB;
+    border-radius: 16px;
+    box-shadow: 0 22px 50px rgba(15, 23, 42, 0.24);
+    overflow: hidden;
+}
+
+.avatar-picker-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #F0F2F1;
+    background: #fafdfb;
+    font-size: 14px;
+    color: #344B38;
+}
+
+.avatar-picker-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background: #f0f2f1;
+    color: #6b7c6e;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+
+.avatar-picker-close:hover { background: #E0E5DB; }
+.avatar-picker-close svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-linecap: round; }
+
+.avatar-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 16px;
+}
+
+.avatar-choice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 6px;
+    border: 1px solid #E0E5DB;
+    border-radius: 12px;
+    background: #ffffff;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #647263;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.avatar-choice img { width: 40px; height: 40px; border-radius: 50%; }
+.avatar-choice:hover { background: #F3F5F0; border-color: #C8D5C5; }
+.avatar-choice.is-active { border-color: #648268; background: #EDF1E9; color: #344B38; }
+
+@media (max-width: 420px) {
+    .avatar-picker-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+[data-theme="dark"] .avatar-picker-card { background: rgba(15, 23, 42, 0.96); border-color: #334155; }
+[data-theme="dark"] .avatar-picker-head { background: rgba(15, 23, 42, 0.72); border-bottom-color: #334155; color: #d6f5e3; }
+[data-theme="dark"] .avatar-picker-close { background: #1f2937; color: #9fb3a6; }
+[data-theme="dark"] .avatar-choice { background: transparent; border-color: #334155; color: #9fb3a6; }
+[data-theme="dark"] .avatar-choice:hover { background: #1f2937; border-color: #4ade80; }
+[data-theme="dark"] .avatar-choice.is-active { background: #16301f; border-color: #6ee7a0; color: #d6f5e3; }
+
 .header-info {
     margin-left: 12px;
     flex: 1;

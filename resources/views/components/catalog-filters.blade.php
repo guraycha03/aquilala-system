@@ -109,7 +109,7 @@
     background: none; cursor: pointer;
     color: #64748b; font-size: 17px; line-height: 1;
   }
-  .cf-search-clear:hover { background: #f1f5f9; color: #0f172a; }
+  .cf-search-clear:hover { background: #edf1e9; color: #648268; }
   .cf-search-clear.is-visible { display: inline-flex; }
 
   .cf-price { display: flex; align-items: center; gap: 6px; }

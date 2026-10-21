@@ -1,5 +1,5 @@
 <x-mail.layout :preheader="'Your ' . config('app.name') . ' verification code is ' . $otp . ' — it expires in 10 minutes.'">
-    <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#5DC257;text-transform:uppercase;letter-spacing:1px;">Account activation</p>
+    <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#8FB89A;text-transform:uppercase;letter-spacing:1px;">Account activation</p>
 
     <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#143d23;font-weight:800;">Verify your account</h1>
 
@@ -24,7 +24,7 @@
     </p>
 
     {{-- Purpose callout --}}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;background-color:#f6f8f7;border-left:3px solid #5DC257;border-radius:6px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;background-color:#f6f8f7;border-left:3px solid #8FB89A;border-radius:6px;">
         <tr>
             <td style="padding:12px 16px;">
                 <p style="margin:0;font-size:13px;line-height:1.6;color:#475569;">
@@ -42,28 +42,28 @@
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
         <tr>
             <td style="padding:0 0 10px;font-size:14px;line-height:1.6;color:#334155;">
-                <strong style="color:#5DC257;">1.</strong>&nbsp; Go to the account activation page:
+                <strong style="color:#8FB89A;">1.</strong>&nbsp; Go to the account activation page:
                 <a href="{{ url('/activate') }}" style="color:#436149;font-weight:700;text-decoration:underline;">{{ url('/activate') }}</a>
             </td>
         </tr>
         <tr>
             <td style="padding:0 0 10px;font-size:14px;line-height:1.6;color:#334155;">
-                <strong style="color:#5DC257;">2.</strong>&nbsp; Enter your email address: <strong>{{ $userEmail }}</strong>
+                <strong style="color:#8FB89A;">2.</strong>&nbsp; Enter your email address: <strong>{{ $userEmail }}</strong>
             </td>
         </tr>
         <tr>
             <td style="padding:0 0 10px;font-size:14px;line-height:1.6;color:#334155;">
-                <strong style="color:#5DC257;">3.</strong>&nbsp; Enter the 6-digit code shown above.
+                <strong style="color:#8FB89A;">3.</strong>&nbsp; Enter the 6-digit code shown above.
             </td>
         </tr>
         <tr>
             <td style="padding:0 0 10px;font-size:14px;line-height:1.6;color:#334155;">
-                <strong style="color:#5DC257;">4.</strong>&nbsp; Create your password &mdash; your account activates automatically.
+                <strong style="color:#8FB89A;">4.</strong>&nbsp; Create your password &mdash; your account activates automatically.
             </td>
         </tr>
         <tr>
             <td style="font-size:14px;line-height:1.6;color:#334155;">
-                <strong style="color:#5DC257;">5.</strong>&nbsp; Sign in and start using {{ config('app.name') }}.
+                <strong style="color:#8FB89A;">5.</strong>&nbsp; Sign in and start using {{ config('app.name') }}.
             </td>
         </tr>
     </table>

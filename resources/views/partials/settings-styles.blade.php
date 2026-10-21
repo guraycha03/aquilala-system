@@ -7,7 +7,7 @@
     .set-page::after {
       content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
     }
-    .set-page::before { width: 320px; height: 320px; background: rgba(16,185,129,0.15); top: -80px; right: -80px; }
+    .set-page::before { width: 320px; height: 320px; background: rgba(94,144,112,0.15); top: -80px; right: -80px; }
     .set-page::after { width: 280px; height: 280px; background: rgba(59,130,246,0.12); bottom: -60px; left: -60px; }
     .set-content { position: relative; z-index: 1; }
 
@@ -86,7 +86,7 @@
       transition: all 0.25s ease;
     }
     .set-toast.show { opacity: 1; transform: translateY(0); }
-    .set-toast svg { width: 16px; height: 16px; stroke: #6aeb2f; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .set-toast svg { width: 16px; height: 16px; stroke: #8FB89A; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
     /* Interface — radio unit selector */
     .unit-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -107,7 +107,7 @@
     .unit-opt .uo-desc { font-size: 11px; color: #94a3b8; line-height: 1.4; }
     .unit-opt .uo-tag {
       width: fit-content; margin-top: 4px; font-size: 10px; font-weight: 700;
-      padding: 3px 8px; border-radius: 999px; background: #f1f5f9; color: #64748b;
+      padding: 3px 8px; border-radius: 999px; background: #edf1e9; color: #648268;
       font-variant-numeric: tabular-nums;
     }
     .unit-opt input:checked + .uo-box { border-color: #8fbf4d; background: #f7fbef; box-shadow: 0 0 0 3px rgba(143,191,77,0.14); }
@@ -166,7 +166,7 @@
       padding: 6px 13px; border-radius: 999px; box-shadow: 0 4px 14px rgba(20,61,35,0.3);
       animation: mapPulse 1.8s ease-in-out infinite;
     }
-    .map-edit-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: #6aeb2f; }
+    .map-edit-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: #8FB89A; }
     @keyframes mapPulse { 0%,100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.04); } }
     .map-editing #orgMap { cursor: crosshair; }
 

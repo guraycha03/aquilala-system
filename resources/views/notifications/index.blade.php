@@ -60,7 +60,7 @@
 
   /* The one dot that carries "unread" — nothing else on the row shouts. */
   .nf-dot { width: 8px; height: 8px; border-radius: 50%; background: transparent; flex-shrink: 0; margin-top: 7px; }
-  .nf-item.is-unread .nf-dot { background: #16a34a; }
+  .nf-item.is-unread .nf-dot { background: #4A7A54; }
 
   .nf-mid { flex: 1; min-width: 0; }
   .nf-title { font-size: 14px; font-weight: 500; color: #344B38; line-height: 1.5; }
@@ -110,7 +110,7 @@
     transition: all 0.25s cubic-bezier(0.4,0,0.2,1); white-space: nowrap; max-width: 90vw;
   }
   .nf-toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
-  .nf-toast svg { width: 16px; height: 16px; stroke: #6aeb2f; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .nf-toast svg { width: 16px; height: 16px; stroke: #8FB89A; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
   @media (max-width: 640px) {
     .nf-header { align-items: flex-start; }
@@ -179,9 +179,9 @@
                   <span>{{ optional($notification->created_at)->diffForHumans() }}</span>
                   <span>&middot;</span>
                   <span>{{ optional($notification->created_at)->format('M d, Y \a\t g:i A') }}</span>
-                  @if($notification->actor_name && $notification->actor_name !== ($notification->user?->name ?? ''))
+                  @if($notification->display_actor_name)
                     <span>&middot;</span>
-                    <span>{{ $notification->actor_name }}</span>
+                    <span>{{ $notification->display_actor_name }}</span>
                   @endif
                 </div>
               </div>

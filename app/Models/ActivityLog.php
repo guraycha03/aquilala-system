@@ -126,6 +126,29 @@ class ActivityLog extends Model
         return $this->actor?->name ?? $this->user?->name ?? 'System';
     }
 
+    /**
+     * The actor to show beside a notice — or nothing.
+     *
+     * Two cases show no name. A row whose actor is the reader is the
+     * reader's own action, and an anonymised row (a farmer's estimate
+     * reaching a store) must never name the farmer: the store learns that
+     * the demand exists, not who created it.
+     */
+    public function getDisplayActorNameAttribute(): string
+    {
+        if ($this->type === self::TYPE_QUOTATION_CREATED && $this->user?->role === 'store_owner') {
+            return '';
+        }
+
+        if (($this->metadata['anonymized'] ?? false) === true) {
+            return '';
+        }
+
+        $actor = $this->actor_name;
+
+        return $actor === (string) $this->user?->name ? '' : $actor;
+    }
+
     public function getCategoryAttribute(): string
     {
         $prefix = explode('.', (string) $this->type)[0];
@@ -212,20 +235,22 @@ class ActivityLog extends Model
 
     /**
      * Store-owner notifications: what happens TO the store, never its own
-     * history. Two kinds of notice live here — requests from farmers (cost
-     * estimates that involve this store's products, fanned out by
-     * QuotationController strictly anonymously: no farmer name or actor)
-     * and the association's calendar events (fanned out by ActivityLogger),
-     * exactly what the farmer bell carries. The store's own actions stay
-     * under Settings → Activity history.
+     * history. One kind of notice lives here — a farmer's cost estimate
+     * that involves this store's products (fanned out by ActivityLogger
+     * strictly anonymously: no farmer name or actor). The store's own
+     * actions stay under Settings → Activity history.
+     *
+     * Two things are deliberately not here. A deleted estimate is the
+     * farmer's undo, and it belongs in that farmer's activity history: the
+     * store is told what reached it, not what the farmer tidied up
+     * afterwards. And association events are not the store's business —
+     * a store owner is not a member of the association and has no
+     * calendar, so no event notice reaches them.
      */
     public function scopeStoreNotifications($query)
     {
         return $query->whereIn('type', [
             self::TYPE_QUOTATION_CREATED,
-            self::TYPE_QUOTATION_DELETED,
-            self::TYPE_EVENT_CREATED,
-            self::TYPE_EVENT_UPDATED,
         ]);
     }
 

@@ -26,7 +26,7 @@
     .mx-page::after {
       content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
     }
-    .mx-page::before { width: 360px; height: 360px; background: rgba(16,185,129,0.16); top: -90px; right: -90px; }
+    .mx-page::before { width: 360px; height: 360px; background: rgba(94,144,112,0.16); top: -90px; right: -90px; }
     .mx-page::after { width: 300px; height: 300px; background: rgba(59,130,246,0.13); bottom: -70px; left: -70px; }
     .mx-content { position: relative; z-index: 1; }
 
@@ -63,7 +63,7 @@
     .mx-group-head .mx-ico {
       width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
-      background: #f0fdf4; color: #16a34a;
+      background: #edf1e9; color: #648268;
     }
     .mx-group-head .mx-ico svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .mx-group-head .mx-badge {
@@ -75,7 +75,7 @@
       display: inline-flex; align-items: center; gap: 6px; margin: 16px 0 8px;
       padding: 4px 12px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: capitalize;
     }
-    .mx-season-title.wet { background: #eef2f6; color: #62829b; }
+    .mx-season-title.wet { background: #edf1e9; color: #648268; }
     .mx-season-title.dry { background: #f6f0e6; color: #a57f43; }
 
     /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
@@ -180,7 +180,7 @@
                         <td class="product">
                           {{ $formula->product->display_name ?? 'Unknown Product' }}
                           @if($formula->stage && $formula->stage !== 'standard')
-                            <span style="display:inline-block; margin-left:6px; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#f5f3ff; color:#6d28d9; border:1px solid #ddd6fe; vertical-align:middle;">{{ $formula->stageLabel() }}</span>
+                            <span style="display:inline-block; margin-left:6px; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700; background: #edf1e9; color: #648268; border:1px solid #ddd6fe; vertical-align:middle;">{{ $formula->stageLabel() }}</span>
                           @endif
                         </td>
                         <td class="rate">

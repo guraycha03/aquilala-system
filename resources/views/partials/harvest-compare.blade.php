@@ -41,18 +41,18 @@
   .cmp-table { min-width: 780px; }
   .cmp-table .num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
   .cmp-var { display: inline-flex; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .cmp-var.up { background: #ecfdf5; color: #15803d; }
+  .cmp-var.up { background: #edf1e9; color: #648268; }
   .cmp-var.down { background: #fef2f2; color: #b91c1c; }
-  .cmp-var.flat { background: #f1f5f9; color: #64748b; }
+  .cmp-var.flat { background: #edf1e9; color: #648268; }
   .cmp-src {
     display: inline-block; padding: 2px 8px; border-radius: 14px;
     font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
   }
-  .cmp-src.batch { background: #eff6ff; color: #1d4ed8; }
-  .cmp-src.baseline { background: #f5f3ff; color: #6d28d9; }
+  .cmp-src.batch { background: #edf1e9; color: #648268; }
+  .cmp-src.baseline { background: #edf1e9; color: #648268; }
   .cmp-pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
-  .cmp-pill.wet { background: #eff6ff; color: #1d4ed8; }
-  .cmp-pill.dry { background: #fffbeb; color: #b45309; }
+  .cmp-pill.wet { background: #edf1e9; color: #648268; }
+  .cmp-pill.dry { background: #edf1e9; color: #648268; }
 
   .cmp-empty { text-align: center; padding: 48px 20px; color: #94a3b8; }
   .cmp-empty b { display: block; color: #475569; font-size: 15px; margin: 8px 0 4px; }
@@ -158,7 +158,7 @@
       </div>
       <div class="cmp-legend">
         <span><span class="sw" style="background:#93c5fd;"></span>Estimate</span>
-        <span><span class="sw" style="background:#16a34a;"></span>Actual</span>
+        <span><span class="sw" style="background:#4A7A54;"></span>Actual</span>
       </div>
     </div>
     <div class="cmp-chart">

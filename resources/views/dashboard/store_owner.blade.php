@@ -45,7 +45,7 @@
 
   .btn-primary {
     display: inline-flex; align-items: center; gap: 7px;
-    background: linear-gradient(135deg, #14532d, #16a34a); color: #fff;
+    background: linear-gradient(135deg, #14532d, #4A7A54); color: #fff;
     padding: 10px 18px; border-radius: 11px; font-size: 13px; font-weight: 700;
     text-decoration: none; border: none; cursor: pointer;
     box-shadow: 0 5px 16px rgba(20,83,45,0.28);
@@ -162,7 +162,7 @@
 
     <!-- 2. KPI CARDS -->
     <section class="kpi-strip">
-      <x-kpi-card title="Total Products" value="{{ $productCount }}" trendValue="{{ $productCount > 0 ? 'live listings' : 'start listing' }}" trendDirection="{{ $productCount > 0 ? 'up' : 'neutral' }}" trendLabel="In marketplace" accent="#16a34a" link="{{ route('store.storefront.index') }}">
+      <x-kpi-card title="Total Products" value="{{ $productCount }}" trendValue="{{ $productCount > 0 ? 'live listings' : 'start listing' }}" trendDirection="{{ $productCount > 0 ? 'up' : 'neutral' }}" trendLabel="In marketplace" accent="#4A7A54" link="{{ route('store.storefront.index') }}">
         <x-slot:icon><svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></x-slot:icon>
       </x-kpi-card>
       <x-kpi-card title="Low Stock Items" value="{{ $lowStockCount }}" trendValue="{{ $lowStockCount > 0 ? 'reorder soon' : 'all healthy' }}" trendDirection="{{ $lowStockCount > 0 ? 'down' : 'up' }}" trendLabel="Alert threshold" accent="#d97706" link="{{ route('store.inventory.index') }}">

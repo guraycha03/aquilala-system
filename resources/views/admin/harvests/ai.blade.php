@@ -42,7 +42,7 @@
   .ai-ask:disabled { opacity: .65; cursor: progress; transform: none; }
 
   .ai-back { font-size: 13px; font-weight: 600; color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-  .ai-back:hover { color: #16a34a; }
+  .ai-back:hover { color: #4A7A54; }
 
   .ai-chat-card { display: flex; flex-direction: column; }
   .ai-chat-log {
@@ -56,8 +56,8 @@
     display: inline-flex; align-items: center; justify-content: center;
     font-size: 11px; font-weight: 800;
   }
-  .ai-msg.bot .ai-msg-avatar { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
-  .ai-msg.user .ai-msg-avatar { background: #e6e6e6; color: #6f8f71; border: 1px solid #d4d4d4; }
+  .ai-msg.bot .ai-msg-avatar { background: #edf1e9; color: #648268; border: 1px solid #ddd6fe; }
+  .ai-msg.user .ai-msg-avatar { background: #edf1e9; color: #648268; border: 1px solid #d4d4d4; }
   .ai-msg-body { max-width: 84%; min-width: 0; }
   .ai-msg-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
   .ai-msg-name { font-size: 11.5px; font-weight: 700; color: #64748b; }
@@ -114,8 +114,8 @@
   .ai-chat-input:disabled { opacity: .6; }
 
   .ai-source-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
-  .ai-source-badge.ai { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
-  .ai-source-badge.fallback { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+  .ai-source-badge.ai { background: #edf1e9; color: #648268; border: 1px solid #ddd6fe; }
+  .ai-source-badge.fallback { background: #edf1e9; color: #648268; border: 1px solid #e2e8f0; }
 
   .basis-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px dashed #eef1f4; font-size: 13px; }
   .basis-row:last-child { border-bottom: none; }
@@ -129,8 +129,8 @@
   .basis-list .v { color: #64748b; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   .pill { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
-  .pill.wet { background: #eff6ff; color: #1d4ed8; }
-  .pill.dry { background: #fffbeb; color: #b45309; }
+  .pill.wet { background: #edf1e9; color: #648268; }
+  .pill.dry { background: #edf1e9; color: #648268; }
 
   .empty-state { text-align: center; padding: 54px 24px; }
   .empty-state h3 { font-size: 16px; color: #1e2922; margin: 14px 0 6px; }
@@ -179,7 +179,7 @@
           <span class="basis-key">Crops</span>
           <span class="basis-val">
             @forelse($crops as $crop)
-              <span class="pill" style="background:#f1f5f9; color:#475569;">{{ $crop }}</span>
+              <span class="pill" style="background: #edf1e9; color: #648268;">{{ $crop }}</span>
             @empty
               —
             @endforelse
@@ -195,7 +195,7 @@
           <p class="ai-card-title">Chat</p>
           <p class="ai-card-sub">Pick a question below, or type your own.</p>
         </div>
-        <button id="aiClearBtn" class="ai-ask" type="button" style="background:#fff; color:#64748b; border:1.5px solid #e2e8f0; box-shadow:none; height:34px; padding:0 14px;" onclick="resetChat()">New chat</button>
+        <button id="aiClearBtn" class="ai-ask" type="button" style="background: #edf1e9; color: #648268; border:1.5px solid #e2e8f0; box-shadow:none; height:34px; padding:0 14px;" onclick="resetChat()">New chat</button>
       </div>
 
       <div id="aiChatLog" class="ai-chat-log" role="log" aria-live="polite">

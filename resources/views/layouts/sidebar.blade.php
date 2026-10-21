@@ -275,7 +275,7 @@
     .nav-links li a:focus, .nav-dropdown-btn:focus, .sub-nav-links li a:focus,
     .sidebar .nav-dropdown-btn:focus { outline: none; }
     .nav-links li a:focus-visible, .nav-dropdown-btn:focus-visible,
-    .sub-nav-links li a:focus-visible { outline: 2px solid #6aeb2f; outline-offset: -2px; }
+    .sub-nav-links li a:focus-visible { outline: 2px solid #8FB89A; outline-offset: -2px; }
 
     /* Global select / dropdown styling — matches the Aquilala white + green theme */
     select {
@@ -296,7 +296,7 @@
     }
     select:not([disabled]) { cursor: pointer; }
     select:focus {
-      border-color: #16a34a;
+      border-color: #4A7A54;
       box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
     }
 
@@ -332,7 +332,7 @@
     /* Brand Section */
     .brand-section { padding: 20px; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.95); letter-spacing: -0.01em; line-height: 1.35; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; }
     .brand-title { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; display: block; margin-bottom: 2px; color: #ffffff; }
-    .brand-accent { color: #6aeb2f; }
+    .brand-accent { color: #8FB89A; }
 
     /* Weather Widget Icon (real condition icons from public/images/weather) */
     .season-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; }
@@ -356,7 +356,7 @@
     @media (max-width: 768px) {
       .climate-card { margin: 4px 8px 20px 8px; }
     }
-    .climate-card:focus-visible { outline: 2px solid #6aeb2f; outline-offset: 2px; }
+    .climate-card:focus-visible { outline: 2px solid #8FB89A; outline-offset: 2px; }
     .climate-card:hover,
     .climate-card.pinned { background: linear-gradient(135deg, var(--sb-card-bg-a, rgba(255,255,255,0.22)), var(--sb-card-bg-b, rgba(255,255,255,0.06))); border-color: var(--sb-card-border-hover, rgba(255,255,255,0.26)); }
     .climate-row { display: flex; align-items: center; gap: 10px; min-height: 40px; }
@@ -502,6 +502,106 @@
       display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.25);
     }
 
+    /* ── The notification panel ───────────────────────────────────
+       The bell opens this instead of leaving the page. It hangs under
+       the bell itself, so it reads as the bell's own list rather than
+       a takeover of the screen. One white card, plain rows, one sage
+       dot for what is still unread - the same language the
+       notifications page speaks. */
+    .nmodal { position: fixed; top: 74px; right: 20px; z-index: 1200; width: min(400px, calc(100vw - 32px)); }
+    .nmodal[hidden] { display: none; }
+    .nmodal-card {
+      display: flex; flex-direction: column; overflow: hidden;
+      max-height: min(72vh, 560px);
+      background: #ffffff; border: 1px solid #E0E5DB; border-radius: 16px;
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+    }
+    .nmodal-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      padding: 16px 18px; border-bottom: 1px solid #F0F2F1; background: #fafdfb;
+    }
+    .nmodal-head h2 { font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0; }
+    .nmodal-head p { font-size: 12px; color: #879a8c; margin: 3px 0 0 0; }
+    .nmodal-close {
+      width: 30px; height: 30px; border-radius: 9px; border: none; cursor: pointer; flex-shrink: 0;
+      background: #f0f2f1; color: #6b7c6e; display: inline-flex; align-items: center; justify-content: center;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .nmodal-close:hover { background: #E0E5DB; color: #344B38; }
+    .nmodal-close svg { stroke: currentColor; fill: none; }
+
+    .nmodal-body { flex: 1; overflow-y: auto; padding: 4px 18px; overscroll-behavior: contain; }
+    .nmodal-item { display: flex; align-items: flex-start; gap: 11px; padding: 13px 0; }
+    .nmodal-item + .nmodal-item { border-top: 1px solid #F0F2F1; }
+    .nmodal-dot { width: 8px; height: 8px; border-radius: 50%; background: transparent; flex-shrink: 0; margin-top: 6px; }
+    .nmodal-item.is-unread .nmodal-dot { background: #4A7A54; }
+    .nmodal-mid { flex: 1; min-width: 0; }
+    .nmodal-text { font-size: 13.5px; font-weight: 500; color: #344B38; line-height: 1.5; }
+    .nmodal-item.is-unread .nmodal-text { font-weight: 600; color: #1f2d24; }
+    .nmodal-meta { font-size: 11.5px; color: #94a3b8; font-weight: 500; margin-top: 4px; }
+    .nmodal-state {
+      display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; margin-right: 7px;
+      border: 1px solid #E0E5DB; background: #F3F5F0; color: #647263;
+      font-size: 10.5px; font-weight: 700; line-height: 1.6; vertical-align: middle; white-space: nowrap;
+    }
+    .nmodal-state--ongoing { background: #EDF1E9; color: #166534; border-color: #C8D5C5; }
+    .nmodal-state--done { background: #FAFBFA; color: #94a3b8; border-color: #EDF0EC; }
+    .nmodal-done {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; border: 1px solid #E0E5DB;
+      background: #fff; color: #94a3b8; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      transition: all 0.15s ease; margin-top: 1px;
+    }
+    .nmodal-done:hover { background: #EDF1E9; border-color: #C8D5C5; color: #166534; }
+    .nmodal-done svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+
+    .nmodal-empty { text-align: center; padding: 40px 18px; }
+    .nmodal-empty-icon {
+      width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 12px;
+      background: #EDF1E9; color: #648268; display: flex; align-items: center; justify-content: center;
+    }
+    .nmodal-empty-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .nmodal-empty h3 { font-size: 14px; font-weight: 700; color: #344B38; margin: 0 0 5px 0; }
+    .nmodal-empty p { font-size: 12.5px; color: #647263; margin: 0; line-height: 1.55; }
+
+    .nmodal-foot {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 18px; border-top: 1px solid #F0F2F1; background: #fafdfb;
+    }
+    .nmodal-readall {
+      display: inline-flex; align-items: center; gap: 6px; border: 1px solid #E0E5DB; cursor: pointer;
+      background: #fff; color: #4b5c50; font-size: 11.5px; font-weight: 700; font-family: inherit;
+      padding: 7px 12px; border-radius: 9px; transition: all 0.15s ease;
+    }
+    .nmodal-readall:hover { background: #EDF1E9; border-color: #C8D5C5; color: #344B38; }
+    .nmodal-readall[hidden] { display: none; }
+    .nmodal-readall svg { stroke: currentColor; fill: none; }
+    .nmodal-all { font-size: 12.5px; font-weight: 700; color: #166534; text-decoration: none; }
+    .nmodal-all:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+    [data-theme="dark"] .nmodal-card { background: rgba(15, 23, 42, 0.96); border-color: #334155; }
+    [data-theme="dark"] .nmodal-head { background: rgba(15, 23, 42, 0.72); border-bottom-color: #334155; }
+    [data-theme="dark"] .nmodal-head h2 { color: #d6f5e3; }
+    [data-theme="dark"] .nmodal-head p { color: #9fb3a6; }
+    [data-theme="dark"] .nmodal-close { background: #1f2937; color: #9fb3a6; }
+    [data-theme="dark"] .nmodal-close:hover { background: #26344a; color: #d6f5e3; }
+    [data-theme="dark"] .nmodal-item + .nmodal-item { border-top-color: #334155; }
+    [data-theme="dark"] .nmodal-text { color: #e2e8f0; }
+    [data-theme="dark"] .nmodal-item.is-unread .nmodal-text { color: #d6f5e3; }
+    [data-theme="dark"] .nmodal-meta { color: #94a3b8; }
+    [data-theme="dark"] .nmodal-state { background: #1f2937; border-color: #334155; color: #9fb3a6; }
+    [data-theme="dark"] .nmodal-state--ongoing { background: #16301f; border-color: #166534; color: #a7f3d0; }
+    [data-theme="dark"] .nmodal-done { background: #1f2937; border-color: #334155; color: #94a3b8; }
+    [data-theme="dark"] .nmodal-done:hover { background: #16301f; color: #a7f3d0; }
+    [data-theme="dark"] .nmodal-empty-icon { background: #16301f; color: #6ee7a0; }
+    [data-theme="dark"] .nmodal-empty h3 { color: #d6f5e3; }
+    [data-theme="dark"] .nmodal-empty p { color: #9fb3a6; }
+    [data-theme="dark"] .nmodal-loading { color: #9fb3a6; }
+    [data-theme="dark"] .nmodal-spin { border-color: #334155; border-top-color: #6ee7a0; }
+    [data-theme="dark"] .nmodal-foot { background: rgba(15, 23, 42, 0.72); border-top-color: #334155; }
+    [data-theme="dark"] .nmodal-readall { background: #1f2937; border-color: #334155; color: #9fb3a6; }
+    [data-theme="dark"] .nmodal-readall:hover { background: #16301f; color: #a7f3d0; }
+    [data-theme="dark"] .nmodal-all { color: #6ee7a0; }
+
     @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
@@ -513,6 +613,13 @@
   .desktop-notif { background: transparent; border: none; box-shadow: none; color: var(--sb-fg); }
   .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(255, 255, 255, 0.08); }
   .desktop-notif-wrap { top: 11px; right: 16px; }
+
+  /* On a phone the panel sits under the bell, across the width of the
+     screen, where the thumb already is. */
+  .nmodal { top: 60px; right: 12px; left: 12px; width: auto; }
+  .nmodal-card { max-height: 72vh; border-radius: 16px; }
+  .nmodal-body { padding: 4px 16px; }
+  .nmodal-foot { padding: 12px 16px; }
 
   /* --- UPDATE HERE --- */
   /* 1. Add right padding to nav-body so space matches the left (14px on both sides) */
@@ -558,8 +665,8 @@
       transition: all .2s ease;
     }
     .ctl-search input:focus {
-      border-color: #16a34a; background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(22,163,74,.08);
+      border-color: #4A7A54; background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(74,122,84,.08);
     }
     .ctl-search input::placeholder { color: #94a3b8; }
     .ncb-group-inline { position: relative; min-width: 170px; }
@@ -572,7 +679,7 @@
     }
     .ncb-select-trigger.placeholder { color: #94a3b8; }
     .ncb-select-trigger:hover { border-color: #cbd5e1; }
-    .ncb-select-trigger.active { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); outline: none; }
+    .ncb-select-trigger.active { border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(74,122,84,0.08); outline: none; }
     .ncb-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ncb-select-arrow { transition: transform 0.2s ease; color: #64748b; flex-shrink: 0; }
     .ncb-select-arrow.rotate { transform: rotate(180deg); }
@@ -594,8 +701,8 @@
       padding: 8px 12px; font-size: 13px; color: #1e293b; border-radius: 6px;
       cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
     }
-    .ncb-select-option:hover { background: #f1f5f9; color: #16a34a; }
-    .ncb-select-option.selected { background: #f0fdf4; color: #16a34a; font-weight: 600; }
+    .ncb-select-option:hover { background: #edf1e9; color: #648268; }
+    .ncb-select-option.selected { background: #edf1e9; color: #648268; font-weight: 600; }
     .btn-clear {
       display: inline-flex; align-items: center; gap: 6px;
       height: 42px; padding: 0 14px; border: 1.5px solid #bfe3c7; border-radius: 10px;
@@ -622,13 +729,13 @@
     .pagination-controls { display: flex; align-items: center; gap: 6px; }
     .page-btn {
       min-width: 34px; height: 34px; padding: 0 10px; border: 1.5px solid #e2e8f0;
-      border-radius: 8px; background: #ffffff; color: #475569; font-size: 13px;
+      border-radius: 8px; background: #edf1e9; color: #648268; font-size: 13px;
       font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
       display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
     }
-    .page-btn:hover:not(:disabled):not(.active):not(.disabled) { border-color: #16a34a; color: #16a34a; }
+    .page-btn:hover:not(:disabled):not(.active):not(.disabled) { border-color: #4A7A54; color: #4A7A54; }
     .page-btn:disabled, .page-btn.disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
-    .page-btn.active { background: #16a34a; border-color: #16a34a; color: #ffffff; font-weight: 700; }
+    .page-btn.active { background: #4A7A54; border-color: #4A7A54; color: #ffffff; font-weight: 700; }
     .page-ellipsis { color: #94a3b8; font-size: 13px; padding: 0 2px; }
     .btn-filter {
       position: relative; width: 42px; height: 42px; flex-shrink: 0;
@@ -639,7 +746,7 @@
     }
     .btn-filter svg { width: 18px; height: 18px; }
     .btn-filter:hover { border-color: #cbd5e1; color: #334155; }
-    .btn-filter.active { border-color: #16a34a; background: #f0fdf4; color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.08); }
+    .btn-filter.active { border-color: #4A7A54; background: #edf1e9; color: #648268; box-shadow: 0 0 0 3px rgba(74,122,84,0.08); }
     .btn-filter-dot {
       position: absolute; top: -3px; right: -3px; width: 9px; height: 9px;
       border-radius: 50%; background: #dc2626; border: 2px solid #ffffff;
@@ -666,7 +773,7 @@
       box-sizing: border-box; max-width: 100%;
     }
     .table-toolbar select:hover { border-color: #cbd5e1; }
-    .table-toolbar select:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.08); }
+    .table-toolbar select:focus { border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(74,122,84,.08); }
     .ttb-pagination {
       display: flex; align-items: center; gap: 10px;
       padding: 4px 0; flex-wrap: wrap; margin-left: auto;
@@ -844,21 +951,38 @@
 <body data-sidebar-theme="{{ $stActive }}"@if($captureShield ?? false) data-capture-shield @endif>
 
   @php
-    // Desktop notification bell: every role gets one, each pointing at its
-    // own notifications page with an unread badge from that role's scope.
+    // Desktop notification bell: every role gets one. It opens a panel with
+    // the same rows the notifications page shows, so nothing new costs a
+    // page away from whatever the reader is doing. The rows are rendered
+    // here, with the badge, so the panel opens on its content - never on a
+    // spinner. The page is still one click away, at the foot of the panel.
     $notifBellUrl = null;
     $notifUnreadCount = 0;
+    $notifItems = [];
+    $notifReadAllUrl = null;
     if (auth()->check()) {
         $notifRole = auth()->user()->role;
-        if ($notifRole === 'farmer') {
-            $notifBellUrl = route('farmer.notifications.index');
-            $notifUnreadCount = \App\Models\ActivityLog::forUser(auth()->id())->farmerNotifications()->unread()->count();
-        } elseif ($notifRole === 'store_owner') {
-            $notifBellUrl = route('store.notifications.index');
-            $notifUnreadCount = \App\Models\ActivityLog::forUser(auth()->id())->storeNotifications()->unread()->count();
-        } elseif ($notifRole === 'admin') {
-            $notifBellUrl = route('admin.notifications.index');
-            $notifUnreadCount = \App\Models\ActivityLog::forUser(auth()->id())->adminNotifications()->unread()->count();
+
+        // The role decides the scope; the route prefix decides the pages.
+        $notifScope = match ($notifRole) {
+            'farmer' => 'farmerNotifications',
+            'store_owner' => 'storeNotifications',
+            'admin' => 'adminNotifications',
+            default => null,
+        };
+        $notifPrefix = match ($notifRole) {
+            'farmer' => 'farmer',
+            'store_owner' => 'store',
+            'admin' => 'admin',
+            default => null,
+        };
+
+        if ($notifScope !== null && $notifPrefix !== null) {
+            $notifFeed = app(\App\Services\NotificationFeed::class);
+            $notifBellUrl = route($notifPrefix . '.notifications.index');
+            $notifUnreadCount = $notifFeed->unreadCount(auth()->user());
+            $notifItems = $notifFeed->items(auth()->user(), 8, $notifPrefix . '.notifications');
+            $notifReadAllUrl = route($notifPrefix . '.notifications.read-all');
         }
     }
   @endphp
@@ -871,7 +995,7 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div style="font-weight: 700; font-size: 18px; line-height: 1;">
-        Aqui<span style="color: var(--sb-accent, #6aeb2f); font-weight: 800;">lala</span>
+        Aqui<span style="color: var(--sb-accent, #8FB89A); font-weight: 800;">lala</span>
       </div>
     </div>
   </header>
@@ -1240,12 +1364,70 @@
 
   @if($notifBellUrl)
   <div class="desktop-notif-wrap">
-    <a class="desktop-notif" id="desktopNotifBtn" href="{{ $notifBellUrl }}" aria-label="Notifications" title="Notifications">
+    <a class="desktop-notif" id="desktopNotifBtn" href="{{ $notifBellUrl }}" aria-label="Notifications" title="Notifications" aria-haspopup="dialog">
       <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       @if($notifUnreadCount > 0)
         <span class="notif-badge" id="desktopNotifBadge">{{ $notifUnreadCount }}</span>
       @endif
     </a>
+  </div>
+
+  {{-- The bell opens this panel instead of leaving the page. The rows are
+       rendered with the page, so the panel opens on its content; it reads
+       the same rows as the notifications page, through the same service, so
+       the two can never disagree. --}}
+  <div class="nmodal" id="notifModal" role="dialog" aria-labelledby="notifModalTitle" aria-hidden="true" hidden>
+    <div class="nmodal-card" role="document">
+      <div class="nmodal-head">
+        <div>
+          <h2 id="notifModalTitle">Notifications</h2>
+          <p id="notifModalCount">{{ $notifUnreadCount > 0 ? $notifUnreadCount . ' unread' : 'You are all caught up' }}</p>
+        </div>
+        <button type="button" class="nmodal-close" data-notif-close aria-label="Close notifications" title="Close">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="nmodal-body" id="notifModalBody">
+        @forelse($notifItems as $item)
+          <div class="nmodal-item{{ $item['unread'] ? ' is-unread' : '' }}">
+            <span class="nmodal-dot"></span>
+            <div class="nmodal-mid">
+              <div class="nmodal-text">
+                @if($item['state_label'])
+                  <span class="nmodal-state nmodal-state--{{ $item['state'] }}">{{ $item['state_label'] }}</span>
+                @endif{{-- the notice itself --}}
+                {{ $item['text'] }}
+              </div>
+              <div class="nmodal-meta">
+                {{ $item['meta'] }}@if($item['actor']) &middot; {{ $item['actor'] }}@endif
+              </div>
+            </div>
+            @if($item['unread'] && $item['read_url'])
+              <button type="button" class="nmodal-done" data-read-url="{{ $item['read_url'] }}" aria-label="Mark as read" title="Mark as read">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            @endif
+          </div>
+        @empty
+          <div class="nmodal-empty">
+            <div class="nmodal-empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </div>
+            <h3>Nothing new</h3>
+            <p>When something reaches you, it will show up here.</p>
+          </div>
+        @endforelse
+      </div>
+
+      <div class="nmodal-foot">
+        <button type="button" class="nmodal-readall" id="notifReadAll" data-url="{{ $notifReadAllUrl }}" @if($notifUnreadCount === 0) hidden @endif>
+          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Mark all as read
+        </button>
+        <a class="nmodal-all" id="notifAllLink" href="{{ $notifBellUrl }}">View all notifications</a>
+      </div>
+    </div>
   </div>
   @endif
 
@@ -1513,6 +1695,123 @@
       }, { passive: true });
     });
 
+    // ── The notification bell opens a panel ─────────────────────────────
+    // The bell used to be a link to the notifications page, which meant
+    // reading one notice cost the page you were on. It now opens a panel
+    // with the same rows, and the page is still one click away at the
+    // foot of it.
+    //
+    // The rows arrive with the page, so the panel opens on its content —
+    // there is no spinner between the click and the list. Reading in the
+    // panel posts to the same route the notifications page uses, and the
+    // row and the badge are updated in place.
+    (function () {
+      var bell = document.getElementById('desktopNotifBtn');
+      var modal = document.getElementById('notifModal');
+      if (!bell || !modal) return;
+
+      var countLabel = document.getElementById('notifModalCount');
+      var readAllBtn = document.getElementById('notifReadAll');
+      var allLink = document.getElementById('notifAllLink');
+
+      function csrf() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+      }
+
+      // The badge is only rendered when there is something unread, so it
+      // may have to be made once the count turns up.
+      function setBadge(count) {
+        var badge = document.getElementById('desktopNotifBadge');
+
+        if (!badge) {
+          if (!count) return;
+          badge = document.createElement('span');
+          badge.className = 'notif-badge';
+          badge.id = 'desktopNotifBadge';
+          bell.appendChild(badge);
+        }
+
+        if (count > 0) {
+          badge.textContent = count > 99 ? '99+' : count;
+          badge.hidden = false;
+        } else {
+          badge.hidden = true;
+        }
+      }
+
+      function setCount(count) {
+        countLabel.textContent = count > 0 ? count + ' unread' : 'You are all caught up';
+        readAllBtn.hidden = !(count > 0);
+        setBadge(count);
+      }
+
+      function open() {
+        modal.hidden = false;
+        modal.setAttribute('aria-hidden', 'false');
+      }
+
+      function close() {
+        modal.hidden = true;
+        modal.setAttribute('aria-hidden', 'true');
+      }
+
+      function post(url) {
+        return fetch(url, {
+          method: 'POST',
+          headers: { 'X-CSRF-TOKEN': csrf(), 'Accept': 'application/json' },
+        }).then(function (r) { return r.json(); });
+      }
+
+      bell.addEventListener('click', function (e) {
+        e.preventDefault();
+        open();
+      });
+
+      modal.addEventListener('click', function (e) {
+        if (e.target.closest('[data-notif-close]')) {
+          close();
+          return;
+        }
+
+        var done = e.target.closest('.nmodal-done');
+        if (done) {
+          var row = done.closest('.nmodal-item');
+          done.disabled = true;
+          post(done.getAttribute('data-read-url')).then(function (data) {
+            row.classList.remove('is-unread');
+            done.remove();
+            setCount(parseInt(data.unread, 10) || 0);
+          }).catch(function () { done.disabled = false; });
+          return;
+        }
+
+        if (e.target.closest('#notifReadAll')) {
+          readAllBtn.disabled = true;
+          post(readAllBtn.dataset.url).then(function () {
+            modal.querySelectorAll('.nmodal-item.is-unread').forEach(function (row) {
+              row.classList.remove('is-unread');
+            });
+            modal.querySelectorAll('.nmodal-done').forEach(function (b) { b.remove(); });
+            setCount(0);
+          }).catch(function () { readAllBtn.disabled = false; });
+        }
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.hidden) close();
+      });
+
+      // A panel under the bell closes when the reader touches anything
+      // outside it. The bell itself is excluded, or clicking it again
+      // would close and immediately reopen.
+      document.addEventListener('click', function (e) {
+        if (modal.hidden) return;
+        if (modal.contains(e.target) || bell.contains(e.target)) return;
+        close();
+      });
+    })();
+
     // ── Resilience guards (registered ONCE per session) ──────────────────
     // 1) A Turbo visit whose request never settles (server asleep, connection
     //    dropped while the app was in the background) leaves the shell stuck:
@@ -1600,7 +1899,7 @@
       transition: background 0.15s ease, transform 0.05s ease;
     }
     .aqn-btn:active { transform: scale(0.98); }
-    .aqn-btn.primary { background: #16a34a; color: #ffffff; }
+    .aqn-btn.primary { background: #4A7A54; color: #ffffff; }
     .aqn-btn.primary:hover { background: #15803d; }
     .aqn-btn.danger { background: #c0392b; color: #ffffff; }
     .aqn-btn.danger:hover { background: #a93226; }

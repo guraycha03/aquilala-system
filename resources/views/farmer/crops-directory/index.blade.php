@@ -84,7 +84,7 @@
   }
   .cd-page::before {
     width: 340px; height: 340px;
-    background: rgba(22,163,74,0.14);
+    background: rgba(74,122,84,0.14);
     top: -80px; right: -80px;
   }
   .cd-page::after {
@@ -113,7 +113,7 @@
     text-decoration: none;
     transition: color 0.2s;
   }
-  .cd-breadcrumb a:hover { color: #16a34a; }
+  .cd-breadcrumb a:hover { color: #4A7A54; }
   .cd-breadcrumb-sep {
     color: #cbd5e1;
     font-weight: 400;
@@ -159,8 +159,7 @@
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    background: #f0fdf4;
-    color: #16a34a;
+    background: #edf1e9; color: #648268;
     font-size: 13px;
     font-weight: 700;
     padding: 8px 16px;
@@ -224,7 +223,7 @@
     height: 56px;
     border-radius: 14px;
     background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-    border: 1px solid rgba(22,163,74,0.12);
+    border: 1px solid rgba(74,122,84,0.12);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -318,8 +317,8 @@
   }
   .cd-search::placeholder { color: #94a3b8; }
   .cd-search:focus {
-    border-color: #16a34a;
-    box-shadow: 0 0 0 3px rgba(22,163,74,0.10);
+    border-color: #4A7A54;
+    box-shadow: 0 0 0 3px rgba(74,122,84,0.10);
   }
 
   .cd-filters {
@@ -346,8 +345,8 @@
     color: #334155;
   }
   .cd-filter-btn.active {
-    background: #16a34a;
-    border-color: #16a34a;
+    background: #4A7A54;
+    border-color: #4A7A54;
     color: #ffffff;
   }
 
@@ -371,8 +370,8 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.05);
   }
   .cd-card.expanded {
-    border-color: #16a34a;
-    box-shadow: 0 4px 20px rgba(22,163,74,0.10);
+    border-color: #4A7A54;
+    box-shadow: 0 4px 20px rgba(74,122,84,0.10);
   }
 
   .cd-card-top {
@@ -385,7 +384,7 @@
     width: 44px; height: 44px;
     border-radius: 12px;
     background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-    border: 1px solid rgba(22,163,74,0.10);
+    border: 1px solid rgba(74,122,84,0.10);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -432,7 +431,7 @@
   .cd-card:hover .cd-card-chevron { stroke: #94a3b8; }
   .cd-card.expanded .cd-card-chevron {
     transform: rotate(180deg);
-    stroke: #16a34a;
+    stroke: #4A7A54;
   }
 
   /* ── Info panel (expand/collapse) ── */

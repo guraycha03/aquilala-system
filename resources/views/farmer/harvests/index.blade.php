@@ -28,7 +28,7 @@
     transform: translate(20px, -20px);
   }
   .stat-card.green  { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #bbf7d0; }
-  .stat-card.green::after { background: #16a34a; }
+  .stat-card.green::after { background: #4A7A54; }
   .stat-card.blue   { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; }
   .stat-card.blue::after  { background: #2563eb; }
   .stat-card.amber  { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde68a; }
@@ -41,7 +41,7 @@
     display: flex; align-items: center; justify-content: center;
     margin-bottom: 12px;
   }
-  .stat-card.green .stat-icon  { background: rgba(22,163,74,0.12); color: #16a34a; }
+  .stat-card.green .stat-icon  { background: rgba(74,122,84,0.12); color: #4A7A54; }
   .stat-card.blue .stat-icon   { background: rgba(37,99,235,0.12); color: #2563eb; }
   .stat-card.amber .stat-icon  { background: rgba(217,119,6,0.12); color: #d97706; }
   .stat-card.violet .stat-icon { background: rgba(124,58,237,0.12); color: #7c3aed; }
@@ -89,8 +89,8 @@
     padding: 5px 12px; border-radius: 20px;
     font-size: 12px; font-weight: 600; letter-spacing: 0.01em;
   }
-  .season-badge.wet { background: #eff6ff; color: #1d4ed8; }
-  .season-badge.dry { background: #fffbeb; color: #b45309; }
+  .season-badge.wet { background: #edf1e9; color: #648268; }
+  .season-badge.dry { background: #edf1e9; color: #648268; }
   .season-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 
   .yield-cell b { font-variant-numeric: tabular-nums; }
@@ -125,7 +125,7 @@
     border: 1px solid #bbf7d0;
     display: flex; align-items: center; justify-content: center;
   }
-  .empty-icon svg { width: 32px; height: 32px; color: #16a34a; }
+  .empty-icon svg { width: 32px; height: 32px; color: #4A7A54; }
 </style>
 
 <div class="header-panel" style="margin-bottom: 28px;">
@@ -144,9 +144,9 @@
 </div>
 
 @if(session('success'))
-  <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(22,163,74,0.06);">
-    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(22,163,74,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+  <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(74,122,84,0.06);">
+    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(74,122,84,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#4A7A54" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <span style="font-size: 14px; color: #166534; font-weight: 600;">{{ session('success') }}</span>
   </div>
@@ -273,7 +273,7 @@
                   data-search="{{ strtolower($report->crop_type . ' ' . $report->season) }}">
                 <td style="font-weight: 600; color: #1e293b;">
                   <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 34px; height: 34px; border-radius: 10px; background: #f0fdf4; color: #16a34a; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <div style="width: 34px; height: 34px; border-radius: 10px; background: #edf1e9; color: #648268; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                       <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
                     </div>
                     <span>{{ $report->crop_type }}</span>

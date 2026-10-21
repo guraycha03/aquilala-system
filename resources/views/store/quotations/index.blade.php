@@ -139,7 +139,7 @@
   @keyframes aiSpin { to { transform: rotate(360deg); } }
 
   .ai-output {
-    margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(22,163,74,0.25);
+    margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(74,122,84,0.25);
     font-size: 13px; color: #3f4f44; max-height: 340px; overflow-y: auto;
     scrollbar-width: thin;
   }
@@ -156,7 +156,7 @@
     font-size: 13px; font-weight: 700; color: #344B38;
   }
   .ai-floating[hidden] { display: none; }
-  .ai-floating .ai-spin { border-color: rgba(22,163,74,0.25); border-top-color: #166534; }
+  .ai-floating .ai-spin { border-color: rgba(74,122,84,0.25); border-top-color: #166534; }
 
   /* Floating result modal — centered, no dark overlay behind */
   .ai-modal {

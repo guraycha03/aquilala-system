@@ -28,11 +28,11 @@
     }
     .cp-btn:hover { background: #0f4228; }
     .cp-note {
-      background: #f6f8f7; border-left: 3px solid #5DC257; border-radius: 6px;
+      background: #f6f8f7; border-left: 3px solid #8FB89A; border-radius: 6px;
       padding: 12px 16px; font-size: 13px; color: #475569; line-height: 1.6;
     }
     .cp-alert-success {
-      background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;
+      background: #edf1e9; color: #648268; border: 1px solid #bbf7d0;
       padding: 14px; border-radius: 8px; margin-bottom: 18px; font-size: 14px;
     }
     .cp-alert-error {

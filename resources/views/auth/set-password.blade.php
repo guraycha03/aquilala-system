@@ -9,7 +9,7 @@
     </p>
 
     @if (session('success'))
-        <div style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: 14px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+        <div style="background: #edf1e9; color: #648268; border: 1px solid #bbf7d0; padding: 14px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
             {{ session('success') }}
         </div>
     @endif
@@ -30,7 +30,7 @@
         </div>
     @endif
 
-    <div style="background: #f6f8f7; border-left: 3px solid #5DC257; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #475569; line-height: 1.6;">
+    <div style="background: #f6f8f7; border-left: 3px solid #8FB89A; border-radius: 6px; padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: #475569; line-height: 1.6;">
         Setting up the account for <strong style="color: #143d23;">{{ $email }}</strong>. The invitation link is single-use and expires after 60 minutes.
     </div>
 
@@ -56,7 +56,7 @@
                    style="width: 100%; padding: 11px 14px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; font-size: 15px; background: #fafbfa; transition: border-color 0.2s, box-shadow 0.2s; outline: none;" />
         </div>
 
-        <button type="submit" style="width: 100%; background: #16a34a; color: #ffffff; border: none; padding: 12px 14px; border-radius: 8px; font-size: 15px; font-weight: 600; letter-spacing: 0.08em; cursor: pointer; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); transition: background 0.2s, transform 0.2s;">
+        <button type="submit" style="width: 100%; background: #4A7A54; color: #ffffff; border: none; padding: 12px 14px; border-radius: 8px; font-size: 15px; font-weight: 600; letter-spacing: 0.08em; cursor: pointer; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); transition: background 0.2s, transform 0.2s;">
             Set Password &amp; Continue
         </button>
     </form>

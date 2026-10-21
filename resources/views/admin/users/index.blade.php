@@ -19,7 +19,7 @@
     .users-page::after {
       content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
     }
-    .users-page::before { width: 320px; height: 320px; background: rgba(16,185,129,0.16); top: -80px; right: -80px; }
+    .users-page::before { width: 320px; height: 320px; background: rgba(94,144,112,0.16); top: -80px; right: -80px; }
     .users-page::after { width: 280px; height: 280px; background: rgba(93,194,87,0.12); bottom: -60px; left: -60px; }
     .users-content { position: relative; z-index: 1; }
 
@@ -37,7 +37,7 @@
     }
     .btn-users:hover { background: #0f4228; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(20,61,35,0.08), 0 7px 16px rgba(20,61,35,0.14); }
     .btn-users:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(20,61,35,0.06); }
-    .btn-users:focus-visible { outline: 3px solid rgba(22,163,74,0.28); outline-offset: 2px; }
+    .btn-users:focus-visible { outline: 3px solid rgba(74,122,84,0.28); outline-offset: 2px; }
     .btn-users:disabled { opacity: 0.5; cursor: not-allowed; transform: none; background: #e6ece6; color: #8aa296; border-color: #d8e3db; box-shadow: none; }
     .btn-users svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .btn-users.ghost { background: #ffffff; color: #334c3e; border-color: #d8e3db; box-shadow: 0 1px 2px rgba(20,61,35,0.05); }
@@ -102,7 +102,7 @@
     /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
     .user-cell { display: flex; align-items: center; gap: 11px; min-width: 0; }
     .user-avatar {
-      width: 36px; height: 36px; border-radius: 10px; background: #e6e6e6; color: #6f8f71;
+      width: 36px; height: 36px; border-radius: 10px; background: #edf1e9; color: #648268;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .user-avatar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -172,7 +172,7 @@
     }
     .umodal-head h3 { font-size: 16px; font-weight: 700; color: #1e293b; margin: 0; }
     .umodal-close {
-      width: 30px; height: 30px; border: none; border-radius: 8px; background: #f1f5f9; color: #64748b;
+      width: 30px; height: 30px; border: none; border-radius: 8px; background: #edf1e9; color: #648268;
       cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .umodal-close:hover { background: #e2e8f0; }
@@ -187,7 +187,7 @@
       transition: all 0.15s ease;
     }
     .btn-modal svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-    .btn-modal.cancel { background: #f1f5f9; color: #475569; }
+    .btn-modal.cancel { background: #edf1e9; color: #648268; }
     .btn-modal.cancel:hover { background: #e2e8f0; }
     .btn-modal.ok { background: rgb(172, 242, 121); color: #14532d; }
     .btn-modal.ok:hover { background: rgb(160, 232, 108); }
@@ -201,7 +201,7 @@
       border-bottom: 1px solid #f1f5f9; margin-bottom: 14px;
     }
     .profile-avatar {
-      width: 46px; height: 46px; border-radius: 12px; background: #e6e6e6; color: #6f8f71;
+      width: 46px; height: 46px; border-radius: 12px; background: #edf1e9; color: #648268;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; font-weight: 800;
     }
     .profile-hero .p-name { font-size: 15px; font-weight: 700; color: #0f172a; }

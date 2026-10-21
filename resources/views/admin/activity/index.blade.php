@@ -48,7 +48,7 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #16a34a;
+    background: #4A7A54;
   }
   /* Filter bar uses the shared .table-toolbar design (layouts.sidebar). */
 </style>

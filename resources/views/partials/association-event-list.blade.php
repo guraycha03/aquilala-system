@@ -26,7 +26,7 @@
     .ael-meta { font-size: 13px; color: #64748b; margin-top: 2px; }
     .ael-desc { font-size: 13.5px; color: #475569; margin-top: 6px; line-height: 1.55; white-space: pre-line; }
     .ael-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; }
-    .ael-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 7px 13px; border-radius: 9px; border: 1.5px solid #e2e8f0; background: #f8fafc; color: #475569; cursor: pointer; }
+    .ael-btn { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 7px 13px; border-radius: 9px; border: 1.5px solid #e2e8f0; background: #edf1e9; color: #648268; cursor: pointer; }
     .ael-btn:hover { background: #f1f5f9; }
     .ael-btn.danger { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
     .ael-empty { background: #fff; border: 1.5px dashed #e2e8f0; border-radius: 14px; padding: 28px 20px; text-align: center; color: #94a3b8; font-size: 13.5px; }
@@ -78,7 +78,7 @@
                         </span>
                         <span class="ael-title">{{ $ev->title }}</span>
                         @if($ev->event_date->isToday())
-                            <span class="ael-type" style="color:#16a34a;background:#f0fdf4;">Today</span>
+                            <span class="ael-type" style="color:#4A7A54;background:#f0fdf4;">Today</span>
                         @endif
                     </div>
                     <div class="ael-meta">

@@ -142,10 +142,10 @@
   .stock-bar > div { height: 100%; border-radius: 6px; }
 
   .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
-  .badge-ok { background: #f0fdf4; color: #16a34a; }
-  .badge-low { background: #fffbeb; color: #d97706; }
+  .badge-ok { background: #edf1e9; color: #648268; }
+  .badge-low { background: #edf1e9; color: #648268; }
   .badge-out { background: #fef2f2; color: #dc2626; }
-  .badge-disc { background: #f1f5f9; color: #64748b; }
+  .badge-disc { background: #edf1e9; color: #648268; }
 
   .row-actions { display: flex; gap: 6px; align-items: center; }
   .btn-icon {
@@ -286,7 +286,7 @@
       </div>
     </div>
     <div class="metric-foot">
-      <span style="width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;"></span>
+      <span style="width:8px;height:8px;border-radius:50%;background:#4A7A54;display:inline-block;"></span>
       {{ $healthyCount }} healthy
     </div>
   </div>
@@ -351,7 +351,7 @@
       </div>
       <div class="health-legend" id="healthLegend">
         <div class="legend-item">
-          <span class="legend-dot" style="background:#16a34a;"></span>
+          <span class="legend-dot" style="background:#4A7A54;"></span>
           <span class="lname">Healthy Stock</span>
           <span class="lnum" id="legendHealthy">{{ $healthyCount }}</span>
         </div>
@@ -381,7 +381,7 @@
         $thresh = (int) ($p->reorder_threshold ?? 0);
         if ($qty <= 0 || $p->status === 'out_of_stock') return '#dc2626';
         if ($qty <= $thresh) return '#f59e0b';
-        return '#16a34a';
+        return '#4A7A54';
     })->toArray();
   @endphp
   <div class="panel">
@@ -396,7 +396,7 @@
         <canvas id="stockLevelChart"></canvas>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:#64748b;">
-        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#16a34a;display:inline-block;"></span> In stock</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#4A7A54;display:inline-block;"></span> In stock</span>
         <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#f59e0b;display:inline-block;"></span> Minimum limit</span>
       </div>
     </div>
@@ -462,7 +462,7 @@
           }
           if ($isDisc) { $badge = 'badge-disc'; $text = 'Discontinued'; $dataStatus = 'out'; }
           $pct = $thresh > 0 ? min(100, round(($qty / max($thresh * 2, 1)) * 100)) : 100;
-          $barColor = $qty <= 0 ? '#dc2626' : ($qty <= $thresh ? '#f59e0b' : '#16a34a');
+          $barColor = $qty <= 0 ? '#dc2626' : ($qty <= $thresh ? '#f59e0b' : '#4A7A54');
           $stockBarStyle = 'width:' . $pct . '%;background:' . $barColor . ';';
         @endphp
         <tr data-name="{{ strtolower($product->name) }} {{ strtolower($product->sku) }}" data-status="{{ $dataStatus }}"
@@ -590,7 +590,7 @@
           labels: ['Healthy', 'Low Stock', 'Out of Stock'],
           datasets: [{
             data: [healthy, low, out],
-            backgroundColor: ['#16a34a', '#f59e0b', '#dc2626'],
+            backgroundColor: ['#4A7A54', '#f59e0b', '#dc2626'],
             borderWidth: 3,
             borderColor: '#ffffff',
             hoverOffset: 6

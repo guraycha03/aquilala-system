@@ -11,7 +11,7 @@
       content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
     }
     .cat-page::before { width: 340px; height: 340px; background: rgba(147,51,234,0.12); top: -80px; right: -80px; }
-    .cat-page::after { width: 300px; height: 300px; background: rgba(16,185,129,0.14); bottom: -60px; left: -60px; }
+    .cat-page::after { width: 300px; height: 300px; background: rgba(94,144,112,0.14); bottom: -60px; left: -60px; }
     .cat-content { position: relative; z-index: 1; }
 
     .cat-head { margin: 0 0 10px; }
@@ -44,19 +44,19 @@
     .cat-row + .cat-row { border-top: 1px outset rgba(0,0,0,0.04); }
     .cat-row .lbl { font-size: 13px; color: #475569; font-weight: 600; }
     .cat-track { flex: 1; max-width: 130px; height: 8px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
-    .cat-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #86efac, #16a34a); }
+    .cat-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #86efac, #4A7A54); }
 
     .quote-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
     .quote-item + .quote-item { border-top: 1px solid #f1f5f9; }
     .quote-rank {
       width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
-      background: #f0fdf4; color: #16a34a; font-size: 12px; font-weight: 800;
+      background: #edf1e9; color: #648268; font-size: 12px; font-weight: 800;
     }
     .quote-name { flex: 1; min-width: 0; font-size: 13px; color: #1e293b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .quote-count {
       display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
-      font-size: 12px; font-weight: 700; color: #16a34a;
+      font-size: 12px; font-weight: 700; color: #4A7A54;
       background: #f0fdf4; border: 1px solid #bbf7d0;
       padding: 4px 10px; border-radius: 999px;
     }

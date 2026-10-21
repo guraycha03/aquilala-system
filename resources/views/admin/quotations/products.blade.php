@@ -19,7 +19,7 @@
   .rank {
     display: inline-flex; align-items: center; justify-content: center;
     width: 24px; height: 24px; border-radius: 7px;
-    background: #f1f5f9; color: #64748b; font-size: 11px; font-weight: 700;
+    background: #edf1e9; color: #648268; font-size: 11px; font-weight: 700;
   }
   .rank.top { background: #143d23; color: #fff; }
 
@@ -47,7 +47,7 @@
 
   .scroll-btn {
     width: 30px; height: 30px; border-radius: 8px; border: 1px solid #e2e8f0;
-    background: #ffffff; color: #475569; cursor: pointer;
+    background: #edf1e9; color: #648268; cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: all 0.15s ease; flex-shrink: 0;
   }

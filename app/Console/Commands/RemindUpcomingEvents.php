@@ -56,7 +56,6 @@ class RemindUpcomingEvents extends Command
         }
 
         $farmerIds = User::where('role', 'farmer')->pluck('id');
-        $storeIds  = User::where('role', 'store_owner')->pluck('id');
 
         foreach ($due as $event) {
             // Marked BEFORE sending: exactly one attempt per event, whatever
@@ -66,20 +65,14 @@ class RemindUpcomingEvents extends Command
             $line = 'Starts at ' . $event->start_time->format('g:i A');
             $body = $event->location ? "{$line} — {$event->location}" : $line;
 
-            // Farmers open their calendar; stores land on their notification
-            // list — each role gets a page its own account may open.
+            // Farmers open their calendar. Store owners are not on the
+            // association's calendar and have no calendar screen, so a
+            // start-soon reminder is not for them.
             PushService::sendToUsers(
                 $farmerIds,
                 "Starting soon: {$event->title}",
                 $body,
                 route('farmer.calendar.index'),
-                'event-' . $event->id . '-soon'
-            );
-            PushService::sendToUsers(
-                $storeIds,
-                "Starting soon: {$event->title}",
-                $body,
-                route('store.notifications.index'),
                 'event-' . $event->id . '-soon'
             );
         }

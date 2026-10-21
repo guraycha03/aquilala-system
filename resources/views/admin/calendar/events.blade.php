@@ -12,7 +12,7 @@
     </p>
   </div>
   <button type="button" class="js-open-add-event"
-          style="display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 20px; border-radius: 10px; background: #16a34a; color: #fff; border: 0; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.25);">
+          style="display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 20px; border-radius: 10px; background: #4A7A54; color: #fff; border: 0; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(74,122,84,0.25);">
     <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     Add Event
   </button>

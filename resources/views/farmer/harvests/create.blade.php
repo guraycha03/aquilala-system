@@ -36,7 +36,7 @@
   .record-head b { font-size: 14px; color: #1e2922; }
   .record-head .rec-icon {
     width: 30px; height: 30px; border-radius: 9px;
-    background: #f0fdf4; color: #16a34a;
+    background: #edf1e9; color: #648268;
     display: inline-flex; align-items: center; justify-content: center;
   }
   .record-body { padding: 0 18px 20px; border-top: 1px solid #f1f5f9; }
@@ -58,7 +58,7 @@
     font-family: inherit; outline: none; transition: all 0.2s ease;
   }
   .form-field input:focus, .form-field select:focus {
-    border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.08);
+    border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.08);
   }
   .form-errors { padding: 12px 18px; background: #fef2f2; border-bottom: 1px solid #fecaca; }
   .form-errors ul { margin: 0; padding-left: 16px; color: #b91c1c; font-size: 13px; }
@@ -77,7 +77,7 @@
     padding: 11px 18px; border-radius: 11px; font-size: 13px; font-weight: 700;
     text-decoration: none; transition: all 0.2s ease;
   }
-  .btn-history:hover { border-color: #16a34a; background: #f0fdf4; }
+  .btn-history:hover { border-color: #4A7A54; background: #f0fdf4; }
   .btn-history svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
   .btn-save svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 </style>
@@ -92,9 +92,9 @@
   </div>
 
   @if(session('success'))
-    <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(22,163,74,0.06);">
-      <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(22,163,74,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+    <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(74,122,84,0.06);">
+      <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(74,122,84,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="#4A7A54" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <span style="font-size: 14px; color: #166534; font-weight: 600;">{{ session('success') }}</span>
     </div>
@@ -114,7 +114,7 @@
   @endif
 
   {{-- <div class="sync-note">
-    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#16a34a" stroke-width="2" fill="none"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="2" width="4" height="19"/></svg>
+    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#4A7A54" stroke-width="2" fill="none"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="2" width="4" height="19"/></svg>
     <div>
       <b>Synced with the administrator</b>
       <p>Harvest data is shared only between you and the admin. Once submitted, it appears instantly on the admin's Harvest Reports page.</p>
@@ -133,7 +133,7 @@
     <div class="record-body">
       @if(($batches ?? collect())->isEmpty())
         <div style="padding: 34px 6px 10px; text-align: center;">
-          <div style="width: 46px; height: 46px; border-radius: 14px; background: #fffbeb; color: #d97706; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: #edf1e9; color: #648268; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
             <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <h3 style="margin: 0 0 6px; font-size: 16px; color: #1e2922;">No crop batches ready to report</h3>

@@ -195,7 +195,7 @@ class RoleNotificationsTest extends TestCase
             ->assertDontSee('id="desktopNotifBadge"', false);
     }
 
-    public function test_deleting_a_quotation_notifies_the_involved_store(): void
+    public function test_deleting_a_quotation_is_the_farmers_history_and_not_a_store_notification(): void
     {
         $quotation = $this->makeQuotation($this->farmer);
 
@@ -203,9 +203,16 @@ class RoleNotificationsTest extends TestCase
             ->delete(route('farmer.quotations.destroy', $quotation))
             ->assertRedirect(route('farmer.quotations.index'));
 
-        $row = ActivityLog::forUser($this->store->id)->storeNotifications()->first();
-        $this->assertNotNull($row);
-        $this->assertSame(ActivityLog::TYPE_QUOTATION_DELETED, $row->type);
+        // A withdrawal is the farmer's own undo. It belongs in the farmer's
+        // activity history; it is not news for the store, and it does not
+        // raise a notification or a popup.
+        $this->assertSame(0, ActivityLog::forUser($this->store->id)->storeNotifications()->count());
+
+        $row = ActivityLog::forUser($this->farmer->id)
+            ->ofType(ActivityLog::TYPE_QUOTATION_DELETED)
+            ->first();
+
+        $this->assertNotNull($row, 'The deletion should still be on the farmer\'s activity history.');
     }
 
     public function test_a_store_owner_cannot_mark_another_stores_notification_read(): void
@@ -398,13 +405,13 @@ class RoleNotificationsTest extends TestCase
             $this->assertNull($row->read_at);
         }
 
-        // Store owners are association members too — the same event notice
-        // reaches their bell (anonymous quotation rows sit alongside it).
-        $storeRow = ActivityLog::forUser($this->store->id)->storeNotifications()
-            ->ofType(ActivityLog::TYPE_EVENT_CREATED)->sole();
-        $this->assertStringContainsString('Upcoming event', $storeRow->description);
-        $this->assertStringContainsString('Free Corn Seeds Distribution', $storeRow->description);
-        $this->assertNull($storeRow->read_at);
+        // Store owners are not association members. The association's
+        // calendar is not theirs, so no event notice reaches their bell.
+        $this->assertSame(
+            0,
+            ActivityLog::forUser($this->store->id)->storeNotifications()
+                ->ofType(ActivityLog::TYPE_EVENT_CREATED)->count()
+        );
     }
 
     public function test_event_notices_reflect_the_events_live_status_not_stale_upcoming(): void

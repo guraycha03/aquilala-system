@@ -28,7 +28,7 @@
     transform: translate(20px, -20px);
   }
   .stat-card.green  { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #bbf7d0; }
-  .stat-card.green::after { background: #16a34a; }
+  .stat-card.green::after { background: #4A7A54; }
   .stat-card.blue   { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; }
   .stat-card.blue::after  { background: #2563eb; }
   .stat-card.amber  { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde68a; }
@@ -41,7 +41,7 @@
     display: flex; align-items: center; justify-content: center;
     margin-bottom: 12px;
   }
-  .stat-card.green .stat-icon  { background: rgba(22,163,74,0.12); color: #16a34a; }
+  .stat-card.green .stat-icon  { background: rgba(74,122,84,0.12); color: #4A7A54; }
   .stat-card.blue .stat-icon   { background: rgba(37,99,235,0.12); color: #2563eb; }
   .stat-card.amber .stat-icon  { background: rgba(217,119,6,0.12); color: #d97706; }
   .stat-card.violet .stat-icon { background: rgba(124,58,237,0.12); color: #7c3aed; }
@@ -88,10 +88,10 @@
     font-size: 12px; font-weight: 600;
     letter-spacing: 0.01em;
   }
-  .status-badge.computed { background: #eff6ff; color: #1d4ed8; }
-  .status-badge.viewed   { background: #f5f3ff; color: #6d28d9; }
+  .status-badge.computed { background: #edf1e9; color: #648268; }
+  .status-badge.viewed   { background: #edf1e9; color: #648268; }
   .status-badge.expired  { background: #f5f5f5; color: #9ca3af; }
-  .status-badge.pending  { background: #fffbeb; color: #b45309; }
+  .status-badge.pending  { background: #edf1e9; color: #648268; }
   .status-badge.accepted { background: #f0fdf4; color: #15803d; }
   .status-badge-dot {
     width: 7px; height: 7px; border-radius: 50%;
@@ -146,7 +146,7 @@
     border: 1px solid #bbf7d0;
     display: flex; align-items: center; justify-content: center;
   }
-  .empty-icon svg { width: 32px; height: 32px; color: #16a34a; }
+  .empty-icon svg { width: 32px; height: 32px; color: #4A7A54; }
 
   .link-animated {
     --c: #143d23;
@@ -182,9 +182,9 @@
 </div>
 
 @if(session('success'))
-  <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(22,163,74,0.06);">
-    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(22,163,74,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#16a34a" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+  <div style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #86efac; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(74,122,84,0.06);">
+    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(74,122,84,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#4A7A54" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <span style="font-size: 14px; color: #166534; font-weight: 600;">{{ session('success') }}</span>
   </div>

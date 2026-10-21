@@ -9,7 +9,7 @@
     .ana-page::after {
       content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
     }
-    .ana-page::before { width: 360px; height: 360px; background: rgba(16,185,129,0.16); top: -90px; right: -90px; }
+    .ana-page::before { width: 360px; height: 360px; background: rgba(94,144,112,0.16); top: -90px; right: -90px; }
     .ana-page::after { width: 300px; height: 300px; background: rgba(59,130,246,0.13); bottom: -70px; left: -70px; }
     .ana-content { position: relative; z-index: 1; }
 
@@ -140,9 +140,9 @@
     .chart-wrap-side.has-empty .chart-nav { display: none; }
     .ana-empty-ico {
       width: 54px; height: 54px; border-radius: 16px; flex-shrink: 0;
-      background: #f0fdf4; color: #16a34a;
+      background: #edf1e9; color: #648268;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: inset 0 0 0 1px rgba(22,163,74,0.14);
+      box-shadow: inset 0 0 0 1px rgba(74,122,84,0.14);
     }
     .ana-empty-ico svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     .ana-empty-title { font-size: 13px; font-weight: 700; color: #334155; }
@@ -245,7 +245,7 @@
     }
     .mx-seasons { display: flex; gap: 6px; flex-wrap: wrap; }
     .mx-season { font-size: 10px; font-weight: 700; text-transform: capitalize; padding: 3px 9px; border-radius: 999px; }
-    .mx-season.wet { background: #eef2f6; color: #62829b; }
+    .mx-season.wet { background: #edf1e9; color: #648268; }
     .mx-season.dry { background: #f6f0e6; color: #a57f43; }
     .mx-prods { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
     .mx-prod {
@@ -319,7 +319,7 @@
         <div class="kpi-card reveal" data-reveal>
           <div class="kpi-top">
             <div class="kpi-label">Quotations Generated</div>
-            <div class="kpi-ico" style="background:#eef2f6;color:#62829b;">
+            <div class="kpi-ico" style="background: #edf1e9; color: #648268;">
               <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             </div>
           </div>
@@ -331,7 +331,7 @@
         <div class="kpi-card reveal" data-reveal>
           <div class="kpi-top">
             <div class="kpi-label">Crops Tracked</div>
-            <div class="kpi-ico" style="background:#f0fdf4;color:#16a34a;">
+            <div class="kpi-ico" style="background: #edf1e9; color: #648268;">
               <svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
             </div>
           </div>
@@ -476,7 +476,7 @@
                 'ripening' => 'Ripening', 'harvested' => 'Harvested', 'failed' => 'Failed'
               ];
               $stageColors = [
-                'land_prep' => '#78716c', 'seeding' => '#2563eb', 'vegetative' => '#16a34a',
+                'land_prep' => '#78716c', 'seeding' => '#2563eb', 'vegetative' => '#4A7A54',
                 'reproductive' => '#d97706', 'ripening' => '#ea580c', 'harvested' => '#6d28d9', 'failed' => '#dc2626'
               ];
               $stageMax = $cropsByStage->first()->count ?? 1;
@@ -523,7 +523,7 @@
           </div>
           <div class="panel-body">
             <div class="sum-row">
-              <div class="sum-rank" style="background:#f0fdf4;color:#16a34a;">
+              <div class="sum-rank" style="background: #edf1e9; color: #648268;">
                 <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
               </div>
               <div class="sum-mid">
@@ -533,7 +533,7 @@
               <div class="sum-val">{{ number_format($totalHarvests) }}</div>
             </div>
             <div class="sum-row">
-              <div class="sum-rank" style="background:#f0fdf4;color:#16a34a;">
+              <div class="sum-rank" style="background: #edf1e9; color: #648268;">
                 <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/></svg>
               </div>
               <div class="sum-mid">
@@ -543,7 +543,7 @@
               <div class="sum-val" style="font-size:17px;">{{ \App\Helpers\SettingsHelper::formatYield($totalYield) }}</div>
             </div>
             <div class="sum-row">
-              <div class="sum-rank" style="background:#eef2f6;color:#62829b;">
+              <div class="sum-rank" style="background: #edf1e9; color: #648268;">
                 <x-peso-icon />
               </div>
               <div class="sum-mid">
@@ -905,7 +905,7 @@
 
       drawSpark('sparkUsers', userSignups.slice(-30).map(function(r) { return r.count; }), '#63856c');
       drawSpark('sparkQuotations', quotationsByDay.map(function(r) { return r.count; }), '#62829b');
-      drawSpark('sparkCrops', cropsByDay.map(function(r) { return r.count; }), '#16a34a');
+      drawSpark('sparkCrops', cropsByDay.map(function(r) { return r.count; }), '#4A7A54');
       drawSpark('sparkActivities', activitiesByDay.map(function(r) { return r.count; }), '#7c3aed');
 
       // ── Quotation Trend (Area chart) ──
@@ -1020,7 +1020,7 @@
           var off = acc * C;
           acc += frac;
           var key = item.season || item.category || item.status;
-          var greenRamp = ['#3f6212', '#65a30d', '#15803d', '#16a34a', '#84cc16', '#6b8f71', '#4d7c0f', '#94a35c', '#86a17b', '#9bbf4f'];
+          var greenRamp = ['#3f6212', '#65a30d', '#15803d', '#4A7A54', '#84cc16', '#6b8f71', '#4d7c0f', '#94a35c', '#86a17b', '#9bbf4f'];
           var col = colorMap[key] || greenRamp[i % greenRamp.length];
           var lbl = labelMap[key] || key || 'Other';
           segData.push({ color: col, label: lbl, value: vals[i], frac: frac });
@@ -1080,7 +1080,7 @@
       // ── User Logins (area chart, last 14 days, admins excluded) ──
       var LOGIN_CHART_COLOR = '#63856c';
       var LOGIN_ROLE_META = [
-        { key: 'farmer', label: 'Farmers', color: '#16a34a' },
+        { key: 'farmer', label: 'Farmers', color: '#4A7A54' },
         { key: 'store_owner', label: 'Store Owners', color: '#d97706' }
       ];
 
@@ -1259,7 +1259,7 @@
         '<svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>');
       renderDonut('categoryDonut', 'categoryLegend', productsByCategory, {
         'Fertilizer': '#3f6212', 'Seeds': '#65a30d', 'Pesticide': '#15803d',
-        'Herbicide': '#16a34a', 'Tools': '#84cc16', 'Other': '#6b8f71'
+        'Herbicide': '#4A7A54', 'Tools': '#84cc16', 'Other': '#6b8f71'
       }, {
         'Fertilizer': 'Fertilizer', 'Seeds': 'Seeds', 'Pesticide': 'Pesticide',
         'Herbicide': 'Herbicide', 'Tools': 'Tools', 'Other': 'Other'

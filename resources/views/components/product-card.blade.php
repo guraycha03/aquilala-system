@@ -219,7 +219,7 @@
   }
   .pc-save .lucide { width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .pc-save:hover { background: #f1f5f9; color: #334155; }
-  .pc-save.is-saved { color: #16a34a; }
+  .pc-save.is-saved { color: #4A7A54; }
   .pc-save.is-saved .lucide { fill: currentColor; }
 
   .action-group { display: flex; gap: 6px; margin-top: 8px; position: relative; z-index: 2; }
@@ -232,7 +232,7 @@
   }
   .btn-action svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .btn-action .lucide { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .btn-action:hover { background: #f1f5f9; color: #0f172a; }
+  .btn-action:hover { background: #edf1e9; color: #648268; }
   .btn-delete { background: #fff5f5; color: #e11d48; border-color: #fecdd3; }
   .btn-delete:hover { background: #ffe4e6; color: #be123c; }
 
@@ -293,7 +293,7 @@
   [data-theme="dark"] .product-card:hover { box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.45); }
   [data-theme="dark"] .pc-save { color: #94a3b8; }
   [data-theme="dark"] .pc-save:hover { background: #1f2937; color: #e2e8f0; }
-  [data-theme="dark"] .pc-save.is-saved { color: #4ade80; }
+  [data-theme="dark"] .pc-save.is-saved { color: #9CC4A3; }
   [data-theme="dark"] .btn-action { background: #1f2937; color: #cbd5e1; border-color: #475569; }
   [data-theme="dark"] .btn-action:hover { background: #334155; color: #f1f5f9; }
   [data-theme="dark"] .btn-delete { background: #3b1220; color: #fb7185; border-color: #7f1d34; }

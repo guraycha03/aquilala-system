@@ -14,7 +14,7 @@
   .sr-page::after {
     content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
   }
-  .sr-page::before { width: 340px; height: 340px; background: rgba(22,163,74,0.14); top: -80px; right: -80px; }
+  .sr-page::before { width: 340px; height: 340px; background: rgba(74,122,84,0.14); top: -80px; right: -80px; }
   .sr-page::after { width: 280px; height: 280px; background: rgba(59,130,246,0.10); bottom: -60px; left: -60px; }
   .sr-content { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 28px 32px 60px; }
 
@@ -33,7 +33,7 @@
     text-decoration: none;
     transition: color 0.2s;
   }
-  .sr-breadcrumb a:hover { color: #16a34a; }
+  .sr-breadcrumb a:hover { color: #4A7A54; }
   .sr-breadcrumb-sep {
     color: #cbd5e1;
     font-weight: 400;
@@ -107,13 +107,13 @@
   .sr-ai-icon {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, #16a34a, #22c55e);
+    background: linear-gradient(135deg, #4A7A54, #7FA886);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 4px 14px rgba(34,197,94,0.3);
+    box-shadow: 0 4px 14px rgba(127,168,134,0.3);
     overflow: hidden;
   }
   .sr-ai-icon img {
@@ -136,8 +136,8 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .sr-ai-input:hover {
-    border-color: #22c55e;
-    box-shadow: 0 4px 14px rgba(34,197,94,0.18);
+    border-color: #7FA886;
+    box-shadow: 0 4px 14px rgba(127,168,134,0.18);
   }
   .sr-ai-input span {
     flex: 1;
@@ -147,7 +147,7 @@
   }
   .sr-ai-input .sr-ai-go {
     flex: none;
-    background: linear-gradient(135deg, #16a34a, #22c55e);
+    background: linear-gradient(135deg, #4A7A54, #7FA886);
     color: white;
     font-style: normal;
     padding: 9px 18px;
@@ -212,7 +212,7 @@
   .sr-cat-count {
     font-size: 12px;
     font-weight: 700;
-    color: #16a34a;
+    color: #4A7A54;
     margin-top: auto;
     display: flex;
     align-items: center;
@@ -324,7 +324,7 @@
   }
   .sr-season-wet { background: #e0f2fe; color: #0369a1; }
   .sr-season-dry { background: #ffedd5; color: #c2410c; }
-  .sr-season-both { background: #f0fdf4; color: #166534; }
+  .sr-season-both { background: #edf1e9; color: #648268; }
 
   .sr-product-body { padding: 18px 20px; flex: 1; display: flex; flex-direction: column; }
   .sr-product-body h3 {
@@ -371,7 +371,7 @@
     font-weight: 800;
     color: #14532d;
   }
-  .sr-stock-in { font-size: 12px; font-weight: 600; color: #16a34a; }
+  .sr-stock-in { font-size: 12px; font-weight: 600; color: #4A7A54; }
   .sr-stock-low { font-size: 12px; font-weight: 600; color: #b91c1c; }
 
   /* ── Why This Product ── */
@@ -384,7 +384,7 @@
   .sr-why-toggle summary {
     font-size: 11.5px;
     font-weight: 600;
-    color: #16a34a;
+    color: #4A7A54;
     cursor: pointer;
     list-style: none;
     display: flex;
@@ -443,14 +443,14 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #16a34a, #22c55e);
+    background: linear-gradient(135deg, #4A7A54, #7FA886);
     color: white;
     border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 24px rgba(22,163,74,0.35);
+    box-shadow: 0 6px 24px rgba(74,122,84,0.35);
     z-index: 999;
     text-decoration: none;
     transition: all 0.25s ease;
@@ -458,7 +458,7 @@
   }
   .sr-ai-fab:hover {
     transform: scale(1.08);
-    box-shadow: 0 8px 30px rgba(22,163,74,0.45);
+    box-shadow: 0 8px 30px rgba(74,122,84,0.45);
   }
   .sr-ai-fab::after {
     content: "Chat with AI";
@@ -477,8 +477,8 @@
   }
   .sr-ai-fab:hover::after { opacity: 1; }
   @keyframes sr-fab-pulse {
-    0%, 100% { box-shadow: 0 6px 24px rgba(22,163,74,0.35); }
-    50% { box-shadow: 0 6px 24px rgba(22,163,74,0.35), 0 0 0 8px rgba(22,163,74,0.12); }
+    0%, 100% { box-shadow: 0 6px 24px rgba(74,122,84,0.35); }
+    50% { box-shadow: 0 6px 24px rgba(74,122,84,0.35), 0 0 0 8px rgba(74,122,84,0.12); }
   }
 
   @media (max-width: 640px) {
@@ -535,7 +535,7 @@
           Our intelligent assistant analyzes your crop type, land area, and local weather conditions to recommend the most effective inputs — from seeds to fertilizers and pest control.
         </p>
         <a class="sr-ai-input" href="{{ route('farmer.ai-chat.index') }}">
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="#22c55e" stroke-width="2" fill="none" style="flex-shrink: 0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="#7FA886" stroke-width="2" fill="none" style="flex-shrink: 0;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
           <span>e.g. "What fertilizer do I need for 2 hectares of rice this wet season?"</span>
           <span class="sr-ai-go">Ask Assistant</span>
         </a>
@@ -552,7 +552,7 @@
 
       <a href="#recommended-products" class="sr-cat-card">
         <div class="sr-cat-icon" style="background: linear-gradient(135deg, #f0fdf4, #dcfce7);">
-          <svg viewBox="0 0 24 24" width="22" height="22" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="#4A7A54" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M7 20h10"/>
             <path d="M12 20v-8"/>
             <path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/>
@@ -707,7 +707,7 @@
               Why this product?
             </summary>
             <div class="sr-why-body">
-              <svg viewBox="0 0 24 24" width="14" height="14" stroke="#16a34a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="#4A7A54" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               Recommended based on your crop type and current season.
             </div>
           </details>

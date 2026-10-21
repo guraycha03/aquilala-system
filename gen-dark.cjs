@@ -72,7 +72,7 @@ function darkTintFor(c) {
 function textColorFor(c) {
     const h = hue(c), s = saturation(c);
     if (s < 0.12) return '#e2e8f0';
-    if (h >= 70 && h < 170) return '#a7f3d0';   // greens / brand headings
+    if (h >= 70 && h < 170) return '#a8cdb2';   // greens / brand headings (soft sage)
     if (h < 20 || h >= 340) return '#fca5a5';   // reds
     if (h >= 20 && h < 68) return '#fcd34d';    // ambers / oranges
     if (h >= 190 && h < 265) return '#93c5fd';  // blues
@@ -82,7 +82,7 @@ function textColorFor(c) {
 
 function borderColorFor(c) {
     const h = hue(c), s = saturation(c);
-    if (s > 0.15 && h >= 70 && h < 170) return '#166534';
+    if (s > 0.15 && h >= 70 && h < 170) return '#2f5d3c';
     if (s > 0.15 && (h < 20 || h >= 340)) return '#7f1d1d';
     return '#334155';
 }

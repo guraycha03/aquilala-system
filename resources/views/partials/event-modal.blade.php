@@ -17,12 +17,12 @@
         width: 100%; padding: 9px 11px; border: 1.5px solid #e2e8f0; border-radius: 9px;
         font-size: 13.5px; font-family: inherit; color: #1e2922; background: #fff; box-sizing: border-box;
     }
-    .ev-field input:focus, .ev-field select:focus, .ev-field textarea:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.12); }
+    .ev-field input:focus, .ev-field select:focus, .ev-field textarea:focus { outline: none; border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(74,122,84,.12); }
     .ev-field textarea { min-height: 74px; resize: vertical; }
     .ev-hint { font-size: 11.5px; color: #94a3b8; margin-top: 4px; }
     .ev-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
-    .ev-save { background: #16a34a; color: #fff; border: 0; padding: 10px 20px; border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,.25); }
-    .ev-cancel { background: #f8fafc; color: #475569; border: 1.5px solid #e2e8f0; padding: 10px 18px; border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+    .ev-save { background: #4A7A54; color: #fff; border: 0; padding: 10px 20px; border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(74,122,84,.25); }
+    .ev-cancel { background: #edf1e9; color: #648268; border: 1.5px solid #e2e8f0; padding: 10px 18px; border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
     .ev-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 12.5px; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; }
 </style>
 

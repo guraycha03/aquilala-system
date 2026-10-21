@@ -97,16 +97,26 @@ class User extends Authenticatable
 
     /**
      * The AI assistant avatar this account sees in the chat header and beside
-     * every AI reply. Falls back to the shared placeholder image so the page
-     * looks complete before anyone uploads their own.
+     * every AI reply. The avatar is one of the system's own set - there is no
+     * upload - so the account only stores which one it picked.
      */
     public function aiAvatarUrl(): string
     {
         if (! $this->ai_avatar) {
-            return asset('images/ai-avatar.png');
+            return \App\Services\AiAvatars::url(\App\Services\AiAvatars::defaultKey());
         }
 
-        return Storage::disk('public')->url($this->ai_avatar);
+        if (\App\Services\AiAvatars::has($this->ai_avatar)) {
+            return \App\Services\AiAvatars::url($this->ai_avatar);
+        }
+
+        // An account that still carries an uploaded image from before the
+        // avatar set existed keeps it until the next pick.
+        if (Storage::disk('public')->exists($this->ai_avatar)) {
+            return Storage::disk('public')->url($this->ai_avatar);
+        }
+
+        return \App\Services\AiAvatars::url(\App\Services\AiAvatars::defaultKey());
     }
 
     public function isPending(): bool

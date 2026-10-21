@@ -58,7 +58,7 @@
     .app-page::after {
       content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
     }
-    .app-page::before { width: 340px; height: 340px; background: rgba(16,185,129,0.16); top: -90px; right: -90px; }
+    .app-page::before { width: 340px; height: 340px; background: rgba(94,144,112,0.16); top: -90px; right: -90px; }
     .app-page::after { width: 280px; height: 280px; background: rgba(59,130,246,0.13); bottom: -70px; left: -70px; }
     .app-content { position: relative; z-index: 1; }
 
@@ -110,7 +110,7 @@
     .app-card + .app-card { border-top: 1px solid #f1f3f2; }
     .app-card:hover { background: #fafbfa; border-radius: 12px; }
     .app-avatar {
-      width: 46px; height: 46px; border-radius: 13px; background: #e6e6e6; color: #6f8f71;
+      width: 46px; height: 46px; border-radius: 13px; background: #edf1e9; color: #648268;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .app-avatar svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -189,7 +189,7 @@
       transition: all 0.25s cubic-bezier(0.4,0,0.2,1); white-space: nowrap; max-width: 90vw;
     }
     .app-toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
-    .app-toast svg { width: 16px; height: 16px; stroke: #6aeb2f; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .app-toast svg { width: 16px; height: 16px; stroke: #8FB89A; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
     @media (max-width: 768px) {
       .app-card { flex-direction: column; align-items: flex-start; gap: 12px; }

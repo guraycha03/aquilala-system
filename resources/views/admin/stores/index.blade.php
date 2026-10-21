@@ -10,7 +10,7 @@
     .stores-page::after {
       content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
     }
-    .stores-page::before { width: 340px; height: 340px; background: rgba(16,185,129,0.16); top: -80px; right: -80px; }
+    .stores-page::before { width: 340px; height: 340px; background: rgba(94,144,112,0.16); top: -80px; right: -80px; }
     .stores-page::after { width: 300px; height: 300px; background: rgba(93,194,87,0.12); bottom: -60px; left: -60px; }
     .stores-content { position: relative; z-index: 1; }
 
