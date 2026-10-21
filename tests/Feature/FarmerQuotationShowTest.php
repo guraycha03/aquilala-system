@@ -103,17 +103,71 @@ class FarmerQuotationShowTest extends TestCase
         $response
             ->assertOk()
             ->assertSee('QT-2026-TEST')
-            ->assertSee('AI Farm Advisor')
-            ->assertSee('Your Plan at a Glance')
-            ->assertSee('Supply Stores')
+            // The explanation lives in a window, not on the page: the card
+            // offers it, the modal shows it.
+            ->assertSee('AI Explanation')
+            ->assertSee('Generate explanation')
+            ->assertSee('Your plan at a glance')
+            ->assertSee('Supply stores')
             ->assertSee('Full Itemized Breakdown')
-            ->assertSee('Estimated Total Cost')
+            ->assertSee('Estimated total cost')
             ->assertSee('Valid until')
             ->assertSee('₱321.00')
-            // The overview page links out to the itemized page rather than
-            // repeating every line, so it must not render the product names.
-            ->assertDontSee('Premium Urea')
+            // The plan's own lines are listed compactly, so the farmer can
+            // see what the estimate covers without opening the breakdown.
+            ->assertSee('Premium Urea')
+            ->assertSee('What this plan covers')
             ->assertSee(route('farmer.quotations.breakdown', $quotation));
+    }
+
+    public function test_the_show_page_carries_one_short_price_note_and_not_the_long_banner(): void
+    {
+        $farmer = $this->makeFarmer();
+        $quotation = $this->makeQuotation($farmer);
+
+        $response = $this->actingAs($farmer)
+            ->get(route('farmer.quotations.show', $quotation));
+
+        // One line, at the top: what the prices are based on.
+        $response
+            ->assertOk()
+            ->assertSee('Prices are based on store prices at the time this quotation was made.');
+
+        // The long closing notice lives on the breakdown page. Repeating it
+        // here made the page read like a document.
+        $response
+            ->assertDontSee('This is a cost quotation, not a purchase order')
+            ->assertDontSee('Store owners can see which products are in demand');
+    }
+
+    public function test_the_plan_facts_stay_closed_until_the_farmer_opens_them(): void
+    {
+        $farmer = $this->makeFarmer();
+        $quotation = $this->makeQuotation($farmer);
+
+        $html = $this->actingAs($farmer)
+            ->get(route('farmer.quotations.show', $quotation))
+            ->assertOk()
+            ->getContent();
+
+        // The card shows its header and keeps the details behind a toggle,
+        // so the page does not turn into a long read.
+        $this->assertStringContainsString('id="planToggle"', $html);
+        $this->assertStringContainsString('id="planFacts" hidden', $html);
+    }
+
+    public function test_the_explanation_is_offered_in_a_modal(): void
+    {
+        $farmer = $this->makeFarmer();
+        $quotation = $this->makeQuotation($farmer);
+
+        $html = $this->actingAs($farmer)
+            ->get(route('farmer.quotations.show', $quotation))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('id="aiModal"', $html);
+        $this->assertStringContainsString('id="aiModalBody"', $html);
     }
 
     public function test_ai_overview_returns_fallback_smart_response_when_no_api_key(): void

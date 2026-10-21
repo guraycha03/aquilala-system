@@ -191,6 +191,11 @@ class QuotationController extends Controller
 
     /**
      * Delete a quotation (farmer only, own quotations).
+     *
+     * A withdrawn estimate leaves no trace anywhere. Its rows go with it,
+     * so the store's notification list, the admin's copy and the farmer's
+     * own history all stop mentioning it: what the store can see is what
+     * exists.
      */
     public function farmerDestroy(Quotation $quotation)
     {
@@ -198,7 +203,12 @@ class QuotationController extends Controller
             abort(403);
         }
 
-        ActivityLogger::quotationDeleted($quotation);
+        // Every notice and log line that points at this estimate - the
+        // store's anonymous copy, the admin's copy, the farmer's own
+        // entries - goes with the estimate itself.
+        ActivityLog::where('subject_type', Quotation::class)
+            ->where('subject_id', $quotation->id)
+            ->delete();
 
         $quotation->items()->delete();
         $quotation->delete();
@@ -318,9 +328,6 @@ STRUCTURE — use these markdown headings exactly:
 
 ### Practical Advice
 2-4 specific, doable actions grounded in this quotation (confirm price and stock with the store, adjust quantities if the land plan changed, ask about a bulk discount, get ready for the stated weather risk). Never invent external prices.
-
-### Next Move
-One closing sentence with the single best next step — usually contacting the store to confirm and lock in the price before the quote expires.
 
 FORMATTING RULES:
 1. Use **bold** for money amounts, quantities, and product names.
@@ -443,23 +450,17 @@ PROMPT;
         if ($quotation->is_expired) {
             $lines .= "\n".'### This Estimate Has Expired'."\n"
                 .'- It closed on **'.$context['valid_until'].'**. The figures above are the ones it was made with — they are kept as they were quoted, and the prices may have moved since.'."\n"
-                .'- Generate a new estimate for the same crop and area: it picks up the current prices and stock.'."\n\n";
-
-            $lines .= '### Next Move'."\n"
-                .'Generate a fresh estimate for the same crop, season and area, and use that one for planning.'."\n";
+                .'- Generate a new estimate for the same crop and area: it picks up the current prices and stock, and that one is the plan to work from.'."\n";
 
             return $lines;
         }
 
         $lines .= "\n".'### Practical Advice'."\n"
-            .'- Run the numbers past **'.$storeText.'** — confirm the listed price and stock, since prices can move once the quote expires.'."\n"
+            .'- Run the numbers past **'.$storeText.'** — confirm the listed price and stock'
+            .($context['valid_until'] ? ' before **'.$context['valid_until'].'** passes' : '')
+            .', since prices move once the quote expires.'."\n"
             .'- Match the quantities to your real planting plan; whole bags and bottles are rounded up, so you may end up with a little extra.'."\n"
-            .'- It never hurts to ask about a volume discount or free delivery if you are buying for the whole season.'."\n\n"
-            .'### Next Move'."\n"
-            .'Message '.($context['stores']->isNotEmpty() ? 'the store' : 'the catalog')
-            .' to confirm availability and lock in the price'
-            .($context['valid_until'] ? ' before **'.$context['valid_until'].'** passes' : ' while it holds')
-            .'.';
+            .'- It never hurts to ask about a volume discount or free delivery if you are buying for the whole season.';
 
         return $lines;
     }

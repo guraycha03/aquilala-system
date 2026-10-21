@@ -71,6 +71,16 @@ class ActivityLog extends Model
     const TYPE_ACCOUNT_PROVISIONED = 'account.provisioned';
 
     /**
+     * How long a store's notice about a farmer's estimate stays in the
+     * list.
+     *
+     * Three days: long enough to act on a new estimate, short enough that
+     * the list is only what is new. The estimate itself does not go
+     * anywhere - the demand trends page keeps the full history.
+     */
+    const QUOTATION_NOTICE_DAYS = 3;
+
+    /**
      * Audit categories: a type prefix (before the first dot) folded into the
      * buckets the admin audit page filters on. Several prefixes map onto one
      * bucket so "user.invited", "admin.created" and "email.verified" all land
@@ -235,7 +245,7 @@ class ActivityLog extends Model
 
     /**
      * Store-owner notifications: what happens TO the store, never its own
-     * history. One kind of notice lives here — a farmer's cost estimate
+     * history. One kind of notice lives here - a farmer's cost estimate
      * that involves this store's products (fanned out by ActivityLogger
      * strictly anonymously: no farmer name or actor). The store's own
      * actions stay under Settings → Activity history.
@@ -243,15 +253,20 @@ class ActivityLog extends Model
      * Two things are deliberately not here. A deleted estimate is the
      * farmer's undo, and it belongs in that farmer's activity history: the
      * store is told what reached it, not what the farmer tidied up
-     * afterwards. And association events are not the store's business —
-     * a store owner is not a member of the association and has no
-     * calendar, so no event notice reaches them.
+     * afterwards - and when the estimate is deleted, its notice goes with
+     * it. And association events are not the store's business - a store
+     * owner is not a member of the association and has no calendar, so no
+     * event notice reaches them.
      */
     public function scopeStoreNotifications($query)
     {
-        return $query->whereIn('type', [
-            self::TYPE_QUOTATION_CREATED,
-        ]);
+        // A farmer's cost estimate is a notice, not a record: it is worth
+        // reading the day it arrives and for a few days after, because the
+        // full estimate lives on the demand trends page. So a quotation
+        // notice leaves the list after three days, and the list stays
+        // short and fresh - new estimates, not a backlog.
+        return $query->where('type', self::TYPE_QUOTATION_CREATED)
+            ->where('created_at', '>=', now()->subDays(self::QUOTATION_NOTICE_DAYS));
     }
 
     /**

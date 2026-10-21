@@ -266,29 +266,9 @@ class ActivityLogger
         return $row;
     }
 
-    public static function quotationDeleted($quotation): ActivityLog
-    {
-        $meta = [
-            'crop_type'    => $quotation->crop_type,
-            'season'       => $quotation->season,
-            'land_area'    => $quotation->land_area,
-            'total_cost'   => $quotation->estimated_total_cost,
-            'quotation_number' => $quotation->quotation_number,
-        ];
-
-        $row = self::log(
-            ActivityLog::TYPE_QUOTATION_DELETED,
-            "Deleted cost estimate {$quotation->quotation_number} for {$quotation->crop_type} ({$quotation->season})",
-            $quotation,
-            $meta
-        );
-
-        // No copy for the stores, and no push. A withdrawal is the farmer's
-        // undo: it belongs in that farmer's activity history, and a popup
-        // about a row that no longer exists is noise, not news.
-
-        return $row;
-    }
+    // A withdrawn estimate is not an event, it is an absence: the rows that
+    // mentioned it are removed with it (see QuotationController::farmerDestroy),
+    // and nothing is filed about a row that no longer exists.
 
     // Looking at an estimate is not an activity, so it is not recorded.
     // A farmer must never feel watched for checking what an input costs.

@@ -195,24 +195,23 @@ class RoleNotificationsTest extends TestCase
             ->assertDontSee('id="desktopNotifBadge"', false);
     }
 
-    public function test_deleting_a_quotation_is_the_farmers_history_and_not_a_store_notification(): void
+    public function test_deleting_a_quotation_removes_every_trace_of_it(): void
     {
         $quotation = $this->makeQuotation($this->farmer);
+
+        $this->actingAs($this->farmer);
+        ActivityLogger::quotationCreated($quotation);
 
         $this->actingAs($this->farmer)
             ->delete(route('farmer.quotations.destroy', $quotation))
             ->assertRedirect(route('farmer.quotations.index'));
 
-        // A withdrawal is the farmer's own undo. It belongs in the farmer's
-        // activity history; it is not news for the store, and it does not
-        // raise a notification or a popup.
+        // A withdrawn estimate leaves nothing behind: not a notice for the
+        // store, not a line in anyone's history, and not the estimate.
         $this->assertSame(0, ActivityLog::forUser($this->store->id)->storeNotifications()->count());
-
-        $row = ActivityLog::forUser($this->farmer->id)
-            ->ofType(ActivityLog::TYPE_QUOTATION_DELETED)
-            ->first();
-
-        $this->assertNotNull($row, 'The deletion should still be on the farmer\'s activity history.');
+        $this->assertSame(0, ActivityLog::forUser($this->farmer->id)->count());
+        $this->assertSame(0, ActivityLog::forUser($this->admin->id)->count());
+        $this->assertNull(Quotation::find($quotation->id));
     }
 
     public function test_a_store_owner_cannot_mark_another_stores_notification_read(): void

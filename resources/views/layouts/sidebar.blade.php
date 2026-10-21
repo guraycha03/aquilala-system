@@ -131,7 +131,7 @@
   <script src="{{ asset('js/alpine.min.js') }}" defer></script>
   {{-- Display theme: every rule is scoped to [data-theme="dark"], so this file
        costs nothing while the user is in light mode. --}}
-  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=10">
+  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=11">
   {{-- App lockdown: kills text selection, copy/cut, long-press & right-click
        browser menus, and printing outside form fields — applies to every page
        and role, so the portal behaves like a native app and long-press is
@@ -761,7 +761,15 @@
     .page-btn:hover:not(:disabled):not(.active):not(.disabled) { border-color: #4A7A54; color: #4A7A54; }
     .page-btn:disabled, .page-btn.disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
     .page-btn.active { background: #4A7A54; border-color: #4A7A54; color: #ffffff; font-weight: 700; }
-    .page-ellipsis { color: #94a3b8; font-size: 13px; padding: 0 2px; }
+    /* The step arrows are the first and last button. They are the way
+       most people move through a table, so they are drawn at a size you
+       can hit without looking twice. */
+    .pagination-controls > .page-btn:first-child,
+    .pagination-controls > .page-btn:last-child {
+      min-width: 42px; height: 40px; padding: 0 12px;
+      font-size: 22px; line-height: 1; font-weight: 700;
+    }
+    .page-ellipsis { color: #94a3b8; font-size: 15px; padding: 0 2px; }
     .btn-filter {
       position: relative; width: 42px; height: 42px; flex-shrink: 0;
       display: inline-flex; align-items: center; justify-content: center;
