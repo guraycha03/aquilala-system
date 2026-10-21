@@ -18,7 +18,7 @@
  * payload carries the notification text plus the in-app page to open, and a
  * click focuses an already-open window (navigating it) or opens a fresh one.
  */
-const VERSION = 'aquilala-v5';
+const VERSION = 'aquilala-v6';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
 const PAGE_CACHE_LIMIT = 60;
