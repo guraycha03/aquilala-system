@@ -70,7 +70,7 @@ class Quotation extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->effective_status) {
-            self::STATUS_COMPUTED   => 'Estimate Ready',
+            self::STATUS_COMPUTED   => 'Active',
             // The state, not the watcher. A farmer should not feel a store
             // is standing over their shoulder while they price an input.
             self::STATUS_VIEWED     => 'Viewed',

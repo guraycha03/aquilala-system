@@ -224,8 +224,7 @@
       search-placeholder="Search by reference, crop, or season…"
       :filters="[
           ['key' => 'status', 'label' => 'All statuses', 'options' => [
-              ['computed', 'Estimate Ready'],
-              ['viewed', 'Viewed'],
+              ['computed', 'Active'],
               ['expired', 'Expired'],
           ]],
           ['key' => 'crop', 'label' => 'All crops', 'options' => collect($quotations->pluck('crop_type')->unique()->values())->map(fn($c) => [strtolower($c), $c])->all()],

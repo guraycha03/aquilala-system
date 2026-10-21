@@ -318,16 +318,19 @@
     .app-scrollbar.dragging { cursor: grabbing; }
     .app-scrollbar-track {
       position: absolute; left: 0; right: 0; top: 2px; bottom: 2px;
-      background: rgba(20,61,35,0.07); border-radius: 999px;
+      background: rgba(169, 189, 170, 0.32); border-radius: 999px;
     }
+    /* A soft, light sage pill - solid, never a gradient. The scrollbar is
+       furniture, not a signal: it should be seen when you look for it and
+       forgotten the rest of the time. */
     .app-scrollbar-thumb {
       position: absolute; top: 0; bottom: 0; left: 0; border-radius: 999px;
-      background: linear-gradient(90deg, #8fcf98, #6ab375);
-      box-shadow: 0 1px 4px rgba(20,61,35,0.25);
+      background: var(--aq-sage-300, #a9bdaa);
+      box-shadow: 0 1px 3px rgba(63, 90, 70, 0.16);
       min-width: 48px; max-width: 42%; transition: background 0.15s ease;
     }
-    .app-scrollbar-thumb:hover { background: linear-gradient(90deg, #6ab375, #559a61); }
-    .app-scrollbar.dragging .app-scrollbar-thumb { background: linear-gradient(90deg, #559a61, #43824f); }
+    .app-scrollbar-thumb:hover { background: var(--aq-sage-400, #7f9a85); }
+    .app-scrollbar.dragging .app-scrollbar-thumb { background: var(--aq-sage-500, #648268); }
     
     /* Brand Section */
     .brand-section { padding: 20px; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.95); letter-spacing: -0.01em; line-height: 1.35; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; }
