@@ -144,7 +144,7 @@
   .ai-floating .ai-spin { border-color: rgba(74,122,84,0.25); border-top-color: #166534; }
 
   /* Floating result modal — centered, no dark overlay behind */
-  .ai-modal {
+  .app-modal {
     position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%) scale(0.96);
     width: min(660px, calc(100vw - 32px)); max-height: 78vh; overflow-y: auto;
@@ -155,47 +155,47 @@
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
     scrollbar-width: thin;
   }
-  .ai-modal.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
-  .ai-modal-head {
+  .app-modal.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+  .app-modal-head {
     display: flex; justify-content: space-between; align-items: center; gap: 12px;
     padding: 16px 20px; border-bottom: 1px solid #f0f2f1;
     position: sticky; top: 0; background: #fafdfb; border-radius: 18px 18px 0 0; z-index: 1;
   }
-  .ai-modal-head h3 { font-size: 15px; margin: 0; color: #1a2b1e; }
-  .ai-modal-head p { font-size: 12px; color: #879a8c; margin: 2px 0 0 0; }
-  .ai-modal-close {
+  .app-modal-head h3 { font-size: 15px; margin: 0; color: #1a2b1e; }
+  .app-modal-head p { font-size: 12px; color: #879a8c; margin: 2px 0 0 0; }
+  .app-modal-close {
     width: 30px; height: 30px; border-radius: 9px; border: none; cursor: pointer;
     background: #f0f2f1; color: #6b7c6e; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     transition: all 0.15s ease; font-size: 16px; line-height: 1;
   }
-  .ai-modal-close:hover { background: #fee2e2; color: #b91c1c; }
-  .ai-modal-body { padding: 20px; font-size: 13.5px; color: #3f3f46; }
+  .app-modal-close:hover { background: #fee2e2; color: #b91c1c; }
+  .app-modal-body { padding: 20px; font-size: 13.5px; color: #3f3f46; }
 
   /* The failure state of the summary: a plain icon, a plain headline and
      the reason, centred — not a raw red box in the corner of the modal. */
-  .ai-modal-error {
+  .app-modal-error {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 10px; text-align: center; padding: 38px 24px;
     background: #F7F9F7; border: 1px solid #E0E5DB; border-radius: 14px;
   }
-  .ai-modal-error-icon {
+  .app-modal-error-icon {
     width: 46px; height: 46px; border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
     background: #FBEDED; border: 1px solid #F0D2D2; color: #B04A42;
   }
-  .ai-modal-error-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .ai-modal-error-title { font-size: 14.5px; font-weight: 700; color: #1a2b1e; }
-  .ai-modal-error-text { font-size: 13px; color: #6b7c6e; max-width: 380px; line-height: 1.55; }
-  [data-theme="dark"] .ai-modal-error { background: rgba(15, 23, 42, 0.72); border-color: #334155; }
-  [data-theme="dark"] .ai-modal-error-icon { background: rgba(127, 29, 29, 0.35); border-color: #7f1d1d; color: #fca5a5; }
-  [data-theme="dark"] .ai-modal-error-title { color: #d6f5e3; }
-  [data-theme="dark"] .ai-modal-error-text { color: #9fb3a6; }
+  .app-modal-error-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .app-modal-error-title { font-size: 14.5px; font-weight: 700; color: #1a2b1e; }
+  .app-modal-error-text { font-size: 13px; color: #6b7c6e; max-width: 380px; line-height: 1.55; }
+  [data-theme="dark"] .app-modal-error { background: rgba(15, 23, 42, 0.72); border-color: #334155; }
+  [data-theme="dark"] .app-modal-error-icon { background: rgba(127, 29, 29, 0.35); border-color: #7f1d1d; color: #fca5a5; }
+  [data-theme="dark"] .app-modal-error-title { color: #d6f5e3; }
+  [data-theme="dark"] .app-modal-error-text { color: #9fb3a6; }
 
-  .ai-modal-foot { margin-top: 16px; display: flex; justify-content: flex-end; }
+  .app-modal-foot { margin-top: 16px; display: flex; justify-content: flex-end; }
 
   @media (max-width: 640px) {
-    .ai-modal { max-height: 82vh; width: calc(100vw - 20px); }
+    .app-modal { max-height: 82vh; width: calc(100vw - 20px); }
     .ai-kpi-card .ai-btn { padding: 9px 12px; font-size: 11.5px; }
   }
 </style>

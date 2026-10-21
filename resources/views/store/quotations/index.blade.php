@@ -226,9 +226,9 @@
   }
 </style>
 
-{{-- The AI card and the modal it opens: one shared set of rules, so the
+{{-- The AI card and the window it opens: one shared set of rules, so the
      farmer's quotation page can offer the same thing in the same way. --}}
-@include('partials.ai-explanation-ui')
+@include('partials.ai-card-and-modal')
 
 <div style="margin-bottom: 28px;">
   <h1 style="font-size: 26px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">Quotation Demand Trends</h1>
@@ -486,17 +486,17 @@
   <span>Preparing your store summary&hellip;</span>
 </div>
 
-<div class="ai-modal" id="aiModal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" aria-hidden="true">
-  <div class="ai-modal-head">
+<div class="app-modal" id="aiModal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" aria-hidden="true">
+  <div class="app-modal-head">
     <div>
       <h3 id="aiModalTitle">Smart Store Summary</h3>
       <p>A short read on what farmers are quoting for</p>
     </div>
-    <button type="button" class="ai-modal-close" id="aiModalClose" aria-label="Close summary" title="Close">
+    <button type="button" class="app-modal-close" id="aiModalClose" aria-label="Close summary" title="Close">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
-  <div class="ai-modal-body" id="aiModalBody"></div>
+  <div class="app-modal-body" id="aiModalBody"></div>
 </div>
 
 <script>
@@ -625,10 +625,10 @@
   function openAiModal(data) {
     if (data && typeof data === 'object' && data.error) {
       document.getElementById('aiModalBody').innerHTML =
-        '<div class="ai-modal-error">' +
-          '<div class="ai-modal-error-icon"><i data-lucide="circle-alert"></i></div>' +
-          '<div class="ai-modal-error-title">We couldn\'t build your summary</div>' +
-          '<div class="ai-modal-error-text">' + escapeAiHtml(data.error) + '</div>' +
+        '<div class="app-modal-error">' +
+          '<div class="app-modal-error-icon"><i data-lucide="circle-alert"></i></div>' +
+          '<div class="app-modal-error-title">We couldn\'t build your summary</div>' +
+          '<div class="app-modal-error-text">' + escapeAiHtml(data.error) + '</div>' +
         '</div>';
       // The icon is injected after Lucide has already swept the page.
       if (typeof renderLucideIcons === 'function') renderLucideIcons();
@@ -653,7 +653,7 @@
       '<div class="ai-narrative-head">' +
       '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#166534" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>' +
       '<h4>Your Store Summary</h4></div><div class="ai-narrative-body">' + body + '</div></div>' +
-      '<div class="ai-modal-foot">' +
+      '<div class="app-modal-foot">' +
       '<button type="button" class="ai-chat-link" onclick="openAiChat()">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
       '<span>Open in AI Chat</span></button></div>';

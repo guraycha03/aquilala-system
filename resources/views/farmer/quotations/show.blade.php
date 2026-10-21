@@ -63,6 +63,63 @@
   $unreachableShortfall = $unreachable ? round($fitFloor - (float) $budgetCeiling, 2) : null;
   $isRed       = $unreachable || $shortfall;
 
+  // The budget outcome, written once. It lives in a window the farmer
+  // opens from the total cost card, so the page itself stays short and
+  // the numbers stay in one place.
+  $budget = null;
+  if ($budgetCap !== null) {
+      if ($unreachable) {
+          $budget = [
+              'state'   => 'over',
+              'icon'    => 'alert',
+              'title'   => 'Nothing fits your ₱' . number_format($budgetCap, 2) . ' budget yet',
+              'figure'  => '₱' . number_format($fitFloor, 2),
+              'caption' => 'what this plan needs for ' . number_format($landArea, 2) . ' ha',
+              'text'    => 'The plan comes to more than the budget you set, so no inputs were included. Raise the budget toward ₱'
+                           . number_format($fitFloor, 2) . ', or plan a smaller area, then generate again.',
+          ];
+      } elseif ($shortfall) {
+          $budget = [
+              'state'   => 'over',
+              'icon'    => 'alert',
+              'title'   => 'Short by ₱' . number_format($shortfall, 2),
+              'figure'  => '₱' . number_format($total, 2),
+              'caption' => 'what this plan comes to',
+              'text'    => 'Your ₱' . number_format($budgetCap, 2) . ' budget'
+                           . ($budgetStrict ? ' and its ₱' . number_format($budgetCeiling, 2) . ' allowance' : '')
+                           . ' is below that. The plan keeps what fits — anything extra stays deferred until the budget allows it.',
+          ];
+      } elseif ($flexBand) {
+          $budget = [
+              'state'   => 'trimmed',
+              'icon'    => 'trim',
+              'title'   => 'Within your flexible limit',
+              'figure'  => '₱' . number_format($total, 2),
+              'caption' => 'of your ₱' . number_format($budgetCap, 2) . ' budget',
+              'text'    => 'Fit mode allows up to ₱' . number_format($budgetCeiling, 2) . ' — twice your budget — so a must-have that crosses the line can still be part of the plan. The total never goes past that limit.',
+          ];
+      } elseif ($deferredCount > 0) {
+          $budget = [
+              'state'   => 'trimmed',
+              'icon'    => 'trim',
+              'title'   => 'Fitted to your ₱' . number_format($budgetCap, 2) . ' budget',
+              'figure'  => '₱' . number_format((float) $budgetLeft, 2),
+              'caption' => 'left to spend',
+              'text'    => $deferredCount . ' input(s) worth ₱' . number_format($deferredTotal, 2)
+                           . ' were deferred to fit your budget. They stay on this quotation so you can add them when the budget allows.',
+          ];
+      } else {
+          $budget = [
+              'state'   => 'fitted',
+              'icon'    => 'check',
+              'title'   => 'Fits your ₱' . number_format($budgetCap, 2) . ' budget',
+              'figure'  => '₱' . number_format((float) $budgetLeft, 2),
+              'caption' => 'to spare',
+              'text'    => 'Every recommended input fits within the budget you set.',
+          ];
+      }
+  }
+
   // The plan's own lines, in the order they were priced. Each one is
   // shown as a readable row: what it is, where it comes from, how much
   // of it, and what it costs.
@@ -231,40 +288,89 @@
   .fq-btn--danger { background: #FAF3F2; color: #a34a4a; border: 1px solid #E8D2CF; }
   .fq-btn--danger:hover { background: #F6E9E7; }
 
-  /* ── Budget outcome ─────────────────────────────────────────── */
-  .fq-budget {
-    display: flex; gap: 13px; align-items: flex-start;
-    border: 1.5px solid; border-radius: 14px;
-    padding: 16px 18px; margin-bottom: 22px;
+  /* ── The budget ───────────────────────────────────────────────
+     A button in the corner of the total cost card, and a window
+     with the reasoning. The button states the budget; the window
+     explains it. */
+  .fq-sum__right { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; }
+
+  .fq-budget-pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: #F3F5F0; border: 1px solid #E0E5DB; border-radius: 12px;
+    padding: 8px 12px; cursor: pointer; font-family: inherit;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
   }
+  .fq-budget-pill:hover { background: #E9EEE5; border-color: #C4D0C0; }
+  .fq-budget-pill:active { transform: scale(0.98); }
+  .fq-budget-pill__ic {
+    width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .fq-budget-pill__ic svg { width: 15px; height: 15px; }
+  .fq-budget-pill__text { text-align: left; }
+  .fq-budget-pill__label {
+    display: block; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: #879a8c;
+  }
+  .fq-budget-pill__value { display: block; font-size: 13.5px; font-weight: 800; color: #1a2b1e; margin-top: 1px; }
+  .fq-budget-pill__chev { width: 15px; height: 15px; color: #879a8c; flex-shrink: 0; }
+
+  .fq-budget-pill--fitted  .fq-budget-pill__ic { background: #E7EDE5; color: #648268; }
+  .fq-budget-pill--trimmed .fq-budget-pill__ic { background: #F2EEDF; color: #8A7C3E; }
+  .fq-budget-pill--over    .fq-budget-pill__ic { background: #F4E3E1; color: #a34a4a; }
+
+  /* The budget inside the window: the outcome, the figure, the words,
+     and what was held back — each with room to breathe. */
+  .fq-budget--modal {
+    border: 1.5px solid #E9EDE8; border-radius: 14px; padding: 22px 24px;
+  }
+  .fq-budget__head { display: flex; align-items: center; gap: 10px; }
   .fq-budget__ic {
-    width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0; margin-top: 1px;
+    width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
   }
   .fq-budget__ic svg { width: 16px; height: 16px; }
-  .fq-budget__title { display: block; font-size: 14px; font-weight: 800; margin-bottom: 3px; }
-  .fq-budget__text { margin: 0; font-size: 13px; line-height: 1.6; }
-  .fq-budget__list {
-    list-style: none; margin: 10px 0 0; padding: 0;
-    display: flex; flex-wrap: wrap; gap: 7px;
+  .fq-budget__title { font-size: 14.5px; font-weight: 800; }
+  .fq-budget__figure {
+    margin: 16px 0 0 0; font-size: 30px; font-weight: 800;
+    letter-spacing: -0.02em; line-height: 1.1;
   }
+  .fq-budget__figure span {
+    display: block; font-size: 12.5px; font-weight: 600;
+    letter-spacing: 0; margin-top: 4px; text-transform: none;
+  }
+  .fq-budget__text { margin: 14px 0 0 0; font-size: 13.5px; line-height: 1.7; max-width: 46ch; }
+  .fq-budget__deferred { margin-top: 20px; padding-top: 16px; border-top: 1px dashed #E9EDE8; }
+  .fq-budget__deferred-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #879a8c; margin-bottom: 6px;
+  }
+  .fq-budget__list { list-style: none; margin: 0; padding: 0; }
   .fq-budget__list li {
-    font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 8px;
-    background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(30, 41, 34, 0.10);
-    color: inherit;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    padding: 9px 0; font-size: 13px;
   }
-  .fq-budget.fitted  { background: #F1F6F1; border-color: #D3E3D5; }
-  .fq-budget.fitted .fq-budget__title { color: #3f6b4d; }
-  .fq-budget.fitted .fq-budget__text { color: #4a6353; }
-  .fq-budget.fitted .fq-budget__ic { background: #E7EDE5; color: #648268; }
-  .fq-budget.trimmed { background: #FAF8F0; border-color: #E8E2CE; }
-  .fq-budget.trimmed .fq-budget__title { color: #7A6A3A; }
-  .fq-budget.trimmed .fq-budget__text { color: #7a6e3f; }
-  .fq-budget.trimmed .fq-budget__ic { background: #F2EEDF; color: #8A7C3E; }
-  .fq-budget.over { background: #FAF3F2; border-color: #E8D2CF; }
-  .fq-budget.over .fq-budget__title { color: #a34a4a; }
-  .fq-budget.over .fq-budget__text { color: #8c524b; }
-  .fq-budget.over .fq-budget__ic { background: #F4E3E1; color: #a34a4a; }
+  .fq-budget__list li + li { border-top: 1px dashed #F0F2F1; }
+  .fq-budget__list li b { font-weight: 700; white-space: nowrap; }
+
+  .fq-budget--fitted  { background: #F1F6F1; border-color: #D3E3D5; }
+  .fq-budget--fitted .fq-budget__title { color: #3f6b4d; }
+  .fq-budget--fitted .fq-budget__text { color: #4a6353; }
+  .fq-budget--fitted .fq-budget__figure { color: #2f5d3c; }
+  .fq-budget--fitted .fq-budget__figure span { color: #6b7c6e; }
+  .fq-budget--fitted .fq-budget__ic { background: #E7EDE5; color: #648268; }
+  .fq-budget--trimmed { background: #FAF8F0; border-color: #E8E2CE; }
+  .fq-budget--trimmed .fq-budget__title { color: #7A6A3A; }
+  .fq-budget--trimmed .fq-budget__text { color: #7a6e3f; }
+  .fq-budget--trimmed .fq-budget__figure { color: #7A6A3A; }
+  .fq-budget--trimmed .fq-budget__figure span { color: #8a8464; }
+  .fq-budget--trimmed .fq-budget__ic { background: #F2EEDF; color: #8A7C3E; }
+  .fq-budget--over { background: #FAF3F2; border-color: #E8D2CF; }
+  .fq-budget--over .fq-budget__title { color: #a34a4a; }
+  .fq-budget--over .fq-budget__text { color: #8c524b; }
+  .fq-budget--over .fq-budget__figure { color: #a34a4a; }
+  .fq-budget--over .fq-budget__figure span { color: #9a6b66; }
+  .fq-budget--over .fq-budget__ic { background: #F4E3E1; color: #a34a4a; }
 
   /* ── AI adviser: cards, not a document ───────────────────────── */
   .fq-ai__meta {
@@ -366,9 +472,19 @@
   .fq-plan__more { display: flex; justify-content: center; width: 100%; margin-top: 16px; }
 
   /* ── Facts and stores ───────────────────────────────────────── */
-  .fq-cols { display: grid; grid-template-columns: 1.5fr 1fr; gap: 22px; align-items: start; }
-  @media (max-width: 980px) { .fq-cols { grid-template-columns: 1fr; } }
-  .fq-ai-card { margin-bottom: 22px; }
+  /* The AI card sits across the full width here, so it lies down:
+     the tile, the words, and the button on one line. The class is
+     written with the shared `.ai-kpi-card` so it wins over the
+     shared card's own column layout. */
+  .ai-kpi-card.fq-ai-card {
+    margin-bottom: 22px; flex-direction: row; align-items: center;
+    gap: 18px; padding: 18px 22px;
+  }
+  .ai-kpi-card.fq-ai-card .kpi-top { flex-shrink: 0; }
+  .ai-kpi-card.fq-ai-card .kpi-title { margin-top: 0; }
+  .ai-kpi-card.fq-ai-card .kpi-desc { margin: 2px 0 0 0; }
+  .fq-ai-card__text { flex: 1; min-width: 0; }
+  .ai-kpi-card.fq-ai-card .ai-btn { flex-shrink: 0; }
 
   .fq-facts {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -433,6 +549,8 @@
       gap: 18px; padding: 20px 16px;
     }
     .fq-sum__value { font-size: 31px; }
+    .fq-sum__right { align-items: stretch; }
+    .fq-budget-pill { width: 100%; }
     .fq-sum__stats {
       display: grid; grid-template-columns: repeat(3, 1fr);
       gap: 8px; width: 100%;
@@ -448,6 +566,10 @@
     .fq-stat__note { font-size: 11px; }
 
     .fq-card__body { padding: 16px; }
+    .ai-kpi-card.fq-ai-card {
+      flex-direction: column; align-items: stretch; gap: 14px; padding: 18px 16px;
+    }
+    .ai-kpi-card.fq-ai-card .ai-btn { width: 100%; }
     .fq-facts { grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 18px 16px; }
     .fq-notes { margin: 0 16px 18px; }
     .fq-stores { padding: 16px; }
@@ -470,7 +592,7 @@
 
 {{-- The AI card and the window it opens: one shared set of rules, so the
      farmer's quotation page and the store's demand page read the same. --}}
-@include('partials.ai-explanation-ui')
+@include('partials.ai-card-and-modal')
 
 @if(session('success'))
   <div class="fq-flash">
@@ -544,12 +666,36 @@
 
 <!-- The one number that matters, and the three facts around it -->
 <div class="fq-sum">
-  <div>
+  <div class="fq-sum__main">
     <div class="fq-sum__label">Estimated total cost</div>
     <div class="fq-sum__value">₱{{ number_format($total, 2) }}</div>
     <div class="fq-sum__sub">≈ ₱{{ number_format($perHectare, 2) }} per hectare</div>
   </div>
-  <div class="fq-sum__stats">
+
+  <div class="fq-sum__right">
+    {{-- The budget sits at the top right of the box and opens in a
+         window: the farmer sees the number, and the reasoning only
+         when they ask for it. --}}
+    @if($budget)
+      <button type="button" class="fq-budget-pill fq-budget-pill--{{ $budget['state'] }}" id="budgetBtn">
+        <span class="fq-budget-pill__ic">
+          @if($budget['icon'] === 'alert')
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          @elseif($budget['icon'] === 'trim')
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          @else
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          @endif
+        </span>
+        <span class="fq-budget-pill__text">
+          <span class="fq-budget-pill__label">Your budget</span>
+          <span class="fq-budget-pill__value">₱{{ number_format($budgetCap, 2) }}</span>
+        </span>
+        <svg class="fq-budget-pill__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    @endif
+
+    <div class="fq-sum__stats">
     <div class="fq-stat">
       <span class="fq-stat__ic">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg>
@@ -579,94 +725,74 @@
     </div>
   </div>
 </div>
+</div>
 
-<!-- Budget outcome (only when the farmer set a budget cap) -->
-@if($budgetCap !== null)
-  @if($unreachable)
-    <div class="fq-budget over">
-      <span class="fq-budget__ic">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      </span>
+{{-- The budget opens in a window: the outcome, the figure and what was
+     held back, with room around each part. --}}
+@if($budget)
+  <div class="app-modal" id="budgetModal" role="dialog" aria-modal="true" aria-labelledby="budgetModalTitle" aria-hidden="true">
+    <div class="app-modal-head">
       <div>
-        <b class="fq-budget__title">Nothing fits your ₱{{ number_format($budgetCap, 2) }} budget yet</b>
-        <p class="fq-budget__text">The inputs this plan needs start at about ₱{{ number_format($fitFloor, 2) }} for {{ number_format($landArea, 2) }} ha — above your budget, so no items were included. Raise the budget toward ₱{{ number_format($fitFloor, 2) }}, or reduce the farm area, then generate again:</p>
-        @if($deferredCount > 0)
-          <ul class="fq-budget__list">
-            @foreach($deferredItems as $di)
-              <li>{{ $di->product_name }} — ₱{{ number_format((float) $di->subtotal, 2) }}</li>
-            @endforeach
-          </ul>
+        <h3 id="budgetModalTitle">Your budget</h3>
+        <p>How this plan sits against the ₱{{ number_format($budgetCap, 2) }} you set</p>
+      </div>
+      <button type="button" class="app-modal-close" id="budgetModalClose" aria-label="Close budget" title="Close">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="app-modal-body">
+      <div class="fq-budget fq-budget--modal fq-budget--{{ $budget['state'] }}">
+        <div class="fq-budget__head">
+          <span class="fq-budget__ic">
+            @if($budget['icon'] === 'alert')
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            @elseif($budget['icon'] === 'trim')
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            @else
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            @endif
+          </span>
+          <b class="fq-budget__title">{{ $budget['title'] }}</b>
+        </div>
+
+        <div class="fq-budget__figure">
+          {{ $budget['figure'] }}
+          <span>{{ $budget['caption'] }}</span>
+        </div>
+
+        <p class="fq-budget__text">{{ $budget['text'] }}</p>
+
+        @if($deferredCount > 0 && $budget['state'] !== 'over')
+          <div class="fq-budget__deferred">
+            <div class="fq-budget__deferred-label">Held back until you can add them</div>
+            <ul class="fq-budget__list">
+              @foreach($deferredItems as $di)
+                <li>
+                  <span>{{ $di->product_name }}</span>
+                  <b>₱{{ number_format((float) $di->subtotal, 2) }}</b>
+                </li>
+              @endforeach
+            </ul>
+          </div>
         @endif
       </div>
     </div>
-  @elseif($shortfall)
-    <div class="fq-budget over">
-      <span class="fq-budget__ic">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      </span>
-      <div>
-        <b class="fq-budget__title">Short by ₱{{ number_format($shortfall, 2) }}@if($budgetStrict) — past your ₱{{ number_format($budgetCeiling, 2) }} flexible limit @else — essentials alone exceed your budget @endif</b>
-        <p class="fq-budget__text">Your ₱{{ number_format($budgetCap, 2) }} budget @if($budgetStrict) with its ₱{{ number_format($budgetCeiling, 2) }} allowance @endif is below what this plan comes to (₱{{ number_format($total, 2) }}). The plan below keeps what fits — anything extra stays deferred. Adjust quantities, wait for better prices, or revisit before committing.</p>
-      </div>
-    </div>
-  @elseif($flexBand)
-    <div class="fq-budget trimmed">
-      <span class="fq-budget__ic">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-      </span>
-      <div>
-        <b class="fq-budget__title">Within your flexible limit — ₱{{ number_format($total, 2) }} of your ₱{{ number_format($budgetCap, 2) }} budget</b>
-        <p class="fq-budget__text">Fit mode allows up to ₱{{ number_format($budgetCeiling, 2) }} — twice your budget — so a must-have that crosses the line can still be part of the plan; the total never goes past that limit.@if($deferredCount > 0) {{ $deferredCount }} input(s) worth ₱{{ number_format($deferredTotal, 2) }} were deferred to stay within it:@endif</p>
-        @if($deferredCount > 0)
-          <ul class="fq-budget__list">
-            @foreach($deferredItems as $di)
-              <li>{{ $di->product_name }} — ₱{{ number_format((float) $di->subtotal, 2) }}</li>
-            @endforeach
-          </ul>
-        @endif
-      </div>
-    </div>
-  @elseif($deferredCount > 0)
-    <div class="fq-budget trimmed">
-      <span class="fq-budget__ic">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
-      </span>
-      <div>
-        <b class="fq-budget__title">Fitted to your ₱{{ number_format($budgetCap, 2) }} budget — ₱{{ number_format((float) $budgetLeft, 2) }} left</b>
-        <p class="fq-budget__text">{{ $deferredCount }} input(s) worth ₱{{ number_format($deferredTotal, 2) }} were deferred to fit your budget. They stay on this quotation so you can add them when your budget allows:</p>
-        <ul class="fq-budget__list">
-          @foreach($deferredItems as $di)
-            <li>{{ $di->product_name }} — ₱{{ number_format((float) $di->subtotal, 2) }}</li>
-          @endforeach
-        </ul>
-      </div>
-    </div>
-  @else
-    <div class="fq-budget fitted">
-      <span class="fq-budget__ic">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      </span>
-      <div>
-        <b class="fq-budget__title">Fits your ₱{{ number_format($budgetCap, 2) }} budget — ₱{{ number_format((float) $budgetLeft, 2) }} to spare</b>
-        <p class="fq-budget__text">Every recommended input fits within the budget you set.</p>
-      </div>
-    </div>
-  @endif
+  </div>
 @endif
 
 {{-- The explanation opens in a window: the same card and window the
      store's demand page uses, so the two read the same. --}}
-<div class="ai-modal" id="aiModal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" aria-hidden="true">
-  <div class="ai-modal-head">
+<div class="app-modal" id="aiModal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" aria-hidden="true">
+  <div class="app-modal-head">
     <div>
       <h3 id="aiModalTitle">AI Explanation</h3>
       <p>What this quotation means for your farm</p>
     </div>
-    <button type="button" class="ai-modal-close" id="aiModalClose" aria-label="Close explanation" title="Close">
+    <button type="button" class="app-modal-close" id="aiModalClose" aria-label="Close explanation" title="Close">
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
-  <div class="ai-modal-body" id="aiModalBody"></div>
+  <div class="app-modal-body" id="aiModalBody"></div>
 </div>
 
 <style>
@@ -681,59 +807,6 @@
   @keyframes fqShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 </style>
 
-<!-- The plan on the left, the things that explain it on the right -->
-<div class="fq-cols">
-  <div>
-<!-- What the plan actually covers -->
-<div class="fq-card">
-  <div class="fq-card__head">
-    <div>
-      <h2 class="fq-card__title">What this plan covers</h2>
-      <p class="fq-card__sub">Every input in the estimate — what it is, how much, and what it costs</p>
-    </div>
-  </div>
-  <div class="fq-card__body">
-    @if($planLines->isNotEmpty())
-      <div class="fq-plan">
-        @foreach($planLines as $line)
-          <div class="fq-plan__row {{ $line['deferred'] ? 'is-deferred' : '' }}">
-            <div>
-              <div class="fq-plan__name">
-                {{ $line['name'] }}
-                @if($line['deferred'])
-                  <span class="fq-plan__tag">Deferred</span>
-                @endif
-              </div>
-              <div class="fq-plan__meta">
-                {{ $line['store'] ?? 'General catalog' }} &middot; ₱{{ number_format($line['price'], 2) }} each
-              </div>
-            </div>
-            <div class="fq-plan__qty">{{ $line['quantity'] }} {{ $line['unit'] }}</div>
-            <div class="fq-plan__sum">₱{{ number_format($line['subtotal'], 2) }}</div>
-          </div>
-        @endforeach
-      </div>
-      <div class="fq-plan__total">
-        <span class="fq-plan__total-label">Estimated total</span>
-        <span class="fq-plan__total-value">₱{{ number_format($total, 2) }}</span>
-      </div>
-      @if($deferredCount > 0)
-        <p class="fq-plan__note">
-          {{ $deferredCount }} deferred line(s) worth ₱{{ number_format($deferredTotal, 2) }} are not included in this total.
-        </p>
-      @endif
-      <a href="{{ route('farmer.quotations.breakdown', $quotation) }}" class="fq-btn fq-btn--ghost fq-plan__more">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-        See the line-by-line breakdown
-      </a>
-    @else
-      <p class="fq-empty" style="padding: 0;">No products matched the formulas for this crop and season.</p>
-    @endif
-  </div>
-</div>
-  </div>
-
-  <div>
 <!-- AI explanation: a card that opens a window, so the page stays short -->
 <div class="ai-kpi-card fq-ai-card">
   <div class="kpi-top">
@@ -744,11 +817,13 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 15H7"/><path d="M15.41 2.49a.6.6 0 011.18 0l.63 3.334a1.2 1.2 0 00.956.955l3.334.631a.6.6 0 010 1.18l-3.334.63a1.2 1.2 0 00-.955.956l-.631 3.334a.6.6 0 01-1.18 0l-.63-3.334a1.2 1.2 0 00-.955-.955L10.49 8.59a.6.6 0 010-1.18l3.334-.63a1.2 1.2 0 00.955-.956z"/><path d="M21 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h6"/><path d="M9 13v4"/></svg>
     </div>
   </div>
-  <h3 class="kpi-title">AI Explanation</h3>
-  <p class="kpi-desc">What this quotation means for your farm, in plain words.</p>
+  <div class="fq-ai-card__text">
+    <h3 class="kpi-title">AI Explanation</h3>
+    <p class="kpi-desc">What this quotation means for your farm.</p>
+  </div>
   <button type="button" class="ai-btn" id="aiOverviewBtn" onclick="generateAiOverview(this)">
     <svg class="ai-btn-icon" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
-    <span>Generate explanation</span>
+    <span>Explain with AI</span>
   </button>
 </div>
 
@@ -825,7 +900,53 @@
     </div>
   </div>
 
-  <div class="fq-card" style="margin-bottom: 0;">
+<!-- What the plan actually covers -->
+<div class="fq-card">
+  <div class="fq-card__head">
+    <div>
+      <h2 class="fq-card__title">What this plan covers</h2>
+      <p class="fq-card__sub">Every input in the estimate — what it is, how much, and what it costs</p>
+    </div>
+  </div>
+  <div class="fq-card__body">
+    @if($planLines->isNotEmpty())
+      <div class="fq-plan">
+        @foreach($planLines as $line)
+          <div class="fq-plan__row {{ $line['deferred'] ? 'is-deferred' : '' }}">
+            <div>
+              <div class="fq-plan__name">
+                {{ $line['name'] }}
+                @if($line['deferred'])
+                  <span class="fq-plan__tag">Deferred</span>
+                @endif
+              </div>
+              <div class="fq-plan__meta">
+                {{ $line['store'] ?? 'General catalog' }} &middot; ₱{{ number_format($line['price'], 2) }} each
+              </div>
+            </div>
+            <div class="fq-plan__qty">{{ $line['quantity'] }} {{ $line['unit'] }}</div>
+            <div class="fq-plan__sum">₱{{ number_format($line['subtotal'], 2) }}</div>
+          </div>
+        @endforeach
+      </div>
+      <div class="fq-plan__total">
+        <span class="fq-plan__total-label">Estimated total</span>
+        <span class="fq-plan__total-value">₱{{ number_format($total, 2) }}</span>
+      </div>
+      @if($deferredCount > 0)
+        <p class="fq-plan__note">
+          {{ $deferredCount }} deferred line(s) worth ₱{{ number_format($deferredTotal, 2) }} are not included in this total.
+        </p>
+      @endif
+      <a href="{{ route('farmer.quotations.breakdown', $quotation) }}" class="fq-btn fq-btn--ghost fq-plan__more">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        See the line-by-line breakdown
+      </a>
+    @else
+      <p class="fq-empty" style="padding: 0;">No products matched the formulas for this crop and season.</p>
+    @endif
+  </div>
+</div>  <div class="fq-card" style="margin-bottom: 0;">
     <div class="fq-card__head">
       <div>
         <h2 class="fq-card__title">Supply stores</h2>
@@ -854,8 +975,6 @@
     @else
       <p class="fq-empty">Products from the general catalog were used.</p>
     @endif
-  </div>
-  </div>
 </div>
 
 <script>
@@ -997,28 +1116,37 @@
     }
   }
 
-  function openAiModal(html) {
-    document.getElementById('aiModalBody').innerHTML = html;
-    var modal = document.getElementById('aiModal');
+  // One window shell for both: the explanation and the budget.
+  function openModal(modalId, bodyId, html) {
+    if (bodyId) { document.getElementById(bodyId).innerHTML = html; }
+    var modal = document.getElementById(modalId);
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     lockPageScroll(true);
   }
 
-  function closeAiModal() {
-    var modal = document.getElementById('aiModal');
+  function closeModal(modalId) {
+    var modal = document.getElementById(modalId);
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
     lockPageScroll(false);
   }
 
+  function openAiModal(html) {
+    openModal('aiModal', 'aiModalBody', html);
+  }
+
+  function closeAiModal() {
+    closeModal('aiModal');
+  }
+
   function renderAiOverview(data) {
     if (data && typeof data === 'object' && data.error) {
       openAiModal(
-        '<div class="ai-modal-error">'
-        + '<div class="ai-modal-error-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>'
-        + '<div class="ai-modal-error-title">We couldn\'t build your explanation</div>'
-        + '<div class="ai-modal-error-text">' + escapeAiHtml(data.error) + '</div>'
+        '<div class="app-modal-error">'
+        + '<div class="app-modal-error-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>'
+        + '<div class="app-modal-error-title">We couldn\'t build your explanation</div>'
+        + '<div class="app-modal-error-text">' + escapeAiHtml(data.error) + '</div>'
         + '</div>'
       );
       return;
@@ -1053,7 +1181,7 @@
       // button reads as working even though it can't be pressed again.
       btn.classList.toggle('is-loading', busy);
       var label = btn.querySelector('span');
-      if (label) label.textContent = busy ? 'Generating\u2026' : 'Generate explanation';
+      if (label) label.textContent = busy ? 'Explaining\u2026' : 'Explain with AI';
     }
   }
 
@@ -1102,8 +1230,23 @@
 
   document.getElementById('aiModalClose').addEventListener('click', closeAiModal);
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeAiModal();
+    if (e.key !== 'Escape') return;
+    closeAiModal();
+    var budgetModal = document.getElementById('budgetModal');
+    if (budgetModal) { closeModal('budgetModal'); }
   });
+
+  // The budget sits in the corner of the total cost card; the reasoning
+  // opens in a window when the farmer asks for it.
+  (function () {
+    var btn = document.getElementById('budgetBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () { openModal('budgetModal'); });
+
+    var close = document.getElementById('budgetModalClose');
+    if (close) { close.addEventListener('click', function () { closeModal('budgetModal'); }); }
+  })();
 
   // "Your plan at a glance" stays closed until the farmer asks for it:
   // the header is enough to know the card is there.

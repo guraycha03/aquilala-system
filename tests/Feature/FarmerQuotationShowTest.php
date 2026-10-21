@@ -106,7 +106,7 @@ class FarmerQuotationShowTest extends TestCase
             // The explanation lives in a window, not on the page: the card
             // offers it, the modal shows it.
             ->assertSee('AI Explanation')
-            ->assertSee('Generate explanation')
+            ->assertSee('Explain with AI')
             ->assertSee('Your plan at a glance')
             ->assertSee('Supply stores')
             ->assertSee('Full Itemized Breakdown')
@@ -168,6 +168,25 @@ class FarmerQuotationShowTest extends TestCase
 
         $this->assertStringContainsString('id="aiModal"', $html);
         $this->assertStringContainsString('id="aiModalBody"', $html);
+    }
+
+    public function test_the_budget_opens_in_a_window_from_the_total_cost_card(): void
+    {
+        $farmer = $this->makeFarmer();
+        $quotation = $this->makeQuotation($farmer);
+
+        $quotation->update(['budget_cap' => 500, 'budget_strict' => false]);
+
+        $html = $this->actingAs($farmer)
+            ->get(route('farmer.quotations.show', $quotation))
+            ->assertOk()
+            ->getContent();
+
+        // The button sits inside the total cost card; the reasoning opens
+        // in a window instead of crowding the page.
+        $this->assertStringContainsString('id="budgetBtn"', $html);
+        $this->assertStringContainsString('id="budgetModal"', $html);
+        $this->assertStringContainsString('Your budget', $html);
     }
 
     public function test_ai_overview_returns_fallback_smart_response_when_no_api_key(): void
