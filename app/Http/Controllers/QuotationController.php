@@ -47,11 +47,15 @@ class QuotationController extends Controller
             ->latest()
             ->get();
 
-        $allQuotes = Quotation::where('user_id', Auth::id())->get();
+        // Active and expired are two different lists. The page the farmer
+        // works from is the live one; the estimates whose window has closed
+        // wait on the archive page.
+        $active = $quotations->filter(fn ($q) => ! $q->is_expired)->values();
+        $archivedCount = $quotations->count() - $active->count();
 
-        $totalQuotes = $allQuotes->count();
-        $computedCount = $allQuotes->filter(fn ($q) => ! $q->is_expired && $q->status === 'computed')->count();
-        $totalValue = $allQuotes->sum('estimated_total_cost');
+        $totalQuotes = $active->count();
+        $computedCount = $active->filter(fn ($q) => $q->status === 'computed')->count();
+        $totalValue = $active->sum('estimated_total_cost');
 
         // The crop filter offers the crops the system knows - the Sorsogon
         // library - not just the ones that happen to be in this farmer's
@@ -62,10 +66,36 @@ class QuotationController extends Controller
 
         // No "seen by stores" figure: a farmer should not be measured by
         // how often a store looked at their prices.
-        return view('farmer.quotations.index', compact(
-            'quotations', 'totalQuotes', 'computedCount', 'totalValue',
-            'cropOptions'
-        ));
+        return view('farmer.quotations.index', [
+            'quotations'     => $active,
+            'totalQuotes'    => $totalQuotes,
+            'computedCount'  => $computedCount,
+            'totalValue'     => $totalValue,
+            'cropOptions'    => $cropOptions,
+            'archivedCount'  => $archivedCount,
+        ]);
+    }
+
+    /**
+     * The farmer's archived estimates - the ones whose window has closed.
+     *
+     * They are kept, because the record of what a farmer costed out is
+     * theirs. They are not on the working page, because a closed estimate
+     * is not something to plan a season with.
+     */
+    public function farmerArchive()
+    {
+        $archived = Quotation::with('items.product.storeOwner')
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->get()
+            ->filter(fn ($q) => $q->is_expired)
+            ->values();
+
+        return view('farmer.quotations.archive', [
+            'archived' => $archived,
+            'archivedValue' => $archived->sum('estimated_total_cost'),
+        ]);
     }
 
     /**
@@ -239,6 +269,9 @@ class QuotationController extends Controller
             ],
             'generated' => $quotation->created_at->format('F d, Y'),
             'valid_until' => $quotation->valid_until?->format('F d, Y'),
+            // The window may already have closed. The advisor must know, or
+            // it will tell a farmer to go and act on a stale price.
+            'is_expired' => (bool) $quotation->is_expired,
             'items' => $items,
             'top_items' => $items->sortByDesc('subtotal')->take(5)->values(),
             'stores' => $quotation->items
@@ -273,6 +306,7 @@ WHAT MATTERS HERE (use whatever applies, skip the rest):
 - Budget: when a budget is present, explain what fits, what was left out, and why that trade-off is sensible for this plan.
 - Items marked "deferred" are NOT part of the total — they are inputs the farmer can add when the budget allows. Make that clear.
 - The total is what the plan costs now; per-hectare cost puts it in scale for the land area.
+- If "is_expired" is true, the window has already closed. Say so plainly, in its own short section, and point at generating a fresh estimate for current prices. Do not tell the farmer to go and act on these prices as if they still hold.
 
 STRUCTURE — use these markdown headings exactly:
 
@@ -403,6 +437,20 @@ PROMPT;
             ? implode(', ', $context['stores']->all())
             : 'the general catalog';
 
+        // An expired estimate is history, not a plan. Say so plainly, and
+        // point at the thing that fixes it, instead of advising the farmer
+        // to go and act on a price that has since moved.
+        if ($quotation->is_expired) {
+            $lines .= "\n".'### This Estimate Has Expired'."\n"
+                .'- It closed on **'.$context['valid_until'].'**. The figures above are the ones it was made with — they are kept as they were quoted, and the prices may have moved since.'."\n"
+                .'- Generate a new estimate for the same crop and area: it picks up the current prices and stock.'."\n\n";
+
+            $lines .= '### Next Move'."\n"
+                .'Generate a fresh estimate for the same crop, season and area, and use that one for planning.'."\n";
+
+            return $lines;
+        }
+
         $lines .= "\n".'### Practical Advice'."\n"
             .'- Run the numbers past **'.$storeText.'** — confirm the listed price and stock, since prices can move once the quote expires.'."\n"
             .'- Match the quantities to your real planting plan; whole bags and bottles are rounded up, so you may end up with a little extra.'."\n"
@@ -483,6 +531,7 @@ PROMPT;
             'budget_strict' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'selected_product_ids' => ['nullable', 'string'],
+            'valid_days' => ['nullable', 'integer', 'in:3,5,7'],
         ]);
 
         $cropType = ucwords(strtolower(trim($validated['crop_type'])));
@@ -512,6 +561,7 @@ PROMPT;
                 'budget_strict' => ! empty($validated['budget_strict']),
                 'selected_products' => ! empty($selectedProductIds) ? $selectedProductIds : null,
                 'notes' => $validated['notes'] ?? null,
+                'valid_days' => (int) ($validated['valid_days'] ?? CostQuotationEngine::DEFAULT_VALID_DAYS),
             ], Auth::user());
         } catch (\Exception $e) {
             // Fallback: create a basic quotation without items if engine fails
@@ -527,7 +577,7 @@ PROMPT;
                     'budget_cap' => isset($validated['budget_cap']) ? (float) $validated['budget_cap'] : null,
                     'estimated_total_cost' => 0,
                     'status' => Quotation::STATUS_COMPUTED,
-                    'valid_until' => now()->addDays(14),
+                    'valid_until' => now()->addDays((int) ($validated['valid_days'] ?? CostQuotationEngine::DEFAULT_VALID_DAYS)),
                     'notes' => $validated['notes'] ?? null,
                 ]);
 
@@ -735,19 +785,30 @@ PROMPT;
             ->flatten()
             ->filter(fn ($item) => $item->product && $item->product->user_id === $storeUserId);
 
-        // Demand metrics
-        $totalQuotations = $allQuotations->count();
-        $uniqueFarmers = $allQuotations->pluck('user_id')->filter()->unique()->count();
+        // Live demand and history are two different things. An estimate that
+        // expired a month ago is still part of the store's record, but it is
+        // not what is being asked for today - and a price that has since
+        // moved is not a current price. The figures below are the live ones;
+        // the expired ones stay in the table and in the history.
+        $liveQuotations = $allQuotations->filter(fn ($q) => ! $q->is_expired);
+        $liveItems = $liveQuotations->pluck('items')
+            ->flatten()
+            ->filter(fn ($item) => $item->product && $item->product->user_id === $storeUserId);
 
-        $recentQuotations = $allQuotations->where('created_at', '>=', now()->subDays(7))->count();
-        $priorQuotations = $allQuotations->filter(fn ($q) => $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
+        // Demand metrics
+        $totalQuotations = $liveQuotations->count();
+        $expiredQuotations = $allQuotations->count() - $totalQuotations;
+        $uniqueFarmers = $liveQuotations->pluck('user_id')->filter()->unique()->count();
+
+        $recentQuotations = $liveQuotations->where('created_at', '>=', now()->subDays(7))->count();
+        $priorQuotations = $liveQuotations->filter(fn ($q) => $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
         )->count();
 
-        $ownDemandValue = $storeItems->sum('subtotal');
-        $demandProductCount = $storeItems->pluck('product_id')->unique()->count();
+        $ownDemandValue = $liveItems->sum('subtotal');
+        $demandProductCount = $liveItems->pluck('product_id')->unique()->count();
 
-        // Products from this store that appear in quotations
-        $productDemand = $storeItems
+        // Products from this store that appear in live quotations
+        $productDemand = $liveItems
             ->groupBy('product_name')
             ->map(fn ($items) => [
                 'count' => $items->count(),
@@ -763,6 +824,7 @@ PROMPT;
             // from — the same rows, no second query.
             'quotations' => $allQuotations,
             'totalQuotations' => $totalQuotations,
+            'expiredQuotations' => $expiredQuotations,
             'uniqueFarmers' => $uniqueFarmers,
             'recentQuotations' => $recentQuotations,
             'priorQuotations' => $priorQuotations,

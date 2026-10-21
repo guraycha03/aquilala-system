@@ -572,7 +572,12 @@
               <div style="text-transform: capitalize; font-weight: 500;">{{ $q->crop_type }}</div>
               <div style="font-size: 12px; color: #879a8c; text-transform: capitalize;">{{ $q->season }} season</div>
             </td>
-            <td><span style="font-weight: 600;">{{ number_format($q->land_area, 1) }}</span> <span style="color: #879a8c; font-size: 12px;">ha</span></td>
+            <td>
+              <span style="font-weight: 600;">{{ number_format($q->land_area, 1) }}</span> <span style="color: #879a8c; font-size: 12px;">ha</span>
+              @if($q->is_expired)
+                <div style="font-size: 11px; color: #9aa3ad; margin-top: 4px; white-space: nowrap;">Expired {{ $q->valid_until->format('M d, Y') }}</div>
+              @endif
+            </td>
             <td><span class="product-count-badge">{{ $storeItems->count() }} product{{ $storeItems->count() === 1 ? '' : 's' }}</span></td>
             <td>
               @if($q->estimated_total_cost > 0)

@@ -44,6 +44,7 @@ return [
         'items' => [
             ['label' => 'Generate Quotation', 'routes' => ['farmer.quotations.request', 'farmer.quotations.products']],
             ['label' => 'My Cost Quotations', 'routes' => ['farmer.quotations.index', 'farmer.quotations.show', 'farmer.quotations.breakdown']],
+            ['label' => 'Archived Estimates', 'routes' => ['farmer.quotations.archive']],
         ],
     ],
     'farm-supplies' => [

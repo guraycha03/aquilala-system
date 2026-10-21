@@ -47,20 +47,33 @@ class StoreDemandService
             ->flatten()
             ->filter(fn ($item) => $item->product && (int) $item->product->user_id === $storeUserId);
 
-        $thisWeek = $quotations->where('created_at', '>=', now()->subDays(7))->count();
-        $lastWeek = $quotations->filter(
+        // Live demand and history are two different things. An estimate that
+        // expired a month ago is still part of the store's record, but it is
+        // not what is being asked for today - and a price that has since
+        // moved is not a current price. So the live figures leave expired
+        // quotations out, and the history keeps them.
+        $live = $quotations->filter(fn ($q) => ! $q->is_expired);
+        $liveItems = $live->pluck('items')
+            ->flatten()
+            ->filter(fn ($item) => $item->product && (int) $item->product->user_id === $storeUserId);
+
+        $thisWeek = $live->where('created_at', '>=', now()->subDays(7))->count();
+        $lastWeek = $live->filter(
             fn ($q) => $q->created_at->lt(now()->subDays(7)) && $q->created_at->gte(now()->subDays(14))
         )->count();
 
         return [
             'total_quotations'     => $quotations->count(),
-            'unique_farmers'       => $quotations->pluck('user_id')->filter()->unique()->count(),
+            'live_quotations'      => $live->count(),
+            'expired_quotations'   => $quotations->count() - $live->count(),
+            'unique_farmers'       => $live->pluck('user_id')->filter()->unique()->count(),
             'this_week'            => $thisWeek,
             'last_week'            => $lastWeek,
-            'own_products_value'   => round((float) $storeItems->sum('subtotal'), 2),
-            'total_value'          => round((float) $quotations->sum('estimated_total_cost'), 2),
-            'top_products'         => $this->topProducts($storeItems),
-            'top_crops'            => $this->topCrops($quotations),
+            'own_products_value'   => round((float) $liveItems->sum('subtotal'), 2),
+            'total_value'          => round((float) $live->sum('estimated_total_cost'), 2),
+            'top_products'         => $this->topProducts($liveItems),
+            'top_crops'            => $this->topCrops($live),
+            'history_value'        => round((float) $quotations->sum('estimated_total_cost'), 2),
         ];
     }
 

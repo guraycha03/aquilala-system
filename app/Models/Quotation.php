@@ -151,6 +151,73 @@ class Quotation extends Model
 
     // ── Scopes ─────────────────────────────────────────────────────
 
+    /**
+     * The quotations that are still live.
+     *
+     * A quotation with no window never expires.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where(fn ($q) => $q->whereNull('valid_until')->orWhere('valid_until', '>=', now()));
+    }
+
+    /**
+     * The quotations whose window has passed.
+     */
+    public function scopeExpired($query)
+    {
+        return $query->whereNotNull('valid_until')->where('valid_until', '<', now());
+    }
+
+    /**
+     * How many days are left, or null when the quotation never expires.
+     */
+    public function daysUntilExpiry(): ?int
+    {
+        if (! $this->valid_until) {
+            return null;
+        }
+
+        return (int) max(0, now()->diffInDays($this->valid_until, false));
+    }
+
+    /**
+     * The lines whose shelf price has moved since the estimate was made.
+     *
+     * A quoted cost is a snapshot: the number the farmer was given and
+     * planned around, and it never changes. When the store re-prices a
+     * product afterwards the estimate keeps its own figure, and the reader
+     * is told that the shelf price has moved.
+     *
+     * @return array<int, array{product_id: int, name: string, was: float, now: float}>
+     */
+    public function priceChanges(): array
+    {
+        $changes = [];
+
+        foreach ($this->items as $item) {
+            $product = $item->product;
+
+            if (! $product) {
+                continue;
+            }
+
+            $was = (float) $item->price_at_generation;
+            $now = (float) $product->price;
+
+            if (abs($now - $was) > 0.005) {
+                $changes[] = [
+                    'product_id' => (int) $item->product_id,
+                    'name'       => (string) $item->product_name,
+                    'was'        => $was,
+                    'now'        => $now,
+                ];
+            }
+        }
+
+        return $changes;
+    }
+
     public function scopePending($query)
     {
         return $query->where('status', self::STATUS_PENDING);

@@ -627,10 +627,29 @@
     </div>
   </div>
 
-  <!-- 7. Notes -->
+  <!-- 7. How long the estimate should hold -->
   <div class="q-block q-span">
     <div class="q-head">
       <span class="q-num">7</span>
+      <label class="input-label" for="valid_days">How long should this estimate hold? <span class="opt-tag">(optional)</span></label>
+    </div>
+    <div class="q-body">
+      <select name="valid_days" id="valid_days" class="input-field" style="max-width: 280px;">
+        <option value="7" {{ (int) old('valid_days', 7) === 7 ? 'selected' : '' }}>7 days &mdash; a week to plan with</option>
+        <option value="5" {{ (int) old('valid_days', 7) === 5 ? 'selected' : '' }}>5 days</option>
+        <option value="3" {{ (int) old('valid_days', 7) === 3 ? 'selected' : '' }}>3 days &mdash; prices move fast</option>
+      </select>
+      <p style="font-size: 12px; color: #94a3b8; margin: 8px 0 0 0; line-height: 1.5;">
+        The estimate is a snapshot of today&rsquo;s prices, so it is marked to expire after this window. When the window
+        closes, the estimate moves to your archive and a fresh one picks up the current prices.
+      </p>
+    </div>
+  </div>
+
+  <!-- 8. Notes -->
+  <div class="q-block q-span">
+    <div class="q-head">
+      <span class="q-num">8</span>
       <label for="notes" class="input-label">Additional notes <span class="opt-tag">(optional)</span></label>
     </div>
     <div class="q-body">
@@ -708,7 +727,7 @@
         </div>
       </div>
       <div class="im-note">
-        <strong>How the price works:</strong> recommended rate per hectare &times; your land area = quantity needed; quantity &times; current store price = each line. With a budget set, essentials always stay and optional items are listed as deferred so you can add them later. Quotations are valid for 14 days and are for planning — not a purchase commitment.
+        <strong>How the price works:</strong> recommended rate per hectare &times; your land area = quantity needed; quantity &times; current store price = each line. With a budget set, essentials always stay and optional items are listed as deferred so you can add them later. The estimate holds for the window you chose (3 to 7 days) and is for planning — not a purchase commitment. When the window closes it moves to your archive, and a new estimate picks up the current prices.
       </div>
     </div>
   </div>

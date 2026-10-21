@@ -64,6 +64,16 @@ class CostQuotationEngine
     const CONTINGENCY_RATE = 0.05; // 5%
 
     /**
+     * How long a quotation stays live.
+     *
+     * The capstone specification puts a quotation's "Valid Until" at 3 to 7
+     * days: long enough to plan a season's inputs, short enough that a
+     * price that moves is not quoted as if it were today's. The farmer
+     * picks the window; 7 days is the default.
+     */
+    const VALID_DAY_OPTIONS = [3, 5, 7];
+    const DEFAULT_VALID_DAYS = 7;
+    /**
      * Budget-fitting priority tiers (transparent category rule):
      * - situational: lime/irrigation lines the soil/weather rules added —
      *   the chosen field conditions justify them, so a budget never cuts them;
@@ -117,6 +127,14 @@ class CostQuotationEngine
         $landArea       = (float) $input['land_area'];
         $selectedIds    = $input['selected_products'] ?? [];
         $notes          = $input['notes'] ?? null;
+
+        // How long the estimate holds. The capstone spec puts a quotation's
+        // "Valid Until" at 3 to 7 days, to protect the farmer and the store
+        // from a price that moves; the farmer picks the window.
+        $validDays      = (int) ($input['valid_days'] ?? self::DEFAULT_VALID_DAYS);
+        if (! in_array($validDays, self::VALID_DAY_OPTIONS, true)) {
+            $validDays = self::DEFAULT_VALID_DAYS;
+        }
 
         // ─── 2. Determine what products to include ─────────────────
         // If specific products selected, use those; otherwise fetch all
@@ -417,7 +435,7 @@ class CostQuotationEngine
             'deferred_total'      => round(array_sum(array_column($deferredItems, 'subtotal')), 2),
             'shortfall'           => $shortfall,
             'budget_left'         => $budgetLeft,
-            'valid_until'         => now()->addDays(14)->format('Y-m-d H:i:s'),
+            'valid_until'         => now()->addDays($validDays)->format('Y-m-d H:i:s'),
             'quotation_number'    => 'QT-' . date('Y') . '-' . strtoupper(Str::random(6)),
         ];
 

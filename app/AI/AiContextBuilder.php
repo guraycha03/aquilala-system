@@ -616,6 +616,10 @@ class AiContextBuilder
             'total'            => (float) $quotation->estimated_total_cost,
             'status'           => $quotation->status,
             'valid_until'      => $quotation->valid_until?->toDateString(),
+            // Whether the window has already closed. The stored status is
+            // never "expired" - it is derived from valid_until - so the
+            // assistant would otherwise read a stale estimate as current.
+            'is_expired'       => (bool) $quotation->is_expired,
             'items'            => $quotation->items->map(fn ($item) => [
                 'product_name' => $item->product_name,
                 'quantity'     => (float) $item->calculated_quantity,

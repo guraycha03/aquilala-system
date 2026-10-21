@@ -98,6 +98,28 @@
     display: inline-flex; align-items: center; gap: 4px;
   }
 
+  /* The archive: where the closed estimates live, so the working page
+     holds only the ones that can still be planned with. */
+  .archive-link-row {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .archive-link {
+    display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+    background: #ffffff; border: 1px solid #E0E5DB; color: #344B38;
+    font-size: 12.5px; font-weight: 700; padding: 9px 14px; border-radius: 10px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .archive-link:hover { background: #F3F5F0; border-color: #C8D5C5; }
+  .archive-link svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .archive-count {
+    font-size: 11px; font-weight: 700; color: #4b5c50; background: #F0F2F1;
+    border-radius: 999px; padding: 2px 8px;
+  }
+  .archive-hint { font-size: 12px; color: #94a3b8; }
+  [data-theme="dark"] .archive-link { background: #1f2937; border-color: #334155; color: #d6f5e3; }
+  [data-theme="dark"] .archive-link:hover { background: #16301f; border-color: #4ade80; }
+  [data-theme="dark"] .archive-count { background: #263244; color: #a7f3d0; }
+
   /* Primary CTA */
   .cta-primary {
     background: linear-gradient(135deg, #143d23 0%, #1a5230 100%);
@@ -216,6 +238,17 @@
 </div>
 
 <!-- Quotations List -->
+@if($archivedCount > 0)
+  <div class="archive-link-row">
+    <a href="{{ route('farmer.quotations.archive') }}" class="archive-link">
+      <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+      <span>Archived estimates</span>
+      <span class="archive-count">{{ $archivedCount }}</span>
+    </a>
+    <span class="archive-hint">Estimates whose validity window has closed are kept here, out of the way.</span>
+  </div>
+@endif
+
 @if($quotations->count() > 0)
   <x-table-toolbar
       uid="quotes"
@@ -224,10 +257,6 @@
       noun="quotations"
       search-placeholder="Search by reference, crop, or season…"
       :filters="[
-          ['key' => 'status', 'label' => 'All statuses', 'options' => [
-              ['active', 'Active'],
-              ['expired', 'Expired'],
-          ]],
           ['key' => 'crop', 'label' => 'All crops', 'options' => $cropOptions],
           ['key' => 'season', 'label' => 'All seasons', 'options' => collect($quotations->pluck('season')->unique()->values())->map(fn($s) => [strtolower($s), ucfirst($s)])->all()],
       ]"
@@ -237,7 +266,6 @@
           ['key' => 'cost', 'dir' => -1, 'type' => 'num', 'label' => 'Estimated cost (highest)'],
           ['key' => 'cost', 'dir' => 1, 'type' => 'num', 'label' => 'Estimated cost (lowest)'],
           ['key' => 'crop', 'dir' => 1, 'type' => 'str', 'label' => 'Crop (A–Z)'],
-          ['key' => 'status', 'dir' => 1, 'type' => 'str', 'label' => 'Status (A–Z)'],
       ]"
     />
   @endif

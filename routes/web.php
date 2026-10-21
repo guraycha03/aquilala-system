@@ -259,6 +259,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
 
         // Quotations
         Route::get('/quotations', [QuotationController::class, 'farmerIndex'])->name('quotations.index');
+        Route::get('/quotations/archive', [QuotationController::class, 'farmerArchive'])->name('quotations.archive');
         Route::get('/quotations/request', [QuotationController::class, 'farmerCreate'])->name('quotations.request');
         Route::get('/quotations/products', [QuotationController::class, 'farmerProducts'])->name('quotations.products');
         Route::get('/quotations/{quotation}', [QuotationController::class, 'farmerShow'])->name('quotations.show');

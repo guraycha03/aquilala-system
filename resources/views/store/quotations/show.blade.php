@@ -117,6 +117,12 @@
   .q-empty { text-align: center; padding: 40px; color: #879a8c; }
   .q-flash-text { font-size: 14px; color: #3f5c46; font-weight: 600; }
   .q-flash { background: #F4F8F4; border: 1px solid #D6E6D8; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+  .q-notice { border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; }
+  .q-notice-title { font-size: 13.5px; font-weight: 700; color: #6B5F2A; }
+  .q-notice-text { font-size: 12.5px; color: #7A6E3F; line-height: 1.55; margin-top: 2px; }
+  [data-theme="dark"] .q-notice { background: rgba(15, 23, 42, 0.72) !important; border-color: #334155 !important; }
+  [data-theme="dark"] .q-notice-title { color: #e7dfbd; }
+  [data-theme="dark"] .q-notice-text { color: #c9c2a4; }
 
   /* The status chip takes its colours from the model as variables, so the
      dark theme can repaint the whole chip in one place. */
@@ -154,6 +160,20 @@
       <svg viewBox="0 0 24 24" width="16" height="16" stroke="#648268" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <span class="q-flash-text">{{ session('success') }}</span>
+  </div>
+@endif
+
+{{-- An expired estimate is history, not a price list. The numbers below are
+     the ones the farmer was given; the shelf may have moved since. --}}
+@if($quotation->is_expired)
+  <div class="q-notice" style="background: #FAF8F0; border: 1px solid #E8E2CE;">
+    <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(148,163,184,0.14); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg viewBox="0 0 24 24" width="16" height="16" stroke="#8A7C3E" stroke-width="2" fill="none"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+    </div>
+    <div>
+      <div class="q-notice-title">This estimate expired on {{ $quotation->valid_until->format('M d, Y') }}</div>
+      <div class="q-notice-text">The prices below are the ones the farmer was given and planned around. They are kept as they were quoted &mdash; the shelf prices may have moved since.</div>
+    </div>
   </div>
 @endif
 
@@ -364,4 +384,50 @@
     @endif
   </div>
 </div>
+
+{{-- The quoted cost is fixed: it is the number the farmer was given and
+     planned around, so it never changes. When the shelf price has moved
+     since, the reader is told - at the bottom, where the totals are. --}}
+@php $priceChanges = $quotation->priceChanges(); @endphp
+@if($priceChanges !== [])
+  <div class="detail-card" style="margin-top: 20px;">
+    <div class="detail-card-header">
+      <h2 class="q-heading">A price has changed since this estimate</h2>
+    </div>
+    <div class="detail-card-body">
+      <p class="q-muted" style="margin: 0 0 12px 0; line-height: 1.6;">
+        The estimate keeps the price it was made with &mdash; that is the cost the farmer planned around. Your
+        current price for {{ count($priceChanges) === 1 ? 'that product is' : 'those products are' }} different:
+      </p>
+      <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+        <div class="app-scroll">
+          <table class="data-table quotation-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quoted price</th>
+                <th style="text-align: right;">Your price now</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($priceChanges as $change)
+                <tr>
+                  <td>
+                    <div class="q-product-name">{{ $change['name'] }}</div>
+                  </td>
+                  <td class="q-muted">₱{{ number_format($change['was'], 2) }}</td>
+                  <td class="q-money" style="text-align: right;">₱{{ number_format($change['now'], 2) }}</td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+        <div class="app-scrollbar">
+          <div class="app-scrollbar-track"></div>
+          <div class="app-scrollbar-thumb"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+@endif
 @endsection

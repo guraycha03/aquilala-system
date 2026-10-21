@@ -957,6 +957,16 @@ class AquilalaAssistant
         }
 
         $lines[] = '';
+
+        // An expired estimate is history. Say so plainly, instead of sending
+        // the reader off to act on a price that has since moved.
+        if (! empty($quotation['is_expired'])) {
+            $lines[] = '**This estimate has expired** (its window closed on ' . $quotation['valid_until'] . '). '
+                . 'The figures are the ones it was made with and the prices may have moved since. '
+                . 'Generate a new estimate for current prices and stock.';
+            $lines[] = '';
+        }
+
         $lines[] = 'Open **Cost Estimates** for the itemized breakdown. These figures come from the Aquilala formulas and live catalog prices.';
 
         return implode("\n", $lines);
