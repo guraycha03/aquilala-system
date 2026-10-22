@@ -245,8 +245,131 @@ class NotificationPanelTest extends TestCase
     }
 
     // ────────────────────────────────────────────────────────────
+    //  4. A notice is a door: it opens the page it is about
+    // ────────────────────────────────────────────────────────────
+
+    public function test_a_store_notice_opens_the_quotation_it_is_about(): void
+    {
+        $quotation = $this->makeQuotation($this->farmer);
+
+        $this->actingAs($this->farmer);
+        \App\Services\ActivityLogger::quotationCreated($quotation);
+
+        $panel = $this->actingAs($this->store)
+            ->getJson(route('store.notifications.index'))
+            ->assertOk();
+
+        $url = $panel->json('items.0.url');
+        $this->assertNotNull($url, 'A store notice must lead somewhere.');
+        $this->assertStringContainsString('/store/quotations/' . $quotation->id, $url);
+
+        // And the link opens the estimate the notice is about.
+        $this->actingAs($this->store)->get($url)->assertOk();
+    }
+
+    public function test_an_admin_notice_about_a_planting_request_opens_the_plantings_page(): void
+    {
+        $crop = $this->makeFarmerCrop($this->farmer);
+
+        $this->actingAs($this->farmer);
+        \App\Services\ActivityLogger::cropPlanted($crop);
+
+        $panel = $this->actingAs($this->admin)
+            ->getJson(route('admin.notifications.index'))
+            ->assertOk();
+
+        $url = $panel->json('items.0.url');
+        $this->assertNotNull($url, 'An admin notice must lead somewhere.');
+        $this->assertStringContainsString('/admin/plantings', $url);
+        $this->assertStringContainsString('planting-' . $crop->id, $url);
+
+        // The row the notice points at is on that page.
+        $this->actingAs($this->admin)
+            ->get(route('admin.plantings.index'))
+            ->assertOk()
+            ->assertSee('id="planting-' . $crop->id . '"', false);
+    }
+
+    public function test_a_farmer_notice_about_an_event_opens_the_calendar_on_that_event(): void
+    {
+        $event = \App\Models\AssociationEvent::create([
+            'title'       => 'Irrigators Meeting',
+            'event_type'  => 'meeting',
+            'event_date'  => now()->addDays(5),
+            'created_by'  => $this->admin->id,
+        ]);
+
+        $this->actingAs($this->admin);
+        \App\Services\ActivityLogger::eventCreated($event);
+
+        $panel = $this->actingAs($this->farmer)
+            ->getJson(route('farmer.notifications.index'))
+            ->assertOk();
+
+        $url = $panel->json('items.0.url');
+        $this->assertNotNull($url, 'A farmer notice must lead somewhere.');
+        $this->assertStringContainsString('/farmer/calendar/events', $url);
+        $this->assertStringContainsString('event-' . $event->id, $url);
+
+        $this->actingAs($this->farmer)
+            ->get(route('farmer.calendar.events'))
+            ->assertOk()
+            ->assertSee('id="event-' . $event->id . '"', false);
+    }
+
+    public function test_a_farmer_notice_about_a_decision_opens_their_planting(): void
+    {
+        $crop = $this->makeFarmerCrop($this->farmer);
+
+        $this->actingAs($this->admin);
+        \App\Services\ActivityLogger::cropConfirmed($crop);
+
+        $panel = $this->actingAs($this->farmer)
+            ->getJson(route('farmer.notifications.index'))
+            ->assertOk();
+
+        $url = $panel->json('items.0.url');
+        $this->assertNotNull($url, 'A farmer notice must lead somewhere.');
+        $this->assertStringContainsString('/farmer/crops/' . $crop->id, $url);
+
+        $this->actingAs($this->farmer)->get($url)->assertOk();
+    }
+
+    public function test_the_notifications_page_links_each_notice_to_its_page(): void
+    {
+        $quotation = $this->makeQuotation($this->farmer);
+
+        $this->actingAs($this->farmer);
+        \App\Services\ActivityLogger::quotationCreated($quotation);
+
+        $this->actingAs($this->store)
+            ->get(route('store.notifications.index'))
+            ->assertOk()
+            ->assertSee(route('store.quotations.show', $quotation), false);
+    }
+
+    // ────────────────────────────────────────────────────────────
     //  Helpers
     // ────────────────────────────────────────────────────────────
+
+    private function makeFarmerCrop(User $farmer)
+    {
+        $crop = \App\Models\Crop::firstOrCreate(
+            ['name' => 'Rice'],
+            ['category' => 'grain', 'days_to_harvest' => 120]
+        );
+
+        return \App\Models\FarmerCrop::create([
+            'user_id'         => $farmer->id,
+            'crop_id'         => $crop->id,
+            'batch_name'      => 'BATCH-' . strtoupper(substr(md5(uniqid('', true)), 0, 6)),
+            'season'          => 'wet',
+            'land_area'       => 1.5,
+            'land_area_unit'  => 'ha',
+            'planting_date'   => now()->toDateString(),
+            'confirmation_status' => \App\Models\FarmerCrop::CONFIRMATION_PENDING,
+        ]);
+    }
 
     private function roleFor(string $prefix): string
     {

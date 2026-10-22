@@ -40,6 +40,10 @@ class FarmerNotificationController extends Controller
             ->paginate(12)
             ->withQueryString();
 
+        // Each notice carries the page it is about, so a reader can click
+        // it and land on the thing they can act on.
+        $this->feed->attachTargets($user, $notifications->getCollection());
+
         return view('notifications.index', [
             'notifications' => $notifications,
             'unreadCount'   => $this->feed->unreadCount($user),

@@ -32,10 +32,14 @@ class AdminNotificationController extends Controller
         }
 
         $notifications = $this->feed->queryFor($user)
-            ->with(['user', 'actor'])
+            ->with(['user', 'actor', 'subject'])
             ->latest()
             ->paginate(12)
             ->withQueryString();
+
+        // Each notice carries the page it is about: the planting request
+        // waiting for a decision, the harvest report, the estimate.
+        $this->feed->attachTargets($user, $notifications->getCollection());
 
         return view('notifications.index', [
             'notifications' => $notifications,

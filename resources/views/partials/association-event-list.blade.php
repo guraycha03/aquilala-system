@@ -13,6 +13,9 @@
     .ael-count { font-size: 12px; font-weight: 700; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 20px; }
     .ael-card { display: flex; flex-direction: column; background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px 18px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
     .ael-card.is-past { opacity: .72; }
+    /* A notice about an event opens this page on that event: the card it
+       points at says so. */
+    .ael-card:target { border-color: #648268; box-shadow: 0 0 0 3px rgba(100, 130, 104, .18); }
     /* Top row: date sits above the content on the left, edit/remove opposite it. */
     .ael-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
     .ael-date { display: inline-flex; align-items: baseline; gap: 5px; }
@@ -42,7 +45,7 @@
         <div class="ael-empty">No upcoming events yet. Check back soon.</div>
     @else
         @foreach($upcoming as $ev)
-            <div class="ael-card">
+            <div class="ael-card" id="event-{{ $ev->id }}">
                 <div class="ael-card-head">
                     <div class="ael-date">
                         <span class="dow">{{ $ev->event_date->format('D') }},</span>
@@ -103,7 +106,7 @@
         <div class="ael-empty">No past events recorded.</div>
     @else
         @foreach($past as $ev)
-            <div class="ael-card is-past">
+            <div class="ael-card is-past" id="event-{{ $ev->id }}">
                 <div class="ael-card-head">
                     <div class="ael-date">
                         <span class="dow">{{ $ev->event_date->format('D') }},</span>

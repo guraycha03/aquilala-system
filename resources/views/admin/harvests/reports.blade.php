@@ -22,6 +22,10 @@
   .yield-cell { font-variant-numeric: tabular-nums; }
   .yield-tons { font-size: 11.5px; color: #94a3b8; font-weight: 600; }
 
+  /* A notice about a harvest report opens this page on that report. */
+  #adminHarvestsTable tbody tr:target > td { background: #F1F6F1; }
+  #adminHarvestsTable tbody tr:target > td:first-child { box-shadow: inset 3px 0 0 #648268; }
+
   .btn-export {
     appearance: none; -webkit-appearance: none; height: 42px; padding: 0 20px;
     font-size: 13px; font-weight: 700; border-radius: 10px; border: none;
@@ -91,7 +95,8 @@
           </thead>
           <tbody>
             @forelse($reports as $report)
-              <tr data-search="{{ strtolower(($report->farmer?->name ?? '') . ' ' . ($report->crop_type ?? '') . ' ' . ($report->season ?? '')) }}"
+              <tr id="report-{{ $report->id }}"
+                  data-search="{{ strtolower(($report->farmer?->name ?? '') . ' ' . ($report->crop_type ?? '') . ' ' . ($report->season ?? '')) }}"
                   data-farmer="{{ strtolower($report->farmer?->name ?? '') }}"
                   data-crop="{{ strtolower($report->crop_type ?? '') }}"
                   data-season="{{ strtolower($report->season ?? '') }}"

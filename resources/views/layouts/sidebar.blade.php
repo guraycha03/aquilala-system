@@ -131,7 +131,7 @@
   <script src="{{ asset('js/alpine.min.js') }}" defer></script>
   {{-- Display theme: every rule is scoped to [data-theme="dark"], so this file
        costs nothing while the user is in light mode. --}}
-  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=11">
+  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=12">
   {{-- App lockdown: kills text selection, copy/cut, long-press & right-click
        browser menus, and printing outside form fields — applies to every page
        and role, so the portal behaves like a native app and long-press is
@@ -563,6 +563,14 @@
     .nmodal-mid { flex: 1; min-width: 0; }
     .nmodal-text { font-size: 13.5px; font-weight: 500; color: #344B38; line-height: 1.5; }
     .nmodal-item.is-unread .nmodal-text { font-weight: 600; color: #1f2d24; }
+    /* A notice that leads somewhere says so: it reads as text until the
+       reader reaches for it. */
+    .nmodal-link {
+      display: block; text-decoration: none; color: inherit;
+      border-radius: 6px; transition: color 0.15s ease;
+    }
+    .nmodal-link:hover { color: #166534; text-decoration: underline; text-underline-offset: 2px; }
+    .nmodal-item.is-unread .nmodal-link:hover { color: #14532d; }
     .nmodal-meta { font-size: 11.5px; color: #94a3b8; font-weight: 500; margin-top: 4px; }
     .nmodal-state {
       display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; margin-right: 7px;
@@ -1410,12 +1418,24 @@
           <div class="nmodal-item{{ $item['unread'] ? ' is-unread' : '' }}">
             <span class="nmodal-dot"></span>
             <div class="nmodal-mid">
-              <div class="nmodal-text">
-                @if($item['state_label'])
-                  <span class="nmodal-state nmodal-state--{{ $item['state'] }}">{{ $item['state_label'] }}</span>
-                @endif{{-- the notice itself --}}
-                {{ $item['text'] }}
-              </div>
+              {{-- The notice is a door: clicking it opens the page the
+                   notice is about. --}}
+              @if(!empty($item['url']))
+                <a class="nmodal-text nmodal-link" href="{{ $item['url'] }}"
+                   @if($item['unread'] && $item['read_url']) data-read-url="{{ $item['read_url'] }}" @endif>
+                  @if($item['state_label'])
+                    <span class="nmodal-state nmodal-state--{{ $item['state'] }}">{{ $item['state_label'] }}</span>
+                  @endif{{-- the notice itself --}}
+                  {{ $item['text'] }}
+                </a>
+              @else
+                <div class="nmodal-text">
+                  @if($item['state_label'])
+                    <span class="nmodal-state nmodal-state--{{ $item['state'] }}">{{ $item['state_label'] }}</span>
+                  @endif{{-- the notice itself --}}
+                  {{ $item['text'] }}
+                </div>
+              @endif
               <div class="nmodal-meta">
                 {{ $item['meta'] }}@if($item['actor']) &middot; {{ $item['actor'] }}@endif
               </div>
@@ -1794,6 +1814,23 @@
       modal.addEventListener('click', function (e) {
         if (e.target.closest('[data-notif-close]')) {
           close();
+          return;
+        }
+
+        // Clicking a notice opens the page it is about, and the notice
+        // counts as read on the way: it has been seen.
+        var link = e.target.closest('.nmodal-link');
+        if (link) {
+          var readUrl = link.getAttribute('data-read-url');
+          if (readUrl) {
+            post(readUrl).then(function (data) {
+              var row = link.closest('.nmodal-item');
+              if (row) row.classList.remove('is-unread');
+              var done = link.closest('.nmodal-item').querySelector('.nmodal-done');
+              if (done) done.remove();
+              setCount(parseInt(data.unread, 10) || 0);
+            }).catch(function () { /* the page opens either way */ });
+          }
           return;
         }
 

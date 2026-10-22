@@ -81,6 +81,11 @@
   .pr-modal-body textarea:focus { outline: none; border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(22, 163, 74, .12); }
   .pr-modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 
+  /* A notice about a planting request opens this page on that request,
+     so the row the admin can act on says so. */
+  .pr-table tbody tr:target > td { background: #F1F6F1; }
+  .pr-table tbody tr:target > td:first-child { box-shadow: inset 3px 0 0 #648268; }
+
   @media (max-width: 760px) {
     .pr-table thead { display: none; }
     .pr-table, .pr-table tbody, .pr-table tr, .pr-table td { display: block; width: 100%; }
@@ -170,7 +175,8 @@
       </thead>
       <tbody>
         @foreach($crops as $crop)
-          <tr data-crop="{{ strtolower($crop->crop?->name ?? '') }}"
+          <tr id="planting-{{ $crop->id }}"
+              data-crop="{{ strtolower($crop->crop?->name ?? '') }}"
               data-farmer="{{ strtolower($crop->user?->name ?? '') }}"
               data-planted="{{ $crop->planting_date?->format('Y-m-d') ?? '' }}">
             <td>

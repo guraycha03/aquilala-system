@@ -157,10 +157,14 @@ class StoreOwnerActivityController extends Controller
         }
 
         $notifications = $this->feed->queryFor($user)
-            ->with(['user', 'actor'])
+            ->with(['user', 'actor', 'subject'])
             ->latest()
             ->paginate(12)
             ->withQueryString();
+
+        // Each notice carries the estimate it is about, so the store can
+        // click it and read the full quotation.
+        $this->feed->attachTargets($user, $notifications->getCollection());
 
         return view('notifications.index', [
             'notifications' => $notifications,

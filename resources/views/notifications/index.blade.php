@@ -66,6 +66,15 @@
   .nf-title { font-size: 14px; font-weight: 500; color: #344B38; line-height: 1.5; }
   .nf-item.is-unread .nf-title { font-weight: 600; color: #1f2d24; }
 
+  /* A notice that leads somewhere reads as text until the reader reaches
+     for it — then it says so. */
+  .nf-link {
+    display: block; text-decoration: none; color: inherit;
+    border-radius: 6px; transition: color 0.15s ease;
+  }
+  .nf-link:hover { color: #166534; text-decoration: underline; text-underline-offset: 2px; }
+  .nf-item.is-unread .nf-link:hover { color: #14532d; }
+
   /* Live status chip: where the notified event sits right now. The state is
      recomputed on every render, so a finished event reads "Done" instead of
      keeping the "Upcoming" wording it was born with. */
@@ -168,12 +177,25 @@
             <div class="nf-item {{ $notification->read_at ? '' : 'is-unread' }}">
               <span class="nf-dot"></span>
               <div class="nf-mid">
-                <div class="nf-title">
-                  @if($notification->event_state)
-                    <span class="nf-state nf-state--{{ $notification->event_state }}">{{ $notification->event_state_label }}</span>
-                  @endif
-                  {{ $notification->display_description }}
-                </div>
+                {{-- A notice is a door: it opens the page the notice is
+                     about — the planting request waiting for a decision,
+                     the event on the calendar, the estimate. --}}
+                @if(!empty($notification->target_url))
+                  <a class="nf-title nf-link" href="{{ $notification->target_url }}"
+                     @if(!$notification->read_at) data-read-url="{{ route($routePrefix . '.read', $notification->id) }}" @endif>
+                    @if($notification->event_state)
+                      <span class="nf-state nf-state--{{ $notification->event_state }}">{{ $notification->event_state_label }}</span>
+                    @endif
+                    {{ $notification->display_description }}
+                  </a>
+                @else
+                  <div class="nf-title">
+                    @if($notification->event_state)
+                      <span class="nf-state nf-state--{{ $notification->event_state }}">{{ $notification->event_state_label }}</span>
+                    @endif
+                    {{ $notification->display_description }}
+                  </div>
+                @endif
                 <div class="nf-meta">
                   <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   <span>{{ optional($notification->created_at)->diffForHumans() }}</span>
@@ -224,6 +246,40 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var toastEl = document.getElementById('nfToast');
   var toastMsg = document.getElementById('nfToastMsg');
+
+  // Clicking a notice opens the page it is about, and counts as reading
+  // it on the way: the row loses its unread dot, the badge counts down.
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('.nf-link[data-read-url]');
+    if (!link) return;
+
+    var url = link.getAttribute('data-read-url');
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    if (!url || !meta) return;
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRF-TOKEN': meta.getAttribute('content'), 'Accept': 'application/json' },
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      var row = link.closest('.nf-item');
+      if (row) {
+        row.classList.remove('is-unread');
+        var dot = row.querySelector('.nf-dot');
+        if (dot) dot.style.background = 'transparent';
+        var dismiss = row.querySelector('.nf-dismiss');
+        if (dismiss) dismiss.remove();
+      }
+      var pill = document.querySelector('.nf-unread-pill b');
+      if (pill && typeof data.unread === 'number') {
+        pill.textContent = data.unread;
+        if (!data.unread) {
+          var pillWrap = pill.closest('.nf-unread-pill');
+          if (pillWrap) pillWrap.remove();
+        }
+      }
+    }).catch(function () { /* the page opens either way */ });
+  });
+
   @if (session('success'))
     if (toastEl && toastMsg) {
       toastMsg.textContent = @js(session('success'));

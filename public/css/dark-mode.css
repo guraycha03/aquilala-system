@@ -1208,7 +1208,9 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .nf-hint a { color: #a8cdb2 !important }
 [data-theme="dark"] .nf-hint svg { stroke: #a8cdb2 !important }
 [data-theme="dark"] .nf-item + .nf-item { border-color: #334155 !important }
+[data-theme="dark"] .nf-item.is-unread .nf-link:hover { color: #a8cdb2 !important }
 [data-theme="dark"] .nf-item.is-unread .nf-title { color: #a8cdb2 !important }
+[data-theme="dark"] .nf-link:hover { color: #a8cdb2 !important }
 [data-theme="dark"] .nf-panel { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
 [data-theme="dark"] .nf-state { border-color: #2f5d3c !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #e2e8f0 !important }
 [data-theme="dark"] .nf-state--done { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
@@ -1231,7 +1233,9 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .nmodal-head h2 { color: #a8cdb2 !important }
 [data-theme="dark"] .nmodal-head p { color: #e2e8f0 !important }
 [data-theme="dark"] .nmodal-item + .nmodal-item { border-color: #334155 !important }
+[data-theme="dark"] .nmodal-item.is-unread .nmodal-link:hover { color: #a8cdb2 !important }
 [data-theme="dark"] .nmodal-item.is-unread .nmodal-text { color: #a8cdb2 !important }
+[data-theme="dark"] .nmodal-link:hover { color: #a8cdb2 !important }
 [data-theme="dark"] .nmodal-readall { border-color: #2f5d3c !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #e2e8f0 !important }
 [data-theme="dark"] .nmodal-readall:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important; color: #a8cdb2 !important }
 [data-theme="dark"] .nmodal-state { border-color: #2f5d3c !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #e2e8f0 !important }
@@ -1314,6 +1318,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .pr-modal-sub { color: #93c5fd !important }
 [data-theme="dark"] .pr-modal-title { color: #93c5fd !important }
 [data-theme="dark"] .pr-remarks { color: #fcd34d !important }
+[data-theme="dark"] .pr-table tbody tr:target > td { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 @media (max-width: 760px) { [data-theme="dark"] .pr-table tr { border-color: #334155 !important } }
 [data-theme="dark"] .pr-table-wrap { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
 [data-theme="dark"] .preview-banner { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important; color: #93c5fd !important }
@@ -1743,6 +1748,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] [data-theme="dark"] .kpi-card:hover { border-color: #2f5d3c !important }
 [data-theme="dark"] [data-theme="dark"] .pb-sep { color: #93c5fd !important }
 [data-theme="dark"] [data-theme="dark"] .product-image-container > .lucide { stroke: #93c5fd !important }
+[data-theme="dark"] #adminHarvestsTable tbody tr:target > td { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] #loginForm input:not([type="hidden"]) { color: #e2e8f0 !important }
 [data-theme="dark"] #pickCount { color: #93c5fd !important }
 [data-theme="dark"] a.push-hint:hover { background-color: hsl(48, 96%, 17%) !important }
