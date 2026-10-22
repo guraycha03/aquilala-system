@@ -41,6 +41,64 @@ class ProfilePhotoTest extends TestCase
     //  The picture
     // ────────────────────────────────────────────────────────────
 
+    public function test_a_member_updates_their_own_address(): void
+    {
+        $farmer = $this->makeUser('Ana Farmer', 'farmer');
+
+        $this->actingAs($farmer)
+            ->patch(route('profile.address.update'), [
+                'address'  => 'Purok 3, Brgy. Aquino',
+                'barangay' => 'Aquino',
+                'city'     => 'Bulan',
+                'province' => 'Sorsogon',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $farmer->refresh();
+        $this->assertSame('Purok 3, Brgy. Aquino', $farmer->address);
+        $this->assertSame('Aquino', $farmer->barangay);
+        $this->assertSame('Bulan', $farmer->city);
+        $this->assertSame('Sorsogon', $farmer->province);
+    }
+
+    public function test_a_member_cannot_change_anything_but_the_address(): void
+    {
+        $farmer = $this->makeUser('Ana Farmer', 'farmer');
+
+        // The rest of the profile is the association's record: the
+        // address route must not carry a way to change any of it.
+        $this->actingAs($farmer)
+            ->patch(route('profile.address.update'), [
+                'address' => 'Purok 3',
+                'name'    => 'Someone Else',
+                'role'    => 'admin',
+                'status'  => 'active',
+                'phone'   => '+639000000000',
+            ])
+            ->assertRedirect();
+
+        $farmer->refresh();
+        $this->assertSame('Ana Farmer', $farmer->name);
+        $this->assertSame('farmer', $farmer->role);
+        $this->assertSame('Purok 3', $farmer->address);
+    }
+
+    public function test_the_association_address_is_corrected_from_the_admin_side(): void
+    {
+        $admin = $this->makeUser('Chair Person', 'admin');
+
+        $this->actingAs($admin)
+            ->patch(route('profile.address.update'), ['city' => 'Bulan'])
+            ->assertForbidden();
+    }
+
+    public function test_guests_cannot_change_an_address(): void
+    {
+        $this->patch(route('profile.address.update'), ['city' => 'Bulan'])
+            ->assertRedirect(route('login'));
+    }
+
     public function test_the_picture_is_changed_from_the_avatar_itself_and_not_from_a_card(): void
     {
         $farmer = $this->makeUser('Ana Farmer', 'farmer');

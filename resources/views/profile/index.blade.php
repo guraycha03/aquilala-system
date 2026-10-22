@@ -57,16 +57,23 @@
   .profile-photo-menu__item svg { width: 15px; height: 15px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .profile-photo-menu__item--danger { color: #9b2c2c; }
   .profile-photo-menu__item--danger:hover { background: #FDF2F2; }
-  .profile-photo-menu__hint {
-    margin: 6px 4px 2px; padding-top: 8px; border-top: 1px solid #F0F2F1;
-    font-size: 11.5px; color: #94a3b8; line-height: 1.5;
-  }
   [data-theme="dark"] .profile-photo-menu { background: #111827; border-color: #334155; }
   [data-theme="dark"] .profile-photo-menu__item { color: #e2e8f0; }
   [data-theme="dark"] .profile-photo-menu__item:hover { background: #1f2937; }
   [data-theme="dark"] .profile-photo-menu__item--danger { color: #fca5a5; }
   [data-theme="dark"] .profile-photo-menu__item--danger:hover { background: #3b1220; }
-  [data-theme="dark"] .profile-photo-menu__hint { border-top-color: #334155; color: #94a3b8; }
+
+  /* The notice under the name: what happened to the picture, or why it
+     was refused. It is only there when there is something to say — no
+     standing reminder of what a picture picker already shows. */
+  .profile-photo-notice {
+    margin: 10px 0 0 0; font-size: 12.5px; line-height: 1.55;
+    color: #5F6F62; max-width: 46ch;
+  }
+  .profile-photo-notice[hidden] { display: none; }
+  .profile-photo-notice.is-error { color: #9b2c2c; }
+  [data-theme="dark"] .profile-photo-notice { color: #9fb3a6; }
+  [data-theme="dark"] .profile-photo-notice.is-error { color: #fca5a5; }
 
   /* The picture at full size, over the page. */
   .profile-photo-view {
@@ -105,6 +112,9 @@
   }
 
   .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }
+  /* The grid's own `display` would beat the UA's [hidden] rule, so the
+     hidden attribute needs saying here. */
+  .profile-grid[hidden] { display: none; }
   .profile-card-panel + .profile-card-panel .profile-grid { margin-top: 0; }
 
   .p-item { padding: 12px 14px; border-radius: 12px; background: #f8fafc; border: 1px solid #eef1f4; }
@@ -112,6 +122,89 @@
   .p-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 4px; }
   .p-value { font-size: 13.5px; font-weight: 600; color: #1e293b; line-height: 1.45; word-break: break-word; }
   .p-value.muted { color: #94a3b8; font-weight: 500; }
+
+  /* ── The address: the one part a member keeps current ─────────
+     A small pencil opens the fields in place; saving posts them back
+     and the page returns with the new address. */
+  .profile-section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 14px;
+  }
+  .profile-section-head .profile-section-title { margin-bottom: 0; }
+  .p-edit__toggle {
+    width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+    border: 1px solid #E0E5DB; background: #ffffff; color: #647263;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .p-edit__toggle:hover { background: #F3F5F0; border-color: #C8D5C5; color: #143d23; }
+  .p-edit__toggle svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  [data-theme="dark"] .p-edit__toggle { background: #1f2937; border-color: #334155; color: #9fb3a6; }
+  [data-theme="dark"] .p-edit__toggle:hover { background: #16301f; border-color: #4ade80; color: #d6f5e3; }
+
+  .p-input {
+    width: 100%; box-sizing: border-box;
+    padding: 9px 11px; border: 1px solid #E0E5DB; border-radius: 10px;
+    background: #ffffff; font-family: inherit; font-size: 13.5px; color: #1e293b;
+  }
+  .p-input:focus {
+    outline: none; border-color: #648268; box-shadow: 0 0 0 3px rgba(100, 130, 104, 0.12);
+  }
+  [data-theme="dark"] .p-input { background: #0f172a; border-color: #334155; color: #e2e8f0; }
+
+  /* Editing happens where the address already is: the value gives way
+     to its own field, in the same row. */
+  .p-item .p-input { display: none; margin-top: 2px; }
+  .profile-card-panel.is-editing .p-item .p-value { display: none; }
+  .profile-card-panel.is-editing .p-item .p-input { display: block; }
+
+  .p-edit__actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+  .p-edit__actions[hidden] { display: none; }
+  .p-btn {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    border-radius: 10px; padding: 9px 16px;
+    font-size: 13px; font-weight: 700; font-family: inherit;
+    border: 1px solid #E0E5DB; background: #ffffff; color: #344B38;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .p-btn:hover { background: #F3F5F0; border-color: #C8D5C5; }
+  .p-btn--primary { background: #143d23; border-color: #143d23; color: #ffffff; }
+  .p-btn--primary:hover { background: #1a5230; border-color: #1a5230; }
+  [data-theme="dark"] .p-btn { background: #1f2937; border-color: #334155; color: #d6f5e3; }
+  [data-theme="dark"] .p-btn--primary { background: #1a5230; border-color: #1a5230; color: #ffffff; }
+
+  /* The confirmation before anything is saved. */
+  .p-confirm {
+    position: fixed; inset: 0; z-index: 1300;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px; background: rgba(15, 23, 42, 0.55);
+  }
+  .p-confirm[hidden] { display: none; }
+  .p-confirm__card {
+    width: min(420px, 100%); background: #ffffff;
+    border: 1px solid #E0E5DB; border-radius: 16px; padding: 22px 24px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.32);
+  }
+  .p-confirm__card h3 { font-size: 16px; font-weight: 700; color: #1e2922; margin: 0 0 8px 0; }
+  .p-confirm__text { font-size: 13px; color: #647263; margin: 0 0 8px 0; }
+  .p-confirm__address {
+    font-size: 13.5px; font-weight: 700; color: #143d23; margin: 0;
+    background: #F3F5F0; border: 1px solid #E0E5DB; border-radius: 10px;
+    padding: 11px 13px; line-height: 1.5; word-break: break-word;
+  }
+  .p-confirm__actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  [data-theme="dark"] .p-confirm__card { background: #111827; border-color: #334155; }
+  [data-theme="dark"] .p-confirm__card h3 { color: #e2e8f0; }
+  [data-theme="dark"] .p-confirm__text { color: #9fb3a6; }
+  [data-theme="dark"] .p-confirm__address { background: #1f2937; border-color: #334155; color: #d6f5e3; }
+
+  .profile-flash {
+    display: flex; align-items: center; gap: 10px;
+    background: #F1F6F1; border: 1px solid #D3E3D5; border-radius: 12px;
+    padding: 12px 16px; margin-bottom: 18px;
+    font-size: 13.5px; font-weight: 600; color: #3f6b4d;
+  }
+  [data-theme="dark"] .profile-flash { background: #16301f; border-color: #2f5d3c; color: #d6f5e3; }
 
   .p-status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: capitalize; letter-spacing: 0.03em; }
   .p-status.active { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
@@ -130,6 +223,13 @@
 </style>
 
 <div class="profile-wrap">
+  @if(session('success'))
+    <div class="profile-flash">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      {{ session('success') }}
+    </div>
+  @endif
+
   <div class="profile-hero">
     {{-- The member's own picture. It follows the account everywhere it is
          shown, and removing it puts the account back on its initials. The
@@ -160,7 +260,6 @@
           Remove picture
         </button>
 
-        <div class="profile-photo-menu__hint" id="profilePhotoHint">JPG, PNG or WebP, up to 2 MB.</div>
         <input type="file" id="profilePhotoInput" accept="image/jpeg,image/png,image/webp" hidden>
       </div>
     </div>
@@ -172,6 +271,9 @@
         Joined {{ optional($me->approved_at ?? $me->created_at)->format('M d, Y') ?? '—' }}
         &middot; {{ $me->email }}
       </div>
+      {{-- Only when there is something to say: what happened to the
+           picture, or why it was refused. --}}
+      <p class="profile-photo-notice" id="profilePhotoNotice" hidden></p>
     </div>
   </div>
 
@@ -238,19 +340,78 @@
   @endif
 
   <div class="profile-card-panel">
-    <div class="profile-section-title">Address</div>
-    <div class="profile-grid">
-      @php $addr = trim(implode(', ', array_filter([$me->barangay, $me->city, $me->province]))); @endphp
-      <div class="p-item wide"><div class="p-label">Address</div><div class="p-value">{{ $addr ?: '—' }}</div></div>
-      @if($me->barangay)
-      <div class="p-item"><div class="p-label">Barangay / District</div><div class="p-value">{{ $me->barangay }}</div></div>
+  {{-- The address is the one part of the profile a member keeps
+       current: where they farm or trade changes, and a stale address
+       sends the association's people to the wrong place. Everything
+       else here is the association's record and is changed from the
+       admin side.
+
+       Editing happens where the address already is: the pencil turns
+       each value into its own field, and nothing is saved until the
+       farmer confirms it. --}}
+  <div class="profile-card-panel" id="addressCard">
+    <div class="profile-section-head">
+      <div class="profile-section-title">Address</div>
+      @if($me->role !== 'admin')
+        <button type="button" class="p-edit__toggle" id="addressEditBtn"
+                aria-expanded="false" aria-controls="addressForm" title="Edit your address" aria-label="Edit your address">
+          <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </button>
       @endif
-      @if($me->city)
-      <div class="p-item"><div class="p-label">City / Municipality</div><div class="p-value">{{ $me->city }}</div></div>
-      @endif
-      @if($me->province)
-      <div class="p-item"><div class="p-label">Province</div><div class="p-value">{{ $me->province }}</div></div>
-      @endif
+    </div>
+
+    <form method="POST" action="{{ route('profile.address.update') }}" id="addressForm">
+      @csrf
+      @method('PATCH')
+      <div class="profile-grid" id="addressRows">
+        @php $addr = trim(implode(', ', array_filter([$me->barangay, $me->city, $me->province]))); @endphp
+        <div class="p-item wide">
+          <div class="p-label">Address</div>
+          <div class="p-value">{{ $me->address ?: '-' }}</div>
+          <input class="p-input" name="address" type="text" maxlength="255"
+                 value="{{ $me->address }}" placeholder="Street, purok, building">
+        </div>
+        <div class="p-item">
+          <div class="p-label">Barangay / District</div>
+          <div class="p-value">{{ $me->barangay ?: '-' }}</div>
+          <input class="p-input" name="barangay" type="text" maxlength="255"
+                 value="{{ $me->barangay }}" placeholder="e.g. Brgy. Aquino">
+        </div>
+        <div class="p-item">
+          <div class="p-label">City / Municipality</div>
+          <div class="p-value">{{ $me->city ?: '-' }}</div>
+          <input class="p-input" name="city" type="text" maxlength="255"
+                 value="{{ $me->city }}" placeholder="e.g. Bulan">
+        </div>
+        <div class="p-item">
+          <div class="p-label">Province</div>
+          <div class="p-value">{{ $me->province ?: '-' }}</div>
+          <input class="p-input" name="province" type="text" maxlength="255"
+                 value="{{ $me->province }}" placeholder="e.g. Sorsogon">
+        </div>
+      </div>
+
+      <div class="p-edit__actions" id="addressActions" hidden>
+        <button type="button" class="p-btn" id="addressCancelBtn">Cancel</button>
+        <button type="button" class="p-btn p-btn--primary" id="addressSaveBtn">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save address
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{{-- Nothing is saved until the farmer says so: the confirmation shows
+     the address as it will be, and only then does the form go. --}}
+<div class="p-confirm" id="addressConfirm" hidden>
+  <div class="p-confirm__card" role="dialog" aria-modal="true" aria-labelledby="addressConfirmTitle">
+    <h3 id="addressConfirmTitle">Save this address?</h3>
+    <p class="p-confirm__text">Your address will be saved as:</p>
+    <p class="p-confirm__address" id="addressConfirmText"></p>
+    <div class="p-confirm__actions">
+      <button type="button" class="p-btn" id="addressConfirmCancel">Keep editing</button>
+      <button type="button" class="p-btn p-btn--primary" id="addressConfirmSave">Save address</button>
     </div>
   </div>
 </div>
@@ -259,6 +420,98 @@
   <button type="button" class="profile-photo-view__close" id="profilePhotoViewClose" aria-label="Close">&times;</button>
   <img id="profilePhotoViewImg" alt="Profile picture">
 </div>
+
+<script>
+  // The address: a pencil on the card turns each value into its own
+  // field, in place. Nothing is saved until the farmer confirms it.
+  (function () {
+    var card = document.getElementById('addressCard');
+    var editBtn = document.getElementById('addressEditBtn');
+    var cancelBtn = document.getElementById('addressCancelBtn');
+    var saveBtn = document.getElementById('addressSaveBtn');
+    var form = document.getElementById('addressForm');
+    var actions = document.getElementById('addressActions');
+    var confirm = document.getElementById('addressConfirm');
+    var confirmText = document.getElementById('addressConfirmText');
+    var confirmSave = document.getElementById('addressConfirmSave');
+    var confirmCancel = document.getElementById('addressConfirmCancel');
+    if (!editBtn || !form || !card) return;
+
+    // What the fields held when the farmer opened the editor: Cancel
+    // puts them back exactly as they were.
+    var original = {};
+
+    function fields() {
+      return Array.prototype.slice.call(form.querySelectorAll('.p-input'));
+    }
+
+    function setEditing(on) {
+      card.classList.toggle('is-editing', on);
+      if (actions) actions.hidden = !on;
+      editBtn.setAttribute('aria-expanded', on ? 'true' : 'false');
+
+      if (on) {
+        fields().forEach(function (input) { original[input.name] = input.value; });
+        var first = fields()[0];
+        if (first) { first.focus(); }
+      } else {
+        fields().forEach(function (input) {
+          if (original[input.name] !== undefined) input.value = original[input.name];
+        });
+      }
+    }
+
+    function setConfirm(open) {
+      if (!confirm) return;
+      confirm.hidden = !open;
+    }
+
+    editBtn.addEventListener('click', function () {
+      setConfirm(false);
+      setEditing(true);
+    });
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', function () {
+        setConfirm(false);
+        setEditing(false);
+      });
+    }
+
+    // Save asks first: the confirmation shows the address as it will be.
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        var parts = fields()
+          .map(function (input) { return input.value.trim(); })
+          .filter(function (v) { return v !== ''; });
+
+        if (confirmText) {
+          confirmText.textContent = parts.length ? parts.join(', ') : 'No address';
+        }
+        setConfirm(true);
+        if (confirmSave) { confirmSave.focus(); }
+      });
+    }
+
+    if (confirmCancel) {
+      confirmCancel.addEventListener('click', function () { setConfirm(false); });
+    }
+
+    if (confirmSave) {
+      confirmSave.addEventListener('click', function () { form.submit(); });
+    }
+
+    if (confirm) {
+      confirm.addEventListener('click', function (e) {
+        if (e.target === confirm) setConfirm(false);
+      });
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && confirm && !confirm.hidden) setConfirm(false);
+    });
+  })();
+</script>
 
 <script>
   // The member's own picture: view it, upload it, replace it, or take it
@@ -270,7 +523,7 @@
     var uploadBtn = document.getElementById('profilePhotoUpload');
     var viewBtn = document.getElementById('profilePhotoView');
     var label = document.getElementById('profilePhotoLabel');
-    var hint = document.getElementById('profilePhotoHint');
+    var notice = document.getElementById('profilePhotoNotice');
     var avatarBtn = document.getElementById('profileAvatarBtn');
     var menu = document.getElementById('profilePhotoMenu');
     var overlay = document.getElementById('profilePhotoViewOverlay');
@@ -278,9 +531,24 @@
     var overlayClose = document.getElementById('profilePhotoViewClose');
     if (!input) return;
 
+    // What the picker accepts. The picker already filters, but a file can
+    // still arrive from "All files" — so the refusal is spelled out here
+    // rather than left to a silent failure.
+    var ACCEPTED = ['image/jpeg', 'image/png', 'image/webp'];
+    var MAX_BYTES = 2 * 1024 * 1024;
+
     function csrf() {
         var meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : '';
+    }
+
+    // The notice: there when there is something to say, gone when there
+    // is not.
+    function say(text, isError) {
+        if (!notice) return;
+        notice.textContent = text;
+        notice.classList.toggle('is-error', !!isError);
+        notice.hidden = false;
     }
 
     // The menu under the picture: open, closed, and out of the way.
@@ -360,14 +628,19 @@
         var file = this.files && this.files[0];
         this.value = '';
         if (!file) return;
-        if (file.size > 2 * 1024 * 1024) {
-            if (hint) hint.textContent = 'That picture is larger than 2 MB.';
+
+        if (file.type && ACCEPTED.indexOf(file.type) === -1) {
+            say('That file type is not supported. Use a JPG, PNG or WebP picture.', true);
+            return;
+        }
+        if (file.size > MAX_BYTES) {
+            say('That picture is larger than 2 MB.', true);
             return;
         }
 
         var fd = new FormData();
         fd.append('photo', file);
-        if (hint) hint.textContent = 'Uploading…';
+        say('Uploading…');
 
         fetch('{{ route('profile.photo.update') }}', {
             method: 'POST',
@@ -378,18 +651,18 @@
             .then(function (res) {
                 if (res.ok && res.d && res.d.ok) {
                     paint(res.d.url, null);
-                    if (hint) hint.textContent = 'Your picture is saved and follows your account.';
+                    say('Your picture is saved and follows your account.');
                 } else {
-                    if (hint) hint.textContent = (res.d && (res.d.message || res.d.error)) || 'Could not save the picture.';
+                    say((res.d && (res.d.message || res.d.error)) || 'Could not save the picture.', true);
                 }
             })
-            .catch(function () { if (hint) hint.textContent = 'Could not save the picture.'; });
+            .catch(function () { say('Could not save the picture.', true); });
     });
 
     if (removeBtn) {
         removeBtn.addEventListener('click', function () {
             setMenu(false);
-            if (hint) hint.textContent = 'Removing…';
+            say('Removing…');
             fetch('{{ route('profile.photo.remove') }}', {
                 method: 'DELETE',
                 headers: { 'X-CSRF-TOKEN': csrf(), 'Accept': 'application/json' },
@@ -398,12 +671,12 @@
                 .then(function (res) {
                     if (res.ok && res.d && res.d.ok) {
                         paint(null, res.d.initials);
-                        if (hint) hint.textContent = 'Picture removed.';
+                        say('Picture removed.');
                     } else {
-                        if (hint) hint.textContent = (res.d && (res.d.message || res.d.error)) || 'Could not remove the picture.';
+                        say((res.d && (res.d.message || res.d.error)) || 'Could not remove the picture.', true);
                     }
                 })
-                .catch(function () { if (hint) hint.textContent = 'Could not remove the picture.'; });
+                .catch(function () { say('Could not remove the picture.', true); });
         });
     }
   })();

@@ -143,6 +143,10 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
     Route::post('/profile/photo', [ProfileController::class, 'updatePhoto'])->name('profile.photo.update');
     Route::delete('/profile/photo', [ProfileController::class, 'removePhoto'])->name('profile.photo.remove');
 
+    // The member's own address. The one part of the profile they keep
+    // current themselves; the rest of the record is the admin's.
+    Route::patch('/profile/address', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
+
     // Personal UI preferences (side menu theme) — available to all roles
     Route::post('/settings/ui', function (Request $request) {
         $theme = (string) $request->input('theme');

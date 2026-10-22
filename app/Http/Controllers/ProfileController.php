@@ -73,4 +73,40 @@ class ProfileController extends Controller
 
         Storage::disk('public')->delete($user->profile_photo);
     }
+
+    /**
+     * Update this account's own address.
+     *
+     * The address is the one part of the profile a member keeps current:
+     * where they farm or trade changes, and a stale address sends the
+     * association's people to the wrong place. Everything else on the
+     * profile — name, role, status, farm details — is the association's
+     * record and is changed from the admin side.
+     */
+    public function updateAddress(Request $request)
+    {
+        $user = $request->user();
+
+        // The association's own records are corrected from the admin
+        // side, where the registry can be checked.
+        if ($user->role === 'admin') {
+            abort(403, 'The association\'s address is corrected from the admin side.');
+        }
+
+        $validated = $request->validate([
+            'address'  => ['nullable', 'string', 'max:255'],
+            'barangay' => ['nullable', 'string', 'max:255'],
+            'city'     => ['nullable', 'string', 'max:255'],
+            'province' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $user->forceFill([
+            'address'  => $validated['address'] ?? null,
+            'barangay' => $validated['barangay'] ?? null,
+            'city'     => $validated['city'] ?? null,
+            'province' => $validated['province'] ?? null,
+        ])->save();
+
+        return back()->with('success', 'Your address has been updated.');
+    }
 }
