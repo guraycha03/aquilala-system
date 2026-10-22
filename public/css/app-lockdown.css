@@ -7,25 +7,14 @@
  *   · resources/views/layouts/auth-layout.blade.php   (login/register)
  *
  * Makes the portal behave like a native app:
- *   · no text selection on display content — page titles (h1), subtext,
- *     cards, nav, static copy
- *   · no long-press callout: kills iOS's "Copy / Look Up / Open in New
- *     Tab" sheet on links and text (the JS half additionally blocks the
- *     Android/desktop right-click+long-press menu)
+ *   · the parts that DO something — buttons, links, and cards that
+ *     open a page — refuse a text selection and the browser's
+ *     long-press menu. On those a press means "do this", so the
+ *     "open in a new tab" / "copy this link" sheet never appears
+ *   · every other text is selectable and copyable: the farmer's own
+ *     words and numbers are theirs to copy, and the normal menu works
  *   · no blue/grey tap highlight
  *   · printing prints one notice on an otherwise blank page
- *
- * EXEMPT — kept selectable everywhere (per feedback: copying your own
- * data should work; blocking it is a hassle, not a protection):
- *   · TABLES — every cell: harvest numbers, member lists, quotations.
- *     The JS half mirrors this so copy/cut/drag actually go through.
- *   · FORM FIELDS (+ their <label>s): typing, caret placement, selection
- *     and paste inside inputs/textareas/contenteditable all ride on the
- *     selection API. Without the exemption every form in the system would
- *     become uneditable on mobile and paste/password-manager flows would
- *     break.
- * Page titles, subtext and cards stay locked on every page, including
- * table and editing pages — only the important parts are copyable.
  *
  * Screenshot mitigations are deliberately NOT here — they are per-page
  * (per feedback: only security-sensitive pages), wired by
@@ -33,29 +22,54 @@
  * js/app-lockdown.js. Honest limits are documented in that file.
  * --------------------------------------------------------------------- */
 
-html, body, body * {
+/* ── Text selection ───────────────────────────────────────────────────
+   The app does not lock text any more: a farmer can select their own
+   crop names, their numbers, a quotation number and copy it out.
+
+   The exceptions are the parts that DO something. A long press on a
+   button, a link, a table row with a click handler or a card that
+   opens a page must not turn into "open in a new tab" or "copy this
+   link" — so those refuse a selection, and the JS half mirrors this
+   list for the long-press menu. The list must stay identical in both
+   halves: css/app-lockdown.css and js/app-lockdown.js. */
+a[href],
+button,
+summary,
+[onclick],
+[role="button"],
+[role="link"],
+[role="tab"],
+[role="menuitem"],
+[role="switch"],
+[role="checkbox"],
+[role="radio"],
+[data-toggle],
+[data-open],
+[data-close],
+[data-lucide],
+[tabindex]:not([tabindex="-1"]),
+.aq-interactive {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
 }
 
-/* Exemptions — must stay AFTER the rule above: equal specificity, so
-   source order decides the winner. Tables + form controls (+labels):
-   selectable and copyable; every other text (titles, subtext, cards)
-   stays locked. `table *` is required because the rule above sets
-   user-select directly on each element — inheriting from `table`
-   alone would not reach the cells. */
-input, textarea, select, [contenteditable]:not([contenteditable="false"]),
-label,
-table, table * {
+/* Form fields keep their own selection: typing, caret placement,
+   select-all and paste all ride on the selection API, so a field must
+   stay selectable even when it sits inside an interactive row. */
+input, textarea, select, [contenteditable]:not([contenteditable="false"]) {
   -webkit-user-select: text;
   -moz-user-select: text;
   -ms-user-select: text;
   user-select: text;
   -webkit-touch-callout: default;
+}
+
+/* No tap highlight anywhere: a tapped card should not flash a grey
+   rectangle before it opens. */
+html, body, body * {
   -webkit-tap-highlight-color: transparent;
 }
 

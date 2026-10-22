@@ -106,6 +106,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] [style*="background-color:#fdf6ec" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background-color:#ffffff" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: #F1F5F9" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
+[data-theme="dark"] [style*="background: #F3F5F0" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: #F4F8F4" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: #FAF8F0" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: #dbeafe" i] { background-color: hsl(214, 95%, 17%) !important }
@@ -129,13 +130,9 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] [style*="background: #fff2dd" i] { background-color: hsl(37, 100%, 17%) !important }
 [data-theme="dark"] [style*="background: #fffbeb" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: #ffffff" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] [style*="background: linear-gradient(135deg, #e0f2fe, #dbeafe)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] [style*="background: linear-gradient(135deg, #f0fdf4, #dcfce7)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: linear-gradient(135deg, #f0fdf4, #ecfdf5)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] [style*="background: linear-gradient(135deg, #f3e8ff, #ede9fe)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: linear-gradient(135deg, #f5f7f6, #e8ecea)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: linear-gradient(135deg, #fef2f2, #fee2e2)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] [style*="background: linear-gradient(135deg, #fef3c7, #fef9c3)" i] { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: rgb(172, 242, 121)" i] { background-color: hsl(95, 82%, 17%) !important }
 [data-theme="dark"] [style*="background: rgba(255,255,255,0.7)" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] [style*="background: rgba(255,255,255,0.86)" i] { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
@@ -170,6 +167,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] [style*="border-top:1px solid #f1f5f9" i] { border-color: #334155 !important }
 [data-theme="dark"] [style*="border: 1px solid #86efac" i] { border-color: #2f5d3c !important }
 [data-theme="dark"] [style*="border: 1px solid #D6E6D8" i] { border-color: #2f5d3c !important }
+[data-theme="dark"] [style*="border: 1px solid #E0E5DB" i] { border-color: #2f5d3c !important }
 [data-theme="dark"] [style*="border: 1px solid #E8E2CE" i] { border-color: #334155 !important }
 [data-theme="dark"] [style*="border: 1px solid #bbf7d0" i] { border-color: #2f5d3c !important }
 [data-theme="dark"] [style*="border: 1px solid #bfdbfe" i] { border-color: #334155 !important }
@@ -746,7 +744,7 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .dropzone.has-file .dz-icon { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .empty-card { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
 [data-theme="dark"] .empty-desc { color: #93c5fd !important }
-[data-theme="dark"] .empty-icon { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important; background-image: none !important }
+[data-theme="dark"] .empty-icon { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important; background-image: none !important; color: #e2e8f0 !important }
 [data-theme="dark"] .empty-icon svg { color: #a8cdb2 !important; stroke: #a8cdb2 !important }
 [data-theme="dark"] .empty-icon-wrap { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important }
 [data-theme="dark"] .empty-state { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; background-image: none !important; border-color: #334155 !important; color: #93c5fd !important }
@@ -1282,10 +1280,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .pf-chip svg { color: #a8cdb2 !important }
 [data-theme="dark"] .phone-prefix { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
 [data-theme="dark"] .phone-row { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] .photo-btn { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important; border-color: #2f5d3c !important }
-[data-theme="dark"] .photo-btn:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
-[data-theme="dark"] .photo-btn.danger { color: #fca5a5 !important }
-[data-theme="dark"] .photo-btn.danger:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #7f1d1d !important }
 [data-theme="dark"] .pick-meta { color: #93c5fd !important }
 [data-theme="dark"] .pick-meta .sku { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .pick-name { color: #93c5fd !important }
@@ -1358,6 +1352,13 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .profile-hero-info h1 { color: #93c5fd !important }
 [data-theme="dark"] .profile-hero-meta { color: #93c5fd !important }
 [data-theme="dark"] .profile-hero-role { color: #a8cdb2 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
+[data-theme="dark"] .profile-photo-menu { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
+[data-theme="dark"] .profile-photo-menu__hint { border-color: #334155 !important }
+[data-theme="dark"] .profile-photo-menu__item { color: #a8cdb2 !important }
+[data-theme="dark"] .profile-photo-menu__item--danger { color: #fca5a5 !important }
+[data-theme="dark"] .profile-photo-menu__item--danger:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
+[data-theme="dark"] .profile-photo-menu__item:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
+[data-theme="dark"] .profile-photo-view__close { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #93c5fd !important }
 [data-theme="dark"] .progress-foot { color: #e2e8f0 !important }
 [data-theme="dark"] .progress-title { color: #93c5fd !important }
 [data-theme="dark"] .progress-track { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
@@ -1447,6 +1448,23 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .row-btn.red:hover { background-color: hsl(0, 93%, 17%) !important }
 [data-theme="dark"] .row-progress { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
 [data-theme="dark"] .row-progress-label { color: #93c5fd !important }
+[data-theme="dark"] .rq-ai { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
+[data-theme="dark"] .rq-ai__avatar { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
+[data-theme="dark"] .rq-ai__btn { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important; border-color: #334155 !important }
+[data-theme="dark"] .rq-ai__btn:hover { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
+[data-theme="dark"] .rq-ai__text h2 { color: #a8cdb2 !important }
+[data-theme="dark"] .rq-ai__text p { color: #e2e8f0 !important }
+[data-theme="dark"] .rq-fact { color: #e2e8f0 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
+[data-theme="dark"] .rq-stock { color: #e2e8f0 !important }
+[data-theme="dark"] .rq-stock.is-low { color: #fcd34d !important }
+[data-theme="dark"] .rq-stock.is-out { color: #fca5a5 !important }
+[data-theme="dark"] .rq-store { color: #e2e8f0 !important }
+[data-theme="dark"] .rq-way { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
+[data-theme="dark"] .rq-way h3 { color: #a8cdb2 !important }
+[data-theme="dark"] .rq-way p { color: #e2e8f0 !important }
+[data-theme="dark"] .rq-way__count { color: #e2e8f0 !important }
+[data-theme="dark"] .rq-way__ic { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important }
+[data-theme="dark"] .rq-way:hover { border-color: #2f5d3c !important }
 [data-theme="dark"] .scroll-btn { border-color: #334155 !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important }
 [data-theme="dark"] .scroll-btn:hover:not(:disabled) { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important }
 [data-theme="dark"] .sea-banner { border-color: #334155 !important }
@@ -1513,44 +1531,6 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] .sidebar-footer { border-color: #334155 !important }
 [data-theme="dark"] .spec-divider { border-color: #334155 !important }
 [data-theme="dark"] .spec-section { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
-[data-theme="dark"] .sr-ai-banner { background-image: none !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
-[data-theme="dark"] .sr-ai-input { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
-[data-theme="dark"] .sr-ai-input span { color: #a8cdb2 !important }
-[data-theme="dark"] .sr-breadcrumb { color: #93c5fd !important }
-[data-theme="dark"] .sr-breadcrumb a { color: #93c5fd !important }
-[data-theme="dark"] .sr-breadcrumb a:hover { color: #a8cdb2 !important }
-[data-theme="dark"] .sr-breadcrumb-current { color: #93c5fd !important }
-[data-theme="dark"] .sr-cat-card { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
-[data-theme="dark"] .sr-cat-card h3 { color: #93c5fd !important }
-[data-theme="dark"] .sr-cat-card p { color: #93c5fd !important }
-[data-theme="dark"] .sr-cat-card:hover { border-color: #2f5d3c !important }
-[data-theme="dark"] .sr-cat-count { color: #a8cdb2 !important }
-[data-theme="dark"] .sr-category-tag { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #93c5fd !important }
-[data-theme="dark"] .sr-empty { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
-[data-theme="dark"] .sr-empty h3 { color: #93c5fd !important }
-[data-theme="dark"] .sr-hero { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
-[data-theme="dark"] .sr-hero h1 { color: #93c5fd !important }
-[data-theme="dark"] .sr-hero p { color: #93c5fd !important }
-[data-theme="dark"] .sr-info-chip { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important; color: #93c5fd !important }
-[data-theme="dark"] .sr-info-chip.season-chip { background-color: hsl(204, 94%, 17%) !important; border-color: #334155 !important; color: #93c5fd !important }
-[data-theme="dark"] .sr-product-body .sr-desc { color: #93c5fd !important }
-[data-theme="dark"] .sr-product-body h3 { color: #93c5fd !important }
-[data-theme="dark"] .sr-product-brand { color: #93c5fd !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
-[data-theme="dark"] .sr-product-card { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
-[data-theme="dark"] .sr-product-card:hover { border-color: #2f5d3c !important }
-[data-theme="dark"] .sr-product-footer { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
-[data-theme="dark"] .sr-product-img { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #334155 !important }
-[data-theme="dark"] .sr-product-price { color: #a8cdb2 !important }
-[data-theme="dark"] .sr-season-both { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important }
-[data-theme="dark"] .sr-season-dry { background-color: hsl(34, 100%, 17%) !important; color: #fca5a5 !important }
-[data-theme="dark"] .sr-season-wet { background-color: hsl(204, 94%, 17%) !important; color: #93c5fd !important }
-[data-theme="dark"] .sr-section-head h2 { color: #93c5fd !important }
-[data-theme="dark"] .sr-section-head p { color: #93c5fd !important }
-[data-theme="dark"] .sr-stock-in { color: #a8cdb2 !important }
-[data-theme="dark"] .sr-stock-low { color: #fca5a5 !important }
-[data-theme="dark"] .sr-why-toggle { border-color: #334155 !important }
-[data-theme="dark"] .sr-why-toggle .sr-why-body { color: #93c5fd !important; background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; border-color: #2f5d3c !important }
-[data-theme="dark"] .sr-why-toggle summary { color: #a8cdb2 !important }
 [data-theme="dark"] .stage-badge { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important; border-color: #334155 !important }
 [data-theme="dark"] .stage-badge-standard { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important; border-color: #334155 !important }
 [data-theme="dark"] .stage-stepper { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }

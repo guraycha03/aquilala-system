@@ -140,8 +140,8 @@
        ?v=1 busts the service worker's cache-first static cache — bump it on
        every edit to either file below or installed PWAs keep serving stale
        bytes (same trick as turbo.min.js?v=2). --}}
-  <link rel="stylesheet" href="{{ asset('css/app-lockdown.css') }}?v=2">
-  <script src="{{ asset('js/app-lockdown.js') }}?v=2" defer></script>
+  <link rel="stylesheet" href="{{ asset('css/app-lockdown.css') }}?v=4">
+  <script src="{{ asset('js/app-lockdown.js') }}?v=4" defer></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scrollbar-width: none; -ms-overflow-style: none; }

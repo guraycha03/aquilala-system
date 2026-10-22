@@ -4,23 +4,20 @@
  * bump that version when editing this file, sw.js caches .js cache-first).
  *
  * What it enforces, for everyone, on every page:
- *   · no long-press / right-click browser menu on display content (the
- *     iOS callout sheet is already suppressed by the CSS half; this
- *     covers Android + desktop, where the event is `contextmenu`) — this
- *     is what previously showed "Open in new tab" on long-press of the
- *     KPI cards
- *   · no copy / cut / drag-out of display content (event layer +
- *     shortcut layer)
+ *   · the browser's long-press / right-click menu is suppressed on the
+ *     parts that DO something — buttons, links, table rows with a click
+ *     handler, cards that open a page. On those, "open in a new tab" and
+ *     "copy this link" are the wrong menu: a long press there means
+ *     "do this", and a tap must open the page, not a sheet.
+ *   · everywhere else the normal menu stays, so the farmer can select
+ *     and copy their own words and numbers
  *   · no devtools / view-source / save-page / print shortcuts
  *
  * KEEP WORKING (deliberate exemptions, mirrored from css/app-lockdown.css
  * — if you add a zone here, add it there too and bump both ?v=):
  *   · form fields: typing, caret moves, select-all, copy/cut/paste, IME,
  *     autofill, the native text-editing menu (mobile paste)
- *   · TABLES: selecting and copying the user's own rows — harvest
- *     numbers, member lists. Per feedback, blocking that is a hassle
- *     rather than a protection; page titles, subtext and cards remain
- *     locked everywhere.
+ *   · all display text: selectable and copyable, everywhere
  *
  * Per-page capture shield (opt-in via `shield` route middleware →
  * data-capture-shield on <body>): a blank branded cover is shown while
@@ -45,58 +42,66 @@
   if (window.__aqLockdown) return;
   window.__aqLockdown = true;
 
-  // Resolved fresh on every event: Turbo swaps the <body>, so nothing
-  // about the current page may be captured up front.
-  var FORM_ZONE = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
-  // Selectable/copyable zones — MUST mirror the exempted selectors in
-  // css/app-lockdown.css (form controls + labels + every table cell).
-  var COPY_ZONES = FORM_ZONE + ', label, table';
+  // ── The parts that do something ─────────────────────────────────────
+  // Mirrors the CSS list exactly (css/app-lockdown.css): a press on one
+  // of these is a command, not a text selection, so the browser's
+  // long-press menu must not appear there.
+  var INTERACTIVE = 'a[href], button, summary, [onclick], [role="button"], [role="link"],'
+    + ' [role="tab"], [role="menuitem"], [role="switch"], [role="checkbox"], [role="radio"],'
+    + ' [data-toggle], [data-open], [data-close], [data-lucide], [tabindex]:not([tabindex="-1"])';
 
-  function inZone(el, zones) {
-    return !!(el && el.closest && el.closest(zones));
+  function interactive(el) {
+    if (!el || !el.closest) return false;
+    if (el.closest(INTERACTIVE)) return true;
+    // Anything the page itself points at as clickable counts as well:
+    // the cursor is the page's own answer to "is this tappable?".
+    try {
+      return getComputedStyle(el).cursor === 'pointer';
+    } catch (err) {
+      return false;
+    }
   }
-  // Copy/cut decisions must look at the SELECTION, not only the event
-  // target: table cells aren't focusable, so after clicking one e.target
-  // is usually <body> while the user's selection sits inside the table.
-  function selectionAllowed() {
-    var sel = document.getSelection();
-    if (!sel || sel.isCollapsed || sel.rangeCount === 0) return false;
-    var node = sel.anchorNode;
-    var el = node && (node.nodeType === 1 ? node : node.parentNode);
-    return inZone(el, COPY_ZONES);
-  }
-  function canCopy(target) {
-    return inZone(target, COPY_ZONES) || selectionAllowed();
-  }
+
   function shielded() {
     return !!(document.body && document.body.hasAttribute('data-capture-shield'));
   }
 
-  // ── Long-press / right-click menu ───────────────────────────────────
-  // Blocked on display content — cards, titles, static text (this is what
-  // previously showed "Open in new tab" on long-press of the KPI cards,
-  // freeing the gesture for the long-press modals planned there; those use
-  // their own touchstart timer, which this does not interfere with).
-  // Allowed inside form fields (mobile Paste / Select-all) and inside
-  // tables (Copy of the user's own rows).
-  document.addEventListener('contextmenu', function (e) {
-    if (inZone(e.target, COPY_ZONES)) return;
-    e.preventDefault();
-  });
+  // Mark the parts the page itself calls tappable — the ones with a
+  // pointer cursor rather than a click attribute — so their text stops
+  // being selectable as well. A card that opens a page should feel like
+  // a button, not like a paragraph of text. Scanned over the elements
+  // that can carry a click, not every node on the page.
+  function markTappable() {
+    var nodes = document.querySelectorAll(
+      'a[href], button, summary, [onclick], [role], [tabindex], [data-toggle], [data-open],'
+      + ' [data-close], [data-lucide], [class*="card"], [class*="btn"], [class*="button"],'
+      + ' [class*="toggle"], [class*="tab"], [class*="link"], tr, li'
+    );
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el.closest('input, textarea, select, [contenteditable]')) continue;
+      var cursor = '';
+      try { cursor = getComputedStyle(el).cursor; } catch (err) { continue; }
+      if (cursor === 'pointer') el.classList.add('aq-interactive');
+    }
+  }
 
-  // ── Copy / cut / drag-out ───────────────────────────────────────────
-  // The event layer is the real enforcement: it catches Ctrl+C, the
-  // browser Edit menu, drag-to-another-app, and any path the keydown
-  // layer below misses. Allowed in copy zones (form fields, table cells)
-  // — canCopy() also consults the selection, see above.
-  ['copy', 'cut'].forEach(function (type) {
-    document.addEventListener(type, function (e) {
-      if (canCopy(e.target)) return;
-      e.preventDefault();
-    });
-  });
-  document.addEventListener('dragstart', function (e) {
-    if (canCopy(e.target)) return;
+  document.addEventListener('DOMContentLoaded', markTappable);
+  document.addEventListener('turbo:load', markTappable);
+
+  // ── Long-press / right-click menu ───────────────────────────────────
+  // Suppressed on the parts that do something (this is what used to
+  // show "Open in new tab" on a long press of a card). Allowed
+  // everywhere else, so the farmer keeps the normal copy menu on their
+  // own text.
+  document.addEventListener('contextmenu', function (e) {
+    if (!interactive(e.target)) return;
+    // A part the page only marked as tappable (a pointer cursor, no
+    // click attribute): mark it now so its text stops being selectable
+    // too.
+    if (e.target && e.target.classList && !e.target.closest(INTERACTIVE)) {
+      e.target.classList.add('aq-interactive');
+    }
     e.preventDefault();
   });
 
@@ -107,23 +112,17 @@
     var mod = e.ctrlKey || e.metaKey;      // Cmd on macOS behaves like Ctrl here
 
     // F12 / devtools variants (Windows+macOS) / view-source / save / print.
-    // Blocked even inside form fields and tables: none of them are
-    // data-entry keys, and printing has its own CSS-level blank page.
+    // Blocked even inside form fields: none of them are data-entry
+    // keys, and printing has its own CSS-level blank page.
     if (key === 'F12' ||
         (mod && e.shiftKey && ['i', 'j', 'c'].indexOf(lower) !== -1) ||
         (e.metaKey && e.altKey && ['i', 'j', 'c'].indexOf(lower) !== -1) ||
         (mod && !e.shiftKey && ['u', 's', 'p'].indexOf(lower) !== -1)) {
       e.preventDefault();
-      return;
     }
-
-    // Select-all / copy / cut: allowed in copy zones (form fields, table
-    // cells) or when the selection already sits in one; blocked on display
-    // content (where selection is already off — this closes the keyboard
-    // path to it).
-    if (mod && !e.shiftKey && !e.altKey && ['a', 'c', 'x'].indexOf(lower) !== -1) {
-      if (!canCopy(e.target)) e.preventDefault();
-    }
+    // Select-all, copy and cut are left alone: text is selectable and
+    // copyable everywhere now, and a farmer copying a quotation number
+    // must not have to fight the app for it.
   });
 
   // ── PrintScreen (best effort, shielded pages only) ──────────────────

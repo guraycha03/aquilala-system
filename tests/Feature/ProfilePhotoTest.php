@@ -41,6 +41,27 @@ class ProfilePhotoTest extends TestCase
     //  The picture
     // ────────────────────────────────────────────────────────────
 
+    public function test_the_picture_is_changed_from_the_avatar_itself_and_not_from_a_card(): void
+    {
+        $farmer = $this->makeUser('Ana Farmer', 'farmer');
+
+        $html = $this->actingAs($farmer)
+            ->get(route('profile.index'))
+            ->assertOk()
+            ->getContent();
+
+        // The picture at the top IS the control: tapping it offers what
+        // can be done with it.
+        $this->assertStringContainsString('id="profileAvatarBtn"', $html);
+        $this->assertStringContainsString('id="profilePhotoMenu"', $html);
+        $this->assertStringContainsString('id="profilePhotoUpload"', $html);
+        $this->assertStringContainsString('id="profilePhotoRemove"', $html);
+        $this->assertStringContainsString('id="profilePhotoView"', $html);
+
+        // No second card for the picture.
+        $this->assertStringNotContainsString('Profile picture</div>', $html);
+    }
+
     public function test_a_member_uploads_a_picture_and_it_is_kept_on_the_account(): void
     {
         Storage::fake('public');
