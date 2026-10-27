@@ -413,6 +413,8 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/members', [AdminMemberController::class, 'index'])
             ->name('members.index')
             ->middleware('shield');
+        Route::post('/members/archive', [AdminMemberController::class, 'archiveBulk'])
+            ->name('members.archive');
         Route::get('/members/create', [AdminMemberController::class, 'create'])->name('members.create');
         Route::post('/members', [AdminMemberController::class, 'store'])->name('members.store');
         Route::get('/members/{member}/edit', [AdminMemberController::class, 'edit'])
@@ -464,6 +466,8 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/users', [AdminUserController::class, 'index'])
             ->name('users.index')
             ->middleware('shield');
+        Route::post('/users/archive', [AdminUserController::class, 'archiveBulk'])
+            ->name('users.archive');
         Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
         Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
         // Administrator creation carries the same four controls as granting

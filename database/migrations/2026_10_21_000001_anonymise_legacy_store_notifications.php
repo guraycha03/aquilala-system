@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\ActivityLog;
-use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
@@ -21,7 +20,7 @@ return new class extends Migration
     {
         $rows = DB::table('activity_logs')
             ->where('type', ActivityLog::TYPE_QUOTATION_CREATED)
-            ->whereIn('user_id', User::where('role', 'store_owner')->pluck('id'))
+            ->whereIn('user_id', DB::table('users')->where('role', 'store_owner')->pluck('id'))
             ->get();
 
         foreach ($rows as $row) {

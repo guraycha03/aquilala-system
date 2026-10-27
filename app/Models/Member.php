@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * A person on the association's list of members.
@@ -15,6 +16,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Member extends Model
 {
+    use SoftDeletes;
+
+    public const DELETED_AT = 'archived_at';
+
     public const STATUS_ACTIVE = 'active';
 
     public const STATUS_INACTIVE = 'inactive';

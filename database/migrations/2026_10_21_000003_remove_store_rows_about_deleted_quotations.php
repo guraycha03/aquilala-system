@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\ActivityLog;
-use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +16,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $storeIds = User::where('role', 'store_owner')->pluck('id');
+        $storeIds = DB::table('users')->where('role', 'store_owner')->pluck('id');
 
         if ($storeIds->isEmpty()) {
             return;

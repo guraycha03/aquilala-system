@@ -78,6 +78,40 @@ class AdminUserController extends Controller
     }
 
     /**
+     * Archive selected accounts without permanently deleting them.
+     */
+    public function archiveBulk(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'string'],
+        ]);
+
+        $ids = collect(explode(',', $validated['ids']))
+            ->map(fn ($id) => trim($id))
+            ->filter(fn ($id) => ctype_digit($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return back()->with('error', 'Select at least one account to archive.');
+        }
+
+        $currentUserId = $request->user()->id;
+        $archived = User::whereIn('id', $ids)
+            ->whereKeyNot($currentUserId)
+            ->delete();
+
+        $skippedSelf = $ids->contains($currentUserId);
+        $message = "{$archived} account".($archived === 1 ? '' : 's').' archived.';
+        if ($skippedSelf) {
+            $message .= ' Your own administrator account was not archived.';
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /**
      * Step 0 of account creation: what kind of account is it?
      *
      *   - (no type)          -> the chooser itself, three cards

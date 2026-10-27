@@ -143,6 +143,17 @@
     .users-footer .rows-info { font-size: 12px; color: #94a3b8; }
     .users-empty { text-align: center; padding: 48px 20px; color: #94a3b8; }
     .users-empty svg { width: 40px; height: 40px; stroke: #cbd5e1; fill: none; stroke-width: 1.5; margin-bottom: 10px; }
+    .bulk-selbar { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 12px; width: max-content; max-width: calc(100vw - 16px); background: #f2f6f1; color: #2c3a2f; border: 1px solid #d8e2d5; padding: 10px 12px 10px 18px; border-radius: 999px; box-shadow: 0 14px 34px rgba(31, 41, 33, 0.18); }
+    .bulk-selbar[hidden] { display: none; }
+    .bulk-selbar form { display: flex; align-items: center; gap: 10px; margin: 0; }
+    .bulk-selbar-count { font-size: 13.5px; font-weight: 600; white-space: nowrap; color: #4a5a4d; }
+    .bulk-selbar-count b { font-size: 14.5px; color: #166534; }
+    .bulk-selbar button { border-radius: 999px; padding: 7px 14px; cursor: pointer; white-space: nowrap; font-size: 13px; font-weight: 700; }
+    .bulk-selbar-clear { border: 1px solid #ccd8c9; background: #fff; color: #5b6b5a; }
+    .bulk-selbar-archive { border: 1px solid #bcd4bb; background: #dcecda; color: #166534; }
+    .bulk-selbar-archive:disabled { opacity: .45; cursor: not-allowed; }
+    .col-sel { width: 34px; padding-left: 14px !important; padding-right: 0 !important; }
+    .col-sel input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: #15803d; cursor: pointer; }
 
     /* Toast */
     .user-toast {
@@ -297,6 +308,7 @@
             <table id="usersTable" class="users-table data-table">
               <thead>
                 <tr>
+                  <th class="col-sel"><input type="checkbox" id="userSelAll" aria-label="Select every account matching the current filters"></th>
                   <th>User Account</th>
                   <th>Contact</th>
                   <th>Role Assignment</th>
@@ -323,9 +335,12 @@
                     $contact = $u->phone ?? ($u->contact_number ?? ($location ?: '—'));
                     $search = strtolower(($u->name ?? '') . ' ' . ($u->email ?? '') . ' ' . ($u->phone ?? '') . ' ' . $location);
                   @endphp
-                  <tr data-search="{{ $search }}" data-role="{{ $u->role }}" data-verified="{{ $accountState }}"
+                  <tr data-id="{{ $u->id }}" data-search="{{ $search }}" data-role="{{ $u->role }}" data-verified="{{ $accountState }}"
                       data-name="{{ strtolower($u->name ?? '') }}"
                       data-joined="{{ $u->created_at?->format('Y-m-d') ?? '' }}">
+                    <td>
+                      <input type="checkbox" class="user-sel" value="{{ $u->id }}" aria-label="Select {{ $u->name }}">
+                    </td>
                     <td>
                       <div class="user-cell">
                         <x-user-avatar :user="$u" :size="36" />
@@ -409,6 +424,22 @@
 
       </div>
     </div>
+  </div>
+
+  <div class="bulk-selbar" id="userSelBar" hidden>
+    <span class="bulk-selbar-count"><b id="userSelCount">0</b> selected</span>
+    <form method="POST" action="{{ route('admin.users.archive') }}">
+      @csrf
+      <input type="hidden" name="ids" id="userSelIds">
+      <button type="button" class="bulk-selbar-clear" id="userSelClear">Clear</button>
+      <button type="submit" class="bulk-selbar-archive" id="userSelArchive"
+              data-aqui-tone="danger"
+              data-aqui-title="Archive accounts?"
+              data-aqui-confirm-label="Archive accounts"
+              data-aqui-confirm="Selected accounts will be archived, not permanently deleted. They will no longer appear in All Users or be able to sign in.">
+        Archive selected
+      </button>
+    </form>
   </div>
 
   <div class="user-toast" id="userToast"></div>
@@ -667,11 +698,11 @@
         var lines = ['Name,Email,Role,Status,Joined'];
         shown.forEach(function (row) {
           var cells = row.querySelectorAll('td');
-          var name = cells[0].querySelector('.u-name').innerText;
-          var mail = cells[0].querySelector('.u-mail').innerText;
-          var role = cells[2].innerText.trim();
-          var status = cells[3].innerText.trim();
-          var joined = cells[4].innerText.trim();
+          var name = cells[1].querySelector('.u-name').innerText;
+          var mail = cells[1].querySelector('.u-mail').innerText;
+          var role = cells[3].innerText.trim();
+          var status = cells[4].innerText.trim();
+          var joined = cells[5].innerText.trim();
           lines.push([name, mail, role, status, joined].map(function (v) {
             return '"' + v.replace(/"/g, '""') + '"';
           }).join(','));
@@ -685,6 +716,61 @@
         URL.revokeObjectURL(url);
         showToast('Exported ' + shown.length + ' accounts');
       });
+
+      (function () {
+        var table = document.getElementById('usersTable');
+        var bar = document.getElementById('userSelBar');
+        var selAll = document.getElementById('userSelAll');
+        if (!table || !bar || !selAll) return;
+        var countEl = document.getElementById('userSelCount');
+        var idsInput = document.getElementById('userSelIds');
+        var clearBtn = document.getElementById('userSelClear');
+        var archiveBtn = document.getElementById('userSelArchive');
+        var selected = new Set();
+        var matched = [];
+
+        function rowId(row) { return String(row.getAttribute('data-id') || ''); }
+        function sync() {
+          table.querySelectorAll('tbody tr[data-id]').forEach(function (row) {
+            var box = row.querySelector('.user-sel');
+            if (box) box.checked = selected.has(rowId(row));
+          });
+          var matchedSelected = matched.filter(function (row) { return selected.has(rowId(row)); }).length;
+          selAll.disabled = matched.length === 0;
+          selAll.checked = matched.length > 0 && matchedSelected === matched.length;
+          selAll.indeterminate = matchedSelected > 0 && matchedSelected < matched.length;
+          bar.hidden = selected.size === 0;
+          countEl.textContent = String(selected.size);
+          idsInput.value = Array.from(selected).join(',');
+          archiveBtn.disabled = selected.size === 0;
+        }
+        function receive(rows) {
+          matched = rows || [];
+          var keep = new Set(matched.map(rowId));
+          selected.forEach(function (id) { if (!keep.has(id)) selected.delete(id); });
+          sync();
+        }
+        document.addEventListener('ttb:render', function (e) {
+          if (e.detail && e.detail.table === 'usersTable') receive(e.detail.matched);
+        });
+        function refresh() { receive(table.__ttbMatched || []); }
+        document.addEventListener('turbo:load', refresh);
+        selAll.addEventListener('change', function () {
+          matched.forEach(function (row) {
+            var id = rowId(row);
+            if (selAll.checked) selected.add(id); else selected.delete(id);
+          });
+          sync();
+        });
+        table.addEventListener('change', function (e) {
+          var box = e.target.closest ? e.target.closest('.user-sel') : null;
+          if (!box) return;
+          if (box.checked) selected.add(box.value); else selected.delete(box.value);
+          sync();
+        });
+        clearBtn.addEventListener('click', function () { selected.clear(); sync(); });
+        refresh();
+      })();
 
       })();
   </script>

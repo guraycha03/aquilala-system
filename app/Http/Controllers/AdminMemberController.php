@@ -60,6 +60,34 @@ class AdminMemberController extends Controller
     }
 
     /**
+     * Archive selected member records without permanently deleting them.
+     */
+    public function archiveBulk(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'string'],
+        ]);
+
+        $ids = collect(explode(',', $validated['ids']))
+            ->map(fn ($id) => trim($id))
+            ->filter(fn ($id) => ctype_digit($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return back()->with('error', 'Select at least one member to archive.');
+        }
+
+        $archived = Member::whereIn('id', $ids)->delete();
+
+        return back()->with(
+            'success',
+            "{$archived} member".($archived === 1 ? '' : 's').' archived.'
+        );
+    }
+
+    /**
      * Blank form for adding one member by hand.
      */
     public function create()

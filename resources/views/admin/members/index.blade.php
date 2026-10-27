@@ -94,6 +94,17 @@
     .users-empty { text-align: center; padding: 56px 20px; color: #94a3b8; }
     .users-empty svg { width: 44px; height: 44px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.7; }
     .users-empty p { font-size: 14px; margin: 14px 0 0 0; line-height: 1.6; }
+    .bulk-selbar { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 12px; width: max-content; max-width: calc(100vw - 16px); background: #f2f6f1; color: #2c3a2f; border: 1px solid #d8e2d5; padding: 10px 12px 10px 18px; border-radius: 999px; box-shadow: 0 14px 34px rgba(31, 41, 33, 0.18); }
+    .bulk-selbar[hidden] { display: none; }
+    .bulk-selbar form { display: flex; align-items: center; gap: 10px; margin: 0; }
+    .bulk-selbar-count { font-size: 13.5px; font-weight: 600; white-space: nowrap; color: #4a5a4d; }
+    .bulk-selbar-count b { font-size: 14.5px; color: #166534; }
+    .bulk-selbar button { border-radius: 999px; padding: 7px 14px; cursor: pointer; white-space: nowrap; font-size: 13px; font-weight: 700; }
+    .bulk-selbar-clear { border: 1px solid #ccd8c9; background: #fff; color: #5b6b5a; }
+    .bulk-selbar-archive { border: 1px solid #bcd4bb; background: #dcecda; color: #166534; }
+    .bulk-selbar-archive:disabled { opacity: .45; cursor: not-allowed; }
+    .col-sel { width: 34px; padding-left: 14px !important; padding-right: 0 !important; }
+    .col-sel input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: #15803d; cursor: pointer; }
 
     .user-toast {
       position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 20px);
@@ -178,6 +189,7 @@
             <table id="membersTable" class="data-table">
               <thead>
                 <tr>
+                  <th class="col-sel"><input type="checkbox" id="memberSelAll" aria-label="Select every member matching the current filters"></th>
                   <th>Member</th>
                   <th>Contact</th>
                   <th>Location</th>
@@ -197,11 +209,14 @@
                     $accountLabel = $m->user ? ($m->user->role === 'store_owner' ? 'Store Owner' : 'Farmer') : '';
                     $search = strtolower($m->fullName() . ' ' . ($m->assoc_member_no ?? '') . ' ' . ($m->email ?? '') . ' ' . ($m->phone ?? '') . ' ' . $location . ' ' . $farming);
                   @endphp
-                  <tr data-search="{{ $search }}"
+                  <tr data-id="{{ $m->id }}" data-search="{{ $search }}"
                       data-status="{{ $m->status }}"
                       data-account="{{ $m->user_id !== null ? 'linked' : 'none' }}"
                       data-name="{{ strtolower($m->fullName()) }}"
                       data-joined="{{ $m->created_at?->format('Y-m-d') ?? '' }}">
+                    <td>
+                      <input type="checkbox" class="member-sel" value="{{ $m->id }}" aria-label="Select {{ $m->fullName() }}">
+                    </td>
                     <td>
                       <div class="user-cell">
                         <x-user-avatar :user="$m" :size="36" />
@@ -288,6 +303,22 @@
     </div>
   </div>
 
+  <div class="bulk-selbar" id="memberSelBar" hidden>
+    <span class="bulk-selbar-count"><b id="memberSelCount">0</b> selected</span>
+    <form method="POST" action="{{ route('admin.members.archive') }}">
+      @csrf
+      <input type="hidden" name="ids" id="memberSelIds">
+      <button type="button" class="bulk-selbar-clear" id="memberSelClear">Clear</button>
+      <button type="submit" class="bulk-selbar-archive" id="memberSelArchive"
+              data-aqui-tone="danger"
+              data-aqui-title="Archive members?"
+              data-aqui-confirm-label="Archive members"
+              data-aqui-confirm="Selected member records will be archived, not permanently deleted. They will no longer appear in All Members.">
+        Archive selected
+      </button>
+    </form>
+  </div>
+
   <div class="user-toast" id="memberToast"></div>
 
   <script>
@@ -309,6 +340,59 @@
       @if (session('error'))
         showToast(@js(session('error')), true);
       @endif
+
+      var table = document.getElementById('membersTable');
+      var bar = document.getElementById('memberSelBar');
+      var selAll = document.getElementById('memberSelAll');
+      if (table && bar && selAll) {
+        var countEl = document.getElementById('memberSelCount');
+        var idsInput = document.getElementById('memberSelIds');
+        var clearBtn = document.getElementById('memberSelClear');
+        var archiveBtn = document.getElementById('memberSelArchive');
+        var selected = new Set();
+        var matched = [];
+        function rowId(row) { return String(row.getAttribute('data-id') || ''); }
+        function sync() {
+          table.querySelectorAll('tbody tr[data-id]').forEach(function (row) {
+            var box = row.querySelector('.member-sel');
+            if (box) box.checked = selected.has(rowId(row));
+          });
+          var matchedSelected = matched.filter(function (row) { return selected.has(rowId(row)); }).length;
+          selAll.disabled = matched.length === 0;
+          selAll.checked = matched.length > 0 && matchedSelected === matched.length;
+          selAll.indeterminate = matchedSelected > 0 && matchedSelected < matched.length;
+          bar.hidden = selected.size === 0;
+          countEl.textContent = String(selected.size);
+          idsInput.value = Array.from(selected).join(',');
+          archiveBtn.disabled = selected.size === 0;
+        }
+        function receive(rows) {
+          matched = rows || [];
+          var keep = new Set(matched.map(rowId));
+          selected.forEach(function (id) { if (!keep.has(id)) selected.delete(id); });
+          sync();
+        }
+        document.addEventListener('ttb:render', function (e) {
+          if (e.detail && e.detail.table === 'membersTable') receive(e.detail.matched);
+        });
+        function refresh() { receive(table.__ttbMatched || []); }
+        document.addEventListener('turbo:load', refresh);
+        selAll.addEventListener('change', function () {
+          matched.forEach(function (row) {
+            var id = rowId(row);
+            if (selAll.checked) selected.add(id); else selected.delete(id);
+          });
+          sync();
+        });
+        table.addEventListener('change', function (e) {
+          var box = e.target.closest ? e.target.closest('.member-sel') : null;
+          if (!box) return;
+          if (box.checked) selected.add(box.value); else selected.delete(box.value);
+          sync();
+        });
+        clearBtn.addEventListener('click', function () { selected.clear(); sync(); });
+        refresh();
+      }
     })();
   </script>
 @endsection
