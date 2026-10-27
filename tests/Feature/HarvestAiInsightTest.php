@@ -89,15 +89,14 @@ class HarvestAiInsightTest extends TestCase
             ->assertSee('Why does Farmer Ana sit at 3.400 MT/ha?', false);
     }
 
-    public function test_the_harvest_page_links_to_the_ai_subpage(): void
+    public function test_the_harvest_page_does_not_duplicate_the_ai_subpage_button(): void
     {
         $this->seedHarvests();
 
         $this->actingAs($this->admin)
             ->get(route('admin.harvests.index'))
             ->assertOk()
-            ->assertSee(route('admin.harvests.ai'), false)
-            ->assertSee('AI Insights');
+            ->assertDontSee('title="Explain this harvest data with AI"', false);
     }
 
     public function test_a_farmer_cannot_reach_the_admin_ai_subpage(): void

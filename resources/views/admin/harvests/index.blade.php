@@ -102,17 +102,13 @@
     <p style="font-size: 13px; color: #64748b; margin: 5px 0 0 0;">Headline figures for the whole association, with the detail one click away.</p>
   </div>
   <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-    <a href="{{ route('admin.harvests.reports') }}" class="btn-nav" title="Browse, filter and export every harvest report">
+    <a href="{{ route('admin.harvests.reports') }}" class="btn-nav ghost" title="Browse, filter and export every harvest report">
       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       All Harvest Reports
     </a>
-    <a href="{{ route('admin.harvests.compare') }}" class="btn-nav" style="background: #166534; box-shadow: 0 4px 12px rgba(22, 101, 52, 0.25);" title="Compare planting estimates against reported yield">
+    <a href="{{ route('admin.harvests.compare') }}" class="btn-nav ghost" title="Compare planting estimates against reported yield">
       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Estimate vs Harvest
-    </a>
-    <a href="{{ route('admin.harvests.ai') }}" class="btn-nav ghost" title="Explain this harvest data with AI">
-      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
-      AI Insights
     </a>
   </div>
 </div>

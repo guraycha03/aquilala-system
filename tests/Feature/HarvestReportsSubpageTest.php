@@ -60,13 +60,12 @@ class HarvestReportsSubpageTest extends TestCase
             ->assertSee('All Harvest Reports');
     }
 
-    public function test_the_landing_page_still_links_to_the_ai_subpage(): void
+    public function test_the_landing_page_keeps_ai_insights_on_its_separate_subpage(): void
     {
         $response = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
 
         $response->assertOk()
-            ->assertSee(route('admin.harvests.ai'), false)
-            ->assertSee('AI Insights');
+            ->assertDontSee('title="Explain this harvest data with AI"', false);
     }
 
     // ── Reports sub-page ──────────────────────────────────────────
