@@ -63,7 +63,7 @@ done
 if [ -n "${GIT_REPO_URL:-}" ]; then
   log "Cloning $GIT_REPO_URL (${GIT_REPO_BRANCH:-main}) -> $APP_DIR"
   rm -rf "$APP_DIR"
-  git clone --depth 1 "${GIT_REPO_BRANCH:-main}" "$GIT_REPO_URL" "$APP_DIR"
+  git clone --depth 1 --branch "${GIT_REPO_BRANCH:-main}" "$GIT_REPO_URL" "$APP_DIR"
   if [ -d "$STAGE/appdir/storage/app" ]; then
     mkdir -p "$APP_DIR/storage/app"
     cp -a "$STAGE/appdir/storage/app/." "$APP_DIR/storage/app/"
