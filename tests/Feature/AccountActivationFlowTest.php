@@ -6,6 +6,7 @@ use App\Exceptions\Onboarding\InvalidOtpException;
 use App\Mail\ActivationOtpMail;
 use App\Mail\PasswordResetOtpMail;
 use App\Models\EmailOtp;
+use App\Models\Member;
 use App\Models\User;
 use App\Models\UserActivation;
 use App\Services\EmailOtpService;
@@ -35,9 +36,33 @@ class AccountActivationFlowTest extends TestCase
         ]);
     }
 
+    /**
+     * The person on the members list this account is created from.
+     *
+     * Accounts are no longer typed in — the administrator picks a member and
+     * supplies the email the invitation goes to — so every payload below
+     * starts from an existing member record.
+     */
+    private ?Member $member = null;
+
+    private function member(): Member
+    {
+        return $this->member ??= Member::create([
+            'first_name' => 'Juan',
+            'last_name' => 'Dela Cruz',
+            'name' => 'Juan Dela Cruz',
+            'phone' => '09171234567',
+            'barangay' => 'Malaybalay',
+            'city' => 'Valencia',
+            'province' => 'Bukidnon',
+            'status' => Member::STATUS_ACTIVE,
+        ]);
+    }
+
     private function validPayload(array $overrides = []): array
     {
         return array_merge([
+            'member_id' => $this->member()->id,
             'first_name' => 'Juan',
             'last_name' => 'Dela Cruz',
             'email' => 'juan@farmer.test',

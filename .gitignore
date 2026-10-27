@@ -2,6 +2,8 @@
 .DS_Store
 .env
 message_to_opencode.txt
+z-note.txt
+z.txt
 .env.backup
 .env.production
 .phpactor.json
@@ -24,3 +26,11 @@ message_to_opencode.txt
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Migration artifacts — never commit (secrets: prod .env backup + SSH keys)
+aquilala-backup-*.tar.gz
+aquilala_key*
+*.pem
+
+# Database dumps — contain password hashes and personal data
+/database/backups/

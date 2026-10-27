@@ -717,10 +717,8 @@
                 </div>
               @endforeach
             </div>
-            <a href="{{ route('admin.analytics.matrix') }}" class="list-more" style="text-decoration:none;">
-              <svg viewBox="0 0 24 24"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
-              View Full Matrix
-            </a>
+            {{-- The standalone formula matrix page is gone; formulas now live
+                 on each product's own info instead of in a full-screen list. --}}
           @endif
         </div>
       </section>

@@ -23,7 +23,7 @@ class PwaSetupTest extends TestCase
             'name' => $name,
             'first_name' => explode(' ', $name)[0],
             'last_name' => explode(' ', $name)[1] ?? 'Test',
-            'email' => strtolower(str_replace(' ', '_', $name)) . '_' . uniqid() . '@example.com',
+            'email' => strtolower(str_replace(' ', '_', $name)).'_'.uniqid().'@example.com',
             'role' => $role,
             'password' => 'password123',
         ]);
@@ -95,5 +95,74 @@ class PwaSetupTest extends TestCase
             ->assertSee('apple-mobile-web-app-capable', false)
             ->assertSee('images/pwa/apple-touch-icon.png', false)
             ->assertSee('theme-color', false);
+    }
+
+    // ── Connection status: a strip at the top, never a dead-end page ──
+
+    public function test_the_connection_strip_is_wired_into_both_layouts(): void
+    {
+        $this->assertFileExists(public_path('js/net-status.js'), 'public/js/net-status.js missing');
+
+        $js = file_get_contents(public_path('js/net-status.js'));
+        $this->assertStringContainsString("fetch('/up'", $js, 'the strip must probe the real server, not just navigator.onLine');
+        $this->assertStringContainsString('AQ_NET', $js, 'the strip must listen to the service worker');
+        $this->assertStringContainsString('aq-netbar-on', $js, 'the strip must offset the fixed chrome instead of covering it');
+        $this->assertStringContainsString('turbo:load', $js, 'Turbo swaps <body>, so the strip has to be re-attached');
+
+        // Both shells: the signed-in app and the login page behind it.
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('js/net-status.js', false);
+
+        $farmer = $this->makeUser('PWA Strip Farmer', 'farmer');
+
+        $this->actingAs($farmer)
+            ->get(route('dashboard.farmer'))
+            ->assertOk()
+            ->assertSee('js/net-status.js', false);
+    }
+
+    public function test_the_health_endpoint_the_strip_probes_is_live(): void
+    {
+        $this->get('/up')->assertOk();
+    }
+
+    public function test_the_offline_page_recovers_on_its_own(): void
+    {
+        $offline = file_get_contents(public_path('offline.html'));
+
+        $this->assertStringContainsString("You're offline", $offline);
+        $this->assertStringContainsString(
+            "fetch('/up'",
+            $offline,
+            'the offline page must probe the server rather than assume the internet is the problem'
+        );
+        $this->assertStringContainsString(
+            'location.reload()',
+            $offline,
+            '...and reload itself when the server answers, without the user having to work out what is wrong'
+        );
+        $this->assertStringContainsString(
+            "addEventListener('online'",
+            $offline,
+            '...the moment connectivity returns'
+        );
+    }
+
+    public function test_the_service_worker_retries_before_declaring_the_app_offline(): void
+    {
+        $sw = file_get_contents(public_path('sw.js'));
+
+        $this->assertStringContainsString(
+            'PAGE_RETRY_DELAY_MS',
+            $sw,
+            'one transient failure must not drop a working session into the offline screen'
+        );
+        $this->assertStringContainsString(
+            'AQ_NET',
+            $sw,
+            'the open page must be told the moment a navigation fails'
+        );
+        $this->assertStringContainsString('cachePage', $sw);
     }
 }

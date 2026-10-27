@@ -24,7 +24,7 @@ return [
     |
     |   1. Add the extension to the array below, e.g. 'xls'.
     |   2. If it is a spreadsheet, make sure a reader handles it —
-    |      AdminUserImportController::readRawRows() dispatches per extension.
+    |      AdminMemberImportController::readRawRows() dispatches per extension.
     |      ProductImportService already auto-detects via PhpSpreadsheet.
     |
     | Nothing else changes: every message, template and file picker follows

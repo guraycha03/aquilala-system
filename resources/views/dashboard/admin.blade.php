@@ -209,8 +209,10 @@
         $nextEventType = $upcomingEvent?->type_label;
     @endphp
     <section class="kpi-strip">
-      {{-- Who is in the association --}}
-      <x-kpi-card title="Total IA Members" value="{{ $farmersCount }}" trendLabel="Official farmer registry" accent="#4A7A54" link="{{ route('admin.users.index') }}">
+      {{-- Who is in the association — the members list, not the accounts
+           table: a CSV/scan import adds people without logins, so counting
+           farmer accounts here would read 0 right after an upload. --}}
+      <x-kpi-card title="Total IA Members" value="{{ $totalMembers }}" trendLabel="Official farmer registry" accent="#4A7A54" link="{{ route('admin.members.index') }}">
         {{-- Local copy of the Icons8 farmer glyph (from message_to_opencode.txt),
              vendored to public/images so the card doesn't depend on a remote
              host. The source PNG is solid black, which fought the sage chips,

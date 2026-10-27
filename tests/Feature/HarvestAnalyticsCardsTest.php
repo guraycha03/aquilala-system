@@ -12,12 +12,15 @@ use Tests\TestCase;
 /**
  * The analytics cards moved off the AI page onto the Harvest Performance
  * landing page. Periods in scope was later taken off that page too and folded
- * into a "Full view" dialog opened from the Latest comparison card, so the
- * landing page carries two cards plus the dialog.
+ * into a "Full view" reachable from the Latest comparison card — first as a
+ * dialog, then as its own page (/admin/harvests/history), because a dialog
+ * never had the room to read the whole chart. The landing page carries two
+ * cards plus the button into that page.
  *
  * Three things are defended:
  *   1. The cards live on /admin/harvests and the AI page renders none of them.
- *   2. The full harvest history is still one click away, as a dialog.
+ *   2. The full harvest history is still one click away — as a breadcrumbed
+ *      page, deliberately absent from the sidebar.
  *   3. Nothing was lost to the model. The landing page and the AI digest read
  *      from the same HarvestInsightService context, so the figures the charts
  *      draw are exactly the figures the analysis is allowed to quote.
@@ -64,21 +67,30 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->assertSee('Ranked by number of harvest reports filed.')
             // Periods in scope was taken off the landing page…
             ->assertDontSee('Periods in scope')
-            // …and moved behind the Latest comparison card's Full view button.
+            // …and moved behind the Latest comparison card's Full view button,
+            // which now opens a page of its own instead of a dialog.
             ->assertSee('Full view')
-            ->assertSee('Full harvest history');
+            ->assertSee(route('admin.harvests.history'), false)
+            ->assertDontSee('id="hpHistoryModal"', false);
     }
 
-    public function test_the_full_view_button_opens_the_whole_harvest_history(): void
+    public function test_the_full_view_button_opens_the_full_history_page(): void
     {
         $this->seedHarvests();
 
-        $response = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
+        $landing = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
 
-        $response->assertOk()
-            ->assertSee('data-hp-history-open', false)
-            ->assertSee('id="hpHistoryModal"', false)
-            ->assertSee('aria-modal="true"', false)
+        $landing->assertOk()
+            ->assertSee(route('admin.harvests.history'), false)
+            // The dialog is gone — its contents live on the page now. (The
+            // layout's own notice modals keep aria-modal; only the harvest
+            // dialog's own hooks are asserted gone.)
+            ->assertDontSee('data-hp-history-open', false)
+            ->assertDontSee('id="hpHistoryModal"', false);
+
+        $page = $this->actingAs($this->admin)->get(route('admin.harvests.history'));
+
+        $page->assertOk()
             // Every period, with its report count and yield per hectare.
             ->assertSee('2025 Dry Season')
             ->assertSee('2026 Wet Season')
@@ -88,19 +100,56 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->assertSee('4.500 MT/ha');
     }
 
+    public function test_the_full_history_page_carries_a_breadcrumb_back_to_harvest_performance(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('admin.harvests.history'));
+
+        $response->assertOk()
+            ->assertSee(route('admin.harvests.index'), false)
+            ->assertSee('>Harvest Performance', false);
+    }
+
+    public function test_the_full_history_page_is_not_listed_in_the_sidebar(): void
+    {
+        $listed = collect(config('admin-nav'))
+            ->flatMap(fn (array $group) => collect($group['items'] ?? [])->flatMap(fn (array $item) => $item['routes'] ?? []))
+            ->merge(collect(config('admin-nav'))->flatMap(fn (array $group) => $group['hidden_routes'] ?? []));
+
+        $this->assertFalse(
+            $listed->contains('admin.harvests.history'),
+            'The full history page is a view of the landing page, not a sidebar destination.'
+        );
+    }
+
+    public function test_the_full_history_page_shows_its_own_empty_state(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('admin.harvests.history'));
+
+        $response->assertOk()
+            ->assertSee('No harvest reports recorded yet, so there are no periods to group.')
+            ->assertDontSee('id="periodsChart"', false);
+    }
+
     public function test_the_landing_page_draws_the_period_and_comparison_cards_as_charts(): void
     {
         $this->seedHarvests();
 
-        $response = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
+        $landing = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
 
-        $response->assertOk()
+        $landing->assertOk()
             // Chart.js is vendored locally (no CDN requests on page load).
             ->assertSee('js/chart.umd.min.js', false)
             ->assertDontSee('cdn.jsdelivr.net', false)
-            // periodsChart renders inside the Full view dialog now.
-            ->assertSee('id="periodsChart"', false)
-            ->assertSee('id="latestChart"', false);
+            // The comparison card stays; the periods chart moved to its page.
+            ->assertSee('id="latestChart"', false)
+            ->assertDontSee('id="periodsChart"', false);
+
+        $page = $this->actingAs($this->admin)->get(route('admin.harvests.history'));
+
+        $page->assertOk()
+            ->assertSee('js/chart.umd.min.js', false)
+            ->assertDontSee('cdn.jsdelivr.net', false)
+            ->assertSee('id="periodsChart"', false);
     }
 
     public function test_the_farmer_ranking_is_a_medal_list_not_a_chart(): void
@@ -126,23 +175,35 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->assertSee('1 rpt');
     }
 
-    public function test_the_full_history_dialog_plots_one_line_per_season_over_time(): void
+    public function test_the_full_history_page_continues_the_landing_pages_bar_chart(): void
     {
         $this->seedHarvests();
 
-        $response = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
+        $response = $this->actingAs($this->admin)->get(route('admin.harvests.history'));
 
         $response->assertOk()
             ->assertSee('id="periodsChart"', false)
-            // Not a bar chart any more: a single line chart with two series.
-            ->assertSee("type: 'line'", false)
-            ->assertSee("seasonLine('wet', 'Wet season', WET_LINE)", false)
-            ->assertSee("seasonLine('dry', 'Dry season', DRY_LINE)", false)
-            // The two lines are stitched across the periods they have no data for.
-            ->assertSee('spanGaps: true', false)
-            // …and the chart is built on open, so it measures a visible box.
-            ->assertSee('renderPeriodsChart()', false)
-            // The comparison card is still a bar chart.
+            // The same bar chart the landing page's Latest comparison draws —
+            // same dataset name, same season colours — so the page reads as
+            // that graph continued rather than a second charting style.
+            ->assertSee("type: 'bar'", false)
+            ->assertSee("label: 'Yield per hectare (MT/ha)'", false)
+            ->assertSee('seasonColor(s, 0.72)', false)
+            // The axis carries the year alone, each tick coloured by its
+            // period's season — short labels that never slant.
+            ->assertSee('var periodYears', false)
+            ->assertSee('maxRotation: 0', false)
+            ->assertDontSee('seasonLine', false)
+            ->assertDontSee('spanGaps', false)
+            // The per-period figures sit in the shared styled table now, not
+            // in the old joined list.
+            ->assertSee('class="data-table"', false)
+            ->assertDontSee('fh-list', false);
+
+        // The comparison card on the landing page is still a bar chart.
+        $this->actingAs($this->admin)
+            ->get(route('admin.harvests.index'))
+            ->assertOk()
             ->assertSee('id="latestChart"', false)
             ->assertSee("type: 'bar'", false);
     }
@@ -153,14 +214,6 @@ class HarvestAnalyticsCardsTest extends TestCase
 
         $response = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
 
-        // Period rows: both periods, their report counts, their yield per hectare.
-        $response->assertSee('2025 Dry Season')
-            ->assertSee('2026 Wet Season')
-            ->assertSee('3 rpt')
-            ->assertSee('4 rpt')
-            ->assertSee('3.750 MT/ha')
-            ->assertSee('4.500 MT/ha');
-
         // Comparison rows.
         $response->assertSee('2026 Wet Season vs 2025 Dry Season')
             ->assertSee('Change in yield per hectare');
@@ -170,6 +223,17 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->assertSee('#2 Analytics Ben')
             ->assertSee('3 rpt')
             ->assertSee('2 rpt');
+
+        // Period rows live on the full history page: both periods, their
+        // report counts and their yield per hectare.
+        $page = $this->actingAs($this->admin)->get(route('admin.harvests.history'));
+
+        $page->assertSee('2025 Dry Season')
+            ->assertSee('2026 Wet Season')
+            ->assertSee('3 rpt')
+            ->assertSee('4 rpt')
+            ->assertSee('3.750 MT/ha')
+            ->assertSee('4.500 MT/ha');
     }
 
     public function test_the_landing_page_shows_empty_states_before_any_report_exists(): void
@@ -177,7 +241,6 @@ class HarvestAnalyticsCardsTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
 
         $response->assertOk()
-            ->assertSee('No harvest reports recorded yet, so there are no periods to group.')
             ->assertSee('Only one harvest period exists so far')
             ->assertSee('No farmer records to rank yet.')
             ->assertDontSee('id="periodsChart"', false);

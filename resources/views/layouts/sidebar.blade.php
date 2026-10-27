@@ -23,6 +23,7 @@
   <meta name="apple-mobile-web-app-title" content="Aquilala">
   <link rel="apple-touch-icon" href="{{ asset('images/pwa/apple-touch-icon.png') }}">
   <script src="{{ asset('js/pwa-register.js') }}" defer></script>
+  <script src="{{ asset('js/net-status.js') }}" defer></script>
   {{-- Shared filter-collapse engine: pages with a search bar + filter choices
        hide those choices behind one funnel button (.btn-filter) until asked. --}}
   <script src="{{ asset('js/filter-collapse.js') }}" defer></script>
@@ -146,6 +147,25 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scrollbar-width: none; -ms-overflow-style: none; }
     html::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+    /* ── The one primary button the whole app shares ────────────────
+       Every page styles its own .btn-primary — the size, the padding,
+       the shape — but the colour is one decision for the whole system:
+       a soft sage green rather than a near-black one, so the button
+       sits on the page instead of shouting over it. Qualified with the
+       content wrapper so it wins over the per-page rules. */
+    .main-content .btn-primary {
+      background-color: #3F6B4D;
+      background-image: none;
+      border-color: #3F6B4D;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(63, 107, 77, 0.20);
+    }
+    .main-content .btn-primary:hover {
+      background-color: #375F43;
+      border-color: #375F43;
+      box-shadow: 0 6px 16px rgba(63, 107, 77, 0.24);
+    }
 
     /* ── System color rule (applies to every page): muted, matte, WARM SAGE
        greens — never bright or neon greens, never hard black borders or
@@ -967,6 +987,9 @@
       foreach ($section['items'] as $item) {
         if (request()->routeIs(...$item['routes'])) { $activeAdminSection = $ai; break 2; }
       }
+      // Pages intentionally left out of the menu (hidden_routes in
+      // config/admin-nav.php) still open their section while on screen.
+      if (!empty($section['hidden_routes']) && request()->routeIs(...$section['hidden_routes'])) { $activeAdminSection = $ai; break; }
     }
   }
   $storeNav = config('store-nav') ?? [];
@@ -1317,13 +1340,25 @@
             </a>
           </li>
           <li>
-            <a href="{{ route('admin.users.index') }}" class="{{ request()->is('admin/users*') || request()->is('admin/approvals*') || request()->is('admin/stores*') ? 'active' : '' }}">
+            <a href="{{ route('admin.members.index') }}" class="{{ request()->is('admin/members*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              Members
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('admin.users.index') }}" class="{{ request()->is('admin/users*') || request()->is('admin/approvals*') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               Users
             </a>
           </li>
           <li>
-            <a href="{{ route('admin.operations.formulas') }}" class="{{ request()->is('admin/operations*') || request()->routeIs('admin.plantings.index') ? 'active' : '' }}">
+            <a href="{{ route('admin.stores.index') }}" class="{{ request()->is('admin/stores*') ? 'active' : '' }}">
+              <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/><path d="M4 11h16v10H4z"/></svg>
+              Stores
+            </a>
+          </li>
+          <li>
+            <a href="{{ route('admin.operations.catalog') }}" class="{{ request()->is('admin/operations*') || request()->routeIs('admin.plantings.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
               Crops &amp; Inputs
             </a>

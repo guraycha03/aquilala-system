@@ -41,7 +41,7 @@ class AssociationCalendarTest extends TestCase
         return AssociationEvent::create(array_merge([
             'title' => 'Sample Association Event',
             'event_type' => AssociationEvent::TYPE_MEETING,
-            'event_date' => now()->addDays(7)->toDateString(),
+            'event_date' => now()->addDay()->toDateString(),
             'start_time' => '09:00',
             'end_time' => '11:00',
             'location' => 'Association Office',
@@ -196,6 +196,7 @@ class AssociationCalendarTest extends TestCase
     public function test_admin_cannot_move_an_event_into_the_past(): void
     {
         $event = $this->makeEvent();
+        $originalDate = $event->event_date->toDateString();
 
         $this->actingAs($this->admin)
             ->put(route('admin.calendar.events.update', $event), [
@@ -205,7 +206,7 @@ class AssociationCalendarTest extends TestCase
             ])
             ->assertSessionHasErrors('event_date');
 
-        $this->assertSame(now()->addDays(7)->toDateString(), $event->fresh()->event_date->toDateString());
+        $this->assertSame($originalDate, $event->fresh()->event_date->toDateString());
     }
 
     public function test_admin_can_edit_a_past_events_details(): void

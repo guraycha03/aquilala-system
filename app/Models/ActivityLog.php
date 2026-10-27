@@ -25,50 +25,104 @@ class ActivityLog extends Model
 
     protected $casts = [
         'metadata' => 'array',
-        'read_at'  => 'datetime',
+        'read_at' => 'datetime',
     ];
 
     // ── Types ─────────────────────────────────────────────────────
     const TYPE_QUOTATION_CREATED = 'quotation.created';
+
     const TYPE_QUOTATION_DELETED = 'quotation.deleted';
-    const TYPE_QUOTATION_VIEWED  = 'quotation.viewed';
-    const TYPE_CROP_PLANTED      = 'crop.planted';
-    const TYPE_CROP_UPDATED      = 'crop.updated';
-    const TYPE_CROP_HARVESTED    = 'crop.harvested';
-    const TYPE_CROP_DELETED      = 'crop.deleted';
-    const TYPE_CROP_CONFIRMED    = 'crop.confirmed';
-    const TYPE_CROP_REJECTED     = 'crop.rejected';
-    const TYPE_LAND_UPDATED      = 'land.updated';
-    const TYPE_PRODUCT_CREATED   = 'product.created';
-    const TYPE_PRODUCT_UPDATED   = 'product.updated';
-    const TYPE_PRODUCT_DELETED   = 'product.deleted';
-    const TYPE_PRODUCT_RESTORED  = 'product.restored';
-    const TYPE_PRODUCT_IMPORTED  = 'product.imported';
-    const TYPE_FORMULA_CREATED   = 'formula.created';
-    const TYPE_FORMULA_UPDATED   = 'formula.updated';
-    const TYPE_FORMULA_DELETED   = 'formula.deleted';
-    const TYPE_REVIEW_CREATED    = 'review.created';
-    const TYPE_REVIEW_DELETED    = 'review.deleted';
-    const TYPE_REVIEW_APPROVED   = 'review.approved';
-    const TYPE_REVIEW_REJECTED   = 'review.rejected';
-    const TYPE_HARVEST_CREATED   = 'harvest.created';
-    const TYPE_HARVEST_DELETED   = 'harvest.deleted';
-    const TYPE_WEATHER_CREATED   = 'weather.created';
-    const TYPE_WEATHER_DELETED   = 'weather.deleted';
-    const TYPE_EVENT_CREATED     = 'event.created';
-    const TYPE_EVENT_UPDATED     = 'event.updated';
-    const TYPE_EVENT_DELETED     = 'event.deleted';
-    const TYPE_LOGIN             = 'auth.login';
-    const TYPE_LOGOUT            = 'auth.logout';
-    const TYPE_LOGIN_FAILED      = 'auth.login_failed';
-    const TYPE_USER_INVITED      = 'user.invited';
-    const TYPE_USER_APPROVED     = 'user.approved';
-    const TYPE_USER_REJECTED     = 'user.rejected';
-    const TYPE_USER_IMPORTED     = 'user.imported';
-    const TYPE_USER_ACTIVATED    = 'user.activated';
-    const TYPE_ADMIN_CREATED     = 'admin.created';
-    const TYPE_EMAIL_VERIFIED    = 'email.verified';
+
+    const TYPE_QUOTATION_VIEWED = 'quotation.viewed';
+
+    const TYPE_CROP_PLANTED = 'crop.planted';
+
+    const TYPE_CROP_UPDATED = 'crop.updated';
+
+    const TYPE_CROP_HARVESTED = 'crop.harvested';
+
+    const TYPE_CROP_DELETED = 'crop.deleted';
+
+    const TYPE_CROP_CONFIRMED = 'crop.confirmed';
+
+    const TYPE_CROP_REJECTED = 'crop.rejected';
+
+    const TYPE_LAND_UPDATED = 'land.updated';
+
+    const TYPE_PRODUCT_CREATED = 'product.created';
+
+    const TYPE_PRODUCT_UPDATED = 'product.updated';
+
+    const TYPE_PRODUCT_DELETED = 'product.deleted';
+
+    const TYPE_PRODUCT_RESTORED = 'product.restored';
+
+    const TYPE_PRODUCT_IMPORTED = 'product.imported';
+
+    const TYPE_FORMULA_CREATED = 'formula.created';
+
+    const TYPE_FORMULA_UPDATED = 'formula.updated';
+
+    const TYPE_FORMULA_DELETED = 'formula.deleted';
+
+    const TYPE_REVIEW_CREATED = 'review.created';
+
+    const TYPE_REVIEW_DELETED = 'review.deleted';
+
+    const TYPE_REVIEW_APPROVED = 'review.approved';
+
+    const TYPE_REVIEW_REJECTED = 'review.rejected';
+
+    const TYPE_HARVEST_CREATED = 'harvest.created';
+
+    const TYPE_HARVEST_DELETED = 'harvest.deleted';
+
+    const TYPE_WEATHER_CREATED = 'weather.created';
+
+    const TYPE_WEATHER_DELETED = 'weather.deleted';
+
+    const TYPE_EVENT_CREATED = 'event.created';
+
+    const TYPE_EVENT_UPDATED = 'event.updated';
+
+    const TYPE_EVENT_DELETED = 'event.deleted';
+
+    const TYPE_LOGIN = 'auth.login';
+
+    const TYPE_LOGOUT = 'auth.logout';
+
+    const TYPE_LOGIN_FAILED = 'auth.login_failed';
+
+    const TYPE_USER_INVITED = 'user.invited';
+
+    const TYPE_USER_APPROVED = 'user.approved';
+
+    const TYPE_USER_REJECTED = 'user.rejected';
+
+    const TYPE_USER_IMPORTED = 'user.imported';
+
+    const TYPE_USER_ACTIVATED = 'user.activated';
+
+    const TYPE_ADMIN_CREATED = 'admin.created';
+
+    // Granted by an existing administrator through the app (not the terminal),
+    // with a password re-check + explicit confirmation. Always logged with the
+    // granting admin as the actor so the trail answers "who made this admin?".
+    const TYPE_ADMIN_PROMOTED = 'admin.promoted';
+
+    const TYPE_EMAIL_VERIFIED = 'email.verified';
+
     const TYPE_ACCOUNT_PROVISIONED = 'account.provisioned';
+
+    const TYPE_MEMBER_CREATED = 'member.created';
+
+    const TYPE_MEMBER_UPDATED = 'member.updated';
+
+    const TYPE_MEMBER_DELETED = 'member.deleted';
+
+    const TYPE_MEMBER_IMPORTED = 'member.imported';
+
+    const TYPE_HARVEST_IMPORTED = 'harvest.imported';
 
     /**
      * How long a store's notice about a farmer's estimate stays in the
@@ -87,24 +141,24 @@ class ActivityLog extends Model
      * under Account Management.
      */
     const CATEGORY_PREFIXES = [
-        'auth'     => ['auth'],
-        'account'  => ['user', 'admin', 'email', 'account'],
-        'product'  => ['product'],
-        'formula'  => ['formula'],
+        'auth' => ['auth'],
+        'account' => ['user', 'admin', 'email', 'account'],
+        'product' => ['product'],
+        'formula' => ['formula'],
         'quotation' => ['quotation'],
-        'farm'     => ['crop', 'land', 'harvest', 'weather', 'event'],
-        'review'   => ['review'],
+        'farm' => ['crop', 'land', 'harvest', 'weather', 'event'],
+        'review' => ['review'],
     ];
 
     const CATEGORY_LABELS = [
-        'auth'      => 'Authentication',
-        'account'   => 'Account Management',
-        'product'   => 'Products',
-        'formula'   => 'Input Formulas',
+        'auth' => 'Authentication',
+        'account' => 'Account Management',
+        'product' => 'Products',
+        'formula' => 'Input Formulas',
         'quotation' => 'Quotations',
-        'farm'      => 'Farming',
-        'review'    => 'Reviews',
-        'system'    => 'System',
+        'farm' => 'Farming',
+        'review' => 'Reviews',
+        'system' => 'System',
     ];
 
     // ── Relationships ─────────────────────────────────────────────
@@ -206,7 +260,7 @@ class ActivityLog extends Model
 
         return $query->where(function ($q) use ($prefixes) {
             foreach ($prefixes as $prefix) {
-                $q->orWhere('type', 'like', $prefix . '.%');
+                $q->orWhere('type', 'like', $prefix.'.%');
             }
         });
     }
@@ -312,7 +366,7 @@ class ActivityLog extends Model
         }
 
         $start = $this->metadata['start_time'] ?? null;
-        $end   = $this->metadata['end_time'] ?? null;
+        $end = $this->metadata['end_time'] ?? null;
 
         return AssociationEvent::computeState(
             Carbon::parse($date),
@@ -339,16 +393,16 @@ class ActivityLog extends Model
     public function getDisplayDescriptionAttribute(): string
     {
         $prefix = match ($this->event_state) {
-            AssociationEvent::STATE_DONE     => 'Past event',
-            AssociationEvent::STATE_ONGOING  => 'Happening now',
-            default                          => null,
+            AssociationEvent::STATE_DONE => 'Past event',
+            AssociationEvent::STATE_ONGOING => 'Happening now',
+            default => null,
         };
 
         if ($prefix === null) {
             return (string) $this->description;
         }
 
-        return preg_replace('/^(?:Upcoming event|Happening now|Past event):/', $prefix . ':', (string) $this->description, 1)
+        return preg_replace('/^(?:Upcoming event|Happening now|Past event):/', $prefix.':', (string) $this->description, 1)
             ?: (string) $this->description;
     }
 
@@ -362,55 +416,61 @@ class ActivityLog extends Model
     public function getIconAttribute(): string
     {
         return match ($this->type) {
-            self::TYPE_QUOTATION_CREATED  => 'file-plus',
-            self::TYPE_QUOTATION_VIEWED   => 'file-text',
-            self::TYPE_QUOTATION_DELETED  => 'file-x',
+            self::TYPE_QUOTATION_CREATED => 'file-plus',
+            self::TYPE_QUOTATION_VIEWED => 'file-text',
+            self::TYPE_QUOTATION_DELETED => 'file-x',
 
-            self::TYPE_CROP_PLANTED       => 'sprout',
-            self::TYPE_CROP_UPDATED       => 'leaf',
-            self::TYPE_CROP_HARVESTED     => 'wheat',
-            self::TYPE_CROP_DELETED       => 'trash-2',
-            self::TYPE_CROP_CONFIRMED     => 'circle-check',
-            self::TYPE_CROP_REJECTED      => 'circle-x',
+            self::TYPE_CROP_PLANTED => 'sprout',
+            self::TYPE_CROP_UPDATED => 'leaf',
+            self::TYPE_CROP_HARVESTED => 'wheat',
+            self::TYPE_CROP_DELETED => 'trash-2',
+            self::TYPE_CROP_CONFIRMED => 'circle-check',
+            self::TYPE_CROP_REJECTED => 'circle-x',
 
-            self::TYPE_LAND_UPDATED       => 'map',
+            self::TYPE_LAND_UPDATED => 'map',
 
-            self::TYPE_PRODUCT_CREATED    => 'package-plus',
-            self::TYPE_PRODUCT_UPDATED    => 'package',
-            self::TYPE_PRODUCT_DELETED    => 'package-x',
-            self::TYPE_PRODUCT_RESTORED   => 'package-check',
-            self::TYPE_PRODUCT_IMPORTED   => 'package-plus',
+            self::TYPE_PRODUCT_CREATED => 'package-plus',
+            self::TYPE_PRODUCT_UPDATED => 'package',
+            self::TYPE_PRODUCT_DELETED => 'package-x',
+            self::TYPE_PRODUCT_RESTORED => 'package-check',
+            self::TYPE_PRODUCT_IMPORTED => 'package-plus',
 
-            self::TYPE_FORMULA_CREATED    => 'calculator',
-            self::TYPE_FORMULA_UPDATED    => 'calculator',
-            self::TYPE_FORMULA_DELETED    => 'calculator',
+            self::TYPE_FORMULA_CREATED => 'calculator',
+            self::TYPE_FORMULA_UPDATED => 'calculator',
+            self::TYPE_FORMULA_DELETED => 'calculator',
 
-            self::TYPE_REVIEW_CREATED     => 'badge-info',
-            self::TYPE_REVIEW_APPROVED    => 'badge-check',
-            self::TYPE_REVIEW_REJECTED    => 'circle-x',
-            self::TYPE_REVIEW_DELETED     => 'trash-2',
+            self::TYPE_REVIEW_CREATED => 'badge-info',
+            self::TYPE_REVIEW_APPROVED => 'badge-check',
+            self::TYPE_REVIEW_REJECTED => 'circle-x',
+            self::TYPE_REVIEW_DELETED => 'trash-2',
 
-            self::TYPE_HARVEST_CREATED    => 'wheat',
-            self::TYPE_HARVEST_DELETED    => 'trash-2',
+            self::TYPE_HARVEST_CREATED => 'wheat',
+            self::TYPE_HARVEST_IMPORTED => 'wheat',
+            self::TYPE_HARVEST_DELETED => 'trash-2',
 
-            self::TYPE_WEATHER_CREATED    => 'cloud-sun',
+            self::TYPE_WEATHER_CREATED => 'cloud-sun',
 
-            self::TYPE_EVENT_CREATED      => 'calendar-plus',
-            self::TYPE_EVENT_UPDATED      => 'calendar',
-            self::TYPE_EVENT_DELETED      => 'calendar-x',
+            self::TYPE_EVENT_CREATED => 'calendar-plus',
+            self::TYPE_EVENT_UPDATED => 'calendar',
+            self::TYPE_EVENT_DELETED => 'calendar-x',
 
-            self::TYPE_LOGIN              => 'log-in',
-            self::TYPE_LOGOUT             => 'log-out',
-            self::TYPE_LOGIN_FAILED       => 'circle-alert',
+            self::TYPE_LOGIN => 'log-in',
+            self::TYPE_LOGOUT => 'log-out',
+            self::TYPE_LOGIN_FAILED => 'circle-alert',
 
-            self::TYPE_USER_INVITED       => 'user-plus',
-            self::TYPE_USER_APPROVED      => 'user-check',
-            self::TYPE_USER_REJECTED      => 'circle-x',
-            self::TYPE_USER_IMPORTED      => 'users',
-            self::TYPE_USER_ACTIVATED     => 'user-check',
-            self::TYPE_ADMIN_CREATED      => 'user',
-            self::TYPE_EMAIL_VERIFIED     => 'mail',
+            self::TYPE_USER_INVITED => 'user-plus',
+            self::TYPE_USER_APPROVED => 'user-check',
+            self::TYPE_USER_REJECTED => 'circle-x',
+            self::TYPE_USER_IMPORTED => 'users',
+            self::TYPE_USER_ACTIVATED => 'user-check',
+            self::TYPE_ADMIN_CREATED => 'user',
+            self::TYPE_EMAIL_VERIFIED => 'mail',
             self::TYPE_ACCOUNT_PROVISIONED => 'key',
+
+            self::TYPE_MEMBER_CREATED => 'user-plus',
+            self::TYPE_MEMBER_UPDATED => 'user-cog',
+            self::TYPE_MEMBER_DELETED => 'user-x',
+            self::TYPE_MEMBER_IMPORTED => 'users',
 
             default => 'history',
         };

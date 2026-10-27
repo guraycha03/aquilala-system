@@ -65,9 +65,9 @@
 
   .btn-save {
     appearance: none; height: 44px; padding: 0 26px; border: none; border-radius: 10px;
-    background: linear-gradient(135deg, #143d23 0%, #1a5230 100%); color: #fff;
+    background: #3F6B4D; color: #fff;
     font-size: 13px; font-weight: 700; cursor: pointer;
-    box-shadow: 0 2px 8px rgba(20,61,35,0.25);
+    box-shadow: 0 2px 8px rgba(63,107,77,0.22);
     display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease;
   }
   .btn-save:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(20,61,35,0.30); }

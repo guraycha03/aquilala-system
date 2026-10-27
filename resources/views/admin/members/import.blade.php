@@ -4,7 +4,7 @@
 
 @section('content')
   @php
-    $import  = session('admin.user_import');
+    $import  = session('admin.member_import');
     $error   = session('error');
     $success = session('success');
 
@@ -191,6 +191,7 @@
     }
 
     .import-panel {
+      position: relative;
       background: rgba(255, 255, 255, 0.95); 
       backdrop-filter: blur(12px); 
       -webkit-backdrop-filter: blur(12px);
@@ -213,6 +214,90 @@
       margin: 0 0 22px 0; 
       line-height: 1.6; 
     }
+
+    /* The "?" in a panel title and the help panel it opens. Deliberately has
+       NO scrim and no blur: the notes float on their own so the upload area
+       and the rest of the page stay sharp and usable behind them. */
+    .help-btn {
+      width: 22px;
+      height: 22px;
+      margin-left: 9px;
+      padding: 0;
+      border: 1px solid var(--slate-300);
+      border-radius: 50%;
+      background: var(--slate-100);
+      color: var(--slate-500);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      vertical-align: 2px;
+      transition: all 0.15s ease;
+    }
+    .help-btn:hover,
+    .help-btn[aria-expanded="true"] {
+      background: var(--primary-light);
+      border-color: var(--primary-border);
+      color: var(--primary);
+    }
+    .help-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+    .help-pop {
+      position: absolute;
+      top: 58px;
+      right: 32px;
+      z-index: 70;
+      width: min(540px, calc(100% - 64px));
+      padding: 20px 22px;
+      background: #ffffff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16);
+    }
+    .help-pop[hidden] { display: none; }
+    .help-pop-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 15px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--slate-200);
+    }
+    .help-pop-head h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--slate-900);
+      letter-spacing: -0.01em;
+    }
+    .help-pop-head p {
+      margin: 4px 0 0;
+      font-size: 12.5px;
+      color: var(--slate-500);
+      line-height: 1.5;
+    }
+    .help-close {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      border: 0;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--slate-400);
+      font-size: 17px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .help-close:hover { background: var(--slate-100); color: var(--slate-700); }
+    .help-pop .import-bullets {
+      grid-template-columns: 1fr;
+      gap: 13px;
+      margin: 0;
+      padding: 0;
+      border-top: 0;
+    }
+    .help-pop .bullet { font-size: 13px; }
 
     .drop-zone {
       border: 2px dashed var(--slate-300); 
@@ -639,15 +724,15 @@
     <div class="import-content">
 
       <div class="top-navigation">
-        <a href="{{ route('admin.users.index') }}" class="btn-users ghost">
+        <a href="{{ route('admin.members.index') }}" class="btn-users ghost">
           <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          Back to Users
+          Back to Members
         </a>
       </div>
 
       <div class="header-row">
         <h1>Import Members</h1>
-        <p>Bulk-create member accounts from {{ \App\Support\ImportFormats::label() }} files. Preview first, then confirm the import.</p>
+        <p>Add people to the members list from {{ \App\Support\ImportFormats::label() }} files. Preview first, then confirm the import.</p>
       </div>
 
       @if($error)
@@ -667,15 +752,19 @@
       @if(empty($import))
         {{-- ── PHASE 1: Upload ── --}}
         <div class="import-panel">
-          <h2 class="panel-title">Upload a member file</h2>
+          <h2 class="panel-title">
+            Upload a member file
+            <button type="button" class="help-btn" id="fileHelpBtn" data-help-toggle
+                    aria-expanded="false" aria-controls="fileHelpPop"
+                    title="What file do I need?">?</button>
+          </h2>
           <p class="panel-desc">
-            The first row must be a header with column names. Only new accounts are created — rows whose email or
-            phone already exists are flagged and skipped. Each imported account is emailed a <b>temporary password</b>
-            and a set-password link, and must replace that password on first sign-in. If the email does not arrive, you
-            can re-send it from the Users page.
+            The first row must be a header with column names. Rows are added to the <b>members list</b> — no accounts
+            are created and no emails are sent at this stage. Rows whose email, phone or member number already appears
+            on the members list are flagged and skipped. You turn a member into a system user afterwards, from the Members page.
           </p>
 
-          <form method="POST" action="{{ route('admin.users.import.preview') }}" enctype="multipart/form-data" id="importForm">
+          <form method="POST" action="{{ route('admin.members.import.preview') }}" enctype="multipart/form-data" id="importForm">
             @csrf
             <label class="drop-zone" for="fileInput" id="dropZone">
               <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -693,36 +782,52 @@
             </div>
           </form>
 
-          <div class="import-bullets">
-            <div class="bullet">
-              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              <div><b>Formats</b><br>{{ \App\Support\ImportFormats::label() }} — delimiters are auto-detected (comma, semicolon or tab).</div>
+          <div class="help-pop" id="fileHelpPop" hidden role="dialog" aria-labelledby="fileHelpTitle">
+            <div class="help-pop-head">
+              <div>
+                <h3 id="fileHelpTitle">What your file needs</h3>
+                <p>Read this before you upload — nothing is imported until you have previewed it.</p>
+              </div>
+              <button type="button" class="help-close" data-help-close aria-label="Close">&times;</button>
             </div>
-            <div class="bullet">
-              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              <div><b>Required columns</b><br>Either <b>Email</b> + <b>First&nbsp;Name</b> + <b>Last&nbsp;Name</b>, or a single <b>Full&nbsp;Name</b> column.</div>
-            </div>
-            <div class="bullet">
-              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              <div><b>Optional columns</b><br>Phone, Middle&nbsp;Initial, Sex, Birth&nbsp;Date, Civil&nbsp;Status, Barangay, City, Province, Address, Farm&nbsp;Location, Land&nbsp;Ownership, Years&nbsp;Farming, Assoc&nbsp;Member&nbsp;No, Store&nbsp;Name, Role.</div>
-            </div>
-            <div class="bullet">
-              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              <div><b>Role</b><br>Defaults to <b>Farmer</b>. Use <b>Store&nbsp;Owner</b> for store accounts (with a Store&nbsp;Name).</div>
+
+            <div class="import-bullets">
+              <div class="bullet">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                <div><b>Formats</b><br>{{ \App\Support\ImportFormats::label() }} — delimiters are auto-detected (comma, semicolon or tab).</div>
+              </div>
+              <div class="bullet">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                <div><b>Required columns</b><br>Either <b>First&nbsp;Name</b> + <b>Last&nbsp;Name</b>, or a single <b>Full&nbsp;Name</b> column.</div>
+              </div>
+              <div class="bullet">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                <div><b>Optional columns</b><br>Email, Phone, Middle&nbsp;Initial, Sex, Birth&nbsp;Date, Civil&nbsp;Status, Barangay, City, Province, Address, Farm&nbsp;Location, Land&nbsp;Ownership, Years&nbsp;Farming, Assoc&nbsp;Member&nbsp;No.</div>
+              </div>
+              <div class="bullet">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                <div><b>Members only</b><br>Nothing here signs anybody in. Imported people are added to the members list and can be given an account later, one at a time.</div>
+              </div>
             </div>
           </div>
         </div>
 
         {{-- ── OCR: scanned document upload (optional enhancement) ── --}}
         <div class="import-panel" style="margin-top:22px;">
-          <h2 class="panel-title">Import from Scanned Document</h2>
+          <h2 class="panel-title">
+            Import from Scanned Document
+            <button type="button" class="help-btn" id="ocrHelpBtn" data-help-toggle
+                    aria-expanded="false" aria-controls="ocrHelpPop"
+                    title="How does the scan import work?">?</button>
+          </h2>
           <p class="panel-desc">
             Upload a photo or scan of a typed member list (JPG or PNG). Tesseract OCR reads the text, we show the
-            records it recognizes, and <b>you approve each row before anything is created</b>. OCR never creates
-            accounts automatically — when in doubt, use the spreadsheet import above instead.
+            records it recognizes, and <b>you approve each row before anything is written</b>. Approved records land on
+            the <b>members list</b> — OCR never creates accounts, and never sends an email. When in doubt, use the
+            spreadsheet import above instead.
           </p>
 
-          <form method="POST" action="{{ route('admin.users.import.ocr') }}" enctype="multipart/form-data" id="ocrImportForm">
+          <form method="POST" action="{{ route('admin.members.import.ocr') }}" enctype="multipart/form-data" id="ocrImportForm">
             @csrf
             <label class="drop-zone" for="ocrFileInput" id="ocrDropZone">
               <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -740,14 +845,24 @@
             </div>
           </form>
 
-          <div class="import-bullets">
-            <div class="bullet">
-              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              <div><b>Never automatic</b><br>Every OCR record stays in review until an administrator approves it.</div>
+          <div class="help-pop" id="ocrHelpPop" hidden role="dialog" aria-labelledby="ocrHelpTitle">
+            <div class="help-pop-head">
+              <div>
+                <h3 id="ocrHelpTitle">How the scan import works</h3>
+                <p>Reading a paper list is never exact — you stay in control of every row.</p>
+              </div>
+              <button type="button" class="help-close" data-help-close aria-label="Close">&times;</button>
             </div>
-            <div class="bullet">
-              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              <div><b>Best effort</b><br>Names, phones and e-mails OCR can read get filled in. Rows without an e-mail are flagged for review.</div>
+
+            <div class="import-bullets">
+              <div class="bullet">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                <div><b>Never automatic</b><br>Every OCR record stays in review until an administrator approves it.</div>
+              </div>
+              <div class="bullet">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                <div><b>Best effort</b><br>Names, phones and e-mails OCR can read get filled in. Rows without an e-mail are flagged for review.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -794,7 +909,7 @@
             {{-- Everything the table can change posts to one form: Import and
                  Save & Re-check are the same form aimed at two endpoints, so
                  the ticks travel with the cells either way. --}}
-            <form method="POST" action="{{ route('admin.users.import.ocr.confirm') }}" id="ocrReviewForm" novalidate
+            <form method="POST" action="{{ route('admin.members.import.ocr.confirm') }}" id="ocrReviewForm" novalidate
                   onsubmit="var b = event.submitter; if (b && b.id === 'ocrImportBtn') { b.disabled = true; b.textContent = 'Importing…'; }">
               @csrf
               <input type="hidden" name="token" value="{{ $import['token'] }}">
@@ -817,7 +932,7 @@
                   </button>
                   <button type="button" class="btn-users danger" id="ocrCancelEditBtn" hidden>Discard edits</button>
                   <button type="submit" class="btn-users" id="ocrSaveBtn"
-                          formaction="{{ route('admin.users.import.ocr.revalidate') }}" hidden>
+                          formaction="{{ route('admin.members.import.ocr.revalidate') }}" hidden>
                     <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                     Save &amp; Re-check
                   </button>
@@ -847,7 +962,6 @@
                       <th>Name</th>
                       <th>Email</th>
                       <th>Phone</th>
-                      <th>Role</th>
                       <th>Status</th>
                     </tr>
                   </thead>
@@ -895,19 +1009,6 @@
                           </div>
                         </td>
                         <td>
-                          <div class="cell-static">
-                            <span class="role-chip {{ ($row['data']['role'] ?? 'farmer') === 'store_owner' ? 'store' : '' }}">
-                              {{ ($row['data']['role'] ?? 'farmer') === 'store_owner' ? 'Store Owner' : 'Farmer' }}
-                            </span>
-                          </div>
-                          <div class="cell-edit">
-                            <select class="ocr-cell" data-ocr-cell name="rows[{{ $index }}][role]">
-                              <option value="farmer" @selected(($row['data']['role'] ?? 'farmer') === 'farmer')>Farmer</option>
-                              <option value="store_owner" @selected(($row['data']['role'] ?? 'farmer') === 'store_owner')>Store Owner</option>
-                            </select>
-                          </div>
-                        </td>
-                        <td>
                           <div class="status-stack">
                             @if(empty($row['issues']))
                               <span class="ok-chip"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Ready</span>
@@ -920,7 +1021,7 @@
                         </td>
                       </tr>
                     @empty
-                      <tr><td colspan="7" style="text-align:center;padding:24px;color:#94a3b8;">No rows to show.</td></tr>
+                      <tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;">No rows to show.</td></tr>
                     @endforelse
                   </tbody>
                 </table>
@@ -955,14 +1056,6 @@
                     </div>
                   </td>
                   <td>
-                    <div class="cell-edit">
-                      <select class="ocr-cell" data-ocr-cell name="rows[__i__][role]">
-                        <option value="farmer">Farmer</option>
-                        <option value="store_owner">Store Owner</option>
-                      </select>
-                    </div>
-                  </td>
-                  <td>
                     <div class="status-stack"><span class="muted">Not checked yet</span></div>
                   </td>
                 </tr>
@@ -978,7 +1071,7 @@
               </div>
             </form>
 
-            <form method="POST" action="{{ route('admin.users.import.cancel') }}" id="ocrCancelForm">
+            <form method="POST" action="{{ route('admin.members.import.cancel') }}" id="ocrCancelForm">
               @csrf
             </form>
           </div>
@@ -987,7 +1080,7 @@
             <h2 class="panel-title">Preview imported members</h2>
             <p class="panel-desc">
               File: <b>{{ $import['filename'] }}</b>. Rows with issues are skipped on import — the ready ones are
-              inserted as active accounts that must set their own password from the email we send.
+              added to the members list. No accounts are created and no email is sent at this stage.
             </p>
 
             <div class="pill-row">
@@ -1010,34 +1103,93 @@
                 search-placeholder="Search name, email, or phone…"
             />
 
-            <div class="import-table-wrap table-scroll">
-              <table class="import-table" id="csvPreviewTable">
+            {{-- The edit bar sits on top of the table and is available whether
+                 or not any row failed — a typo is fixed here, not by
+                 re-uploading the whole file. The cells post to their own
+                 re-check form, so Enter in a cell re-checks too. --}}
+            <div class="ocr-table-bar">
+              <span class="bar-note" id="fileBarNote">
+                Every row can be edited, not just the failing ones — click <b>Edit rows</b> to fix a cell in place.
+              </span>
+              <span class="bar-note" id="fileBarEditNote" hidden>
+                Fix the cells you need, then <b>Save &amp; Re-check</b>. Discard edits throws them away.
+              </span>
+              <div class="bar-actions">
+                <button type="button" class="btn-users ghost" id="fileEditBtn">
+                  <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  Edit rows
+                </button>
+                <button type="button" class="btn-users danger" id="fileCancelEditBtn" hidden>Discard edits</button>
+                <button type="submit" class="btn-users" id="fileSaveBtn" form="fileRecheckForm" hidden>
+                  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                  Save &amp; Re-check
+                </button>
+              </div>
+            </div>
+
+            <div class="import-table-wrap table-scroll" id="fileTableWrap">
+              <form method="POST" action="{{ route('admin.members.import.revalidate') }}" id="fileRecheckForm">
+                @csrf
+                <input type="hidden" name="token" value="{{ $import['token'] }}">
+                <table class="import-table" id="csvPreviewTable">
                 <thead>
                   <tr>
                     <th>#</th>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Phone</th>
-                    <th>Role</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @forelse($import['rows'] as $row)
+                  @forelse($import['rows'] as $index => $row)
+                    @php
+                        $raw = is_array($row['_raw'] ?? null) ? $row['_raw'] : [];
+                        // Inputs show what passed validation first; a failed
+                        // cell falls back to what the file actually said so it
+                        // can be fixed in place instead of retyped.
+                        $editName = $row['data']['name'] ?? trim(($raw['first_name'] ?? '') . ' ' . ($raw['last_name'] ?? ''));
+                        $editName = $editName !== '' ? $editName : ($raw['name'] ?? '');
+                        $editNo = $row['data']['assoc_member_no'] ?? ($raw['assoc_member_no'] ?? '');
+                        $editEmail = $row['data']['email'] ?? ($raw['email'] ?? '');
+                        $editPhone = $row['data']['phone'] ?? ($raw['phone'] ?? '');
+                    @endphp
                     <tr class="{{ $row['issues'] ? 'row-error' : '' }}">
-                      <td class="row-num">{{ $row['_row'] }}</td>
-                      <td>
-                        {{ $row['data']['name'] ?? '—' }}
-                        @if(!empty($row['data']['assoc_member_no']))
-                          <div class="muted">Member {{ $row['data']['assoc_member_no'] }}</div>
-                        @endif
+                      <td class="row-num">
+                        {{ $row['_row'] }}
+                        <input type="hidden" name="rows[{{ $index }}][__row]" value="{{ $row['_row'] }}">
                       </td>
-                      <td>{{ $row['data']['email'] ?? '—' }}</td>
-                      <td>{{ $row['data']['phone'] ?? '—' }}</td>
                       <td>
-                        <span class="role-chip {{ ($row['data']['role'] ?? 'farmer') === 'store_owner' ? 'store' : '' }}">
-                          {{ ($row['data']['role'] ?? 'farmer') === 'store_owner' ? 'Store Owner' : 'Farmer' }}
-                        </span>
+                        <div class="cell-static">
+                          {{ $row['data']['name'] ?? '—' }}
+                          @if(!empty($row['data']['assoc_member_no']))
+                            <div class="muted">Member {{ $row['data']['assoc_member_no'] }}</div>
+                          @endif
+                        </div>
+                        <div class="cell-edit">
+                          <input type="text" class="ocr-cell" data-file-cell
+                                 name="rows[{{ $index }}][name]" value="{{ $editName }}"
+                                 placeholder="Full name" autocomplete="off">
+                          <input type="text" class="ocr-cell member-no" data-file-cell
+                                 name="rows[{{ $index }}][assoc_member_no]" value="{{ $editNo }}"
+                                 placeholder="Member #" autocomplete="off">
+                        </div>
+                      </td>
+                      <td>
+                        <div class="cell-static">{{ $row['data']['email'] ?? '—' }}</div>
+                        <div class="cell-edit">
+                          <input type="text" class="ocr-cell" data-file-cell
+                                 name="rows[{{ $index }}][email]" value="{{ $editEmail }}"
+                                 placeholder="Email" autocomplete="off">
+                        </div>
+                      </td>
+                      <td>
+                        <div class="cell-static">{{ $row['data']['phone'] ?? '—' }}</div>
+                        <div class="cell-edit">
+                          <input type="text" class="ocr-cell" data-file-cell
+                                 name="rows[{{ $index }}][phone]" value="{{ $editPhone }}"
+                                 placeholder="Phone" autocomplete="off">
+                        </div>
                       </td>
                       <td>
                         <div class="status-stack">
@@ -1052,23 +1204,24 @@
                       </td>
                     </tr>
                   @empty
-                    <tr><td colspan="6" style="text-align:center;padding:24px;color:#94a3b8;">No rows to show.</td></tr>
+                    <tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;">No rows to show.</td></tr>
                   @endforelse
                   </tbody>
                 </table>
+              </form>
             </div>
             </div>
 
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
-              <form method="POST" action="{{ route('admin.users.import.confirm') }}" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Importing…';">
+              <form method="POST" action="{{ route('admin.members.import.confirm') }}" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Importing…';">
                 @csrf
                 <input type="hidden" name="token" value="{{ $import['token'] }}">
-                <button type="submit" class="btn-users" {{ $import['valid'] === 0 ? 'disabled' : '' }}>
+                <button type="submit" class="btn-users" id="fileImportBtn" {{ $import['valid'] === 0 ? 'disabled' : '' }}>
                   <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                   Import {{ $import['valid'] }} Member{{ $import['valid'] === 1 ? '' : 's' }}
                 </button>
               </form>
-              <form method="POST" action="{{ route('admin.users.import.cancel') }}">
+              <form method="POST" action="{{ route('admin.members.import.cancel') }}">
                 @csrf
                 <button type="submit" class="btn-users ghost">Start Over</button>
               </form>
@@ -1119,6 +1272,63 @@
 
       wireZone('dropZone', 'fileInput', 'previewBtn', 'fileSelected');
       wireZone('ocrDropZone', 'ocrFileInput', 'ocrPreviewBtn', 'ocrFileSelected');
+
+      // ---- "?" help panels --------------------------------------------
+      // The notes used to sit under each upload area and push the layout
+      // around; they now open from the "?" in the panel title. No scrim on
+      // purpose, so the page behind stays sharp and usable — clicks outside
+      // the panel (or Escape) simply close it again.
+      var helpToggles = document.querySelectorAll('[data-help-toggle]');
+
+      function helpPopFor(btn) {
+        var id = btn && btn.getAttribute('aria-controls');
+        return id ? document.getElementById(id) : null;
+      }
+
+      function closeHelp(btn) {
+        var pop = helpPopFor(btn);
+        if (!pop || pop.hidden) return;
+        pop.hidden = true;
+        btn.setAttribute('aria-expanded', 'false');
+      }
+
+      function closeAllHelp() {
+        Array.prototype.forEach.call(helpToggles, closeHelp);
+      }
+
+      Array.prototype.forEach.call(helpToggles, function (btn) {
+        var pop = helpPopFor(btn);
+        if (!pop) return;
+
+        btn.addEventListener('click', function (event) {
+          event.stopPropagation();
+          var wasOpen = !pop.hidden;
+          closeAllHelp();
+          if (wasOpen) return;
+          pop.hidden = false;
+          btn.setAttribute('aria-expanded', 'true');
+        });
+
+        pop.addEventListener('click', function (event) {
+          event.stopPropagation();
+          if (event.target && event.target.closest && event.target.closest('[data-help-close]')) {
+            closeHelp(btn);
+            btn.focus();
+          }
+        });
+      });
+
+      document.addEventListener('click', closeAllHelp);
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') return;
+        var openButton = null;
+        Array.prototype.forEach.call(helpToggles, function (btn) {
+          var pop = helpPopFor(btn);
+          if (pop && !pop.hidden) { closeHelp(btn); openButton = btn; }
+        });
+        if (openButton) openButton.focus();
+      });
 
       // ---- OCR review table: ticks, edit mode, added rows ---------------
       var ocrForm = document.getElementById('ocrReviewForm');
@@ -1240,6 +1450,68 @@
         });
 
         refreshOcrImportBtn();
+      }
+
+      // ---- File preview table: always-available editing ---------------
+      // Same deal as the scan table above, minus ticking and row-adding:
+      // every row is editable whether or not it failed, the cells post to
+      // their own re-check form, and importing is locked out until the
+      // officer saves (or discards) what they typed.
+      var fileForm = document.getElementById('fileRecheckForm');
+
+      if (fileForm) {
+        var fileWrap = document.getElementById('fileTableWrap');
+        var fileEditBtn = document.getElementById('fileEditBtn');
+        var fileCancelBtn = document.getElementById('fileCancelEditBtn');
+        var fileSaveBtn = document.getElementById('fileSaveBtn');
+        var fileImportBtn = document.getElementById('fileImportBtn');
+        var fileBarNote = document.getElementById('fileBarNote');
+        var fileBarEditNote = document.getElementById('fileBarEditNote');
+        var fileSnapshot = null;
+        // Import may already be locked server-side (nothing ready to import);
+        // remember which is which so leaving edit mode restores the right state.
+        var fileImportLocked = fileImportBtn ? fileImportBtn.disabled : false;
+
+        var fileCells = function () {
+          return Array.prototype.slice.call(fileForm.querySelectorAll('[data-file-cell]'));
+        };
+
+        function setFileEditing(on) {
+          fileWrap.classList.toggle('editing', on);
+          fileEditBtn.hidden = on;
+          fileCancelBtn.hidden = !on;
+          fileSaveBtn.hidden = !on;
+          fileBarNote.hidden = on;
+          fileBarEditNote.hidden = !on;
+
+          if (fileImportBtn) {
+            // While editing, the only safe buttons are Save & Re-check and
+            // Discard — importing from here would ignore what was typed.
+            fileImportBtn.disabled = on || fileImportLocked;
+          }
+
+          if (on) {
+            // Remember the table as it stands so Discard can put it back.
+            fileSnapshot = fileCells().map(function (el) { return el.value; });
+            var first = fileForm.querySelector('[data-file-cell]');
+            if (first) first.focus();
+          }
+        }
+
+        fileEditBtn.addEventListener('click', function () { setFileEditing(true); });
+
+        fileCancelBtn.addEventListener('click', function () {
+          if (fileSnapshot) {
+            fileCells().forEach(function (el, i) {
+              if (fileSnapshot[i] !== undefined) el.value = fileSnapshot[i];
+            });
+            fileSnapshot = null;
+          }
+          setFileEditing(false);
+        });
+
+        // Save & Re-check submits this form through its form= reference; the
+        // reload replaces the page, so editing mode simply ends with it.
       }
     })();
   </script>

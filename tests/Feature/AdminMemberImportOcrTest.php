@@ -2,15 +2,22 @@
 
 namespace Tests\Feature;
 
+use App\Models\Member;
 use App\Models\User;
 use App\Services\OcrService;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
-class AdminUserImportOcrTest extends TestCase
+/**
+ * A scan adds rows to the members list. Nothing a document says can ever
+ * create an account, which is why every insert assertion below is against
+ * `members` and the accounts table is left at just the administrator.
+ */
+class AdminMemberImportOcrTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -20,6 +27,9 @@ class AdminUserImportOcrTest extends TestCase
 
         $this->withoutMiddleware(ValidateCsrfToken::class);
         Mail::fake();
+        // The import vault parks uploaded files on this disk — fake it so
+        // no test ever writes to (or reads from) real storage.
+        Storage::fake('local');
 
         if (! app(OcrService::class)->isAvailable()) {
             $this->markTestSkipped('Tesseract OCR (with language data) is not available on this machine.');
@@ -49,13 +59,13 @@ class AdminUserImportOcrTest extends TestCase
     {
         $admin = $this->makeAdmin();
 
-        $response = $this->actingAs($admin)->post(route('admin.users.import.ocr'), [
+        $response = $this->actingAs($admin)->post(route('admin.members.import.ocr'), [
             'file' => $this->scan(),
         ]);
 
         $response->assertOk();
 
-        $import = session('admin.user_import');
+        $import = session('admin.member_import');
         $this->assertNotNull($import);
         $this->assertSame('ocr', $import['source'] ?? null);
         $this->assertNotSame('', trim($import['ocr_text'] ?? ''));
@@ -64,13 +74,13 @@ class AdminUserImportOcrTest extends TestCase
         $this->assertContains('juan@example.com', $emails);
     }
 
-    public function test_ocr_confirm_creates_accounts_only_for_approved_rows(): void
+    public function test_ocr_confirm_creates_members_only_for_approved_rows(): void
     {
         $admin = $this->makeAdmin();
-        $this->actingAs($admin)->post(route('admin.users.import.ocr'), ['file' => $this->scan()])
+        $this->actingAs($admin)->post(route('admin.members.import.ocr'), ['file' => $this->scan()])
             ->assertOk();
 
-        $import = session('admin.user_import');
+        $import = session('admin.member_import');
         $this->assertNotNull($import);
 
         $approved = [];
@@ -81,32 +91,36 @@ class AdminUserImportOcrTest extends TestCase
         }
         $this->assertNotSame([], $approved, 'The scanned row should be importable without issues.');
 
-        $this->post(route('admin.users.import.ocr.confirm'), [
+        $this->post(route('admin.members.import.ocr.confirm'), [
             'token' => $import['token'],
             'approve' => $approved,
         ])
-            ->assertRedirect(route('admin.users.index'))
+            ->assertRedirect(route('admin.members.index'))
             ->assertSessionHas('success');
 
-        $this->assertDatabaseHas('users', [
+        $this->assertDatabaseHas('members', [
             'email' => 'juan@example.com',
-            'role' => 'farmer',
+            'status' => Member::STATUS_ACTIVE,
+            'user_id' => null,
         ]);
+
+        $this->assertDatabaseCount('users', 1);
     }
 
     public function test_ocr_confirm_requires_explicit_row_approval(): void
     {
         $admin = $this->makeAdmin();
-        $this->actingAs($admin)->post(route('admin.users.import.ocr'), ['file' => $this->scan()])
+        $this->actingAs($admin)->post(route('admin.members.import.ocr'), ['file' => $this->scan()])
             ->assertOk();
 
-        $import = session('admin.user_import');
+        $import = session('admin.member_import');
 
-        $this->post(route('admin.users.import.ocr.confirm'), [
+        $this->post(route('admin.members.import.ocr.confirm'), [
             'token' => $import['token'],
             'approve' => [],
         ])->assertSessionHas('error');
 
+        $this->assertDatabaseCount('members', 0);
         $this->assertDatabaseCount('users', 1);
     }
 
@@ -115,7 +129,7 @@ class AdminUserImportOcrTest extends TestCase
         $admin = $this->makeAdmin();
         $fake = UploadedFile::fake()->createWithContent('members.csv', "First Name,Email\nJuan,juan@example.com\n");
 
-        $this->actingAs($admin)->post(route('admin.users.import.ocr'), ['file' => $fake])
+        $this->actingAs($admin)->post(route('admin.members.import.ocr'), ['file' => $fake])
             ->assertSessionHas('error');
     }
 }

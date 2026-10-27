@@ -79,8 +79,11 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         Clear
     </button>
-    @endif
+    {{-- The filter panel's own close tag must stay INSIDE the @if: on a
+         toolbar without filters an extra </div> here would close the
+         caller's panel and foster-parent its table out into the grid. --}}
     </div>
+    @endif
 </div>
 
 @once
@@ -328,6 +331,18 @@
                 table.style.display = filtered.length ? '' : 'none';
                 emptyEl.classList.toggle('show', filtered.length === 0);
             }
+            // Tell listeners which rows currently match search/filters —
+            // bulk actions (select-all across client-side pages) act on this
+            // set, not on the single page the user happens to be viewing.
+            // The set is also parked on the table node: on Turbo visits this
+            // render can run before a page's script registers its listener,
+            // and a property survives that ordering while an event does not.
+            if (table) table.__ttbMatched = filtered;
+            try {
+                document.dispatchEvent(new CustomEvent('ttb:render', {
+                    detail: { uid: uid, table: tableId, matched: filtered }
+                }));
+            } catch (err) { /* listeners are optional */ }
             updateClear();
         }
 

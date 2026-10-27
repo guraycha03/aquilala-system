@@ -3,15 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\OcrException;
-use App\Exceptions\Onboarding\MailDeliveryException;
 use App\Models\ActivityLog;
-use App\Models\User;
+use App\Models\ImportUpload;
+use App\Models\Member;
 use App\Services\ActivityLogger;
 use App\Services\OcrMemberAiMapper;
 use App\Services\OcrMemberExtractor;
 use App\Services\OcrService;
 use App\Services\UserInvitationService;
 use App\Support\ImportFormats;
+use App\Support\ImportUploadVault;
 use DateTimeImmutable;
 use finfo;
 use Illuminate\Database\QueryException;
@@ -19,7 +20,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
@@ -27,9 +27,16 @@ use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 use RuntimeException;
 use Throwable;
 
-class AdminUserImportController extends Controller
+/**
+ * Bulk intake for the members list.
+ *
+ * CSV/XLSX files and OCR scans used to mint system accounts directly. They
+ * now only ever write `members` rows. Turning a member into a user is a
+ * separate, deliberate act done from the member list.
+ */
+class AdminMemberImportController extends Controller
 {
-    private const SESSION_KEY = 'admin.user_import';
+    private const SESSION_KEY = 'admin.member_import';
 
     /**
      * Spreadsheet extensions => PhpSpreadsheet reader. Must cover every
@@ -49,15 +56,15 @@ class AdminUserImportController extends Controller
     /**
      * The only columns the OCR review table lets an administrator change.
      * Everything else on a row is carried over untouched, so an edit can
-     * never smuggle a status, password or id into the created account.
+     * never smuggle a status or id into the created member record.
      */
-    private const OCR_EDITABLE_FIELDS = ['name', 'email', 'phone', 'role', 'assoc_member_no'];
+    private const OCR_EDITABLE_FIELDS = ['name', 'email', 'phone', 'assoc_member_no'];
 
     private const MAX_TOTAL_ROWS = 2000;
 
     private const MAX_BATCH = 1000;
 
-    /** @var array<string, string> normalized header -> users column */
+    /** @var array<string, string> normalized header -> members column */
     private const HEADER_MAP = [
         'name' => 'name',
         'fullname' => 'name',
@@ -102,10 +109,32 @@ class AdminUserImportController extends Controller
         'assocno' => 'assoc_member_no',
         'memberno' => 'assoc_member_no',
         'membernumber' => 'assoc_member_no',
-        'storename' => 'store_name',
-        'store' => 'store_name',
-        'role' => 'role',
-        'accounttype' => 'role',
+    ];
+
+    /**
+     * The only keys a normalized import row is allowed to carry into
+     * `members`. Anything else on the row — a status, an id, a password —
+     * is dropped before the insert, so an uploaded file can never write
+     * columns it has no business touching.
+     */
+    private const MEMBER_FIELDS = [
+        'assoc_member_no',
+        'first_name',
+        'middle_initial',
+        'last_name',
+        'name',
+        'sex',
+        'birth_date',
+        'civil_status',
+        'email',
+        'phone',
+        'address',
+        'barangay',
+        'city',
+        'province',
+        'farm_location',
+        'land_ownership',
+        'years_farming',
     ];
 
     private OcrMemberAiMapper $aiMapper;
@@ -119,7 +148,7 @@ class AdminUserImportController extends Controller
     {
         abort_unless(auth()->user()?->role === 'admin', 403);
 
-        return view('admin.users.import');
+        return view('admin.members.import');
     }
 
     public function preview(Request $request)
@@ -153,7 +182,15 @@ class AdminUserImportController extends Controller
                 ->withInput();
         }
 
-        $rows = array_map(fn (array $raw) => $this->normalizeRow($raw), $rawRows);
+        $rows = array_map(function (array $raw) {
+            $row = $this->normalizeRow($raw);
+            // Keep the file's own text beside the normalized copy so the edit
+            // table can show what was actually written — validation only
+            // stores the values that passed.
+            $row['_raw'] = $raw;
+
+            return $row;
+        }, $rawRows);
 
         $this->markDuplicates($rows);
 
@@ -170,6 +207,13 @@ class AdminUserImportController extends Controller
                 ->withInput();
         }
 
+        // A fresh upload replaces any earlier preview in this session — its
+        // staged copy must not linger in the archive staging directory.
+        $previous = session(self::SESSION_KEY);
+        if (is_array($previous)) {
+            ImportUploadVault::discard($previous['staged_path'] ?? null);
+        }
+
         session()->put(self::SESSION_KEY, [
             'token' => Str::random(32),
             'filename' => $file->getClientOriginalName(),
@@ -177,9 +221,91 @@ class AdminUserImportController extends Controller
             'valid' => count($validRows),
             'errors' => count($rows) - count($validRows),
             'expires' => now()->addMinutes(60)->timestamp,
+            // Parked until the officer confirms — the upload itself is gone
+            // once this request ends, so the archive keeps it here.
+            'staged_path' => ImportUploadVault::stage($file),
         ]);
 
-        return view('admin.users.import', ['import' => session(self::SESSION_KEY)]);
+        return view('admin.members.import', ['import' => session(self::SESSION_KEY)]);
+    }
+
+    /**
+     * Re-check the spreadsheet preview after cells were edited in the table.
+     *
+     * The form posts only the columns the table shows; every other field the
+     * file carried is kept from the staged raw copy, so fixing one column
+     * never drops the rest of the row. The result replaces the staged rows,
+     * so the later confirm imports exactly what the officer just reviewed.
+     */
+    public function revalidate(Request $request): RedirectResponse
+    {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
+        $import = session(self::SESSION_KEY);
+
+        if (! is_array($import) || ($import['source'] ?? 'file') !== 'file'
+            || ! hash_equals((string) ($import['token'] ?? ''), (string) $request->input('token'))) {
+            return redirect()->route('admin.members.import')
+                ->with('error', 'The import session has expired. Please upload the file again.');
+        }
+
+        $edits = [];
+
+        foreach ((array) $request->input('rows', []) as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $key = trim((string) ($entry['__row'] ?? ''));
+
+            if ($key !== '' && ! isset($edits[$key])) {
+                $edits[$key] = $entry;
+            }
+        }
+
+        if ($edits === []) {
+            return redirect()->route('admin.members.import')
+                ->with('error', 'There is nothing to re-check.');
+        }
+
+        // Every staged row keeps its place and number; only the ones the
+        // table posted come back rebuilt and re-validated.
+        $rows = [];
+
+        foreach ((array) $import['rows'] as $original) {
+            $entry = $edits[(string) ($original['_row'] ?? '')] ?? null;
+
+            $rows[] = $entry === null
+                ? $original
+                : $this->rebuildRow($entry, $original, 'file');
+        }
+
+        $this->markDuplicates($rows);
+
+        // A rebuilt row starts with fresh issues; a row the form did not
+        // post would otherwise collect a second copy of the duplicates.
+        foreach ($rows as &$row) {
+            $row['issues'] = array_values(array_unique($row['issues']));
+        }
+        unset($row);
+
+        $validRows = array_values(array_filter($rows, fn (array $row) => $row['issues'] === []));
+
+        $import['rows'] = $rows;
+        $import['valid'] = count($validRows);
+        $import['errors'] = count($rows) - count($validRows);
+        session()->put(self::SESSION_KEY, $import);
+
+        $invalid = count($rows) - count($validRows);
+
+        // Redirect to the GET page (never back()): the preview rendered on a
+        // POST-only URL, so "back" would 405 in a real browser.
+        return redirect()->route('admin.members.import')->with(
+            'success',
+            $invalid === 0
+                ? 'All '.count($rows).' row(s) now pass validation.'
+                : $invalid.' row(s) still need attention.'
+        );
     }
 
     public function previewOcr(Request $request)
@@ -290,14 +416,24 @@ class AdminUserImportController extends Controller
                 ->withInput();
         }
 
+        // Replacing whatever the session held before (an earlier scan or a
+        // spreadsheet preview) — its staged copy must not linger.
+        $previous = session(self::SESSION_KEY);
+        if (is_array($previous)) {
+            ImportUploadVault::discard($previous['staged_path'] ?? null);
+        }
+
         $this->stageOcrRows($rows, [
             'token' => Str::random(32),
             'filename' => $filename,
             'ai_assisted' => $aiAssisted,
             'ocr_text' => $text,
+            // The photographed form itself is archived alongside the rows it
+            // produced, so the uploads list keeps the original image too.
+            'staged_path' => ImportUploadVault::stage($file),
         ]);
 
-        return view('admin.users.import', ['import' => session(self::SESSION_KEY)]);
+        return view('admin.members.import', ['import' => session(self::SESSION_KEY)]);
     }
 
     /**
@@ -315,20 +451,22 @@ class AdminUserImportController extends Controller
 
         if (! is_array($import) || ($import['source'] ?? 'file') !== 'ocr'
             || ! hash_equals((string) ($import['token'] ?? ''), (string) $request->input('token'))) {
-            return redirect()->route('admin.users.import')
+            return redirect()->route('admin.members.import')
                 ->with('error', 'The OCR review session has expired. Please scan the document again.');
         }
 
         $posted = $request->input('rows', []);
 
         if (! is_array($posted) || $posted === []) {
-            return back()->with('error', 'There is nothing to re-check.');
+            return redirect()->route('admin.members.import')
+                ->with('error', 'There is nothing to re-check.');
         }
 
         $rebuilt = $this->rebuildOcrRows($posted, $import);
 
         if (isset($rebuilt['error'])) {
-            return back()->with('error', $rebuilt['error'])->withInput(['token' => $import['token']]);
+            return redirect()->route('admin.members.import')
+                ->with('error', $rebuilt['error'])->withInput(['token' => $import['token']]);
         }
 
         $rows = $rebuilt['rows'];
@@ -346,11 +484,16 @@ class AdminUserImportController extends Controller
             'filename' => $import['filename'] ?? '',
             'ai_assisted' => (bool) ($import['ai_assisted'] ?? false),
             'ocr_text' => (string) ($import['ocr_text'] ?? ''),
+            // No new upload happens here — carry the staged image across so
+            // the eventual confirm can still archive it.
+            'staged_path' => $import['staged_path'] ?? null,
         ], $approved);
 
         $invalid = count(array_filter($rows, fn (array $row) => $row['issues'] !== []));
 
-        return back()->with(
+        // Redirect to the GET page (never back()): the review rendered on a
+        // POST-only URL, so "back" would 405 in a real browser.
+        return redirect()->route('admin.members.import')->with(
             'success',
             $invalid === 0
                 ? 'All '.count($rows).' row(s) now pass validation.'
@@ -366,7 +509,7 @@ class AdminUserImportController extends Controller
 
         if (! is_array($import) || ($import['source'] ?? 'file') !== 'ocr'
             || ! hash_equals((string) ($import['token'] ?? ''), (string) $request->input('token'))) {
-            return redirect()->route('admin.users.import')
+            return redirect()->route('admin.members.import')
                 ->with('error', 'The OCR review session has expired. Please scan the document again.');
         }
 
@@ -411,24 +554,29 @@ class AdminUserImportController extends Controller
                 ->withInput(['token' => $import['token']]);
         }
 
-        $result = $this->createAccounts($validRows);
+        $result = $this->createMembers($validRows);
         $inserted = $result['inserted'];
         $skipped = $result['skipped'];
 
-        $deliveryFailures = 0;
-        foreach ($result['createdUsers'] as $importUser) {
-            try {
-                UserInvitationService::issueSetPassword($importUser);
-            } catch (MailDeliveryException) {
-                $deliveryFailures++;
-            }
-        }
+        // The scanned image leaves staging for the permanent archive only now
+        // that the officer has actually submitted these records.
+        ImportUploadVault::archive(
+            $import['staged_path'] ?? null,
+            ImportUpload::KIND_MEMBERS,
+            ImportUpload::SOURCE_OCR,
+            (string) ($import['filename'] ?? ''),
+            [
+                'total' => count($import['rows']),
+                'imported' => $inserted,
+                'skipped' => $skipped,
+            ]
+        );
 
         session()->forget(self::SESSION_KEY);
 
         if ($inserted > 0) {
             ActivityLogger::log(
-                ActivityLog::TYPE_USER_IMPORTED,
+                ActivityLog::TYPE_MEMBER_IMPORTED,
                 "Imported {$inserted} member".($inserted > 1 ? 's' : '').' from a scanned document'.($skipped > 0 ? " ({$skipped} duplicate".($skipped > 1 ? 's' : '').' skipped)' : ''),
                 null,
                 ['inserted' => $inserted, 'skipped' => $skipped, 'source' => 'ocr']
@@ -436,19 +584,16 @@ class AdminUserImportController extends Controller
         }
 
         if ($inserted === 0) {
-            $message = 'No new members were imported — every approved OCR record was invalid or already registered.';
+            $message = 'No new members were imported — every approved OCR record was invalid or already on the members list.';
         } else {
             $message = 'Imported '.number_format($inserted).' member'.($inserted > 1 ? 's' : '').' from the scanned document.';
             if ($skipped > 0) {
                 $message .= ' '.number_format($skipped).' duplicate'.($skipped > 1 ? 's were' : ' was').' skipped.';
             }
-            $message .= ' Password-setup invitations were emailed to each new account.';
-            if ($deliveryFailures > 0) {
-                $message .= ' '.$deliveryFailures.' email'.($deliveryFailures > 1 ? 's' : '').' could not be sent — resend from the Users list once connectivity is restored.';
-            }
+            $message .= ' They are on the members list now — create an account for any of them whenever you are ready.';
         }
 
-        return redirect()->route('admin.users.index')->with('success', $message);
+        return redirect()->route('admin.members.index')->with('success', $message);
     }
 
     public function confirm(Request $request): RedirectResponse
@@ -458,7 +603,7 @@ class AdminUserImportController extends Controller
         $import = session(self::SESSION_KEY);
 
         if (! is_array($import) || ! hash_equals((string) ($import['token'] ?? ''), (string) $request->input('token'))) {
-            return redirect()->route('admin.users.import')
+            return redirect()->route('admin.members.import')
                 ->with('error', 'The import session has expired. Please upload the file again.');
         }
 
@@ -470,28 +615,29 @@ class AdminUserImportController extends Controller
             fn (array $row) => ($row['_source'] ?? 'file') === 'file' && $row['issues'] === []
         ));
 
-        $result = $this->createAccounts($validRows);
+        $result = $this->createMembers($validRows);
         $inserted = $result['inserted'];
         $skipped = $result['skipped'];
 
-        // Email a password-setup invitation (link + temporary password) to
-        // every freshly imported account. A single delivery failure must never
-        // roll back the whole import — leave those accounts actionable
-        // (resend) from the Users list.
-        $deliveryFailures = 0;
-        foreach ($result['createdUsers'] as $importUser) {
-            try {
-                UserInvitationService::issueSetPassword($importUser);
-            } catch (MailDeliveryException) {
-                $deliveryFailures++;
-            }
-        }
+        // The spreadsheet leaves staging for the permanent archive only now
+        // that the officer has actually submitted these records.
+        ImportUploadVault::archive(
+            $import['staged_path'] ?? null,
+            ImportUpload::KIND_MEMBERS,
+            ImportUpload::SOURCE_FILE,
+            (string) ($import['filename'] ?? ''),
+            [
+                'total' => count($import['rows']),
+                'imported' => $inserted,
+                'skipped' => $skipped,
+            ]
+        );
 
         session()->forget(self::SESSION_KEY);
 
         if ($inserted > 0) {
             ActivityLogger::log(
-                ActivityLog::TYPE_USER_IMPORTED,
+                ActivityLog::TYPE_MEMBER_IMPORTED,
                 "Imported {$inserted} member".($inserted > 1 ? 's' : '').' from a file'.($skipped > 0 ? " ({$skipped} duplicate".($skipped > 1 ? 's' : '').' skipped)' : ''),
                 null,
                 ['inserted' => $inserted, 'skipped' => $skipped]
@@ -499,63 +645,76 @@ class AdminUserImportController extends Controller
         }
 
         if ($inserted === 0) {
-            $message = 'No new members were imported — every row was invalid or already registered.';
+            $message = 'No new members were imported — every row was invalid or already on the members list.';
         } else {
             $message = 'Imported '.number_format($inserted).' member'.($inserted > 1 ? 's' : '').'.';
             if ($skipped > 0) {
                 $message .= ' '.number_format($skipped).' duplicate'.($skipped > 1 ? 's were' : ' was').' skipped.';
             }
-            $message .= ' Password-setup invitations were emailed to each new account.';
-            if ($deliveryFailures > 0) {
-                $message .= ' '.$deliveryFailures.' email'.($deliveryFailures > 1 ? 's' : '').' could not be sent — resend from the Users list once connectivity is restored.';
-            }
+            $message .= ' They are on the members list now — create an account for any of them whenever you are ready.';
         }
 
-        return redirect()->route('admin.users.index')->with('success', $message);
+        return redirect()->route('admin.members.index')->with('success', $message);
     }
 
     public function cancel(): RedirectResponse
     {
         abort_unless(auth()->user()?->role === 'admin', 403);
 
+        // Nothing was imported, so the parked upload goes with it.
+        $import = session(self::SESSION_KEY);
+
+        if (is_array($import)) {
+            ImportUploadVault::discard($import['staged_path'] ?? null);
+        }
+
         session()->forget(self::SESSION_KEY);
 
-        return redirect()->route('admin.users.index');
+        return redirect()->route('admin.members.index');
     }
 
     /**
-     * Shared account-creation step used by both the file import and the OCR
+     * Shared member-creation step used by both the file import and the OCR
      * import. Returns the number inserted/skipped and the created models.
      *
+     * Only `members` rows are written — no account, no invitation, no
+     * password. Linking a member to a system account is a separate step.
+     *
      * @param  list<array<string, mixed>>  $validRows
-     * @return array{inserted: int, skipped: int, createdUsers: list<User>}
+     * @return array{inserted: int, skipped: int, createdMembers: list<Member>}
      */
-    private function createAccounts(array $validRows): array
+    private function createMembers(array $validRows): array
     {
         $inserted = 0;
         $skipped = 0;
-        $createdUsers = [];
+        $createdMembers = [];
+        $createdBy = auth()->id();
 
-        DB::transaction(function () use ($validRows, &$inserted, &$skipped, &$createdUsers) {
+        DB::transaction(function () use ($validRows, $createdBy, &$inserted, &$skipped, &$createdMembers) {
             foreach ($validRows as $row) {
                 try {
-                    $email = strtolower($row['data']['email']);
-                    $phone = $row['data']['phone'] ?? null;
+                    $data = array_intersect_key($row['data'], array_flip(self::MEMBER_FIELDS));
 
-                    if (User::where('email', $email)->exists()
-                        || ($phone !== null && User::where('phone', $phone)->exists())) {
+                    $email = isset($data['email']) ? strtolower((string) $data['email']) : null;
+                    $phone = $data['phone'] ?? null;
+                    $memberNo = $data['assoc_member_no'] ?? null;
+
+                    $duplicate = Member::query()
+                        ->when($email !== null && $email !== '', fn ($query) => $query->orWhere('email', $email))
+                        ->when($phone !== null && $phone !== '', fn ($query) => $query->orWhere('phone', $phone))
+                        ->when($memberNo !== null && $memberNo !== '', fn ($query) => $query->orWhere('assoc_member_no', $memberNo))
+                        ->exists();
+
+                    if ($duplicate) {
                         $skipped++;
 
                         continue;
                     }
 
-                    $createdUsers[] = User::create([
-                        ...$row['data'],
-                        'status' => User::STATUS_ACTIVE,
-                        // Placeholder until issueSetPassword() stores the real
-                        // temporary password that gets emailed to the member.
-                        'password' => Hash::make(Str::random(64)),
-                        'must_change_password' => true,
+                    $createdMembers[] = Member::create([
+                        ...$data,
+                        'status' => Member::STATUS_ACTIVE,
+                        'created_by' => $createdBy,
                     ]);
 
                     $inserted++;
@@ -571,7 +730,7 @@ class AdminUserImportController extends Controller
             }
         });
 
-        return compact('inserted', 'skipped', 'createdUsers');
+        return compact('inserted', 'skipped', 'createdMembers');
     }
 
     private function isValidOcrImage(UploadedFile $file): bool
@@ -696,7 +855,7 @@ class AdminUserImportController extends Controller
      * Put an OCR review table back into the session with fresh counts.
      *
      * @param  list<array<string, mixed>>  $rows
-     * @param  array{token: string, filename: string, ai_assisted: bool, ocr_text: string}  $meta
+     * @param  array{token: string, filename: string, ai_assisted: bool, ocr_text: string, staged_path?: string|null}  $meta
      * @param  list<string>  $approved
      */
     private function stageOcrRows(array $rows, array $meta, array $approved = []): void
@@ -709,6 +868,7 @@ class AdminUserImportController extends Controller
             'source' => 'ocr',
             'ai_assisted' => $meta['ai_assisted'],
             'ocr_text' => $meta['ocr_text'],
+            'staged_path' => $meta['staged_path'] ?? null,
             'rows' => $rows,
             'valid' => $valid,
             'errors' => count($rows) - $valid,
@@ -756,7 +916,7 @@ class AdminUserImportController extends Controller
             $key = trim((string) ($entry['__row'] ?? ''));
             $original = ($key !== '' && isset($staged[$key]) && ! isset($used[$key])) ? $staged[$key] : null;
 
-            $row = $this->rebuildOcrRow($entry, $original);
+            $row = $this->rebuildRow($entry, $original, 'ocr');
 
             if ($original !== null) {
                 $row['_row'] = (int) $original['_row'];
@@ -793,9 +953,10 @@ class AdminUserImportController extends Controller
      *
      * @param  array<mixed>  $entry
      * @param  array<string, mixed>|null>  $original
+     * @param  string  $source  'ocr' for scan rows, 'file' for spreadsheet rows.
      * @return array<string, mixed>
      */
-    private function rebuildOcrRow(array $entry, ?array $original): array
+    private function rebuildRow(array $entry, ?array $original, string $source): array
     {
         $raw = is_array($original['_raw'] ?? null)
             ? $original['_raw']
@@ -828,7 +989,7 @@ class AdminUserImportController extends Controller
             'data' => $data,
             'issues' => $issues,
             '_raw' => $raw,
-            '_source' => 'ocr',
+            '_source' => $source,
             '_row' => $original['_row'] ?? 0,
         ];
     }
@@ -872,13 +1033,14 @@ class AdminUserImportController extends Controller
             $issues[] = 'Missing name — include First Name + Last Name, or a Full Name column.';
         }
 
+        // Email is optional on the list — plenty of members have none. It is
+        // only needed once an account is made, and the admin supplies it then.
         $email = strtolower($this->clean($raw['email'] ?? ''));
-        if ($email === '') {
-            $issues[] = 'Email is required.';
-        } elseif (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if ($email !== '' && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $issues[] = 'Email address is invalid.';
+        } elseif ($email !== '') {
+            $data['email'] = $email;
         }
-        $data['email'] = $email;
 
         $phone = $this->clean($raw['phone'] ?? '');
         if ($phone !== '') {
@@ -890,19 +1052,9 @@ class AdminUserImportController extends Controller
             }
         }
 
-        $roleRaw = strtolower(preg_replace('/[^a-z]/', '', $this->clean($raw['role'] ?? 'farmer')));
-        $role = match ($roleRaw) {
-            '', 'farmer' => 'farmer',
-            'storeowner', 'store' => 'store_owner',
-            default => null,
-        };
-        if ($role === null) {
-            $issues[] = "'{$this->clean($raw['role'] ?? '')}' is not a valid role (use farmer or store_owner).";
-            $role = 'farmer';
-        }
-        $data['role'] = $role;
-
-        foreach (['sex', 'civil_status', 'address', 'barangay', 'city', 'province', 'farm_location', 'land_ownership', 'store_name', 'assoc_member_no'] as $field) {
+        // Members carry no role: they are the list, not accounts. A stray
+        // Role column in an uploaded file is read, then discarded.
+        foreach (['sex', 'civil_status', 'address', 'barangay', 'city', 'province', 'farm_location', 'land_ownership', 'assoc_member_no'] as $field) {
             $value = $this->clean($raw[$field] ?? '');
             if ($value !== '') {
                 $data[$field] = $value;
@@ -931,43 +1083,61 @@ class AdminUserImportController extends Controller
         return ['data' => $data, 'issues' => $issues];
     }
 
+    /**
+     * Flag rows that repeat a value the list already holds, or that repeat
+     * within the file itself. Email, phone and association member number all
+     * identify the same person.
+     */
     private function markDuplicates(array &$rows): void
     {
-        $emails = array_values(array_unique(array_filter(array_map(
-            fn (array $row) => strtolower($row['data']['email'] ?? ''),
-            $rows
-        ))));
-        $phones = array_values(array_unique(array_filter(array_map(
-            fn (array $row) => $row['data']['phone'] ?? null,
+        $pick = fn (string $column): array => array_values(array_unique(array_filter(array_map(
+            fn (array $row) => $column === 'email'
+                ? strtolower($row['data'][$column] ?? '')
+                : ($row['data'][$column] ?? null),
             $rows
         ))));
 
+        $emails = $pick('email');
+        $phones = $pick('phone');
+        $memberNos = $pick('assoc_member_no');
+
         $existingEmails = $emails !== []
-            ? User::whereIn('email', $emails)->pluck('email')->mapWithKeys(fn (string $email) => [strtolower($email) => true])
+            ? Member::whereIn('email', $emails)->pluck('email')->mapWithKeys(fn (string $email) => [strtolower($email) => true])
             : collect();
         $existingPhones = $phones !== []
-            ? User::whereIn('phone', $phones)->pluck('phone')->flip()
+            ? Member::whereIn('phone', $phones)->pluck('phone')->flip()
+            : collect();
+        $existingMemberNos = $memberNos !== []
+            ? Member::whereIn('assoc_member_no', $memberNos)->pluck('assoc_member_no')->flip()
             : collect();
 
         $seenEmails = [];
         $seenPhones = [];
+        $seenMemberNos = [];
 
         foreach ($rows as &$row) {
             $email = strtolower($row['data']['email'] ?? '');
             $phone = $row['data']['phone'] ?? null;
+            $memberNo = $row['data']['assoc_member_no'] ?? null;
 
             if ($email !== '' && ($existingEmails->has($email) || isset($seenEmails[$email]))) {
-                $row['issues'][] = 'This email is already registered.';
+                $row['issues'][] = 'This email is already on the members list.';
             }
-            if ($phone !== null && ($existingPhones->has($phone) || isset($seenPhones[$phone]))) {
-                $row['issues'][] = 'This phone number is already registered.';
+            if ($phone !== null && $phone !== '' && ($existingPhones->has($phone) || isset($seenPhones[$phone]))) {
+                $row['issues'][] = 'This phone number is already on the members list.';
+            }
+            if ($memberNo !== null && $memberNo !== '' && ($existingMemberNos->has($memberNo) || isset($seenMemberNos[$memberNo]))) {
+                $row['issues'][] = 'That association member number is already taken.';
             }
 
             if ($email !== '') {
                 $seenEmails[$email] = true;
             }
-            if ($phone !== null) {
+            if ($phone !== null && $phone !== '') {
                 $seenPhones[$phone] = true;
+            }
+            if ($memberNo !== null && $memberNo !== '') {
+                $seenMemberNos[$memberNo] = true;
             }
         }
         unset($row);

@@ -55,6 +55,32 @@ class SubPagesNavTest extends TestCase
         }
     }
 
+    public function test_reporting_is_folded_into_the_sections_that_own_the_data(): void
+    {
+        $nav = config('admin-nav');
+
+        $this->assertArrayNotHasKey(
+            'analytics',
+            $nav,
+            'There is no reporting section of its own: every report lives beside the data it describes.'
+        );
+
+        // The cost report is budgeted-vs-actual off the harvest table, so it
+        // must sit in the Harvest section…
+        $harvest = collect($nav['harvest']['items']);
+        $this->assertNotNull(
+            $harvest->first(fn (array $item) => ($item['routes'] ?? []) === ['admin.analytics.expenses']),
+            'Farming Cost Reports belongs in the Harvest section.'
+        );
+
+        // …and demand trends describe product demand, so Farm Supplies owns it.
+        $operations = collect($nav['operations']['items']);
+        $this->assertNotNull(
+            $operations->first(fn (array $item) => ($item['routes'] ?? []) === ['admin.quotations.index']),
+            'Quotation Demand Trends belongs with Farm Supplies.'
+        );
+    }
+
     public function test_the_tabs_style_preference_route_is_removed(): void
     {
         $this->assertFalse(Route::has('settings.tabs-style'));

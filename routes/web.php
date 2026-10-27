@@ -4,10 +4,14 @@ use App\Helpers\SeasonHelper;
 use App\Helpers\SettingsHelper;
 use App\Http\Controllers\AccountActivationController;
 use App\Http\Controllers\AdminAuditController;
+use App\Http\Controllers\AdminHarvestImportController;
+use App\Http\Controllers\AdminImportUploadController;
+use App\Http\Controllers\AdminMemberController;
+use App\Http\Controllers\AdminMemberImportController;
 use App\Http\Controllers\AdminNotificationController;
 use App\Http\Controllers\AdminPlantingController;
+use App\Http\Controllers\AdminStoreController;
 use App\Http\Controllers\AdminUserController;
-use App\Http\Controllers\AdminUserImportController;
 use App\Http\Controllers\AdminWeatherLogController;
 use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\AuthController;
@@ -35,9 +39,9 @@ use App\Models\FarmerCrop;
 use App\Models\HarvestReport;
 use App\Models\Product;
 use App\Models\Quotation;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -65,7 +69,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.post')->middleware('throttle:login');
 
-    // ── Account activation (admin-created farmer / store-owner accounts) ──
+    // ── Account activation (admin-created farmer / store-owner / admin accounts) ──
     Route::get('/activate', [AccountActivationController::class, 'index'])->name('account.activation.index');
     Route::post('/activate/verify', [AccountActivationController::class, 'verify'])
         ->name('account.activation.verify')->middleware('throttle:otp');
@@ -402,15 +406,73 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // to any route to opt it in, delete it to opt it out — that's the whole
         // switch (see app/Http/Middleware/CaptureShield.php).
 
-        // Member registry: names, contacts, roles, emails.
+        // ── Members ──────────────────────────────────────────────────
+        // The people themselves, held apart from the accounts they sign
+        // in with. Manual entry, CSV/XLSX uploads and OCR scans all land
+        // here, so this list is the single source of truth for who exists.
+        Route::get('/members', [AdminMemberController::class, 'index'])
+            ->name('members.index')
+            ->middleware('shield');
+        Route::get('/members/create', [AdminMemberController::class, 'create'])->name('members.create');
+        Route::post('/members', [AdminMemberController::class, 'store'])->name('members.store');
+        Route::get('/members/{member}/edit', [AdminMemberController::class, 'edit'])
+            ->name('members.edit')
+            ->middleware('shield');
+        Route::put('/members/{member}', [AdminMemberController::class, 'update'])->name('members.update');
+        Route::delete('/members/{member}', [AdminMemberController::class, 'destroy'])->name('members.destroy');
+
+        // Bulk intake for the list from CSV / XLSX files. Writes members,
+        // never accounts — invitations only go out when an account is made.
+        Route::get('/members/import', [AdminMemberImportController::class, 'create'])
+            ->name('members.import');
+        Route::post('/members/import/preview', [AdminMemberImportController::class, 'preview'])
+            ->name('members.import.preview');
+        Route::post('/members/import/revalidate', [AdminMemberImportController::class, 'revalidate'])
+            ->name('members.import.revalidate');
+        Route::post('/members/import/confirm', [AdminMemberImportController::class, 'confirm'])
+            ->name('members.import.confirm');
+        Route::post('/members/import/cancel', [AdminMemberImportController::class, 'cancel'])
+            ->name('members.import.cancel');
+
+        // Optional OCR path: scan a JPG/PNG member list via Tesseract.
+        // Records only ever become members after explicit per-row approval.
+        Route::post('/members/import/ocr', [AdminMemberImportController::class, 'previewOcr'])
+            ->name('members.import.ocr');
+        // Re-validate the cells the administrator edited in the review table.
+        Route::post('/members/import/ocr/revalidate', [AdminMemberImportController::class, 'revalidateOcr'])
+            ->name('members.import.ocr.revalidate');
+        Route::post('/members/import/ocr/confirm', [AdminMemberImportController::class, 'confirmOcr'])
+            ->name('members.import.ocr.confirm');
+
+        // The archive of every file this importer was ever given — CSV/XLSX
+        // and the photographed forms alike — so the original stays reachable
+        // years later. Declared with the literal /members/... paths above so
+        // it can never be shadowed by a {member} binding.
+        Route::get('/members/uploads', [AdminImportUploadController::class, 'members'])
+            ->name('members.uploads');
+        Route::get('/members/uploads/{importUpload}/download', [AdminImportUploadController::class, 'downloadMembers'])
+            ->name('members.uploads.download');
+        // Scans (pictures) render inside the page's viewer instead of
+        // downloading — spreadsheets have no preview route at all.
+        Route::get('/members/uploads/{importUpload}/preview', [AdminImportUploadController::class, 'previewMembers'])
+            ->name('members.uploads.preview');
+
+        // ── System accounts ─────────────────────────────────────────
+        // Every account that can sign in. Creation opens on an account-type
+        // chooser: farmers from a member picked off the list, store owners
+        // from the store form, administrators from a typed form.
         Route::get('/users', [AdminUserController::class, 'index'])
             ->name('users.index')
             ->middleware('shield');
-
-        // Admin pre-registration with phone/email uniqueness check + free email activation flow
         Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
         Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
-        // One member's full profile — same personal data as the registry above.
+        // Administrator creation carries the same four controls as granting
+        // admin to an existing account: step-up password, explicit consent,
+        // throttle, audit row (see AdminUserController::storeAdmin).
+        Route::post('/users/create/admin', [AdminUserController::class, 'storeAdmin'])
+            ->middleware('throttle:admin-grant')
+            ->name('users.storeAdmin');
+        // One account's profile — same personal data as the registry above.
         Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])
             ->name('users.edit')
             ->middleware('shield');
@@ -422,52 +484,46 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::post('/users/{user}/reject', [AdminUserController::class, 'reject'])
             ->name('users.reject');
 
-        // Bulk member import from CSV / XLSX files
-        Route::get('/users/import', [AdminUserImportController::class, 'create'])
-            ->name('users.import');
-        Route::post('/users/import/preview', [AdminUserImportController::class, 'preview'])
-            ->name('users.import.preview');
-        Route::post('/users/import/confirm', [AdminUserImportController::class, 'confirm'])
-            ->name('users.import.confirm');
-        Route::post('/users/import/cancel', [AdminUserImportController::class, 'cancel'])
-            ->name('users.import.cancel');
-
-        // Optional OCR path: scan a JPG/PNG member list via Tesseract.
-        // Records only ever become accounts after explicit per-row approval.
-        Route::post('/users/import/ocr', [AdminUserImportController::class, 'previewOcr'])
-            ->name('users.import.ocr');
-        // Re-validate the cells the administrator edited in the review table.
-        Route::post('/users/import/ocr/revalidate', [AdminUserImportController::class, 'revalidateOcr'])
-            ->name('users.import.ocr.revalidate');
-        Route::post('/users/import/ocr/confirm', [AdminUserImportController::class, 'confirmOcr'])
-            ->name('users.import.ocr.confirm');
+        // Granting administrator access. Deliberately NOT folded into the
+        // profile form above: it re-checks the acting admin's own password,
+        // is throttled per account, and writes an audit entry, so an
+        // unattended session cannot quietly mint a second administrator.
+        Route::post('/users/{user}/promote', [AdminUserController::class, 'promote'])
+            ->whereNumber('user')
+            ->middleware('throttle:admin-grant')
+            ->name('users.promote');
 
         Route::get('/approvals', [AdminUserController::class, 'approvals'])
             ->name('approvals.index');
 
-        // Accredited local supply store directory (Users → Stores tab)
-        Route::get('/stores', function () {
-            $storeOwners = User::where('role', 'store_owner')
-                ->withCount('products')
-                ->orderBy('name')
-                ->get();
-
-            // A "store" is currently identified by its store name (falling back
-            // to the account name) so accounts can later be grouped per store.
-            $storeKey = function (User $u): string {
-                $name = trim($u->store_name ?? '');
-                return $name !== '' ? strtolower($name) : ('user:' . $u->id);
-            };
-
-            $totals = [
-                'stores'    => $storeOwners->map($storeKey)->unique()->count(),
-                'accounts'  => $storeOwners->count(),
-                'products'  => $storeOwners->sum('products_count'),
-                'inactive'  => $storeOwners->where('status', User::STATUS_DISABLED)->count(),
-            ];
-
-            return view('admin.stores.index', compact('storeOwners', 'totals'));
-        })->name('stores.index');
+        // Accredited local supply store directory (Users → Stores tab).
+        // Store owners are outsiders — registered here by an administrator,
+        // never created from the members list — and each store's legal
+        // papers are filed against it one document at a time.
+        Route::get('/stores', [AdminStoreController::class, 'index'])
+            ->name('stores.index')
+            ->middleware('shield');
+        Route::get('/stores/create', [AdminStoreController::class, 'create'])->name('stores.create');
+        Route::post('/stores', [AdminStoreController::class, 'store'])->name('stores.store');
+        Route::get('/stores/{store}/edit', [AdminStoreController::class, 'edit'])
+            ->whereNumber('store')
+            ->name('stores.edit')
+            ->middleware('shield');
+        Route::put('/stores/{store}', [AdminStoreController::class, 'update'])
+            ->whereNumber('store')
+            ->name('stores.update');
+        Route::delete('/stores/{store}', [AdminStoreController::class, 'destroy'])
+            ->whereNumber('store')
+            ->name('stores.destroy');
+        Route::post('/stores/{store}/documents', [AdminStoreController::class, 'storeDocument'])
+            ->whereNumber('store')
+            ->name('stores.documents.store');
+        Route::get('/stores/{store}/documents/{document}/download', [AdminStoreController::class, 'downloadDocument'])
+            ->whereNumber('store')
+            ->name('stores.documents.download');
+        Route::delete('/stores/{store}/documents/{document}', [AdminStoreController::class, 'destroyDocument'])
+            ->whereNumber('store')
+            ->name('stores.documents.destroy');
 
         Route::get('/quotations', [QuotationController::class, 'adminIndex'])->name('quotations.index');
         Route::get('/quotations/products', [QuotationController::class, 'adminProducts'])->name('quotations.products');
@@ -483,8 +539,10 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
             // links (dashboard KPI cards, breadcrumbs) still land on a useful page.
             return redirect()->route('admin.quotations.index');
         })->name('analytics.index');
-        // The formula matrix is now the Crops & Inputs → Formulas tab
-        Route::redirect('/analytics/matrix', '/admin/operations/formulas')->name('analytics.matrix');
+        // The formula matrix used to live here. Formulas are no longer browsed
+        // as a standalone list — they will be attached to each product's own
+        // info — so this URL lands on the catalog instead.
+        Route::redirect('/analytics/matrix', '/admin/operations/catalog')->name('analytics.matrix');
         Route::get('/settings', function () {
             return view('admin.settings.index');
         })->name('settings.index');
@@ -521,23 +579,11 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::delete('/settings/weather/{weatherLog}', [AdminWeatherLogController::class, 'destroy'])
             ->name('settings.weather.destroy');
         // ── Crops & Inputs (grouped pages ──────────────────────────
-        Route::get('/operations', fn () => redirect()->route('admin.operations.formulas'))->name('operations.index');
-        Route::get('/operations/formulas', function () {
-            $formulas = DecisionFormula::with('product.category')
-                ->orderBy('crop_type')
-                ->orderBy('season')
-                ->get();
-
-            $grouped = $formulas->groupBy('crop_type')->map(function ($cropFormulas) {
-                return $cropFormulas->groupBy('season');
-            });
-
-            $ruleCount = $formulas->count();
-            $cropCount = $grouped->count();
-            $seasonLabels = $grouped->flatMap(fn ($s) => $s->keys())->unique()->values()->map(fn ($n) => ucfirst($n))->implode(' · ');
-
-            return view('admin.analytics.matrix', compact('formulas', 'grouped', 'ruleCount', 'cropCount', 'seasonLabels'));
-        })->name('operations.formulas');
+        // The standalone decision-formula matrix page is gone: formulas will
+        // be maintained alongside each product's own info instead of in a
+        // separate list. Old links land on the catalog.
+        Route::get('/operations', fn () => redirect()->route('admin.operations.catalog'))->name('operations.index');
+        Route::get('/operations/formulas', fn () => redirect()->route('admin.operations.catalog'))->name('operations.formulas');
         Route::get('/operations/catalog', function () {
             $products = Product::with('category')->get();
 
@@ -555,12 +601,12 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
 
             // Demand snapshot: products ranked by how many distinct farmer
             // quotations include them — a real-intent signal, not opinions.
-            $topQuoted = \Illuminate\Support\Facades\DB::table('quotation_items')
+            $topQuoted = DB::table('quotation_items')
                 ->join('products', 'quotation_items.product_id', '=', 'products.id')
                 ->select(
                     'quotation_items.product_id',
                     'products.name',
-                    \Illuminate\Support\Facades\DB::raw('COUNT(DISTINCT quotation_items.quotation_id) as quote_count')
+                    DB::raw('COUNT(DISTINCT quotation_items.quotation_id) as quote_count')
                 )
                 ->groupBy('quotation_items.product_id', 'products.name')
                 ->orderByDesc('quote_count')
@@ -624,37 +670,64 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::delete('/calendar/events/{event}', [CalendarController::class, 'destroy'])->name('calendar.events.destroy');
 
         // ── Analytics & Reports (grouped pages) ────────────────────
-        // Expenses — budget vs actual farm expenditure analysis
+        // Expenses — what farming actually cost, grouped the way an officer
+        // reads it: crop, season, year. "Planned" (the estimate) is the total
+        // of a store quotation linked to the report; the importer and the
+        // manual form both leave that link null, so with nothing quoted the
+        // page must not draw budget/variance conclusions from ₱0.
         Route::get('/analytics/expenses', function () {
-            $reports = HarvestReport::with('quotation')->latest()->get();
+            $reports = HarvestReport::with('quotation')->get();
+
+            $planned = fn ($set) => $set->sum(
+                fn ($r) => (float) ($r->quotation?->estimated_total_cost ?? 0)
+            );
 
             $totals = [
-                'planned' => $reports->sum(fn ($r) => (float) ($r->quotation?->estimated_total_cost ?? 0)),
+                'planned' => $planned($reports),
                 'actual' => $reports->sum(fn ($r) => (float) $r->actual_total_expenses),
                 'count' => $reports->count(),
                 'yield' => $reports->sum(fn ($r) => (float) $r->actual_yield_metric_tons),
+                'area' => $reports->sum(fn ($r) => (float) $r->land_area),
             ];
             $totals['variance'] = $totals['actual'] - $totals['planned'];
 
-            $byCrop = $reports->groupBy('crop_type')->map(function ($group) {
-                return [
-                    'crop' => $group->first()->crop_type,
-                    'count' => $group->count(),
-                    'planned' => $group->sum(fn ($r) => (float) ($r->quotation?->estimated_total_cost ?? 0)),
-                    'actual' => $group->sum(fn ($r) => (float) $r->actual_total_expenses),
-                ];
-            })->sortByDesc('actual')->values();
+            // No quotation has ever been linked to a report → there is no
+            // budget to compare against, and "variance" would just echo
+            // the whole spend back as "over budget".
+            $hasBudget = $totals['planned'] > 0;
 
-            $bySeason = $reports->groupBy('season')->map(function ($group) {
-                return [
-                    'season' => ucfirst($group->first()->season ?? 'wet'),
-                    'count' => $group->count(),
-                    'planned' => $group->sum(fn ($r) => (float) ($r->quotation?->estimated_total_cost ?? 0)),
-                    'actual' => $group->sum(fn ($r) => (float) $r->actual_total_expenses),
-                ];
-            })->values();
+            $byCrop = $reports->groupBy('crop_type')->map(fn ($group) => [
+                'crop' => $group->first()->crop_type,
+                'count' => $group->count(),
+                'planned' => $planned($group),
+                'actual' => $group->sum(fn ($r) => (float) $r->actual_total_expenses),
+                'area' => $group->sum(fn ($r) => (float) $r->land_area),
+            ])->sortByDesc('actual')->values();
 
-            return view('admin.analytics.expenses', compact('totals', 'byCrop', 'bySeason'));
+            $bySeason = $reports->groupBy('season')->map(fn ($group) => [
+                'season' => ucfirst($group->first()->season ?? 'wet'),
+                'count' => $group->count(),
+                'planned' => $planned($group),
+                'actual' => $group->sum(fn ($r) => (float) $r->actual_total_expenses),
+                'yield' => $group->sum(fn ($r) => (float) $r->actual_yield_metric_tons),
+            ])->sortByDesc('actual')->values();
+
+            // The imported history spans many years of paper records —
+            // grouping by the year the harvest happened keeps a decade
+            // readable in one scan.
+            $byYear = $reports
+                ->groupBy(fn ($r) => $r->harvest_date?->format('Y') ?? 'Unknown')
+                ->map(fn ($group, $year) => [
+                    'year' => (string) $year,
+                    'count' => $group->count(),
+                    'planned' => $planned($group),
+                    'actual' => $group->sum(fn ($r) => (float) $r->actual_total_expenses),
+                    'yield' => $group->sum(fn ($r) => (float) $r->actual_yield_metric_tons),
+                ])
+                ->sortKeys()
+                ->values();
+
+            return view('admin.analytics.expenses', compact('totals', 'byCrop', 'bySeason', 'byYear', 'hasBudget'));
         })->name('analytics.expenses');
 
         // ── Settings (grouped pages) ───────────────────────────────
@@ -674,6 +747,43 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
             ->name('harvests.reports')
             ->middleware('shield');
 
+        // Removing wrong records from the table: the officer ticks rows in
+        // the list (or the Uploads page removes a whole file's worth) and
+        // confirms — declared as a literal so it never collides with a
+        // future /harvests/reports/{report} route.
+        Route::post('/harvests/reports/remove', [HarvestReportController::class, 'removeRecords'])
+            ->name('harvests.reports.remove');
+
+        // Bulk import of the association's historical harvest records from a
+        // CSV / Excel file. Declared before /harvests/reports so the literal
+        // paths can never be shadowed.
+        Route::get('/harvests/import', [AdminHarvestImportController::class, 'create'])
+            ->name('harvests.import');
+        Route::post('/harvests/import/preview', [AdminHarvestImportController::class, 'preview'])
+            ->name('harvests.import.preview');
+        Route::post('/harvests/import/revalidate', [AdminHarvestImportController::class, 'revalidate'])
+            ->name('harvests.import.revalidate');
+        Route::post('/harvests/import/confirm', [AdminHarvestImportController::class, 'confirm'])
+            ->name('harvests.import.confirm');
+        Route::post('/harvests/import/cancel', [AdminHarvestImportController::class, 'cancel'])
+            ->name('harvests.import.cancel');
+        Route::get('/harvests/import-template/{format}', [AdminHarvestImportController::class, 'template'])
+            ->name('harvests.import.template');
+
+        // The archive of every historical harvest file this importer was ever
+        // given, kept so the original stays reachable years later.
+        Route::get('/harvests/uploads', [AdminImportUploadController::class, 'harvest'])
+            ->name('harvests.uploads');
+        Route::get('/harvests/uploads/{importUpload}/download', [AdminImportUploadController::class, 'downloadHarvest'])
+            ->name('harvests.uploads.download');
+        // Same deal as the members list: pictures view in-page, sheets download.
+        Route::get('/harvests/uploads/{importUpload}/preview', [AdminImportUploadController::class, 'previewHarvest'])
+            ->name('harvests.uploads.preview');
+        // Wrong file? Take back everything it imported, in one action.
+        // The upload itself stays archived for a re-import.
+        Route::post('/harvests/uploads/{importUpload}/remove-records', [AdminImportUploadController::class, 'removeHarvestRecords'])
+            ->name('harvests.uploads.remove-records');
+
         // AI Harvest Insights — analytics subpage over the harvest_reports table.
         // Declared before the index so the literal path can never be shadowed.
         Route::get('/harvests/ai', [HarvestReportController::class, 'aiIndex'])
@@ -687,6 +797,14 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // Estimate vs Actual — planting estimate against reported yield.
         Route::get('/harvests/compare', [HarvestReportController::class, 'adminCompare'])
             ->name('harvests.compare');
+
+        // Full harvest history — the wet-vs-dry trend as a page of its own,
+        // opened from the landing page's Full view button (it used to be a
+        // dialog there). Breadcrumbed back to the landing page and kept out
+        // of the sidebar on purpose: config/admin-nav.php stays as it is.
+        Route::get('/harvests/history', [HarvestReportController::class, 'adminHistory'])
+            ->name('harvests.history')
+            ->middleware('shield');
     });
 
     // Explicit fallback alias for dashboard.admin reference in layout and AuthController

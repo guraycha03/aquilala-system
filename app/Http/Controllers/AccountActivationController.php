@@ -232,10 +232,18 @@ class AccountActivationController extends Controller
             ->with('success', 'Your account is now active. Welcome to Aquilala!');
     }
 
+    /**
+     * Every pending account an emailed activation code may unlock.
+     *
+     * Farmers and store owners have always arrived this way. Invited
+     * administrators do too — they are created without a password, so this
+     * flow is the only door in. (Terminal-provisioned admins differ: they
+     * already know their password and verify at /verify-email instead.)
+     */
     private function findPendingAccount(string $email): ?User
     {
         return User::where('email', $email)
-            ->whereIn('role', ['farmer', 'store_owner'])
+            ->whereIn('role', ['farmer', 'store_owner', 'admin'])
             ->where('status', User::STATUS_PENDING)
             ->first();
     }

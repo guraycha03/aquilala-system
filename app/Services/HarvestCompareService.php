@@ -35,7 +35,10 @@ class HarvestCompareService
         $year = trim((string) ($filters['year'] ?? ''));
         $season = trim((string) ($filters['season'] ?? ''));
         $crop = trim((string) ($filters['crop'] ?? ''));
-        $farmerId = (int) ($filters['farmer'] ?? 0);
+        // The admin dropdown offers reporter NAMES (accounts and members
+        // alike), so the filter matches on the rendered name rather than an
+        // account id — member-filed history has no account id to match.
+        $farmerName = trim((string) ($filters['farmer'] ?? ''));
         $groupBy = in_array(($filters['group_by'] ?? ''), ['crop', 'period'], true)
             ? $filters['group_by']
             : 'crop';
@@ -52,7 +55,7 @@ class HarvestCompareService
 
         // ── Source 2: reports with no linked batch (baseline estimate) ──
         $looseQuery = HarvestReport::query()
-            ->with('farmer')
+            ->with(['farmer', 'member'])
             ->whereNotExists(function ($sub) {
                 $sub->selectRaw('1')
                     ->from('farmer_crops')
@@ -87,7 +90,7 @@ class HarvestCompareService
 
         foreach ($loose as $report) {
             $rows[] = [
-                'farmer' => $report->farmer?->name ?? '—',
+                'farmer' => $report->reporterName(),
                 'farmer_id' => (int) $report->user_id,
                 'crop' => $report->crop_type,
                 'batch' => null,
@@ -104,11 +107,11 @@ class HarvestCompareService
 
         // ── Filters (applied to rows so KPIs, table and chart agree) ──
         $rows = collect($rows)
-            ->filter(function (array $r) use ($year, $season, $crop, $farmerId) {
+            ->filter(function (array $r) use ($year, $season, $crop, $farmerName) {
                 if ($year !== '' && $year !== 'all' && (string) $r['year'] !== $year) return false;
                 if (in_array($season, ['wet', 'dry'], true) && $r['season'] !== $season) return false;
                 if ($crop !== '' && strcasecmp($r['crop'], $crop) !== 0) return false;
-                if ($farmerId > 0 && $r['farmer_id'] !== $farmerId) return false;
+                if ($farmerName !== '' && strcasecmp($r['farmer'], $farmerName) !== 0) return false;
                 return true;
             })
             ->sortBy('harvest_date')
@@ -189,7 +192,7 @@ class HarvestCompareService
                 'year' => $b->harvestReport->harvest_date?->year,
             ]);
 
-        $loose = HarvestReport::with('farmer')
+        $loose = HarvestReport::with(['farmer', 'member'])
             ->whereNotExists(function ($sub) {
                 $sub->selectRaw('1')
                     ->from('farmer_crops')
@@ -198,7 +201,7 @@ class HarvestCompareService
             ->when($scope === 'farmer', fn ($q) => $q->where('user_id', $userId))
             ->get()
             ->map(fn (HarvestReport $r) => [
-                'farmer' => $r->farmer?->name ?? '—',
+                'farmer' => $r->reporterName(),
                 'crop' => $r->crop_type,
                 'year' => $r->harvest_date?->year,
             ]);

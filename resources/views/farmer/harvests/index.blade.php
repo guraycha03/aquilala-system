@@ -270,13 +270,18 @@
                   data-date="{{ $report->harvest_date->format('Y-m-d') }}"
                   data-year="{{ $report->harvest_date->year }}"
                   data-month="{{ $report->harvest_date->month }}"
-                  data-search="{{ strtolower($report->crop_type . ' ' . $report->season) }}">
+                  data-search="{{ strtolower($report->crop_type . ' ' . ($report->variety ?? '') . ' ' . $report->season) }}">
                 <td style="font-weight: 600; color: #1e293b;">
                   <div style="display: flex; align-items: center; gap: 10px;">
                     <div style="width: 34px; height: 34px; border-radius: 10px; background: #edf1e9; color: #648268; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                       <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
                     </div>
-                    <span>{{ $report->crop_type }}</span>
+                    <div>
+                      <span>{{ $report->crop_type }}</span>
+                      @if($report->variety)
+                        <div style="font-size: 11.5px; color: #64748b; font-weight: 500;">{{ $report->variety }}</div>
+                      @endif
+                    </div>
                   </div>
                 </td>
                 <td>

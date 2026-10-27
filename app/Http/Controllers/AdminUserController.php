@@ -5,11 +5,18 @@ namespace App\Http\Controllers;
 use App\Exceptions\Onboarding\DuplicateAccountException;
 use App\Exceptions\Onboarding\InvalidActivationTokenException;
 use App\Exceptions\Onboarding\MailDeliveryException;
+use App\Mail\AdminAccessGrantedMail;
+use App\Models\ActivityLog;
+use App\Models\Member;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use App\Services\UserInvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class AdminUserController extends Controller
@@ -71,11 +78,67 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Show the Register User page.
+     * Step 0 of account creation: what kind of account is it?
+     *
+     *   - (no type)          -> the chooser itself, three cards
+     *   - ?type=farmer       -> the member picker (accounts are made *from*
+     *                           a person already on the members list)
+     *   - ?member={id}       -> the confirmation form for that one member
+     *   - ?type=admin        -> the typed form (administrators are not
+     *                           association members, so there is no record
+     *                           to pick them from)
+     *   - ?type=store_owner  -> handed to the Stores page, which owns the
+     *                           store registration form
+     *
+     * With ?member={id} the picker is skipped and only that one member's
+     * confirmation form is shown.
      */
-    public function create()
+    public function create(Request $request)
     {
-        return view('admin.users.create');
+        $memberId = $request->query('member');
+
+        if ($memberId !== null && $memberId !== '') {
+            $member = Member::available()->find($memberId);
+
+            if ($member === null) {
+                return redirect()
+                    ->route('admin.users.create', ['type' => 'farmer'])
+                    ->with('error', 'That member either does not exist or already has an account. Choose someone from the list instead.');
+            }
+
+            if (! $member->isActive()) {
+                return redirect()
+                    ->route('admin.users.create', ['type' => 'farmer'])
+                    ->with('error', "{$member->fullName()}'s member record is inactive. Reactivate it on the Members page before creating an account.");
+            }
+
+            return view('admin.users.create', ['member' => $member, 'members' => collect()]);
+        }
+
+        $type = $request->query('type');
+
+        if ($type === 'admin') {
+            return view('admin.users.create-admin');
+        }
+
+        if ($type === 'store_owner') {
+            return redirect()->route('admin.stores.create');
+        }
+
+        if ($type !== 'farmer') {
+            return view('admin.users.choose');
+        }
+
+        // Everyone still waiting for sign-in access, newest records last so
+        // the list reads in the same order as the Members page.
+        $members = Member::available()
+            ->where('status', Member::STATUS_ACTIVE)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.users.create', ['member' => null, 'members' => $members]);
     }
 
     /**
@@ -148,37 +211,163 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Admin pre-registers a user account and emails a single-use 6-digit
-     * activation code plus the entry link (AccountActivationController).
+     * Grant administrator access to an existing account.
+     *
+     * This is the only in-app way to make an administrator — the terminal
+     * command that produced the first one is deliberately one-shot. It is
+     * kept out of the profile form on purpose so it is never submitted by
+     * accident, and it carries the four controls you would expect of a
+     * privilege escalation in a real system:
+     *
+     *   1. Step-up authentication — the acting admin re-enters their own
+     *      password, so an unattended signed-in session cannot mint one.
+     *   2. Explicit consent — a checkbox that states what is being granted.
+     *   3. Rate limiting — `throttle:admin-grant`, 5 attempts/minute per
+     *      account, so the password field cannot be brute-forced.
+     *   4. An audit row naming both sides (target owns the row, granting
+     *      admin is the actor), plus a notification email to the target.
+     *
+     * Only active accounts qualify: a still-pending invitee has not proved
+     * who they are yet.
+     */
+    public function promote(Request $request, User $user): RedirectResponse
+    {
+        $granter = $request->user();
+
+        // The route already sits behind role:admin, but the invariant belongs
+        // in the handler too — this is not a check to leave to middleware.
+        abort_unless($granter !== null && $granter->role === 'admin', 403);
+
+        if ($user->id === $granter->id) {
+            return back()->with('error', 'You already have administrator access.');
+        }
+
+        if ($user->role === 'admin') {
+            return back()->with('error', "{$user->name} is already an administrator.");
+        }
+
+        if (! $user->isActive()) {
+            return back()->with(
+                'error',
+                "{$user->name}'s account is still {$user->status}. Only an active account can be granted administrator access."
+            );
+        }
+
+        $request->validate([
+            'password' => ['required', 'string'],
+            'confirm' => ['accepted'],
+        ], [
+            'password.required' => 'Enter your password to confirm this change.',
+            'confirm.accepted' => 'Tick the box to confirm you understand what this grants.',
+        ]);
+
+        if (! Hash::check((string) $request->input('password'), $granter->password)) {
+            return back()
+                ->withErrors(['password' => 'Your password is incorrect.'])
+                ->withInput($request->except('password'));
+        }
+
+        $before = $user->role;
+
+        DB::transaction(function () use ($user, $granter, $before): void {
+            $user->update(['role' => 'admin']);
+
+            ActivityLogger::log(
+                ActivityLog::TYPE_ADMIN_PROMOTED,
+                "Administrator access granted to {$user->name} by {$granter->name}",
+                $user,
+                [
+                    'email' => $user->email,
+                    'role_before' => $before,
+                    'role_after' => 'admin',
+                    'granted_by' => $granter->email,
+                    'granted_by_ip' => request()->ip(),
+                ],
+                $user,
+                $granter
+            );
+        });
+
+        // The database change is the source of truth; a mail server being down
+        // must not roll a privilege grant back. Report and carry on.
+        $notified = true;
+
+        try {
+            Mail::to($user->email)->send(new AdminAccessGrantedMail($user, $granter));
+        } catch (\Throwable $e) {
+            $notified = false;
+            report($e);
+        }
+
+        $message = "{$user->name} now has administrator access.";
+
+        if (! $notified) {
+            $message .= ' The confirmation email could not be sent — ask them to check their inbox later.';
+        }
+
+        return redirect()->route('admin.users.edit', $user)->with('success', $message);
+    }
+
+    /**
+     * Create the account for a chosen member and email them their 6-digit
+     * activation code.
+     *
+     * Every identifying field — name, address, phone, farming details — comes
+     * off the member record. The administrator only supplies an email address
+     * (plus a phone override when the member has none) because those are what
+     * sign-in and the invitation are keyed to.
+     *
+     * The role is always "farmer": store owners are not association members
+     * and are set up through the store flow instead.
      */
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $emailRule = app()->environment('production') ? 'email:rfc,dns,spoof' : 'email:rfc';
 
         $validated = $request->validate([
-            'first_name' => ['required', 'string', 'max:50', 'regex:/^[\pL\s\-]+$/u'],
-            'middle_initial' => ['nullable', 'string', 'max:50', 'regex:/^[\pL\s\.]+$/u'],
-            'last_name' => ['required', 'string', 'max:50', 'regex:/^[\pL\s\-]+$/u'],
-            'email' => ['required', 'string', 'max:254', $emailRule],
+            'member_id' => ['required', 'integer', Rule::exists('members', 'id')->whereNull('user_id')],
+            'email' => ['required', 'string', 'max:254', $emailRule, Rule::unique('users', 'email')],
             'phone' => ['nullable', 'string', 'max:25'],
-            'role' => ['required', Rule::in(['farmer', 'store_owner'])],
-            'barangay' => ['nullable', 'string', 'max:120'],
-            'city' => ['nullable', 'string', 'max:120'],
-            'province' => ['nullable', 'string', 'max:120'],
         ], [
-            'first_name.required' => 'Please enter the user\'s first name.',
-            'first_name.regex' => 'First name may only contain letters, spaces, and hyphens.',
-            'last_name.required' => 'Please enter the user\'s last name.',
-            'last_name.regex' => 'Last name may only contain letters, spaces, and hyphens.',
-            'email.required' => 'Please enter the user\'s email address.',
+            'member_id.required' => 'Choose a member to create the account for.',
+            'member_id.exists' => 'That member either does not exist or already has an account.',
+            'email.required' => 'An email address is required — it is how the member signs in.',
+            'email.unique' => 'That email address is already in use by another account.',
             'email.email' => 'Enter a valid email address.',
-            'role.required' => 'Select an account role.',
-            'role.in' => 'Select a valid account role.',
+        ]);
+
+        $member = Member::find($validated['member_id']);
+
+        if ($member === null || ! $member->isActive()) {
+            $who = $member?->fullName() ?? 'That member';
+
+            return $this->invitationFailure(
+                $request,
+                "{$who} is not an active member. Reactivate their member record before creating an account.",
+                'member_id',
+                422
+            );
+        }
+
+        // The form pre-fills the member's own number, but the server still
+        // falls back to the record when the field never arrives — the list is
+        // the source of truth for contact details.
+        $phone = $request->has('phone')
+            ? trim((string) $request->input('phone'))
+            : (string) ($member->phone ?? '');
+
+        $data = array_merge($this->nameParts($member), [
+            'email' => $validated['email'],
+            'phone' => $phone !== '' ? $phone : null,
+            'role' => 'farmer',
+            'barangay' => $member->barangay,
+            'city' => $member->city,
+            'province' => $member->province,
         ]);
 
         try {
             $delivery = [];
-            $user = UserInvitationService::invite($validated, $delivery);
+            $user = UserInvitationService::invite($data, $delivery);
         } catch (DuplicateAccountException $e) {
             return $this->invitationFailure($request, $e->getMessage(), $e->field, 422);
         } catch (MailDeliveryException $e) {
@@ -186,9 +375,37 @@ class AdminUserController extends Controller
             return $this->invitationFailure($request, $e->getMessage(), 'email', 503);
         }
 
+        // Mirror the rest of the member profile onto the account and link the
+        // two records together so the Users page still shows the same details
+        // it always did — and so this member cannot be picked a second time.
+        try {
+            DB::transaction(function () use ($user, $member) {
+                $user->forceFill([
+                    'assoc_member_no' => $member->assoc_member_no,
+                    'sex' => $member->sex,
+                    'birth_date' => $member->birth_date,
+                    'civil_status' => $member->civil_status,
+                    'farm_location' => $member->farm_location,
+                    'land_ownership' => $member->land_ownership,
+                    'years_farming' => $member->years_farming,
+                ])->save();
+
+                $member->update(['user_id' => $user->id]);
+            });
+        } catch (\Throwable $e) {
+            report($e);
+
+            return $this->invitationFailure(
+                $request,
+                "The account was created but could not be linked back to {$member->fullName()}'s member record. Contact support before retrying, or this member will appear available twice.",
+                'member_id',
+                500
+            );
+        }
+
         $message = $delivery && empty($delivery['sent'])
             ? "{$user->name}'s account was created, but the activation email could not be sent — {$delivery['error']} To deliver invitations, verify a sender domain at resend.com and set MAIL_FROM_ADDRESS in .env, then click Resend Invitation in the Users list."
-            : "Account created for {$user->email}. They can now sign in, enter the 6-digit activation code we emailed them, and set their own password.";
+            : "Account created for {$user->name} from the members list. They can now sign in, enter the 6-digit activation code we emailed them, and set their own password.";
 
         if ($request->expectsJson()) {
             return response()->json(['message' => $message], 201);
@@ -197,6 +414,144 @@ class AdminUserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('success', $message);
+    }
+
+    /**
+     * Create a brand-new administrator account from typed details.
+     *
+     * Administrators are not association members, so unlike farmers they
+     * cannot be picked off the members list — this is the one place in the
+     * app where an account is typed in from scratch. It therefore carries
+     * the same four controls as granting admin to an existing account (see
+     * promote()):
+     *
+     *   1. Step-up authentication — the acting admin re-enters their own
+     *      password, so an unattended session cannot mint an administrator.
+     *   2. Explicit consent — a checkbox that states what is being granted.
+     *   3. Rate limiting — `throttle:admin-grant`, 5 attempts/minute, so
+     *      the password field cannot be brute-forced.
+     *   4. An audit row naming both sides (the new admin owns the row, the
+     *      creator is the actor).
+     *
+     * The account goes out pending with a 6-digit activation code, exactly
+     * like a farmer account, so the new administrator still chooses their
+     * own password — nothing typed here becomes a sign-in secret.
+     */
+    public function storeAdmin(Request $request): RedirectResponse
+    {
+        $granter = $request->user();
+
+        // The route sits behind role:admin, but the invariant belongs here too.
+        abort_unless($granter !== null && $granter->role === 'admin', 403);
+
+        $emailRule = app()->environment('production') ? 'email:rfc,dns,spoof' : 'email:rfc';
+
+        $validated = $request->validate([
+            'first_name' => ['required', 'string', 'max:80'],
+            'middle_initial' => ['nullable', 'string', 'max:10'],
+            'last_name' => ['required', 'string', 'max:80'],
+            'email' => ['required', 'string', 'max:254', $emailRule, Rule::unique('users', 'email')],
+            'phone' => ['nullable', 'string', 'max:25'],
+            'password' => ['required', 'string'],
+            'confirm' => ['accepted'],
+        ], [
+            'first_name.required' => "Enter the administrator's first name.",
+            'last_name.required' => "Enter the administrator's last name.",
+            'email.required' => 'An email address is required — it is how they sign in.',
+            'email.unique' => 'That email address is already in use by another account.',
+            'email.email' => 'Enter a valid email address.',
+            'password.required' => 'Enter your password to confirm this change.',
+            'confirm.accepted' => 'Tick the box to confirm you understand what this grants.',
+        ]);
+
+        // Step-up authentication: an unattended signed-in session cannot
+        // mint an administrator — prove it is really you first.
+        if (! Hash::check((string) $validated['password'], $granter->password)) {
+            return back()
+                ->withErrors(['password' => 'Your password is incorrect.'])
+                ->withInput($request->except('password'));
+        }
+
+        $middle = trim((string) ($validated['middle_initial'] ?? ''));
+        $phone = trim((string) ($validated['phone'] ?? ''));
+
+        try {
+            $delivery = [];
+            $user = UserInvitationService::invite([
+                'first_name' => trim($validated['first_name']),
+                'middle_initial' => $middle !== '' ? $middle : null,
+                'last_name' => trim($validated['last_name']),
+                'email' => $validated['email'],
+                'phone' => $phone !== '' ? $phone : null,
+                'role' => 'admin',
+            ], $delivery);
+        } catch (DuplicateAccountException $e) {
+            return back()
+                ->withErrors([$e->field => $e->getMessage()])
+                ->withInput($request->except('password'));
+        } catch (MailDeliveryException $e) {
+            return back()
+                ->withErrors(['email' => $e->getMessage()])
+                ->withInput($request->except('password'));
+        }
+
+        // invite() already wrote the user.invited row; this one is the
+        // privilege audit — who created the administrator, from where.
+        ActivityLogger::log(
+            ActivityLog::TYPE_ADMIN_CREATED,
+            "Administrator account created for {$user->name} by {$granter->name}",
+            $user,
+            [
+                'email' => $user->email,
+                'role' => 'admin',
+                'created_by' => $granter->email,
+                'created_by_ip' => request()->ip(),
+            ],
+            $user,
+            $granter
+        );
+
+        $message = $delivery && empty($delivery['sent'])
+            ? "{$user->name}'s administrator account was created, but the activation email could not be sent — {$delivery['error']} Use Resend Invitation on the Users list once a sender domain is configured."
+            : "{$user->name}'s administrator account was created. They can now sign in with {$user->email}, enter the 6-digit activation code we emailed them, and set their own password.";
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', $message);
+    }
+
+    /**
+     * Split a member's name into the three fields the account needs.
+     *
+     * Members imported from a single "Full Name" column may only carry one
+     * unbroken string, so fall back to the first and last tokens of it rather
+     * than rejecting the record.
+     *
+     * @return array{first_name: string, middle_initial: ?string, last_name: string}
+     */
+    private function nameParts(Member $member): array
+    {
+        $first = trim((string) $member->first_name);
+        $last = trim((string) $member->last_name);
+        $mi = trim((string) $member->middle_initial);
+
+        if ($first === '' && $last === '') {
+            $tokens = preg_split('/\s+/', trim((string) $member->name)) ?: [];
+            $first = array_shift($tokens) ?? '';
+            $last = array_pop($tokens) ?? '';
+
+            // A single-word name has no surname to give — leave it blank
+            // rather than repeating the given name twice.
+            if ($tokens === []) {
+                $last = '';
+            }
+        }
+
+        return [
+            'first_name' => $first,
+            'middle_initial' => $mi !== '' ? $mi : null,
+            'last_name' => $last,
+        ];
     }
 
     /**

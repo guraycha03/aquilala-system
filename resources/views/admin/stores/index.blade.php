@@ -71,7 +71,7 @@
 
     @media (max-width: 768px) {
       .users-table th:nth-child(2), .users-table td:nth-child(2),
-      .users-table th:nth-child(5), .users-table td:nth-child(5) { display: none; }
+      .users-table th:nth-child(6), .users-table td:nth-child(6) { display: none; }
     }
   </style>
 
@@ -81,12 +81,13 @@
       <div class="header-row">
         <div>
           <h1>Stores</h1>
-          <p>Directory of accredited agricultural supply stores and their assigned store owners.</p>
+          <p>Accredited agricultural supply stores and their owners. Store owners are outsiders — they are registered
+             here by an administrator, never created from the members list.</p>
         </div>
         <div class="header-actions">
-          <a class="btn-users" href="{{ route('admin.users.create') }}">
+          <a class="btn-users" href="{{ route('admin.stores.create') }}">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add Store Owner
+            Add Store
           </a>
         </div>
       </div>
@@ -106,6 +107,11 @@
           <div class="kpi-label">Products Listed</div>
           <div class="kpi-value">{{ $totals['products'] }}</div>
           <div class="kpi-sub">Across all store catalogs</div>
+        </div>
+        <div class="stores-kpi">
+          <div class="kpi-label">Legal Papers on File</div>
+          <div class="kpi-value">{{ $totals['papers'] }}</div>
+          <div class="kpi-sub">Permits and registrations held</div>
         </div>
         <div class="stores-kpi">
           <div class="kpi-label">Inactive Stores</div>
@@ -129,6 +135,7 @@
             ['key' => 'approved', 'dir' => -1, 'type' => 'date', 'label' => 'Approved (newest)'],
             ['key' => 'approved', 'dir' => 1, 'type' => 'date', 'label' => 'Approved (oldest)'],
             ['key' => 'products', 'dir' => -1, 'type' => 'num', 'label' => 'Most products'],
+            ['key' => 'papers', 'dir' => -1, 'type' => 'num', 'label' => 'Most paperwork'],
         ]"
       />
 
@@ -142,6 +149,7 @@
                 <th>Store</th>
                 <th>Location</th>
                 <th>Products</th>
+                <th>Papers</th>
                 <th>Status</th>
                 <th>Approved</th>
                 <th style="text-align:right;">Actions</th>
@@ -162,6 +170,7 @@
                     data-status="{{ $statusValue }}"
                     data-store="{{ strtolower($store->store_name ?: $store->name) }}"
                     data-approved="{{ $store->approved_at?->format('Y-m-d') ?? '' }}"
+                    data-papers="{{ $store->documents_count }}"
                     data-products="{{ $store->products_count }}">
                   <td>
                     <div class="user-cell">
@@ -176,6 +185,14 @@
                   </td>
                   <td><div class="user-contact">{{ $location }}</div></td>
                   <td><div class="user-joined">{{ $store->products_count }}</div></td>
+                  <td>
+                    <div class="user-joined" title="{{ $store->documents_count }} legal paper(s) filed">
+                      {{ $store->documents_count }}
+                      @if($store->documents_count === 0)
+                        <span style="color:#b45309;font-weight:700;">— none yet</span>
+                      @endif
+                    </div>
+                  </td>
                   <td>
                     @if($statusValue === 'active')
                       <span class="verified-pill" style="background:#eef3ef;color:#3f7a4f;">
@@ -197,7 +214,7 @@
                   <td><span class="user-joined">{{ $store->approved_at?->format('M d, Y') ?: '—' }}</span></td>
                   <td>
                     <div class="user-actions">
-                      <a class="icon-btn" href="{{ route('admin.users.edit', $store) }}" title="Edit store owner">
+                      <a class="icon-btn" href="{{ route('admin.stores.edit', $store) }}" title="Manage store details and legal papers">
                         <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       </a>
                     </div>
@@ -209,7 +226,7 @@
         @else
           <div class="users-empty">
             <svg viewBox="0 0 24 24"><path d="M21 10c0-7-9-13-9-13s-9 6-9 13a9 9 0 0 0 18 0z"/><circle cx="12" cy="10" r="3"/><path d="M2 21h20"/></svg>
-            <p style="margin:0;">No store accounts registered yet.</p>
+            <p style="margin:0;">No stores registered yet — use <b>Add Store</b> to register one.</p>
           </div>
         @endif
         </div>

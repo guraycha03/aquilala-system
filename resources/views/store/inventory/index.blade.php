@@ -156,10 +156,10 @@
   }
   .btn-icon svg { width: 14px; height: 14px; stroke: currentColor; }
   .btn-icon:hover { background: #f1f5f9; }
-  .btn-icon.primary { background: #14532d; color: #fff; border-color: #14532d; }
-  .btn-icon.primary:hover { background: #166534; }
-  .btn-icon.stock-update { background: #14532d; color: #fff; border-color: #14532d; }
-  .btn-icon.stock-update:hover { background: #166534; box-shadow: 0 3px 10px rgba(20,83,45,0.25); }
+  .btn-icon.primary { background: #3F6B4D; color: #fff; border-color: #3F6B4D; }
+  .btn-icon.primary:hover { background: #375F43; }
+  .btn-icon.stock-update { background: #3F6B4D; color: #fff; border-color: #3F6B4D; }
+  .btn-icon.stock-update:hover { background: #375F43; box-shadow: 0 3px 10px rgba(63,107,77,0.22); }
   .btn-icon.product-edit { background: #43a047; color: #fff; border-color: #43a047; }
   .btn-icon.product-edit:hover { background: #388e3c; box-shadow: 0 3px 10px rgba(67,160,71,0.25); }
 
@@ -194,8 +194,8 @@
   .btn { padding: 10px 18px; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all .2s; }
   .btn-ghost { background: #f1f5f9; color: #334155; border-color: #e2e8f0; }
   .btn-ghost:hover { background: #e2e8f0; }
-  .btn-save { background: #14532d; color: #fff; }
-  .btn-save:hover { background: #166534; }
+  .btn-save { background: #3F6B4D; color: #fff; }
+  .btn-save:hover { background: #375F43; }
 
   .panel-foot { padding: 12px 18px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; }
   .btn-link-ghost {

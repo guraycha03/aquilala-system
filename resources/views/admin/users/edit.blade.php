@@ -93,6 +93,30 @@
     .btn-users svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .btn-users.ghost { background: #ffffff; color: #334c3e; border-color: #d8e3db; box-shadow: 0 1px 2px rgba(20,61,35,0.05); }
     .btn-users.ghost:hover { background: #f3f8f4; border-color: #b9cec0; color: #1e3829; transform: translateY(-1px); }
+    .btn-users.warning { background: #8a6d1f; border-color: rgba(120,95,20,0.3); box-shadow: 0 1px 2px rgba(120,95,20,0.12), 0 4px 12px rgba(120,95,20,0.14); }
+    .btn-users.warning:hover { background: #7a6019; box-shadow: 0 2px 4px rgba(120,95,20,0.14), 0 7px 16px rgba(120,95,20,0.18); }
+
+    /* ── Privileged action card ──────────────────────────────────── */
+    .grant-card {
+      position: relative; z-index: 1; margin-top: 20px;
+      background: #fffcf4; border: 1px solid #f2e3c4; border-radius: 18px;
+      box-shadow: 0 6px 28px rgba(150,110,30,0.06), 0 1px 4px rgba(0,0,0,0.03);
+      padding: 26px;
+    }
+    .grant-eyebrow {
+      display: flex; align-items: center; gap: 8px; margin: 0 0 8px 0;
+      font-size: 11px; font-weight: 800; letter-spacing: 0.14em;
+      text-transform: uppercase; color: #a57f43;
+    }
+    .grant-eyebrow svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .grant-card h2 { font-size: 17px; font-weight: 700; color: #1e293b; margin: 0 0 8px 0; }
+    .grant-card > p { font-size: 13.5px; line-height: 1.65; color: #64748b; margin: 0 0 16px 0; max-width: 640px; }
+    .grant-list { margin: 0 0 18px 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+    .grant-list li { display: flex; gap: 9px; align-items: flex-start; font-size: 13px; line-height: 1.55; color: #475569; }
+    .grant-list li svg { width: 15px; height: 15px; flex: 0 0 15px; margin-top: 2px; stroke: #a57f43; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .grant-check { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; font-size: 13px; line-height: 1.55; color: #334155; cursor: pointer; }
+    .grant-check input { width: 17px; height: 17px; margin: 1px 0 0 0; accent-color: #14532d; flex: 0 0 17px; }
+    .grant-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 18px; border-top: 1px solid #f1e7d2; }
   </style>
 
   <div class="register-page">
@@ -128,6 +152,19 @@
         <span style="font-size:12px;color:#94a3b8;">Joined {{ $user->created_at ? $user->created_at->format('M d, Y') : '—' }}</span>
       </div>
     </div>
+
+    @if (session('success'))
+      <div class="form-alert info" style="position:relative;z-index:1;">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        {{ session('success') }}
+      </div>
+    @endif
+    @if (session('error'))
+      <div class="form-alert error" style="position:relative;z-index:1;">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ session('error') }}
+      </div>
+    @endif
 
     <div class="form-card">
       @if ($errors->any())
@@ -223,6 +260,78 @@
         </div>
       </form>
     </div>
+
+    {{-- ── Privilege escalation ─────────────────────────────────────
+         Kept out of the profile form on purpose: granting administrator
+         access asks for this account's password again, states plainly what
+         is being handed over, is throttled, and is written to the audit log
+         with both names on it. --}}
+    @if ($user->role !== 'admin')
+      <div class="grant-card">
+        <div class="grant-eyebrow">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Privileged action
+        </div>
+        <h2>Grant administrator access</h2>
+        <p>
+          Administrator is the highest level in {{ config('app.name') }}. Only an existing
+          administrator can grant it, and it is never granted by accident — you will be asked
+          to confirm with your own password.
+        </p>
+
+        <ul class="grant-list">
+          <li>
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Full access to the members list, system accounts, stores, their legal paperwork and every association report.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>{{ $user->name }} will be emailed a security notice the moment it takes effect.</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>The grant is recorded in the audit log against your account, with the time and IP address.</span>
+          </li>
+        </ul>
+
+        @if ($user->isActive())
+          <form method="POST" action="{{ route('admin.users.promote', $user) }}" id="promoteForm" novalidate>
+            @csrf
+
+            <div class="invite-field" style="max-width:340px;">
+              <label>Your Password <span class="req">*</span></label>
+              <input type="password" name="password" autocomplete="current-password"
+                     placeholder="Re-enter your password" value="">
+              <small class="field-error">@error('password'){{ $message }}@enderror</small>
+            </div>
+
+            <label class="grant-check">
+              <input type="checkbox" name="confirm" value="1" @checked(old('confirm'))>
+              <span>
+                I understand this gives <strong>{{ $user->name }}</strong> full control of the
+                system — members, accounts, stores and all association data — and that they can
+                change anything, including this.
+              </span>
+            </label>
+            <small class="field-error">@error('confirm'){{ $message }}@enderror</small>
+
+            <div class="grant-actions">
+              <button type="submit" class="btn-users warning"
+                      data-aqui-confirm="Give {{ $user->name }} full administrator access? They will be able to manage members, accounts, stores and every association record."
+                      data-aqui-title="Grant administrator access"
+                      data-aqui-confirm-label="Grant access">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                Grant Administrator Access
+              </button>
+            </div>
+          </form>
+        @else
+          <p class="field-error" style="min-height:0;font-size:13px;">
+            This account is still <strong>{{ $user->status }}</strong>. Only an active account can be granted administrator access — activate it first.
+          </p>
+        @endif
+      </div>
+    @endif
   </div>
 
   <script>

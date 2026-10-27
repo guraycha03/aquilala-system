@@ -17,17 +17,17 @@
     .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn-set {
       display: inline-flex; align-items: center; gap: 8px; text-decoration: none; border: 1px solid transparent;
-      background: rgb(172, 242, 121); border-color: rgba(20,61,35,0.12);
-      color: #14532d; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 700;
+      background: #EDF1E9; border-color: #D9E2D6;
+      color: #3F6B4D; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 700;
       transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(20,61,35,0.08); cursor: pointer;
     }
-    .btn-set:hover { background: rgb(160, 232, 108); transform: translateY(-1px); }
+    .btn-set:hover { background: #E2E9E0; transform: translateY(-1px); }
     .btn-set svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
     .btn-set.ghost { background: #ffffff; border-color: rgba(20,61,35,0.10); box-shadow: none; }
     .btn-set.ghost:hover { background: #f0fdf4; }
     .btn-set:disabled { background: #f1f5f9; border-color: #e2e8f0; color: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
-    .btn-set.editing { background: #143d23; border-color: #143d23; color: #ffffff; box-shadow: none; }
-    .btn-set.editing:hover { background: #1a4a2a; transform: none; }
+    .btn-set.editing { background: #3F6B4D; border-color: #3F6B4D; color: #ffffff; box-shadow: none; }
+    .btn-set.editing:hover { background: #375F43; transform: none; }
 
     .set-panel {
       background: rgba(255,255,255,0.86); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);

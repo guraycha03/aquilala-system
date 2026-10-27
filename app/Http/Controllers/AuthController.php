@@ -6,6 +6,7 @@ use App\Helpers\SeasonHelper;
 use App\Models\AssociationEvent;
 use App\Models\Category;
 use App\Models\HarvestReport;
+use App\Models\Member;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\User;
@@ -176,6 +177,12 @@ class AuthController extends Controller
         $storeOwnersCount = User::where('role', 'store_owner')->count();
         $farmersCount = User::where('role', 'farmer')->count();
 
+        // The members list is the association's registry of people, held
+        // apart from the accounts above — an import adds to this list
+        // without creating a single login, so the dashboard card counts
+        // members here, never farmer accounts.
+        $totalMembers = Member::count();
+
         // 2. Fetch the latest 10 profile registrations
         $recentUsers = User::latest()->take(10)->get();
 
@@ -223,10 +230,15 @@ class AuthController extends Controller
             })
             ->values();
 
-        // Harvest report activity grouped per day for the dashboard graph (last 12 months)
+        // Harvest report activity grouped per day for the dashboard graph (last 12 months).
+        // Bucketed by harvest_date — WHEN the crop was harvested — not by
+        // created_at. The association loads years of paper records through
+        // the importer, and every imported row carries the day of the upload
+        // as its created_at: plotting that would pile the entire history
+        // onto a single day of the current month.
         $harvestDaily = DB::table('harvest_reports')
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as total, COALESCE(SUM(actual_yield_metric_tons), 0) as yield, COALESCE(SUM(actual_total_expenses), 0) as expenses')
-            ->where('created_at', '>=', now()->subDays(364)->startOfDay())
+            ->selectRaw('DATE(harvest_date) as date, COUNT(*) as total, COALESCE(SUM(actual_yield_metric_tons), 0) as yield, COALESCE(SUM(actual_total_expenses), 0) as expenses')
+            ->where('harvest_date', '>=', now()->subDays(364)->toDateString())
             ->groupBy('date')
             ->get()
             ->keyBy('date');
@@ -344,6 +356,7 @@ class AuthController extends Controller
             'adminCount',
             'storeOwnersCount',
             'farmersCount',
+            'totalMembers',
             'recentUsers',
             'totalCategories',
             'totalProducts',

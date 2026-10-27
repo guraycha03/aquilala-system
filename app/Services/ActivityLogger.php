@@ -436,10 +436,11 @@ class ActivityLogger
         );
 
         // Admin bell: a new harvest report is available for the association
-        // harvest overview.
+        // harvest overview. The reporter is the linked account or, for
+        // imported history, the member the report was filed against.
         self::notifyAdmins(
             ActivityLog::TYPE_HARVEST_CREATED,
-            'New harvest report from ' . ($report->user?->name ?? Auth::user()?->name ?? 'a farmer')
+            'New harvest report from ' . ($report->farmer?->name ?? $report->member?->fullName() ?? Auth::user()?->name ?? 'a farmer')
                 . ": {$report->crop_type} ({$report->season}) — {$report->actual_yield_metric_tons} MT on {$report->harvest_date->format('M d, Y')}",
             $report,
             [

@@ -10,16 +10,17 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
  * The AI field-matching stage on the OCR member import.
  *
  * Every test still goes through real Tesseract (same skip guard as
- * AdminUserImportOcrTest) because the stage sits between raw OCR text and
+ * AdminMemberImportOcrTest) because the stage sits between raw OCR text and
  * the shared normalizeRow() pipeline.
  */
-class AdminUserImportOcrAiTest extends TestCase
+class AdminMemberImportOcrAiTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -29,6 +30,9 @@ class AdminUserImportOcrAiTest extends TestCase
 
         $this->withoutMiddleware(ValidateCsrfToken::class);
         Mail::fake();
+        // The import vault parks uploaded files on this disk — fake it so
+        // no test ever writes to (or reads from) real storage.
+        Storage::fake('local');
 
         if (! app(OcrService::class)->isAvailable()) {
             $this->markTestSkipped('Tesseract OCR (with language data) is not available on this machine.');
@@ -56,7 +60,7 @@ class AdminUserImportOcrAiTest extends TestCase
 
     private function previewScan(): void
     {
-        $this->actingAs($this->makeAdmin())->post(route('admin.users.import.ocr'), [
+        $this->actingAs($this->makeAdmin())->post(route('admin.members.import.ocr'), [
             'file' => $this->scan(),
         ])->assertOk();
     }
@@ -106,7 +110,7 @@ class AdminUserImportOcrAiTest extends TestCase
         // The filename travels as context so the model knows it is not a member.
         $this->assertStringContainsString('member-list.png', $requests[0]->body());
 
-        $import = session('admin.user_import');
+        $import = session('admin.member_import');
         $this->assertTrue($import['ai_assisted'] ?? false);
 
         $emails = array_column(array_column($import['rows'], 'data'), 'email');
@@ -124,7 +128,7 @@ class AdminUserImportOcrAiTest extends TestCase
 
         $this->previewScan();
 
-        $import = session('admin.user_import');
+        $import = session('admin.member_import');
         $this->assertNotNull($import);
         $this->assertFalse($import['ai_assisted'] ?? false);
 
@@ -141,15 +145,19 @@ class AdminUserImportOcrAiTest extends TestCase
 
         $this->previewScan();
 
-        $import = session('admin.user_import');
+        $import = session('admin.member_import');
         $this->assertTrue($import['ai_assisted'] ?? false);
 
+        // An invalid address never reaches `data` — normalizeRow() flags the
+        // row instead of storing it — so look at what the model actually sent.
         $flagged = array_values(array_filter(
             $import['rows'],
-            fn (array $row) => ($row['data']['email'] ?? null) === 'not-an-email'
+            fn (array $row) => (($row['_raw']['email'] ?? null) === 'not-an-email')
+                || (($row['data']['email'] ?? null) === 'not-an-email')
         ));
         $this->assertCount(1, $flagged);
         $this->assertNotSame([], $flagged[0]['issues'], 'An AI-supplied invalid e-mail must be flagged, not importable.');
+        $this->assertArrayNotHasKey('email', $flagged[0]['data'], 'The bad address must not be staged for insert.');
     }
 
     public function test_no_api_key_means_no_request_and_rule_based_rows(): void
@@ -161,7 +169,7 @@ class AdminUserImportOcrAiTest extends TestCase
 
         $this->assertSame([], $this->groqRequests(), 'No model call may happen without an API key.');
 
-        $import = session('admin.user_import');
+        $import = session('admin.member_import');
         $this->assertFalse($import['ai_assisted'] ?? false);
 
         $emails = array_column(array_column($import['rows'], 'data'), 'email');

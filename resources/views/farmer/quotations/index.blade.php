@@ -122,12 +122,12 @@
 
   /* Primary CTA */
   .cta-primary {
-    background: linear-gradient(135deg, #143d23 0%, #1a5230 100%);
+    background: #3F6B4D;
     color: #fff; text-decoration: none;
     padding: 10px 20px; border-radius: 10px;
     font-size: 13px; font-weight: 700;
     display: inline-flex; align-items: center; gap: 7px;
-    box-shadow: 0 2px 8px rgba(20,61,35,0.25);
+    box-shadow: 0 2px 8px rgba(63,107,77,0.22);
     transition: all 0.2s ease;
     border: none; cursor: pointer;
   }

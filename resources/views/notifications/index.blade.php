@@ -43,11 +43,11 @@
 
   .btn-markread {
     display: inline-flex; align-items: center; gap: 7px; border: none; cursor: pointer;
-    background: #14532d; color: #fff; font-size: 12px; font-weight: 700;
+    background: #3F6B4D; color: #fff; font-size: 12px; font-weight: 700;
     padding: 8px 15px; border-radius: 10px; font-family: inherit;
     transition: background 0.15s ease;
   }
-  .btn-markread:hover { background: #166534; }
+  .btn-markread:hover { background: #375F43; }
   .btn-markread:disabled { opacity: 0.5; cursor: wait; }
   .btn-markread svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 

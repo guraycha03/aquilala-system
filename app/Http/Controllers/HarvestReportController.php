@@ -3,15 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\SettingsHelper;
+use App\Models\ActivityLog;
 use App\Models\Crop;
 use App\Models\FarmerCrop;
 use App\Models\HarvestReport;
+use App\Models\Member;
 use App\Services\ActivityLogger;
 use App\Services\HarvestCompareService;
 use App\Services\HarvestInsightService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class HarvestReportController extends Controller
@@ -68,11 +72,29 @@ class HarvestReportController extends Controller
      */
     public function adminIndex(Request $request)
     {
-        [, $stats] = $this->applyFiltersAndStats(HarvestReport::with('farmer'), $request);
+        [, $stats] = $this->applyFiltersAndStats(HarvestReport::with(['farmer', 'member']), $request);
 
         return view('admin.harvests.index', [
             'stats'   => $stats,
             'context' => $this->insights->context(),
+        ]);
+    }
+
+    /**
+     * Full harvest history — the wet-vs-dry trend at page size, reached from
+     * the landing page's Full view button. It was a dialog once, and a dialog
+     * never had the room to read twenty periods at a glance, so it became a
+     * page of its own: breadcrumbed back to the landing page, deliberately
+     * absent from the sidebar (it is a view of that page, not a destination).
+     */
+    public function adminHistory()
+    {
+        $periods = $this->insights->historyPeriods();
+
+        return view('admin.harvests.history', [
+            'periods' => $periods,
+            'from'    => $periods[0]['first_harvest'] ?? null,
+            'to'      => $periods ? end($periods)['last_harvest'] : null,
         ]);
     }
 
@@ -82,11 +104,11 @@ class HarvestReportController extends Controller
     public function reportsIndex(Request $request)
     {
         [$reports, $stats, $allReports, $yearOptions, $monthOptions] = $this->applyFiltersAndStats(
-            HarvestReport::with('farmer'),
+            HarvestReport::with(['farmer', 'member']),
             $request
         );
 
-        $farmerOptions = $allReports->pluck('farmer.name')
+        $farmerOptions = $allReports->map(fn (HarvestReport $report) => $report->reporterName())
             ->filter()
             ->unique()
             ->sort()
@@ -100,6 +122,54 @@ class HarvestReportController extends Controller
             'yearOptions',
             'monthOptions'
         ));
+    }
+
+    /**
+     * "Remove selected records" — the row-level half of removing wrong data.
+     *
+     * The officer ticks rows in the table (select-all covers every row the
+     * toolbar is currently matching, across pages) and confirms once. Only
+     * the listed ids go: the archived source file stays in Import Uploads so
+     * a wrong removal is fixed by re-importing it, and planting batches tied
+     * to a removed record survive untouched (the foreign key nulls itself)
+     * and simply become reportable again.
+     */
+    public function removeRecords(Request $request): RedirectResponse
+    {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
+        $raw = $request->input('ids', '');
+        $ids = collect(is_array($raw) ? $raw : explode(',', (string) $raw))
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return redirect()
+                ->route('admin.harvests.reports')
+                ->with('error', 'Tick at least one record first, then choose Remove selected.');
+        }
+
+        $removed = (int) HarvestReport::whereIn('id', $ids)->delete();
+
+        if ($removed > 0) {
+            ActivityLogger::log(
+                ActivityLog::TYPE_HARVEST_DELETED,
+                'Removed ' . $removed . ' harvest record' . ($removed > 1 ? 's' : '') . ' from All Harvest Reports',
+                null,
+                ['count' => $removed, 'ids' => $ids->all()]
+            );
+        }
+
+        return redirect()
+            ->route('admin.harvests.reports')
+            ->with(
+                'success',
+                $removed > 0
+                    ? number_format($removed) . ' record' . ($removed > 1 ? 's' : '') . ' removed.'
+                    : 'Those records are no longer on the list.'
+            );
     }
 
     /**
@@ -194,7 +264,19 @@ class HarvestReportController extends Controller
             $query->where('season', $season);
         }
         if ($farmer !== '') {
-            $query->whereHas('farmer', fn ($q) => $q->where('name', $farmer));
+            // A report's reporter is either an account or a member record, so
+            // the filter has to reach both: account names in the query, member
+            // names resolved here (a member's display name is composed from
+            // name parts and does not exist as a single column).
+            $memberIds = $this->memberIdsNamed($farmer);
+
+            $query->where(function ($q) use ($farmer, $memberIds) {
+                $q->whereHas('farmer', fn ($fq) => $fq->where('name', $farmer));
+
+                if ($memberIds->isNotEmpty()) {
+                    $q->orWhereIn('member_id', $memberIds);
+                }
+            });
         }
         if ($year !== '' && $year !== 'all') {
             $query->whereYear('harvest_date', $year);
@@ -206,8 +288,8 @@ class HarvestReportController extends Controller
         // Summary figures reflect the user's full dataset (before filters),
         // mirroring how the quotations/activity pages compute their stats.
         $allReports = collect(match (true) {
-            Auth::user()->role === 'admin' => HarvestReport::with('farmer')->orderByDesc('harvest_date')->get(),
-            default => HarvestReport::with('farmer')->where('user_id', Auth::id())->orderByDesc('harvest_date')->get(),
+            Auth::user()->role === 'admin' => HarvestReport::with(['farmer', 'member'])->orderByDesc('harvest_date')->get(),
+            default => HarvestReport::with(['farmer', 'member'])->where('user_id', Auth::id())->orderByDesc('harvest_date')->get(),
         });
 
         $stats = [
@@ -216,7 +298,9 @@ class HarvestReportController extends Controller
             'yield_atoms' => $allReports->sum('actual_yield_metric_tons'),
             'expenses' => (float) $allReports->sum('actual_total_expenses'),
             'area' => (float) $allReports->sum('land_area'),
-            'farmers' => $allReports->pluck('user_id')->unique()->count(),
+            // Distinct reporters, not distinct accounts: member-filed history
+            // counts the member as the farmer who reported it.
+            'farmers' => $allReports->map(fn (HarvestReport $report) => $report->reporterKey())->unique()->count(),
         ];
 
         // Get unique years and months for filter dropdowns
@@ -241,6 +325,37 @@ class HarvestReportController extends Controller
         $reports = $query->orderByDesc('harvest_date')->get();
 
         return [$reports, $stats, $allReports, $yearOptions, $monthOptions];
+    }
+
+    /**
+     * Ids of members whose composed display name equals the given name
+     * (case- and period-insensitive), so the farmer filter reaches
+     * member-filed history as well as account-filed reports.
+     *
+     * @return Collection<int, int>
+     */
+    private function memberIdsNamed(string $name): Collection
+    {
+        $needle = self::normalizeReporterName($name);
+
+        if ($needle === '') {
+            return collect();
+        }
+
+        return Member::query()
+            ->get(['id', 'name', 'first_name', 'middle_initial', 'last_name'])
+            ->filter(fn (Member $member) => self::normalizeReporterName($member->fullName()) === $needle)
+            ->pluck('id')
+            ->values();
+    }
+
+    /**
+     * Comparison form of a reporter's name: case-folded, whitespace-collapsed
+     * and free of the periods used in middle initials.
+     */
+    private static function normalizeReporterName(string $name): string
+    {
+        return mb_strtolower(preg_replace('/\s+/u', ' ', str_replace('.', '', trim($name))));
     }
 
     /**
@@ -282,10 +397,14 @@ class HarvestReportController extends Controller
             ])->withInput();
         }
 
-        // The batch is the source of truth for these three fields.
+        // The batch is the source of truth for these fields — including the
+        // seed variety, so a manually filed report carries the same
+        // registry-backed label an imported one does.
         $validated['crop_type'] = $batch->crop?->name ?? $validated['crop_type'];
         $validated['season'] = $batch->season ?? $validated['season'];
         $validated['land_area'] = (float) $batch->land_area;
+        $validated['variety'] = $batch->variety;
+        $validated['variety_key'] = $batch->variety_key;
 
         $validated['user_id'] = Auth::id();
         $validated['quotation_id'] = null;

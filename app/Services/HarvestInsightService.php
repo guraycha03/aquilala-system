@@ -9,6 +9,7 @@ use App\Models\ActivityLog;
 use App\Models\FarmerCrop;
 use App\Models\HarvestReport;
 use App\Models\WeatherLog;
+use App\Support\HarvestDigestRow;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -80,7 +81,7 @@ class HarvestInsightService
 
         $coverage = [
             'reports'       => $reports->count(),
-            'farmers'       => $reports->pluck('user_id')->unique()->count(),
+            'farmers'       => $reports->map(fn (HarvestDigestRow $report) => $report->reporterKey())->unique()->count(),
             'crops'         => $reports->pluck('crop_type')->filter()->unique()->sort()->values()->all(),
             'seasons'       => $reports->pluck('season')->filter()->unique()->sort()->values()->all(),
             'first_harvest' => $this->dateOf($reports->first()->harvest_date),
@@ -120,7 +121,27 @@ class HarvestInsightService
 
     private function loadReports(): Collection
     {
-        return HarvestReport::with('farmer')->orderBy('harvest_date')->get();
+        // Reduced to plain rows on the way in (see HarvestDigestRow): every
+        // aggregation below then runs on already-loaded floats and strings
+        // instead of paying Eloquent's per-cell access cost on each pass.
+        return HarvestReport::with(['farmer', 'member'])
+            ->orderBy('harvest_date')
+            ->get()
+            ->map(fn (HarvestReport $report) => HarvestDigestRow::from($report))
+            ->values();
+    }
+
+    /**
+     * The period list alone, for the full-history page. The landing page's
+     * "Full view" used to open this as a dialog; it is a page now, and it
+     * should not have to rebuild every other slice of the digest (farmers,
+     * varieties, weather, climatology) just to draw one chart.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function historyPeriods(): array
+    {
+        return $this->periods($this->loadReports());
     }
 
     /**
@@ -189,13 +210,13 @@ class HarvestInsightService
     /**
      * One aggregate row per harvest year + season, ordered chronologically.
      *
-     * @param  Collection<int, HarvestReport>  $reports
+     * @param  Collection<int, HarvestDigestRow>  $reports
      * @return array<int, array<string, mixed>>
      */
     private function periods(Collection $reports): array
     {
         return $reports
-            ->groupBy(fn (HarvestReport $r) => $r->harvest_date->format('Y') . '-' . $r->season)
+            ->groupBy(fn (HarvestDigestRow $r) => $r->harvest_date->format('Y') . '-' . $r->season)
             ->map(function (Collection $rows, string $key) {
                 [$year, $season] = explode('-', $key);
                 $first = Carbon::parse($rows->min('harvest_date'));
@@ -218,7 +239,7 @@ class HarvestInsightService
     /**
      * Totals for a set of reports: area, yield, yield/ha, expenses, cost/ton.
      *
-     * @param  Collection<int, HarvestReport>  $rows
+     * @param  Collection<int, HarvestDigestRow>  $rows
      * @return array<string, mixed>
      */
     private function summarize(Collection $rows): array
@@ -229,7 +250,7 @@ class HarvestInsightService
 
         return [
             'reports'          => $rows->count(),
-            'farmers'          => $rows->pluck('user_id')->unique()->count(),
+            'farmers'          => $rows->map(fn (HarvestDigestRow $report) => $report->reporterKey())->unique()->count(),
             'area_ha'          => round($area, 2),
             'yield_tons'       => round($yield, 2),
             'yield_per_ha'     => $area > 0 ? round($yield / $area, 3) : null,
@@ -270,7 +291,7 @@ class HarvestInsightService
     }
 
     /**
-     * @param  Collection<int, HarvestReport>  $reports
+     * @param  Collection<int, HarvestDigestRow>  $reports
      * @return array<string, mixed>
      */
     private function bySeason(Collection $reports): array
@@ -288,7 +309,7 @@ class HarvestInsightService
      * Per-crop totals plus that crop's own latest-vs-previous movement, so the
      * model can separate "everything fell" from "one crop dragged the average".
      *
-     * @param  Collection<int, HarvestReport>  $reports
+     * @param  Collection<int, HarvestDigestRow>  $reports
      * @return array<int, array<string, mixed>>
      */
     private function byCrop(Collection $reports): array
@@ -323,15 +344,15 @@ class HarvestInsightService
      * computed separately on purpose — they frequently disagree, and that
      * disagreement is worth showing.
      *
-     * @param  Collection<int, HarvestReport>  $reports
+     * @param  Collection<int, HarvestDigestRow>  $reports
      * @return array<int, array<string, mixed>>
      */
     private function topFarmers(Collection $reports, string $ranking): array
     {
         $farmers = $reports
-            ->groupBy('user_id')
+            ->groupBy(fn (HarvestDigestRow $report) => $report->reporterKey())
             ->map(fn (Collection $rows) => Arr::except($this->summarize($rows), ['farmers', 'expenses_per_ha'])
-                + ['farmer' => $rows->first()->farmer?->name ?? 'Unknown farmer']);
+                + ['farmer' => $rows->first()->reporterName()]);
 
         $sorted = $ranking === 'yield'
             ? $farmers->sortByDesc('yield_tons')
@@ -351,18 +372,18 @@ class HarvestInsightService
      * measures how much land someone farms, which is exactly the wrong yard
      * stick for "who performed worst".
      *
-     * @param  Collection<int, HarvestReport>  $reports
+     * @param  Collection<int, HarvestDigestRow>  $reports
      * @return array<int, array<string, mixed>>
      */
     private function farmers(Collection $reports): array
     {
         return $reports
-            ->groupBy('user_id')
+            ->groupBy(fn (HarvestDigestRow $report) => $report->reporterKey())
             ->map(function (Collection $rows) {
                 $summary = Arr::except($this->summarize($rows), ['farmers']);
 
                 return $summary + [
-                    'farmer'        => $rows->first()->farmer?->name ?? 'Unknown farmer',
+                    'farmer'        => $rows->first()->reporterName(),
                     'seasons'       => $this->splitBy($rows, 'season'),
                     'crops'         => $this->splitBy($rows, 'crop_type'),
                     'period_labels' => array_column($this->periods($rows), 'label'),
@@ -380,13 +401,13 @@ class HarvestInsightService
      * so a farmer's own wet-vs-dry or rice-vs-corn split can be compared
      * against the association's.
      *
-     * @param  Collection<int, HarvestReport>  $rows
+     * @param  Collection<int, HarvestDigestRow>  $rows
      * @return array<string, array{reports: int, yield_per_ha: float|null}>
      */
     private function splitBy(Collection $rows, string $column): array
     {
         return $rows
-            ->filter(fn (HarvestReport $row) => trim((string) $row->getAttribute($column)) !== '')
+            ->filter(fn (HarvestDigestRow $row) => trim((string) $row->getAttribute($column)) !== '')
             ->groupBy($column)
             ->map(fn (Collection $group) => [
                 'reports'      => $group->count(),
@@ -400,7 +421,7 @@ class HarvestInsightService
      * back to a harvest report. Returns [] when nothing is linked, which the
      * prompt treats as "do not discuss varieties".
      *
-     * @param  Collection<int, HarvestReport>  $reports
+     * @param  Collection<int, HarvestDigestRow>  $reports
      * @return array<int, array<string, mixed>>
      */
     private function varieties(Collection $reports): array
@@ -449,7 +470,7 @@ class HarvestInsightService
      * it just sits outside the recorded harvest range, and the prompt is told
      * not to use it to explain a period.
      *
-     * @param  Collection<int, HarvestReport>  $reports
+     * @param  Collection<int, HarvestDigestRow>  $reports
      * @param  array<int, array<string, mixed>>  $periods
      * @return array<int, array<string, mixed>>
      */
@@ -588,22 +609,26 @@ class HarvestInsightService
         }
 
         $reports = $this->loadReports()
-            ->filter(fn (HarvestReport $report) => ($report->farmer?->name ?? 'Unknown farmer') === $name)
+            ->filter(fn (HarvestDigestRow $report) => $report->reporterName() === $name)
             ->values();
 
         if ($reports->isEmpty()) {
             return null;
         }
 
-        $plantings = FarmerCrop::with('crop')
-            ->where('user_id', $reports->first()->user_id)
+        // Plantings and activity live on the account, so member-filed
+        // history (no user_id yet) simply has none to show.
+        $reporterId = $reports->first()->user_id;
+
+        $plantings = $reporterId === null ? collect() : FarmerCrop::with('crop')
+            ->where('user_id', $reporterId)
             ->get()
             ->sortByDesc(fn (FarmerCrop $crop) => $crop->planting_date?->getTimestamp() ?? 0)
             ->take(self::FOCUS_PLANTINGS)
             ->values();
 
-        $activity = ActivityLog::whereIn('type', self::FARM_ACTIVITY_TYPES)
-            ->where('user_id', $reports->first()->user_id)
+        $activity = $reporterId === null ? collect() : ActivityLog::whereIn('type', self::FARM_ACTIVITY_TYPES)
+            ->where('user_id', $reporterId)
             ->orderByDesc('created_at')
             ->limit(self::FOCUS_ACTIVITY)
             ->get();
@@ -840,7 +865,7 @@ class HarvestInsightService
     }
 
     /**
-     * @param  Collection<int, HarvestReport>  $reports
+     * @param  Collection<int, HarvestDigestRow>  $reports
      * @return array<int, array<string, mixed>>
      */
     private function focusReports(Collection $reports): array
@@ -848,7 +873,7 @@ class HarvestInsightService
         return $reports
             ->reverse()
             ->take(self::FOCUS_REPORTS)
-            ->map(function (HarvestReport $report) {
+            ->map(function (HarvestDigestRow $report) {
                 $area  = (float) $report->land_area;
                 $yield = (float) $report->actual_yield_metric_tons;
 

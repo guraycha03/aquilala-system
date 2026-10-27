@@ -38,6 +38,14 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->ip().'|password');
         });
 
+        // Privileged self-service actions (granting administrator access).
+        // Keyed on the acting account, not the IP: it is a credential check an
+        // already-signed-in admin is performing, so a wrong password must be
+        // retryable a few times but never brute-forceable.
+        RateLimiter::for('admin-grant', function ($request) {
+            return Limit::perMinute(5)->by($request->user()?->id.'|admin-grant');
+        });
+
         // Share global season/climate data with ALL views
         View::share('globalSeason', SeasonHelper::getCurrentSeason());
         View::share('globalSeasonLabel', SeasonHelper::getSeasonLabel());

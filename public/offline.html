@@ -18,7 +18,7 @@
             padding: 24px;
             text-align: center;
         }
-        .card { max-width: 420px; width: 100%; }
+        .card { max-width: 440px; width: 100%; }
         /* The mark sits on a plain white tile, never on a dark green box:
            a logo with a colour behind it reads as an error badge. */
         .logo-tile {
@@ -29,7 +29,21 @@
         }
         .logo-tile img { width: 72px; height: 72px; }
         h1 { font-size: 22px; font-weight: 700; margin-bottom: 10px; color: #143d23; }
-        p { font-size: 14.5px; line-height: 1.65; color: #64748b; margin-bottom: 26px; }
+        p { font-size: 14.5px; line-height: 1.65; color: #64748b; margin-bottom: 22px; }
+        .status {
+            display: flex; align-items: center; justify-content: center; gap: 9px;
+            font-size: 13px; font-weight: 600; color: #8a5a1f;
+            background: #fdf6ec; border: 1px solid #f3e3c6;
+            border-radius: 999px; padding: 9px 16px; margin-bottom: 20px;
+        }
+        .dot {
+            width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+            animation: pulse 1.4s ease-in-out infinite; flex: 0 0 8px;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.75); }
+            50%      { opacity: 1;   transform: scale(1.2); }
+        }
         button {
             font: inherit;
             font-size: 14px;
@@ -42,6 +56,8 @@
             cursor: pointer;
         }
         button:hover { background: #0f2f1b; }
+        .footnote { font-size: 12.5px; color: #94a3b8; margin-top: 18px; margin-bottom: 0; }
+        @media (prefers-reduced-motion: reduce) { .dot { animation: none; } }
     </style>
 </head>
 <body>
@@ -51,9 +67,79 @@
         </div>
         <h1>You're offline</h1>
         <p>
-            No internet connection right now. Reconnect to continue working in Aquilala.
+            We can't reach Aquilala right now — it may be your connection or the
+            server restarting. There is nothing you need to do: this page checks
+            again every few seconds and reloads itself the moment it is back.
         </p>
-        <button onclick="location.reload()">Try again</button>
+
+        <div class="status" role="status" aria-live="polite">
+            <span class="dot"></span>
+            <span id="aq-status">Checking the connection…</span>
+        </div>
+
+        <button type="button" id="aq-retry">Try again now</button>
+
+        <p class="footnote">
+            If it stays on this screen, close the tab and reopen it once you are
+            sure the connection is working.
+        </p>
     </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            var statusEl = document.getElementById('aq-status');
+            var button = document.getElementById('aq-retry');
+            var attempts = 0;
+            var timer = null;
+            var running = false;
+
+            // /up is Laravel's health route. It is fetched with a non-HTML
+            // Accept header on purpose so the service worker passes it straight
+            // through to the network instead of serving a cached page — we are
+            // asking whether the server is genuinely reachable.
+            function probe() {
+                if (running) return;
+                running = true;
+                attempts += 1;
+                statusEl.textContent = 'Reconnecting… attempt ' + attempts;
+
+                fetch('/up', { cache: 'no-store', headers: { 'Accept': 'application/json' } })
+                    .then(function (res) {
+                        running = false;
+                        if (res && res.ok) {
+                            statusEl.textContent = 'Connection restored — reloading…';
+                            window.location.reload();
+                            return;
+                        }
+                        schedule();
+                    })
+                    .catch(function () {
+                        running = false;
+                        schedule();
+                    });
+            }
+
+            function schedule() {
+                statusEl.textContent = 'Still offline — trying again automatically (attempt ' + attempts + ')';
+
+                if (timer) window.clearTimeout(timer);
+                timer = window.setTimeout(probe, 3000);
+            }
+
+            window.addEventListener('online', function () {
+                if (timer) window.clearTimeout(timer);
+                probe();
+            });
+
+            button.addEventListener('click', function () {
+                if (timer) window.clearTimeout(timer);
+                probe();
+            });
+
+            window.setTimeout(probe, 800);
+        })();
+    </script>
 </body>
 </html>

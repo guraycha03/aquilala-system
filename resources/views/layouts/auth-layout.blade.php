@@ -126,6 +126,7 @@
     <meta name="apple-mobile-web-app-title" content="Aquilala">
     <link rel="apple-touch-icon" href="{{ asset('images/pwa/apple-touch-icon.png') }}">
     <script src="{{ asset('js/pwa-register.js') }}" defer></script>
+    <script src="{{ asset('js/net-status.js') }}" defer></script>
     {{-- Same global app lockdown as the app shell (selection, copy, long-press
          menus, printing — forms stay fully editable) so login/register behave
          identically. ?v= bump on edit: sw.js caches .css/.js cache-first. --}}

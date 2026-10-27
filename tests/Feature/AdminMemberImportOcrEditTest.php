@@ -8,6 +8,7 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -19,7 +20,7 @@ use Tests\TestCase;
  * The session is seeded directly so these run without Tesseract; the last
  * test renders the real preview and skips when OCR is unavailable.
  */
-class AdminUserImportOcrEditTest extends TestCase
+class AdminMemberImportOcrEditTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -31,6 +32,9 @@ class AdminUserImportOcrEditTest extends TestCase
 
         $this->withoutMiddleware(ValidateCsrfToken::class);
         Mail::fake();
+        // The import vault parks uploaded files on this disk — fake it so
+        // no test ever writes to (or reads from) real storage.
+        Storage::fake('local');
     }
 
     private function makeAdmin(): User
@@ -80,7 +84,7 @@ class AdminUserImportOcrEditTest extends TestCase
         $valid = count(array_filter($rows, fn (array $row) => $row['issues'] === []));
 
         $this->withSession([
-            'admin.user_import' => $extra + [
+            'admin.member_import' => $extra + [
                 'token' => $token,
                 'filename' => 'member-list.png',
                 'source' => 'ocr',
@@ -100,7 +104,7 @@ class AdminUserImportOcrEditTest extends TestCase
     /** @return array<string, mixed> */
     private function staged(): array
     {
-        $import = session('admin.user_import');
+        $import = session('admin.member_import');
         $this->assertIsArray($import, 'The OCR review session should still be staged.');
 
         return $import;
@@ -110,12 +114,12 @@ class AdminUserImportOcrEditTest extends TestCase
     {
         $token = $this->stage([
             $this->row(
-                ['name' => 'Juan Dela Cruz', 'email' => 'not-an-email', 'role' => 'farmer'],
+                ['name' => 'Juan Dela Cruz', 'email' => 'not-an-email'],
                 ['Email address is invalid.']
             ),
         ]);
 
-        $this->actingAs($this->admin())->post(route('admin.users.import.ocr.revalidate'), [
+        $this->actingAs($this->admin())->post(route('admin.members.import.ocr.revalidate'), [
             'token' => $token,
             'approve' => ['1'],
             'rows' => [[
@@ -123,7 +127,6 @@ class AdminUserImportOcrEditTest extends TestCase
                 'name' => 'Juan Dela Cruz',
                 'email' => 'juan@example.com',
                 'phone' => '',
-                'role' => 'farmer',
                 'assoc_member_no' => '',
             ]],
         ])->assertSessionHas('success');
@@ -138,7 +141,7 @@ class AdminUserImportOcrEditTest extends TestCase
         $this->assertSame(['1'], $import['approved']);
 
         // back() lands on the review page, which renders the new state.
-        $this->actingAs($this->admin())->get(route('admin.users.import'))
+        $this->actingAs($this->admin())->get(route('admin.members.import'))
             ->assertOk()
             ->assertSee('All 1 row(s) now pass validation.')
             ->assertSee('juan@example.com');
@@ -148,23 +151,22 @@ class AdminUserImportOcrEditTest extends TestCase
     {
         $token = $this->stage([
             $this->row(
-                ['name' => 'Ana Reyes', 'email' => 'ana@example.com', 'role' => 'farmer'],
+                ['name' => 'Ana Reyes', 'email' => 'ana@example.com'],
                 ['Phone number is not a valid PH mobile number (e.g. 09171234567).'],
                 // The scan also read a barangay and a broken phone number;
                 // neither has a column in the table.
                 ['name' => 'Ana Reyes', 'email' => 'ana@example.com', 'phone' => '12345',
-                    'role' => 'farmer', 'barangay' => 'Malaybalay']
+                    'barangay' => 'Malaybalay']
             ),
         ]);
 
-        $this->actingAs($this->admin())->post(route('admin.users.import.ocr.revalidate'), [
+        $this->actingAs($this->admin())->post(route('admin.members.import.ocr.revalidate'), [
             'token' => $token,
             'rows' => [[
                 '__row' => '1',
                 'name' => 'Ana Reyes',
                 'email' => 'ana@example.com',
                 'phone' => '09171234567',
-                'role' => 'farmer',
                 'assoc_member_no' => '',
             ]],
         ])->assertSessionHas('success');
@@ -180,19 +182,20 @@ class AdminUserImportOcrEditTest extends TestCase
     public function test_only_the_columns_the_table_edits_are_accepted(): void
     {
         $token = $this->stage([
-            $this->row(['name' => 'Juan Dela Cruz', 'email' => 'juan@example.com', 'role' => 'farmer']),
+            $this->row(['name' => 'Juan Dela Cruz', 'email' => 'juan@example.com']),
         ]);
 
-        $this->actingAs($this->admin())->post(route('admin.users.import.ocr.revalidate'), [
+        $this->actingAs($this->admin())->post(route('admin.members.import.ocr.revalidate'), [
             'token' => $token,
             'rows' => [[
                 '__row' => '1',
                 'name' => 'Juan Dela Cruz',
                 'email' => 'juan@example.com',
                 'phone' => '',
-                'role' => 'store_owner',
                 'assoc_member_no' => 'MEM-01',
-                // Posted, but not a column this table is allowed to change.
+                // Posted, but not a column this table is allowed to change —
+                // and members hold no role or credentials at all.
+                'role' => 'store_owner',
                 'password' => 'secret',
                 'status' => 'active',
                 'is_admin' => '1',
@@ -202,8 +205,8 @@ class AdminUserImportOcrEditTest extends TestCase
 
         $data = $this->staged()['rows'][0]['data'];
 
-        $this->assertSame('store_owner', $data['role'], 'The role the table offers must still be honoured.');
         $this->assertSame('MEM-01', $data['assoc_member_no']);
+        $this->assertArrayNotHasKey('role', $data, 'Members are the list, not accounts — they carry no role.');
         $this->assertArrayNotHasKey('password', $data);
         $this->assertArrayNotHasKey('status', $data);
         $this->assertArrayNotHasKey('is_admin', $data);
@@ -213,10 +216,10 @@ class AdminUserImportOcrEditTest extends TestCase
     public function test_a_row_added_manually_is_numbered_and_keeps_its_tick(): void
     {
         $token = $this->stage([
-            $this->row(['name' => 'Juan Dela Cruz', 'email' => 'juan@example.com', 'role' => 'farmer']),
+            $this->row(['name' => 'Juan Dela Cruz', 'email' => 'juan@example.com']),
         ]);
 
-        $this->actingAs($this->admin())->post(route('admin.users.import.ocr.revalidate'), [
+        $this->actingAs($this->admin())->post(route('admin.members.import.ocr.revalidate'), [
             'token' => $token,
             'approve' => ['2'],
             'rows' => [
@@ -225,7 +228,6 @@ class AdminUserImportOcrEditTest extends TestCase
                     'name' => 'Juan Dela Cruz',
                     'email' => 'juan@example.com',
                     'phone' => '',
-                    'role' => 'farmer',
                     'assoc_member_no' => '',
                 ],
                 [
@@ -234,7 +236,6 @@ class AdminUserImportOcrEditTest extends TestCase
                     'name' => 'Maria Santos',
                     'email' => 'maria@example.com',
                     'phone' => '',
-                    'role' => 'farmer',
                     'assoc_member_no' => 'MEM-02',
                 ],
             ],
@@ -251,21 +252,22 @@ class AdminUserImportOcrEditTest extends TestCase
         $this->assertSame(['2'], $import['approved']);
         $this->assertSame(2, $import['valid']);
 
-        $this->actingAs($this->admin())->post(route('admin.users.import.ocr.confirm'), [
+        $this->actingAs($this->admin())->post(route('admin.members.import.ocr.confirm'), [
             'token' => $token,
             'approve' => ['2'],
-        ])->assertRedirect(route('admin.users.index'));
+        ])->assertRedirect(route('admin.members.index'));
 
-        $this->assertDatabaseHas('users', ['email' => 'maria@example.com']);
+        $this->assertDatabaseHas('members', ['email' => 'maria@example.com', 'user_id' => null]);
+        $this->assertDatabaseCount('users', 1);
     }
 
     public function test_confirm_imports_edited_values_without_a_separate_recheck(): void
     {
         $token = $this->stage([
-            $this->row(['name' => 'Juan Dela Cruz', 'email' => 'juan@example.com', 'role' => 'farmer']),
+            $this->row(['name' => 'Juan Dela Cruz', 'email' => 'juan@example.com']),
         ]);
 
-        $this->actingAs($this->admin())->post(route('admin.users.import.ocr.confirm'), [
+        $this->actingAs($this->admin())->post(route('admin.members.import.ocr.confirm'), [
             'token' => $token,
             'approve' => ['1'],
             // The table posts its cells with the ticks, so importing straight
@@ -275,36 +277,36 @@ class AdminUserImportOcrEditTest extends TestCase
                 'name' => 'Juan Dela Cruz',
                 'email' => 'juan.dela.cruz@example.com',
                 'phone' => '',
-                'role' => 'farmer',
                 'assoc_member_no' => '',
             ]],
-        ])->assertRedirect(route('admin.users.index'));
+        ])->assertRedirect(route('admin.members.index'));
 
-        $this->assertDatabaseHas('users', ['email' => 'juan.dela.cruz@example.com']);
-        $this->assertDatabaseMissing('users', ['email' => 'juan@example.com']);
+        $this->assertDatabaseHas('members', ['email' => 'juan.dela.cruz@example.com']);
+        $this->assertDatabaseMissing('members', ['email' => 'juan@example.com']);
+        $this->assertDatabaseCount('users', 1);
     }
 
     public function test_revalidate_flags_a_duplicate_created_by_an_edit(): void
     {
         $token = $this->stage([
-            $this->row(['name' => 'Juan Dela Cruz', 'email' => 'juan@example.com', 'role' => 'farmer']),
-            $this->row(['name' => 'Ana Reyes', 'email' => 'ana@example.com', 'role' => 'farmer']),
+            $this->row(['name' => 'Juan Dela Cruz', 'email' => 'juan@example.com']),
+            $this->row(['name' => 'Ana Reyes', 'email' => 'ana@example.com']),
         ]);
 
-        $this->actingAs($this->admin())->post(route('admin.users.import.ocr.revalidate'), [
+        $this->actingAs($this->admin())->post(route('admin.members.import.ocr.revalidate'), [
             'token' => $token,
             'rows' => [
                 ['__row' => '1', 'name' => 'Juan Dela Cruz', 'email' => 'juan@example.com',
-                    'phone' => '', 'role' => 'farmer', 'assoc_member_no' => ''],
+                    'phone' => '', 'assoc_member_no' => ''],
                 ['__row' => '2', 'name' => 'Ana Reyes', 'email' => 'juan@example.com',
-                    'phone' => '', 'role' => 'farmer', 'assoc_member_no' => ''],
+                    'phone' => '', 'assoc_member_no' => ''],
             ],
         ])->assertSessionHas('success');
 
         $import = $this->staged();
 
         $this->assertSame([], $import['rows'][0]['issues'], 'The first occurrence of an address is fine.');
-        $this->assertContains('This email is already registered.', $import['rows'][1]['issues']);
+        $this->assertContains('This email is already on the members list.', $import['rows'][1]['issues']);
         $this->assertSame(1, $import['valid']);
         $this->assertSame(1, $import['errors']);
     }
@@ -312,16 +314,16 @@ class AdminUserImportOcrEditTest extends TestCase
     public function test_revalidate_rejects_a_stale_or_foreign_token(): void
     {
         $token = $this->stage([
-            $this->row(['name' => 'Juan Dela Cruz', 'email' => 'juan@example.com', 'role' => 'farmer']),
+            $this->row(['name' => 'Juan Dela Cruz', 'email' => 'juan@example.com']),
         ]);
 
-        $this->actingAs($this->admin())->post(route('admin.users.import.ocr.revalidate'), [
+        $this->actingAs($this->admin())->post(route('admin.members.import.ocr.revalidate'), [
             'token' => 'not-the-staged-token',
             'rows' => [[
                 '__row' => '1', 'name' => 'Someone Else', 'email' => 'someone@example.com',
-                'phone' => '', 'role' => 'farmer', 'assoc_member_no' => '',
+                'phone' => '', 'assoc_member_no' => '',
             ]],
-        ])->assertRedirect(route('admin.users.import'))->assertSessionHas('error');
+        ])->assertRedirect(route('admin.members.import'))->assertSessionHas('error');
 
         $this->assertSame('juan@example.com', $this->staged()['rows'][0]['data']['email']);
         $this->assertSame($token, $this->staged()['token']);
@@ -336,12 +338,12 @@ class AdminUserImportOcrEditTest extends TestCase
         $png = file_get_contents(base_path('tests/Fixtures/ocr-member-list.png'));
         $file = UploadedFile::fake()->createWithContent('member-list.png', $png);
 
-        $this->actingAs($this->admin())->post(route('admin.users.import.ocr'), ['file' => $file])
+        $this->actingAs($this->admin())->post(route('admin.members.import.ocr'), ['file' => $file])
             ->assertOk()
             ->assertSee('Edit rows')
             ->assertSee('id="ocrEditBtn"', false)
             ->assertSee('id="ocrSaveBtn"', false)
             ->assertSee('name="rows[0][email]"', false)
-            ->assertSee(route('admin.users.import.ocr.revalidate'), false);
+            ->assertSee(route('admin.members.import.ocr.revalidate'), false);
     }
 }

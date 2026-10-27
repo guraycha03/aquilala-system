@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Services\AiAvatars;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
@@ -104,11 +106,11 @@ class User extends Authenticatable
     public function aiAvatarUrl(): string
     {
         if (! $this->ai_avatar) {
-            return \App\Services\AiAvatars::url(\App\Services\AiAvatars::defaultKey());
+            return AiAvatars::url(AiAvatars::defaultKey());
         }
 
-        if (\App\Services\AiAvatars::has($this->ai_avatar)) {
-            return \App\Services\AiAvatars::url($this->ai_avatar);
+        if (AiAvatars::has($this->ai_avatar)) {
+            return AiAvatars::url($this->ai_avatar);
         }
 
         // An account that still carries an uploaded image from before the
@@ -117,7 +119,7 @@ class User extends Authenticatable
             return Storage::disk('public')->url($this->ai_avatar);
         }
 
-        return \App\Services\AiAvatars::url(\App\Services\AiAvatars::defaultKey());
+        return AiAvatars::url(AiAvatars::defaultKey());
     }
 
     /**
@@ -151,7 +153,7 @@ class User extends Authenticatable
         $words = array_values(array_filter($words, fn ($word) => $word !== ''));
 
         if (count($words) >= 2) {
-            return mb_strtoupper(mb_substr($words[0], 0, 1) . mb_substr(end($words), 0, 1));
+            return mb_strtoupper(mb_substr($words[0], 0, 1).mb_substr(end($words), 0, 1));
         }
 
         return mb_strtoupper(mb_substr($words[0] ?? '?', 0, 2));
@@ -174,7 +176,7 @@ class User extends Authenticatable
             return 'Axxx';
         }
 
-        return implode(' ', array_map(fn ($word) => mb_substr($word, 0, 1) . 'xxx', $words));
+        return implode(' ', array_map(fn ($word) => mb_substr($word, 0, 1).'xxx', $words));
     }
 
     public function isPending(): bool
@@ -220,5 +222,22 @@ class User extends Authenticatable
     public function chatHistories(): HasMany
     {
         return $this->hasMany(ChatHistory::class, 'user_id');
+    }
+
+    /**
+     * The member record this account was created from, if any. Farmer
+     * accounts always have one; store owners are outsiders and have none.
+     */
+    public function member(): HasOne
+    {
+        return $this->hasOne(Member::class);
+    }
+
+    /**
+     * Legal paperwork filed against this store.
+     */
+    public function documents(): HasMany
+    {
+        return $this->hasMany(StoreDocument::class);
     }
 }

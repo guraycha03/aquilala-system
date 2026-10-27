@@ -148,7 +148,9 @@
     background: #ffffff; font-family: inherit; font-size: 13.5px; color: #1e293b;
   }
   .p-input:focus {
-    outline: none; border-color: #648268; box-shadow: 0 0 0 3px rgba(100, 130, 104, 0.12);
+    /* A soft, light edge on the field being typed in — the focus must
+       read as a gentle lift, not a dark outline. */
+    outline: none; border-color: #C4D0C4; box-shadow: 0 0 0 3px rgba(100, 130, 104, 0.07);
   }
   [data-theme="dark"] .p-input { background: #0f172a; border-color: #334155; color: #e2e8f0; }
 
@@ -168,8 +170,8 @@
     transition: background 0.15s ease, border-color 0.15s ease;
   }
   .p-btn:hover { background: #F3F5F0; border-color: #C8D5C5; }
-  .p-btn--primary { background: #143d23; border-color: #143d23; color: #ffffff; }
-  .p-btn--primary:hover { background: #1a5230; border-color: #1a5230; }
+  .p-btn--primary { background: #3F6B4D; border-color: #3F6B4D; color: #ffffff; }
+  .p-btn--primary:hover { background: #375F43; border-color: #375F43; }
   [data-theme="dark"] .p-btn { background: #1f2937; border-color: #334155; color: #d6f5e3; }
   [data-theme="dark"] .p-btn--primary { background: #1a5230; border-color: #1a5230; color: #ffffff; }
 

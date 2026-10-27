@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
  * text belongs in which member field, instead of relying on the line-by-line
  * guesses in OcrMemberExtractor.
  *
- * Contract with the caller (AdminUserImportController::previewOcr):
+ * Contract with the caller (AdminMemberImportController::previewOcr):
  *
  *   - it either returns a sanitized, field allow-listed row set, or [].
  *   - [] is returned for every failure mode (no API key, network error,

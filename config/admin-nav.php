@@ -13,12 +13,22 @@
 | `icon`  -> raw inline SVG (same glyph as the classic top-level menu item)
 | `items` -> ['label', 'routes'] the current request may be on
 |
-| Ordering follows the navigation plan: Dashboard, User Management, Farm
-| Supplies, Harvest Reports, Calendar & Events, Reports & Analytics, System
-| Settings. No notification items or badges are shown here — notifications
-| live outside the sidebar. Quotation terminology is preserved
-| intentionally. The `harvest` and `settings` group keys are referenced by
-| feature tests, so they must not be renamed.
+| Ordering follows the navigation plan: Dashboard, Members, User
+| Management, Report and Request, Calendar & Events, Farm Supplies, System
+| Settings — the association's daily work first, Farm Supplies (the least
+| association-specific section) just above Settings. The `harvest` group is
+| titled "Report and Request" because it now carries the planting requests
+| next to the harvest pages, so the name cannot be read as harvest-only.
+| There is no separate reporting section: Farming Cost Reports sits in
+| Harvest because it analyses the same harvest data, and Quotation Demand
+| Trends sits with Farm Supplies because it describes product demand. No
+| notification items or badges are shown here — notifications live outside
+| the sidebar. Quotation terminology is preserved intentionally. The
+| `harvest` and `settings` group keys are referenced by feature tests, so
+| they must not be renamed.
+|
+| Decision formulas no longer have their own sub-page: they will be maintained
+| on each product's own info instead of in a standalone list.
 */
 
 return [
@@ -29,31 +39,56 @@ return [
             ['label' => 'Overview', 'routes' => ['dashboard.admin']],
         ],
     ],
+    // The association's members. Accounts are always created by picking
+    // a member from this list, so Members is its own section rather than a
+    // sub-page of User Management.
+    'members' => [
+        'label' => 'Members',
+        'icon' => '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
+        'items' => [
+            ['label' => 'All Members', 'routes' => ['admin.members.index']],
+            ['label' => 'Import Members', 'routes' => ['admin.members.import', 'admin.members.import.preview', 'admin.members.import.confirm']],
+            ['label' => 'Import Uploads', 'routes' => ['admin.members.uploads', 'admin.members.uploads.download']],
+        ],
+    ],
     'users' => [
         'label' => 'User Management',
         'icon' => '<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
         'items' => [
             ['label' => 'All Users', 'routes' => ['admin.users.index']],
+            ['label' => 'Create Account', 'routes' => ['admin.users.create', 'admin.users.store']],
         ],
     ],
-    'operations' => [
-        'label' => 'Farm Supplies',
-        'icon' => '<svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>',
-        'items' => [
-            ['label' => 'Product Catalog', 'routes' => ['admin.operations.catalog']],
-            ['label' => 'Stores', 'routes' => ['admin.stores.index']],
-            ['label' => 'Input Formulas', 'routes' => ['admin.operations.formulas']],
-            ['label' => 'Planting Requests', 'routes' => ['admin.plantings.index']],
-        ],
-    ],
+    // Reports *and* requests: the harvest pages share this dropdown with the
+    // planting requests, so the title promises both halves of the name.
     'harvest' => [
-        'label' => 'Harvest Reports',
+        'label' => 'Report and Request',
         'icon' => '<svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M12 10C9 10 6 9 6 5c3 0 6 2 6 5"/><path d="M12 14c3 0 6-1 6-5-3 0-6 2-6 5"/><path d="M3 20h18"/><path d="M3 12l4-4 4 4 5-5 5 5"/></svg>',
+        // Importing and the archive of its files carry no menu entries of
+        // their own: both pages are one button away on "All Harvest Reports",
+        // so a sidebar line would only repeat that page and pad the menu.
+        // The routes stay listed here so the section still opens while
+        // either page is on screen — every page remains reachable, it just
+        // no longer takes a permanent slot in the side menu.
+        'hidden_routes' => [
+            'admin.harvests.import',
+            'admin.harvests.import.*',
+            'admin.harvests.uploads',
+            'admin.harvests.uploads.*',
+        ],
         'items' => [
             ['label' => 'Harvest Performance', 'routes' => ['admin.harvests.index']],
             ['label' => 'All Harvest Reports', 'routes' => ['admin.harvests.reports']],
             ['label' => 'Estimate vs Actual Harvest', 'routes' => ['admin.harvests.compare']],
+            // The cost report is budgeted-vs-actual off this same harvest
+            // table, so it belongs beside the rest of the harvest figures
+            // rather than in a reporting section of its own.
+            ['label' => 'Farming Cost Reports', 'routes' => ['admin.analytics.expenses']],
             ['label' => 'AI Insights', 'routes' => ['admin.harvests.ai']],
+            // Moved here from Farm Supplies so the section's name holds true:
+            // this dropdown lists the association's reports *and* its one
+            // request page.
+            ['label' => 'Planting Requests', 'routes' => ['admin.plantings.index']],
         ],
     ],
     'calendar' => [
@@ -65,12 +100,20 @@ return [
             ['label' => 'Planting Seasons', 'routes' => ['admin.operations.seasons']],
         ],
     ],
-    'analytics' => [
-        'label' => 'Reports & Analytics',
-        'icon' => '<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+    // Farm Supplies takes the slot just above System Settings: of everything
+    // in the menu it is the least association-specific section (a product
+    // catalog and stores), so it belongs at the bottom rather than between
+    // account management and harvest. Planting Requests moved up into
+    // "Report and Request".
+    'operations' => [
+        'label' => 'Farm Supplies',
+        'icon' => '<svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>',
         'items' => [
+            ['label' => 'Product Catalog', 'routes' => ['admin.operations.catalog']],
+            ['label' => 'Stores', 'routes' => ['admin.stores.index', 'admin.stores.create', 'admin.stores.edit']],
+            // Which products are being quoted, i.e. product demand in
+            // numbers — a supply-and-stores report, so it sits with them.
             ['label' => 'Quotation Demand Trends', 'routes' => ['admin.quotations.index']],
-            ['label' => 'Farming Cost Reports', 'routes' => ['admin.analytics.expenses']],
         ],
     ],
     'settings' => [

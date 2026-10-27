@@ -11,14 +11,17 @@
 @php
     $photoUrl = ($photo && ! $mask) ? $user?->profilePhotoUrl() : null;
     $initials = $user?->initials() ?? '?';
+    // A member record composes its display name from parts; only an account
+    // carries it in a plain `name` attribute.
+    $fullName = $user instanceof \App\Models\Member ? $user->fullName() : ($user?->name ?? '');
     // A masked avatar must not leak the name on hover either.
-    $label = $mask ? ($user?->maskedName() ?? '') : ($user?->name ?? '');
+    $label = $mask ? ($user?->maskedName() ?? '') : $fullName;
     $fontSize = round($size * 0.36);
 @endphp
 
 <span class="user-avatar {{ $class }}" style="width: {{ $size }}px; height: {{ $size }}px; font-size: {{ $fontSize }}px;" @if(! $photoUrl && $label !== '') title="{{ $label }}" @endif>
     @if($photoUrl)
-        <img src="{{ $photoUrl }}" alt="{{ $user?->name ?? '' }}" loading="lazy">
+        <img src="{{ $photoUrl }}" alt="{{ $fullName }}" loading="lazy">
     @else
         {{ $initials }}
     @endif
