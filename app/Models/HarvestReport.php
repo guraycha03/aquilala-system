@@ -4,9 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class HarvestReport extends Model
 {
+    use SoftDeletes;
+
+    public const DELETED_AT = 'archived_at';
+
     protected $fillable = [
         'user_id', 'member_id', 'quotation_id', 'import_upload_id', 'crop_type', 'variety', 'variety_key', 'season',
         'land_area', 'actual_yield_metric_tons', 'actual_total_expenses', 'harvest_date'

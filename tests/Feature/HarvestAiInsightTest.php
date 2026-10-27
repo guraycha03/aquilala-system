@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Crop;
 use App\Models\FarmerCrop;
 use App\Models\HarvestReport;
+use App\Models\Member;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\HarvestInsightService;
@@ -57,15 +58,19 @@ class HarvestAiInsightTest extends TestCase
 
         $response = $this->actingAs($this->admin)->get(route('admin.harvests.ai'));
 
-        $response->assertOk()->assertSee('AI Harvest Insights');
+        $response->assertOk()->assertSee('AI Insight');
 
         // The chat container, its suggested-question buttons and its input.
         $response->assertSee('id="aiChatLog"', false)
             ->assertSee('id="aiChatForm"', false)
             ->assertSee('id="aiChatInput"', false)
             ->assertSee('How did the latest season compare with the one before it?', false)
-            ->assertSee('Which farmers should I recognise?', false)
-            ->assertSee('What should I verify next?', false);
+            ->assertSee('Is the wet season out-yielding the dry season?', false)
+            ->assertSee('Which crops are trending up or down?', false)
+            ->assertDontSee('Which farmers should I recognise?', false)
+            ->assertDontSee('What should I verify next?', false);
+
+        $this->assertSame(3, substr_count($response->getContent(), 'class="chip ai-chip"'));
 
         // Nothing generates a report on the administrator's behalf.
         $response->assertDontSee('Generate insights', false)
@@ -77,16 +82,16 @@ class HarvestAiInsightTest extends TestCase
         $this->assertSame(2, $context['coverage']['farmers']);
     }
 
-    public function test_the_chat_offers_a_data_driven_why_about_the_weakest_performer(): void
+    public function test_the_chat_does_not_expose_personalised_farmer_suggestions(): void
     {
         $this->seedHarvests();
 
-        // The chip is built from the digest, so it always names a real
-        // farmer with a real figure and teaches the follow-up by example.
         $this->actingAs($this->admin)
             ->get(route('admin.harvests.ai'))
             ->assertOk()
-            ->assertSee('Why does Farmer Ana sit at 3.400 MT/ha?', false);
+            ->assertDontSee('Why does Farmer Ana sit at 3.400 MT/ha?', false)
+            ->assertSee('How did the latest season compare with the one before it?', false)
+            ->assertSee('Which crops are trending up or down?', false);
     }
 
     public function test_the_harvest_page_does_not_duplicate_the_ai_subpage_button(): void
@@ -254,11 +259,189 @@ class HarvestAiInsightTest extends TestCase
         $response = $this->actingAs($this->admin)
             ->postJson(route('admin.harvests.ai.ask'), ['message' => 'How did we do?']);
 
-        $response->assertOk()->assertJson(['source' => 'fallback']);
+        $response->assertOk()->assertJson(['source' => 'clarification']);
         $this->assertStringContainsString(
-            'No harvest reports have been recorded yet',
+            'not certain what you mean',
             $response->json('reply')
         );
+    }
+
+    public function test_a_simple_greeting_gets_a_conversational_reply_without_the_full_summary(): void
+    {
+        $this->seedHarvests();
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'hi']);
+
+        $response->assertOk()->assertJson(['source' => 'conversation']);
+        $reply = $response->json('reply');
+
+        $this->assertStringContainsString('Hello.', $reply);
+        $this->assertStringContainsString('harvest records', $reply);
+        $this->assertStringNotContainsString('Performance Snapshot', $reply);
+        $this->assertStringNotContainsString('718', $reply);
+        Http::assertNothingSent();
+    }
+
+    public function test_an_identity_question_gets_a_direct_conversational_reply(): void
+    {
+        $this->seedHarvests();
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'who u?']);
+
+        $response->assertOk()->assertJson(['source' => 'conversation']);
+        $reply = $response->json('reply');
+
+        $this->assertStringContainsString('administrative insight assistant', $reply);
+        $this->assertStringContainsString('general agricultural', $reply);
+        $this->assertStringNotContainsString('Performance Snapshot', $reply);
+        Http::assertNothingSent();
+    }
+
+    public function test_the_assistant_explains_authenticated_identity_boundaries_directly(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'do you know who i am?']);
+
+        $response->assertOk()->assertJson(['source' => 'conversation']);
+        $reply = $response->json('reply');
+
+        $this->assertStringContainsString('signed-in Aquilala administrator', $reply);
+        $this->assertStringContainsString('only what this account makes available', $reply);
+        $this->assertStringNotContainsString('Performance Snapshot', $reply);
+        Http::assertNothingSent();
+    }
+
+    public function test_a_date_question_gets_the_current_application_date(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'what day is it now']);
+
+        $response->assertOk()->assertJson(['source' => 'conversation']);
+        $this->assertSame(
+            'Today is **' . now(config('app.timezone'))->isoFormat('dddd, MMMM D, YYYY') . '**.',
+            $response->json('reply')
+        );
+        $this->assertStringNotContainsString('clarify', $response->json('reply'));
+        Http::assertNothingSent();
+    }
+
+    public function test_a_relative_date_followup_gets_the_correct_date(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'tomorrow']);
+
+        $expected = now(config('app.timezone'))->addDay();
+
+        $response->assertOk()->assertJson(['source' => 'conversation']);
+        $this->assertSame(
+            'Tomorrow is **' . $expected->isoFormat('dddd, MMMM D, YYYY') . '**.',
+            $response->json('reply')
+        );
+        Http::assertNothingSent();
+    }
+
+    public function test_a_member_count_question_returns_only_the_member_count(): void
+    {
+        $this->seedHarvests();
+        Member::create(['name' => 'Active Member']);
+        $archived = Member::create(['name' => 'Archived Member']);
+        $archived->delete();
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'how many members do we have']);
+
+        $response->assertOk()->assertJson(['source' => 'data']);
+        $reply = $response->json('reply');
+
+        $this->assertSame('There are **1** active members in the association. Archived members are not included.', $reply);
+        $this->assertStringNotContainsString('Performance Snapshot', $reply);
+        $this->assertStringNotContainsString('harvest reports', $reply);
+        Http::assertNothingSent();
+    }
+
+    public function test_a_member_followup_uses_the_previous_member_question(): void
+    {
+        Member::create(['name' => 'Ana Member']);
+        Member::create(['name' => 'Ben Member']);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), [
+                'message' => 'who are they?',
+                'messages' => [
+                    ['role' => 'user', 'content' => 'how many members do we have?'],
+                    ['role' => 'assistant', 'content' => 'There are **2** active members in the association.'],
+                ],
+            ]);
+
+        $response->assertOk()->assertJson(['source' => 'data']);
+        $reply = $response->json('reply');
+
+        $this->assertStringContainsString('Ana Member', $reply);
+        $this->assertStringContainsString('Ben Member', $reply);
+        $this->assertStringNotContainsString('Performance Snapshot', $reply);
+        Http::assertNothingSent();
+    }
+
+    public function test_a_misspelled_member_age_question_returns_the_age_filtered_count(): void
+    {
+        Member::create(['name' => 'Young Member', 'birth_date' => now()->subYears(40)->toDateString()]);
+        Member::create(['name' => 'Older Member', 'birth_date' => now()->subYears(55)->toDateString()]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'how amny are 50 adn up age']);
+
+        $response->assertOk()->assertJson(['source' => 'data']);
+        $reply = $response->json('reply');
+
+        $this->assertStringContainsString('**1** active members aged **50** and above', $reply);
+        $this->assertStringNotContainsString('Performance Snapshot', $reply);
+        $this->assertStringNotContainsString('farmer', $reply);
+        Http::assertNothingSent();
+    }
+
+    public function test_an_ambiguous_misspelled_question_asks_for_clarification_instead_of_guessing(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'who has 50 adn up aga']);
+
+        $response->assertOk()
+            ->assertJson([
+                'source' => 'clarification',
+                'reply' => 'I want to make sure I understood that correctly. What would you like to find?',
+            ])
+            ->assertJsonCount(3, 'clarification');
+
+        $this->assertSame(
+            'How many members are aged 50 and above?',
+            $response->json('clarification.0.question')
+        );
+        $this->assertArrayNotHasKey('farmer_focus', $response->json('context'));
+        Http::assertNothingSent();
+    }
+
+    public function test_admin_chat_histories_are_saved_and_only_the_owner_can_read_them(): void
+    {
+        $save = $this->actingAs($this->admin)->postJson(route('admin.harvests.ai.history.save'), [
+            'messages' => [
+                ['role' => 'user', 'content' => 'how many members do we have?'],
+                ['role' => 'assistant', 'content' => 'There are **2** active members.'],
+            ],
+        ]);
+
+        $save->assertOk()->assertJsonStructure(['id', 'title']);
+        $id = $save->json('id');
+
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.harvests.ai.history.show', $id))
+            ->assertOk()
+            ->assertJsonPath('messages.0.content', 'how many members do we have?');
+
+        $otherAdmin = $this->makeUser('Other Admin', 'admin', 'other-admin');
+        $this->actingAs($otherAdmin)
+            ->getJson(route('admin.harvests.ai.history.show', $id))
+            ->assertForbidden();
     }
 
     // ── Chat turn: model available ─────────────────────────────────
@@ -294,7 +477,7 @@ class HarvestAiInsightTest extends TestCase
             return is_array($user)
                 && str_contains((string) $user['content'], 'HARVEST REPORT CONTEXT')
                 && str_contains((string) $user['content'], '"reports": 5')
-                && str_contains((string) $user['content'], "ADMINISTRATOR'S QUESTION:");
+                && str_contains((string) $user['content'], 'CURRENT ADMINISTRATOR QUESTION — answer this one only:');
         });
     }
 
@@ -519,11 +702,16 @@ class HarvestAiInsightTest extends TestCase
         $this->assertStringContainsString('NEVER name, invent or imply a typhoon', $system);
         $this->assertStringContainsString('NEVER claim a weather event caused a yield change', $system);
         $this->assertStringContainsString('overlapping_periods', $system);
+        $this->assertStringContainsString('general knowledge and reasoning', $system);
+        $this->assertStringContainsString('typed question as the primary guide', $system);
 
         // The chat must answer from the digest's own slices, in one voice.
         $this->assertStringContainsString('`recent_vs_previous`', $system);
         $this->assertStringContainsString('`periods`', $system);
         $this->assertStringContainsString('`top_farmers_by_reports`', $system);
+        $this->assertStringContainsString('The CURRENT QUESTION is the only question you must answer', $system);
+        $this->assertStringContainsString('Past messages are supporting context, not a second request', $system);
+        $this->assertStringContainsString('Keep the answer proportional to the current question', $system);
         $this->assertStringContainsString('`top_farmers_by_yield`', $system);
         $this->assertStringContainsString('Do not use section headings', $system);
 
@@ -531,7 +719,7 @@ class HarvestAiInsightTest extends TestCase
         $user = HarvestQaPrompt::user(['coverage' => ['reports' => 5]], 'How many reports?');
         $this->assertStringContainsString('"reports": 5', $user);
         $this->assertStringContainsString('HARVEST REPORT CONTEXT', $user);
-        $this->assertStringContainsString("ADMINISTRATOR'S QUESTION:", $user);
+        $this->assertStringContainsString('CURRENT ADMINISTRATOR QUESTION', $user);
         $this->assertStringContainsString('How many reports?', $user);
     }
 

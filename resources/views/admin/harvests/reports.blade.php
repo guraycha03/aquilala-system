@@ -110,6 +110,9 @@
   .hr-selbar-remove { border: 1px solid #bcd4bb; background: #dcecda; color: #166534; font-size: 13px; font-weight: 700; border-radius: 999px; padding: 8px 16px; cursor: pointer; white-space: nowrap; transition: all 0.15s ease; }
   .hr-selbar-remove:hover:not(:disabled) { background: #cfe4cd; border-color: #a6c4a5; color: #0f5132; }
   .hr-selbar-remove:disabled { opacity: 0.45; cursor: not-allowed; }
+  .hr-selbar-archive { border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-size: 13px; font-weight: 700; border-radius: 999px; padding: 8px 16px; cursor: pointer; white-space: nowrap; transition: all 0.15s ease; }
+  .hr-selbar-archive:hover:not(:disabled) { background: #eef2f7; border-color: #94a3b8; color: #1e293b; }
+  .hr-selbar-archive:disabled { opacity: 0.45; cursor: not-allowed; }
 
   /* Phones: hug the content instead of stretching edge-to-edge — a full
      width pill reads as huge dead padding on both sides. The pill stays
@@ -121,6 +124,7 @@
     .hr-selbar-count b { font-size: 13.5px; }
     .hr-selbar-clear { padding: 6px 12px; font-size: 12.5px; }
     .hr-selbar-remove { padding: 7px 13px; font-size: 12.5px; }
+    .hr-selbar-archive { padding: 7px 13px; font-size: 12.5px; }
   }
 
   /* Dark mode: the black pill stays; only the tints adapt to the dark
@@ -289,6 +293,21 @@
     @csrf
     <input type="hidden" name="ids" id="hrSelIds" value="">
     <button type="button" class="hr-selbar-clear" id="hrSelClear">Clear</button>
+  </form>
+  <form method="POST" action="{{ route('admin.harvests.reports.archive') }}">
+    @csrf
+    <input type="hidden" name="ids" id="hrArchiveIds" value="">
+    <button type="submit" class="hr-selbar-archive" id="hrSelArchive" disabled
+            data-aqui-tone="neutral"
+            data-aqui-title="Archive records?"
+            data-aqui-confirm-label="Archive records"
+            data-aqui-confirm="Selected records will leave All Harvest Reports but remain available in the Archive.">
+      Archive selected
+    </button>
+  </form>
+  <form method="POST" action="{{ route('admin.harvests.reports.remove') }}">
+    @csrf
+    <input type="hidden" name="ids" id="hrRemoveIds" value="">
     <button type="submit" class="hr-selbar-remove" id="hrSelRemove" disabled
             data-aqui-tone="danger"
             data-aqui-title="Remove records?"
@@ -361,8 +380,11 @@
 
     var countEl = document.getElementById('hrSelCount');
     var idsInput = document.getElementById('hrSelIds');
+    var archiveIdsInput = document.getElementById('hrArchiveIds');
+    var removeIdsInput = document.getElementById('hrRemoveIds');
     var clearBtn = document.getElementById('hrSelClear');
     var removeBtn = document.getElementById('hrSelRemove');
+    var archiveBtn = document.getElementById('hrSelArchive');
     var selected = new Set();
     var matched = [];
 
@@ -386,7 +408,10 @@
       bar.hidden = total === 0;
       countEl.textContent = String(total);
       idsInput.value = Array.from(selected).join(',');
+      archiveIdsInput.value = idsInput.value;
+      removeIdsInput.value = idsInput.value;
       removeBtn.disabled = total === 0;
+      archiveBtn.disabled = total === 0;
       removeBtn.setAttribute('data-aqui-title', 'Remove ' + total + ' record' + plural + '?');
       removeBtn.setAttribute('data-aqui-confirm',
         total + ' record' + plural + ' will be removed from Harvest Reports. ' +

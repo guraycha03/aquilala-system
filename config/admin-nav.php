@@ -39,6 +39,14 @@ return [
             ['label' => 'Overview', 'routes' => ['dashboard.admin']],
         ],
     ],
+    'ai_insight' => [
+        'label' => 'AI Insight',
+        'icon' => '<i data-lucide="sparkles" aria-hidden="true"></i>',
+        'standalone' => true,
+        'items' => [
+            ['label' => 'AI Insight', 'routes' => ['admin.harvests.ai']],
+        ],
+    ],
     // The association's members. Accounts are always created by picking
     // a member from this list, so Members is its own section rather than a
     // sub-page of User Management.
@@ -84,7 +92,6 @@ return [
             // table, so it belongs beside the rest of the harvest figures
             // rather than in a reporting section of its own.
             ['label' => 'Farming Cost Reports', 'routes' => ['admin.analytics.expenses']],
-            ['label' => 'AI Insights', 'routes' => ['admin.harvests.ai']],
             // Moved here from Farm Supplies so the section's name holds true:
             // this dropdown lists the association's reports *and* its one
             // request page.
@@ -124,6 +131,7 @@ return [
             ['label' => 'Season Settings', 'routes' => ['admin.settings.seasons']],
             ['label' => 'Appearance', 'routes' => ['admin.settings.interface']],
             ['label' => 'Weather Log', 'routes' => ['admin.settings.weather']],
+            ['label' => 'Archive', 'routes' => ['admin.archive']],
             ['label' => 'Audit Log', 'routes' => ['admin.audit.index']],
             ['label' => 'Activity History', 'routes' => ['admin.activity.index']],
         ],

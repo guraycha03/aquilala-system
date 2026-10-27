@@ -81,6 +81,32 @@ class SubPagesNavTest extends TestCase
         );
     }
 
+    public function test_ai_insight_is_a_standalone_admin_link_below_dashboard(): void
+    {
+        $keys = array_keys(config('admin-nav'));
+
+        $this->assertSame(
+            'ai_insight',
+            $keys[array_search('dashboard', $keys, true) + 1]
+        );
+        $this->assertTrue(config('admin-nav.ai_insight.standalone'));
+        $this->assertNotContains(
+            ['label' => 'AI Insights', 'routes' => ['admin.harvests.ai']],
+            config('admin-nav.harvest.items')
+        );
+
+        $response = $this->actingAs($this->makeAdmin())
+            ->get(route('admin.harvests.ai'));
+
+        $response->assertOk()
+            ->assertSee('AI Insight')
+            ->assertSee(
+                '<a href="'.route('admin.harvests.ai').'" class="active">',
+                false
+            )
+            ->assertDontSee('<li class="nav-dropdown open">', false);
+    }
+
     public function test_the_tabs_style_preference_route_is_removed(): void
     {
         $this->assertFalse(Route::has('settings.tabs-style'));

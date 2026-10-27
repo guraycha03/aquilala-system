@@ -110,6 +110,32 @@ class AdminHarvestRecordRemovalTest extends TestCase
         $this->assertDatabaseCount('harvest_reports', 1);
     }
 
+    public function test_ticked_records_can_be_archived_and_restored(): void
+    {
+        $admin = $this->makeUser('admin');
+        $member = $this->makeMember('Juan C. Reyes');
+        $report = $this->makeReport($member);
+
+        $this->actingAs($admin)
+            ->post(route('admin.harvests.reports.archive'), ['ids' => (string) $report->id])
+            ->assertRedirect(route('admin.harvests.reports'))
+            ->assertSessionHas('success', '1 record archived.');
+
+        $this->assertDatabaseHas('harvest_reports', [
+            'id' => $report->id,
+            'archived_at' => $report->fresh()->archived_at,
+        ]);
+        $this->assertNotNull($report->fresh()->archived_at);
+        $this->assertSame(0, HarvestReport::count());
+
+        $this->actingAs($admin)
+            ->post(route('admin.archive.harvest-reports.restore', $report->id))
+            ->assertRedirect(route('admin.archive', ['type' => 'harvest-reports']));
+
+        $this->assertNull($report->fresh()->archived_at);
+        $this->assertSame(1, HarvestReport::count());
+    }
+
     public function test_removal_detaches_the_planting_batch_so_it_can_be_reported_again(): void
     {
         $admin = $this->makeUser('admin');

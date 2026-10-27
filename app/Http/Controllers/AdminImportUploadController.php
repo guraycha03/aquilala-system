@@ -85,7 +85,7 @@ class AdminImportUploadController extends Controller
         abort_unless(auth()->user()?->role === 'admin', 403);
         abort_unless($importUpload->kind === ImportUpload::KIND_HARVEST, 404);
 
-        $removed = (int) $importUpload->harvestReports()->delete();
+        $removed = (int) $importUpload->harvestReports()->withTrashed()->forceDelete();
 
         if ($removed > 0) {
             ActivityLogger::log(

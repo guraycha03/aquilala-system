@@ -320,7 +320,7 @@
 
 </div>
 
-<script src="{{ asset('js/chart.umd.min.js') }}"></script>
+<script src="{{ asset('js/chart.umd.min.js') }}" defer></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     function setGreeting() {

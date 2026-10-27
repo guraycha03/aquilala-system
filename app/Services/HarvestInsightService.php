@@ -8,6 +8,7 @@ use App\Helpers\SeasonHelper;
 use App\Models\ActivityLog;
 use App\Models\FarmerCrop;
 use App\Models\HarvestReport;
+use App\Models\Member;
 use App\Models\WeatherLog;
 use App\Support\HarvestDigestRow;
 use Illuminate\Support\Arr;
@@ -74,9 +75,13 @@ class HarvestInsightService
     public function context(): array
     {
         $reports = $this->loadReports();
+        $memberCount = Member::count();
 
         if ($reports->isEmpty()) {
-            return ['coverage' => ['reports' => 0, 'farmers' => 0, 'crops' => []]];
+            return [
+                'coverage' => ['reports' => 0, 'farmers' => 0, 'crops' => []],
+                'membership' => ['active_members' => $memberCount],
+            ];
         }
 
         $coverage = [
@@ -102,6 +107,7 @@ class HarvestInsightService
                     fn (array $event) => $event['overlapping_periods'] !== []
                 )),
             ],
+            'membership'         => ['active_members' => $memberCount],
             'totals'             => $this->summarize($reports),
             'periods'            => $periods,
             'recent_vs_previous' => $this->recentVsPrevious($periods),
@@ -160,7 +166,83 @@ class HarvestInsightService
      */
     public function ask(string $message, array $history = []): array
     {
+        if ($this->isGreeting($message) || $this->isIdentityQuestion($message)) {
+            return [
+                'source'  => 'conversation',
+                'reply'   => $this->isIdentityQuestion($message)
+                    ? ($this->isSelfRecognitionQuestion($message)
+                        ? 'I know you as the signed-in Aquilala administrator for this session. I can use only what this account makes available in the system; I do not infer or reveal personal identity beyond that.'
+                        : 'I’m Aquilala’s administrative insight assistant. I can discuss the association’s harvest records, explain general agricultural concepts, help interpret trends, and think through practical questions that relate to your work.')
+                    : 'Hello. I’m ready to help you review the association’s harvest records. Ask me about seasons, crops, yield, costs, or recorded activities.',
+                'context' => [],
+            ];
+        }
+
+        if (($dateOffset = $this->dateQuestionOffset($message)) !== null) {
+            $date = Carbon::now(config('app.timezone'))->addDays($dateOffset);
+
+            return [
+                'source'  => 'conversation',
+                'reply'   => ($dateOffset === 0 ? 'Today' : ($dateOffset === 1 ? 'Tomorrow' : ($dateOffset === -1 ? 'Yesterday' : $date->isoFormat('dddd'))))
+                    . ' is **' . $date->isoFormat('dddd, MMMM D, YYYY') . '**.',
+                'context' => [],
+            ];
+        }
+
         $context = $this->context();
+
+        if (($ageQuestion = $this->memberAgeQuestion($message)) !== null) {
+            $minimumAge = $ageQuestion['minimum_age'];
+            $members = Member::query()
+                ->whereNotNull('birth_date')
+                ->get(['birth_date'])
+                ->filter(fn (Member $member) => $member->birth_date?->age >= $minimumAge);
+
+            return [
+                'source'  => 'data',
+                'reply'   => 'There are **' . number_format($members->count()) . '** active members aged **' . $minimumAge . '** and above. Members without a recorded birth date are not included.',
+                'context' => [
+                    'membership' => $context['membership'] ?? ['active_members' => 0],
+                    'age_filter' => ['minimum_age' => $minimumAge, 'matching_members' => $members->count()],
+                ],
+            ];
+        }
+
+        if ($this->isMemberCountQuestion($message)) {
+            return [
+                'source'  => 'data',
+                'reply'   => 'There are **' . number_format((int) ($context['membership']['active_members'] ?? 0)) . '** active members in the association. Archived members are not included.',
+                'context' => ['membership' => $context['membership'] ?? ['active_members' => 0]],
+            ];
+        }
+
+        if ($this->isMemberListFollowup($message, $history)) {
+            $members = Member::query()
+                ->orderBy('name')
+                ->get()
+                ->map(fn (Member $member) => $member->fullName())
+                ->filter()
+                ->values()
+                ->all();
+
+            return [
+                'source'  => 'data',
+                'reply'   => $this->memberListReply($members),
+                'context' => [
+                    'membership' => $context['membership'] ?? ['active_members' => 0],
+                    'member_names' => $members,
+                ],
+            ];
+        }
+
+        if (($clarification = $this->clarificationFor($message, $history)) !== null) {
+            return [
+                'source' => 'clarification',
+                'reply' => $clarification['reply'],
+                'clarification' => $clarification['options'],
+                'context' => [],
+            ];
+        }
 
         if (($context['coverage']['reports'] ?? 0) === 0) {
             return [
@@ -183,9 +265,180 @@ class HarvestInsightService
 
         return [
             'source'  => $reply !== null ? 'ai' : 'fallback',
-            'reply'   => $reply ?? $this->fallbackFor($context),
+            'reply'   => $reply ?? $this->fallbackFor($context, $message),
             'context' => $context,
         ];
+    }
+
+    private function isGreeting(string $message): bool
+    {
+        return preg_match(
+            '/^(?:hi|hello|hey|greetings|good\s+(?:morning|afternoon|evening)|how\s+are\s+you)(?:\s+there)?[!?.\s]*$/iu',
+            trim($message)
+        ) === 1;
+    }
+
+    private function isIdentityQuestion(string $message): bool
+    {
+        return preg_match(
+            '/^(?:who\s+are\s+you|who\s+r\s+u|who\s+u|do\s+you\s+know\s+who\s+i\s+am|do\s+you\s+recognize\s+me|what\s+are\s+you|what\s+can\s+you\s+do|what\s+do\s+you\s+do|tell\s+me\s+about\s+yourself)[!?.\s]*$/iu',
+            trim($message)
+        ) === 1;
+    }
+
+    private function isSelfRecognitionQuestion(string $message): bool
+    {
+        return preg_match(
+            '/^(?:do\s+you\s+know\s+who\s+i\s+am|do\s+you\s+recognize\s+me)[!?.\s]*$/iu',
+            trim($message)
+        ) === 1;
+    }
+
+    private function dateQuestionOffset(string $message): ?int
+    {
+        $text = mb_strtolower(trim($message));
+
+        if (preg_match(
+            '/^(?:what\s+(?:day|date)\s+is\s+it(?:\s+(?:today|now))?|what\s+is\s+today(?:\x27s)?\s+date|what\s+day\s+are\s+we\s+on)[!?.\s]*$/iu',
+            $text
+        ) === 1 || $text === 'today') {
+            return 0;
+        }
+
+        if (in_array($text, ['tomorrow', 'what day is tomorrow', "what is tomorrow's date"], true)) {
+            return 1;
+        }
+
+        if (in_array($text, ['yesterday', 'what day was yesterday', "what was yesterday's date"], true)) {
+            return -1;
+        }
+
+        if (in_array($text, ['the day after tomorrow', 'day after tomorrow'], true)) {
+            return 2;
+        }
+
+        return null;
+    }
+
+    private function isMemberCountQuestion(string $message): bool
+    {
+        return preg_match(
+            '/\b(?:how\s+many|number\s+of|count\s+of|total)\b.*\bmembers?\b|\bmembers?\b.*\b(?:how\s+many|count|number|total)\b/iu',
+            trim($message)
+        ) === 1;
+    }
+
+    /**
+     * Recognize short member-age questions even when the administrator types
+     * common keyboard errors such as "amny" or "adn".
+     *
+     * @return array{minimum_age: int}|null
+     */
+    private function memberAgeQuestion(string $message): ?array
+    {
+        $text = mb_strtolower(trim($message));
+        $text = strtr($text, [
+            'memebers' => 'members',
+            'membres'  => 'members',
+            'amny'     => 'many',
+            'adn'      => 'and',
+            'agge'     => 'age',
+            'ages'     => 'age',
+        ]);
+
+        if (! preg_match('/\bmembers?\b/u', $text) && ! preg_match('/\b(?:many|count|number)\b/u', $text)) {
+            return null;
+        }
+
+        if (! preg_match('/\b(?:age|aged|years?)\b/u', $text)) {
+            return null;
+        }
+
+        if (preg_match('/\b(\d{1,3})\s*(?:\+|and\s+up|or\s+older|or\s+above)\b/u', $text, $match) !== 1) {
+            return null;
+        }
+
+        return ['minimum_age' => max(0, (int) $match[1])];
+    }
+
+    /**
+     * Return choices instead of guessing when a short question could refer to
+     * more than one system subject.
+     *
+     * @return array{reply: string, options: array<int, array{label: string, question: string}>}|null
+     */
+    private function clarificationFor(string $message, array $history = []): ?array
+    {
+        $text = mb_strtolower(trim($message));
+        $text = strtr($text, [
+            'amny' => 'many',
+            'adn' => 'and',
+            'aga' => 'age',
+            'agge' => 'age',
+        ]);
+
+        if (preg_match('/\b(?:who|how\s+many|how\s+much)\b.*\b\d{1,3}\b.*\b(?:age|aged|and\s+up|older|above)\b/iu', $text) === 1) {
+            return [
+                'reply' => 'I want to make sure I understood that correctly. What would you like to find?',
+                'options' => [
+                    ['label' => 'Members aged 50 and above', 'question' => 'How many members are aged 50 and above?'],
+                    ['label' => 'Members aged 50 and above by name', 'question' => 'Who are the members aged 50 and above?'],
+                    ['label' => 'Something else', 'question' => ''],
+                ],
+            ];
+        }
+
+        $isShortFollowup = collect($history)->contains(
+            fn (array $turn) => ($turn['role'] ?? null) === 'assistant'
+        );
+
+        if (! $isShortFollowup
+            && mb_strlen($text) <= 24
+            && preg_match('/\b(?:who|what|which|how|why)\b/iu', $text) === 1) {
+            return [
+                'reply' => 'I’m not certain what you mean yet. Choose a topic or clarify it in your own words.',
+                'options' => [
+                    ['label' => 'Members and accounts', 'question' => 'Tell me about the association members and user accounts.'],
+                    ['label' => 'Harvest performance', 'question' => 'Summarise the association harvest performance.'],
+                    ['label' => 'Crops and seasons', 'question' => 'Show me the crop and season trends.'],
+                    ['label' => 'Something else', 'question' => ''],
+                ],
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve a short follow-up such as "who are they?" against the preceding
+     * member-count turn instead of treating it as an unrelated question.
+     *
+     * @param  array<int, array{role: string, content: string}> $history
+     */
+    private function isMemberListFollowup(string $message, array $history): bool
+    {
+        if (preg_match('/^(?:who\s+are\s+they|who\s+are\s+the\s+members|list\s+the\s+members|show\s+(?:me\s+)?the\s+members)[!?.\s]*$/iu', trim($message)) !== 1) {
+            return false;
+        }
+
+        return collect($history)->contains(function (array $turn) {
+            return ($turn['role'] ?? null) === 'user'
+                && $this->isMemberCountQuestion((string) ($turn['content'] ?? ''));
+        });
+    }
+
+    /**
+     * @param  array<int, string> $members
+     */
+    private function memberListReply(array $members): string
+    {
+        if ($members === []) {
+            return 'There are no active members in the association. Archived members are not included.';
+        }
+
+        return 'The **' . number_format(count($members)) . '** active members are:' . "\n"
+            . implode("\n", array_map(fn (string $name) => '- **' . $name . '**', $members))
+            . "\n\nArchived members are not included.";
     }
 
     /**
@@ -194,13 +447,25 @@ class HarvestInsightService
      *
      * @param  array<string, mixed>  $context
      */
-    private function fallbackFor(array $context): string
+    private function fallbackFor(array $context, string $message): string
     {
         if (isset($context['farmer_focus'])) {
             return $this->focusFallback($context['farmer_focus']);
         }
 
+        if (! $this->isHarvestDataQuestion($message)) {
+            return 'I can help with questions related to Aquilala’s work, including harvest performance, crops, seasons, costs, planting records, and practical agricultural context. I’ll connect the answer to the system when the records contain something relevant.';
+        }
+
         return $this->fallback($context);
+    }
+
+    private function isHarvestDataQuestion(string $message): bool
+    {
+        return preg_match(
+            '/\b(harvest|yield|crop|season|farmer|plant|planting|report|cost|expense|weather|rain|flood|drought|typhoon|area|hectare|ton|tonne|rice|corn|eggplant|tomato|performance|trend|compare|highest|lowest|best|worst|summary|summarise|summarize|overview|data|how\s+many|how\s+much)\b/iu',
+            $message
+        ) === 1;
     }
 
     // ────────────────────────────────────────────────────────────────

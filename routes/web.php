@@ -550,6 +550,12 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/settings', function () {
             return view('admin.settings.index');
         })->name('settings.index');
+        Route::get('/archive', [\App\Http\Controllers\AdminArchiveController::class, 'index'])
+            ->name('archive');
+        Route::post('/archive/users/{user}/restore', [\App\Http\Controllers\AdminArchiveController::class, 'restoreUser'])
+            ->name('archive.users.restore');
+        Route::post('/archive/members/{member}/restore', [\App\Http\Controllers\AdminArchiveController::class, 'restoreMember'])
+            ->name('archive.members.restore');
         Route::get('/settings/seasons', function () {
             return view('admin.settings.seasons');
         })->name('settings.seasons');
@@ -757,6 +763,10 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // future /harvests/reports/{report} route.
         Route::post('/harvests/reports/remove', [HarvestReportController::class, 'removeRecords'])
             ->name('harvests.reports.remove');
+        Route::post('/harvests/reports/archive', [HarvestReportController::class, 'archiveRecords'])
+            ->name('harvests.reports.archive');
+        Route::post('/archive/harvest-reports/{harvestReport}/restore', [HarvestReportController::class, 'restoreArchived'])
+            ->name('archive.harvest-reports.restore');
 
         // Bulk import of the association's historical harvest records from a
         // CSV / Excel file. Declared before /harvests/reports so the literal
@@ -797,6 +807,14 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // error state instead of round tripping the whole page.
         Route::post('/harvests/ai/ask', [HarvestReportController::class, 'aiAsk'])
             ->name('harvests.ai.ask');
+        Route::get('/harvests/ai/histories', [HarvestReportController::class, 'adminAiHistories'])
+            ->name('harvests.ai.histories');
+        Route::get('/harvests/ai/histories/{chatHistory}', [HarvestReportController::class, 'adminAiHistory'])
+            ->name('harvests.ai.history.show');
+        Route::post('/harvests/ai/histories', [HarvestReportController::class, 'saveAdminAiHistory'])
+            ->name('harvests.ai.history.save');
+        Route::delete('/harvests/ai/histories/{chatHistory}', [HarvestReportController::class, 'destroyAdminAiHistory'])
+            ->name('harvests.ai.history.destroy');
 
         // Estimate vs Actual — planting estimate against reported yield.
         Route::get('/harvests/compare', [HarvestReportController::class, 'adminCompare'])

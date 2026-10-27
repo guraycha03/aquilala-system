@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Crop;
 use App\Models\FarmerCrop;
 use App\Models\HarvestReport;
+use App\Models\ChatHistory;
 use App\Models\Member;
 use App\Services\ActivityLogger;
 use App\Services\HarvestCompareService;
@@ -17,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use App\AI\AiConversationContext;
 
 class HarvestReportController extends Controller
 {
@@ -151,7 +153,7 @@ class HarvestReportController extends Controller
                 ->with('error', 'Tick at least one record first, then choose Remove selected.');
         }
 
-        $removed = (int) HarvestReport::whereIn('id', $ids)->delete();
+        $removed = (int) HarvestReport::withTrashed()->whereIn('id', $ids)->forceDelete();
 
         if ($removed > 0) {
             ActivityLogger::log(
@@ -170,6 +172,53 @@ class HarvestReportController extends Controller
                     ? number_format($removed) . ' record' . ($removed > 1 ? 's' : '') . ' removed.'
                     : 'Those records are no longer on the list.'
             );
+    }
+
+    /**
+     * Archive selected records so they leave normal reports without being
+     * permanently deleted.
+     */
+    public function archiveRecords(Request $request): RedirectResponse
+    {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
+        $ids = collect(explode(',', (string) $request->input('ids', '')))
+            ->filter(fn ($id) => is_numeric($id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return redirect()
+                ->route('admin.harvests.reports')
+                ->with('error', 'Tick at least one record first, then choose Archive selected.');
+        }
+
+        $archived = (int) HarvestReport::whereIn('id', $ids)->delete();
+
+        return redirect()
+            ->route('admin.harvests.reports')
+            ->with(
+                'success',
+                $archived > 0
+                    ? number_format($archived) . ' record' . ($archived > 1 ? 's' : '') . ' archived.'
+                    : 'Those records are already archived.'
+            );
+    }
+
+    /**
+     * Restore one report from the administrator's Archive.
+     */
+    public function restoreArchived(int $harvestReport): RedirectResponse
+    {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
+        $report = HarvestReport::onlyTrashed()->findOrFail($harvestReport);
+        $report->restore();
+
+        return redirect()
+            ->route('admin.archive', ['type' => 'harvest-reports'])
+            ->with('success', 'Harvest report restored.');
     }
 
     /**
@@ -236,10 +285,77 @@ class HarvestReportController extends Controller
         $result = $this->insights->ask(trim($validated['message']), $history);
 
         return response()->json([
-            'source'  => $result['source'],
-            'reply'   => $result['reply'],
-            'context' => $result['context'],
+            'source'         => $result['source'],
+            'reply'          => $result['reply'],
+            'clarification'  => $result['clarification'] ?? null,
+            'context'        => $result['context'],
         ]);
+    }
+
+    public function adminAiHistories(): JsonResponse
+    {
+        $histories = auth()->user()
+            ->chatHistories()
+            ->orderByDesc('updated_at')
+            ->get(['id', 'title', 'updated_at']);
+
+        return response()->json([
+            'histories' => $histories->map(fn (ChatHistory $history) => [
+                'id' => $history->id,
+                'title' => $history->title,
+                'updated_at' => $history->updated_at->diffForHumans(),
+            ])->values(),
+        ]);
+    }
+
+    public function adminAiHistory(ChatHistory $chatHistory): JsonResponse
+    {
+        abort_unless($chatHistory->user_id === auth()->id(), 403);
+
+        return response()->json([
+            'messages' => $chatHistory->messages,
+            'context' => $chatHistory->ai_context,
+        ]);
+    }
+
+    public function saveAdminAiHistory(Request $request): JsonResponse
+    {
+        $request->validate([
+            'id' => ['nullable', 'integer'],
+            'messages' => ['required', 'array', 'min:1'],
+            'messages.*.role' => ['required', 'in:user,assistant'],
+            'messages.*.content' => ['required', 'string', 'max:4000'],
+            'context' => ['nullable', 'array'],
+        ]);
+
+        $messages = array_values(array_filter(
+            $request->input('messages'),
+            fn (array $message) => in_array($message['role'], ['user', 'assistant'], true)
+        ));
+
+        $firstUser = collect($messages)->firstWhere('role', 'user');
+        $payload = [
+            'title' => mb_strimwidth((string) ($firstUser['content'] ?? 'Chat'), 0, 60, '…'),
+            'messages' => $messages,
+            'ai_context' => AiConversationContext::fromArray($request->input('context'))->toArray(),
+        ];
+
+        if ($request->filled('id')) {
+            $history = auth()->user()->chatHistories()->findOrFail($request->integer('id'));
+            $history->update($payload);
+        } else {
+            $history = auth()->user()->chatHistories()->create($payload);
+        }
+
+        return response()->json(['id' => $history->id, 'title' => $history->title]);
+    }
+
+    public function destroyAdminAiHistory(ChatHistory $chatHistory): JsonResponse
+    {
+        abort_unless($chatHistory->user_id === auth()->id(), 403);
+        $chatHistory->delete();
+
+        return response()->json(['ok' => true]);
     }
 
     /**

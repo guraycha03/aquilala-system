@@ -95,4 +95,30 @@ class AdminArchiveSelectionTest extends TestCase
             ->assertOk()
             ->assertDontSee('Archived Member');
     }
+
+    public function test_archive_page_offers_type_switches_and_restores_members(): void
+    {
+        $admin = $this->admin();
+        $member = $this->member(['name' => 'Archived Member']);
+        $member->delete();
+
+        $this->actingAs($admin)
+            ->get(route('admin.archive'))
+            ->assertOk()
+            ->assertSee('Account Users')
+            ->assertSee('Members')
+            ->assertSee('Harvest Reports');
+
+        $this->actingAs($admin)
+            ->get(route('admin.archive', ['type' => 'members']))
+            ->assertOk()
+            ->assertSee('Archived Member')
+            ->assertSee('Restore');
+
+        $this->actingAs($admin)
+            ->post(route('admin.archive.members.restore', $member->id))
+            ->assertRedirect(route('admin.archive', ['type' => 'members']));
+
+        $this->assertNull($member->fresh()->archived_at);
+    }
 }

@@ -41,6 +41,16 @@
   }
   .btn-nav.ghost:hover { background: #ede9fe; border-color: #c4b5fd; }
 
+  .hp-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  @media (max-width: 700px) {
+    .hp-header-actions { width: 100%; justify-content: space-between; }
+    .hp-header-actions .btn-nav { flex: 1 1 0; min-width: 0; justify-content: center; padding-left: 10px; padding-right: 10px; }
+  }
+  @media (max-width: 360px) {
+    .hp-header-actions { justify-content: stretch; }
+    .hp-header-actions .btn-nav { flex-basis: 100%; }
+  }
+
   .hp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; align-items: start; }
   .hp-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
   .hp-card-head { padding: 18px 20px; border-bottom: 1px solid #eef1f4; }
@@ -101,7 +111,7 @@
     <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0;">Harvest Performance</h1>
     <p style="font-size: 13px; color: #64748b; margin: 5px 0 0 0;">Headline figures for the whole association, with the detail one click away.</p>
   </div>
-  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+  <div class="hp-header-actions">
     <a href="{{ route('admin.harvests.reports') }}" class="btn-nav ghost" title="Browse, filter and export every harvest report">
       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       All Harvest Reports

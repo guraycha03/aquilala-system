@@ -7,8 +7,9 @@
   {{-- Authenticated app shell: no dashboard or internal page may ever be
        indexed (belt to the robots.txt braces). --}}
   <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Aquilala agricultural association management portal.">
   <title>@yield('title') | Aquilala</title>
-  <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+  <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}" width="32" height="32">
   {{-- PWA: installable from the browser ("Add to Home Screen" / install
        prompt) so Aquilala opens like a native app. The manifest describes
        the app and its home-screen icons; js/pwa-register.js registers the
@@ -21,7 +22,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Aquilala">
-  <link rel="apple-touch-icon" href="{{ asset('images/pwa/apple-touch-icon.png') }}">
+  <link rel="apple-touch-icon" href="{{ asset('images/pwa/apple-touch-icon.png') }}" width="180" height="180">
   <script src="{{ asset('js/pwa-register.js') }}" defer></script>
   <script src="{{ asset('js/net-status.js') }}" defer></script>
   {{-- Shared filter-collapse engine: pages with a search bar + filter choices
@@ -1312,25 +1313,38 @@
         @elseif(auth()->user()->role === 'admin')
           @if($adminNav)
             @foreach($adminNav as $ai => $section)
-              @php $isOpen = ($activeAdminSection === $ai); @endphp
-              <li class="nav-dropdown {{ $isOpen ? 'open' : '' }}">
-                <button type="button" class="nav-dropdown-btn" aria-expanded="{{ $isOpen ? 'true' : 'false' }}">
-                  <span class="nav-dropdown-title">
+              @php
+                $isOpen = ($activeAdminSection === $ai);
+                $isStandalone = !empty($section['standalone']);
+                $standaloneItem = $section['items'][0] ?? null;
+              @endphp
+              @if($isStandalone && $standaloneItem)
+                <li>
+                  <a href="{{ route($standaloneItem['routes'][0]) }}" class="{{ request()->routeIs(...$standaloneItem['routes']) ? 'active' : '' }}">
                     {!! $section['icon'] !!}
-                    <span>{{ $section['label'] }}</span>
-                  </span>
-                  <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
-                <ul class="sub-nav-links">
-                  @foreach($section['items'] as $item)
-                    <li>
-                      <a href="{{ route($item['routes'][0]) }}" class="{{ request()->routeIs(...$item['routes']) ? 'active' : '' }}">
-                        {{ $item['label'] }}
-                      </a>
-                    </li>
-                  @endforeach
-                </ul>
-              </li>
+                    {{ $section['label'] }}
+                  </a>
+                </li>
+              @else
+                <li class="nav-dropdown {{ $isOpen ? 'open' : '' }}">
+                  <button type="button" class="nav-dropdown-btn" aria-expanded="{{ $isOpen ? 'true' : 'false' }}">
+                    <span class="nav-dropdown-title">
+                      {!! $section['icon'] !!}
+                      <span>{{ $section['label'] }}</span>
+                    </span>
+                    <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <ul class="sub-nav-links">
+                    @foreach($section['items'] as $item)
+                      <li>
+                        <a href="{{ route($item['routes'][0]) }}" class="{{ request()->routeIs(...$item['routes']) ? 'active' : '' }}">
+                          {{ $item['label'] }}
+                        </a>
+                      </li>
+                    @endforeach
+                  </ul>
+                </li>
+              @endif
             @endforeach
           @else
           <li>
@@ -1382,7 +1396,7 @@
             </a>
           </li>
           <li>
-            <a href="{{ route('admin.settings.index') }}" class="{{ request()->is('admin/settings*') || request()->routeIs('admin.audit.index') || request()->routeIs('admin.activity.index') ? 'active' : '' }}">
+            <a href="{{ route('admin.settings.index') }}" class="{{ request()->is('admin/settings*') || request()->routeIs('admin.archive', 'admin.audit.index', 'admin.activity.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               Settings
             </a>
@@ -2174,4 +2188,3 @@
 
 </body>
 </html>
-

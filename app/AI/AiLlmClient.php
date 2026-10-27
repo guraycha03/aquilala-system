@@ -64,7 +64,6 @@ class AiLlmClient
                     // the same question answerable two different ways.
                     'temperature'     => 0.2,
                     'max_tokens'      => $maxTokens,
-                    'response_format' => ['type' => 'json_object'],
                 ]);
         } catch (ConnectionException $e) {
             Log::warning('Aquilala assistant could not reach the model provider.', [

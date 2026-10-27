@@ -1,28 +1,23 @@
 @extends('layouts.sidebar')
 
-@section('title', 'AI Harvest Insights')
+@section('title', 'AI Insight')
+
+@section('page-styles')
+  <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=2" data-turbo-track="dynamic">
+@endsection
 
 @section('content')
 
 @php
   $coverage = $context['coverage'] ?? ['reports' => 0, 'farmers' => 0, 'crops' => []];
-  $totals   = $context['totals'] ?? [];
   $hasData  = (int) ($coverage['reports'] ?? 0) > 0;
-  $crops    = $coverage['crops'] ?? [];
-  // `farmers` is sorted best-yield-per-hectare first, so the last row is the
-  // weakest performer — the question every admin wants to ask second.
-  $worst    = collect($context['farmers'] ?? [])->last();
-  $worstYield = $worst && isset($worst['yield_per_ha']) && $worst['yield_per_ha'] !== null
-      ? number_format((float) $worst['yield_per_ha'], 3)
-      : null;
 @endphp
 
 <style>
   .ai-page-head { margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
   .ai-page-head h1 { font-size: 24px; font-weight: 700; color: #1e2922; margin: 0; }
 
-  .ai-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.75fr); gap: 18px; align-items: start; }
-  @media (max-width: 960px) { .ai-grid { grid-template-columns: minmax(0, 1fr); } }
+  .ai-grid { display: block; }
 
   .ai-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
   .ai-card-head { padding: 18px 20px; border-bottom: 1px solid #eef1f4; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
@@ -135,109 +130,148 @@
   .empty-state { text-align: center; padding: 54px 24px; }
   .empty-state h3 { font-size: 16px; color: #1e2922; margin: 14px 0 6px; }
   .empty-state p { font-size: 13.5px; color: #64748b; margin: 0 auto 18px; max-width: 440px; line-height: 1.65; }
+
+  .admin-ai-page .chat-header { gap: 12px; }
+  .admin-ai-avatar {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--aq-sage-100, #e6ebe2); color: var(--aq-sage-600, #4f6a56);
+  }
+  .admin-ai-avatar svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .admin-ai-new { margin-left: auto; }
+  .admin-ai-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--aq-line, #e4e8de);
+  }
+  .admin-ai-suggestions::before {
+    content: 'Suggested questions';
+    flex-basis: 100%;
+    color: var(--aq-ink-faint, #879a8c);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  .admin-ai-suggestions .chip { box-shadow: 0 1px 3px rgba(44, 53, 48, .06); }
+  .ai-clarification { margin-top: 12px; }
+  .ai-clarification-title { margin: 0 0 9px; font-size: 12px; font-weight: 700; color: #64748b; }
+  .ai-clarification-options { display: grid; gap: 7px; }
+  .ai-clarification-option { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 9px; background: #fff; cursor: pointer; font-size: 12.5px; color: #334155; }
+  .ai-clarification-option:hover { border-color: #c4b5fd; background: #f5f3ff; }
+  .ai-clarification-option input { margin-top: 2px; accent-color: #6d28d9; }
+  .ai-clarification-custom { display: flex; gap: 7px; margin-top: 9px; }
+  .ai-clarification-custom input { flex: 1; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 8px; font: inherit; font-size: 12.5px; }
+  .ai-clarification-custom button { border: 0; border-radius: 8px; padding: 0 12px; background: #6d28d9; color: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 </style>
 
-<div class="ai-page-head">
-  <div>
-    <h1>AI Harvest Insights</h1>
-    <p class="ai-card-sub" style="margin: 5px 0 0;">Ask anything about your harvest reports — every answer is read straight from those records, nothing else.</p>
-  </div>
-  <a href="{{ route('admin.harvests.index') }}" class="ai-back">
-    <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-    Back to Harvest Performance
-  </a>
+<div class="breadcrumb">
+  <span>AI Insight</span>
 </div>
 
 @if(! $hasData)
-  <div class="ai-card" style="margin-top: 14px;">
-    <div class="empty-state">
-      <x-peso-icon :size="42" color="#cbd5e1" :stroke-width="1.5" />
-      <h3>No harvest reports yet</h3>
-      <p>Once farmers start recording harvests, this page will explain recent versus past performance, yield factors, and the farmers behind the numbers.</p>
-      <a href="{{ route('admin.harvests.index') }}" class="ai-ask" style="text-decoration:none;">View Harvest Performance</a>
+  <div class="chat-page admin-ai-page">
+    <div class="chat-container">
+      <div class="chat-header">
+        <div class="admin-ai-avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"/></svg>
+        </div>
+        <div class="header-info">
+          <div class="header-title">AI Insight</div>
+          <div class="header-status"><div class="status-dot"></div>Admin data assistant</div>
+        </div>
+        <div class="history-wrap">
+          <button class="history-btn" id="adminHistoryBtn" type="button" aria-label="Chat history" title="Chat history">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l4 2" />
+            </svg>
+          </button>
+          <div class="history-dropdown" id="adminHistoryDropdown">
+            <div class="history-head">
+              <b>Chat History</b>
+              <button class="history-new-btn" id="adminNewChatBtn" type="button">+ New Chat</button>
+            </div>
+            <div class="history-list" id="adminHistoryList"></div>
+          </div>
+        </div>
+        <button id="aiClearBtn" class="chip admin-ai-new" type="button" onclick="resetChat()">New chat</button>
+      </div>
+      <div class="chat-messages" id="aiChatLog" role="log" aria-live="polite">
+        <div class="message-row">
+          <div class="message-avatar"><span aria-hidden="true">AI</span></div>
+          <div class="message-bubble">
+            No harvest reports are available yet. Once records are added, I can explain performance, crops, seasons, costs, and the next items to verify.
+          </div>
+        </div>
+      </div>
+      <form id="aiChatForm" class="chat-input-area" onsubmit="submitChat(event)">
+        <div class="chat-input-wrapper">
+          <input id="aiChatInput" class="chat-input ai-chat-input" type="text" maxlength="500" placeholder="Ask about your association data…" autocomplete="off" aria-label="Ask about association data" />
+          <button id="aiChatSend" class="send-btn" type="submit" title="Send" aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 @else
-  <div class="ai-grid">
-    {{-- ── Deterministic data basis ───────────────────────────── --}}
-    <div class="ai-card">
-      <div class="ai-card-head">
-        <div>
-          <p class="ai-card-title">Data this chat reads</p>
-          <p class="ai-card-sub">Computed from harvest_reports, no AI involved.</p>
+  <div class="chat-page admin-ai-page">
+    <div class="chat-container">
+      <div class="chat-header">
+        <div class="admin-ai-avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 15 .7 2.3L22 18l-.7 2.3L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"/></svg>
         </div>
-      </div>
-      <div class="ai-card-body" style="padding-top:6px; padding-bottom:6px;">
-        <div class="basis-row"><span class="basis-key">Harvest reports</span><span class="basis-val">{{ number_format((int) $coverage['reports']) }}</span></div>
-        <div class="basis-row"><span class="basis-key">Reporting farmers</span><span class="basis-val">{{ number_format((int) ($coverage['farmers'] ?? 0)) }}</span></div>
-        <div class="basis-row"><span class="basis-key">Date range</span><span class="basis-val">{{ ($coverage['first_harvest'] ?? '—') }} &rarr; {{ ($coverage['last_harvest'] ?? '—') }}</span></div>
-        <div class="basis-row"><span class="basis-key">Total yield</span><span class="basis-val">{{ number_format((float) ($totals['yield_tons'] ?? 0), 2) }} MT</span></div>
-        <div class="basis-row"><span class="basis-key">Harvested area</span><span class="basis-val">{{ number_format((float) ($totals['area_ha'] ?? 0), 2) }} ha</span></div>
-        <div class="basis-row"><span class="basis-key">Yield per hectare</span><span class="basis-val">{{ isset($totals['yield_per_ha']) && $totals['yield_per_ha'] !== null ? number_format((float) $totals['yield_per_ha'], 3) . ' MT/ha' : '—' }}</span></div>
-        <div class="basis-row"><span class="basis-key">Expenses</span><span class="basis-val">&#8369;{{ number_format((float) ($totals['expenses_php'] ?? 0), 0) }}</span></div>
-        <div class="basis-row">
-          <span class="basis-key">Crops</span>
-          <span class="basis-val">
-            @forelse($crops as $crop)
-              <span class="pill" style="background: #edf1e9; color: #648268;">{{ $crop }}</span>
-            @empty
-              —
-            @endforelse
-          </span>
+        <div class="header-info">
+          <div class="header-title">AI Insight</div>
+          <div class="header-status"><div class="status-dot"></div>Admin data assistant</div>
         </div>
-      </div>
-    </div>
-
-    {{-- ── Chat ─────────────────────────────────────────────── --}}
-    <div class="ai-card ai-chat-card">
-      <div class="ai-card-head">
-        <div>
-          <p class="ai-card-title">Chat</p>
-          <p class="ai-card-sub">Pick a question below, or type your own.</p>
-        </div>
-        <button id="aiClearBtn" class="ai-ask" type="button" style="background: #edf1e9; color: #648268; border:1.5px solid #e2e8f0; box-shadow:none; height:34px; padding:0 14px;" onclick="resetChat()">New chat</button>
-      </div>
-
-      <div id="aiChatLog" class="ai-chat-log" role="log" aria-live="polite">
-        <div class="ai-msg bot">
-          <div class="ai-msg-avatar" aria-hidden="true">AI</div>
-          <div class="ai-msg-body">
-            <div class="ai-msg-meta"><span class="ai-msg-name">Aquilala harvest assistant</span></div>
-            <div class="ai-msg-bubble">
-              <p>Hi — I read your <strong>{{ number_format((int) $coverage['reports']) }} harvest reports</strong> from {{ ($coverage['first_harvest'] ?? '—') }} to {{ ($coverage['last_harvest'] ?? '—') }} and nothing else.</p>
-              <p>Ask me about seasons, crops, farmers, yield, costs, planting records, or the weather events you logged. Every figure I give you comes from those records.</p>
-              <p>It is a conversation — if I name a farmer, just reply <strong>why</strong> and I will walk through their own land, planting cadence, seasons and crop batches with you.</p>
+        <div class="history-wrap">
+          <button class="history-btn" id="adminHistoryBtn" type="button" aria-label="Chat history" title="Chat history">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.05 13A9 9 0 1 0 6 5.3L3 8" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l4 2" />
+            </svg>
+          </button>
+          <div class="history-dropdown" id="adminHistoryDropdown">
+            <div class="history-head">
+              <b>Chat History</b>
+              <button class="history-new-btn" id="adminNewChatBtn" type="button">+ New Chat</button>
             </div>
+            <div class="history-list" id="adminHistoryList"></div>
           </div>
         </div>
+        <button id="aiClearBtn" class="chip admin-ai-new" type="button" onclick="resetChat()">New chat</button>
+      </div>
 
-        <div class="ai-msg bot">
-          <div class="ai-msg-avatar" aria-hidden="true">AI</div>
-          <div class="ai-msg-body">
-            <div class="ai-msg-meta"><span class="ai-msg-name">Try one of these</span></div>
-            <div class="ai-chip-row">
-              @if($worst !== null && $worstYield !== null)
-                <button type="button" class="ai-chip" onclick="askChip(this)">Why does {{ $worst['farmer'] }} sit at {{ $worstYield }} MT/ha?</button>
-              @endif
-              <button type="button" class="ai-chip" onclick="askChip(this)">How did the latest season compare with the one before it?</button>
-              <button type="button" class="ai-chip" onclick="askChip(this)">Which farmers should I recognise?</button>
-              <button type="button" class="ai-chip" onclick="askChip(this)">Is the wet season out-yielding the dry season?</button>
-              <button type="button" class="ai-chip" onclick="askChip(this)">Which crops are trending up or down?</button>
-              <button type="button" class="ai-chip" onclick="askChip(this)">What did we harvest in total and what did it cost?</button>
-              <button type="button" class="ai-chip" onclick="askChip(this)">What should I verify next?</button>
+      <div id="aiChatLog" class="chat-messages" role="log" aria-live="polite">
+        <div class="message-row">
+          <div class="message-avatar" aria-hidden="true">AI</div>
+          <div class="message-bubble">
+            <p>Hello. I’m Aquilala’s administrative insight assistant.</p>
+            <p>I can help you interpret association performance, harvest trends, costs, crops, seasons, and recorded activities.</p>
+            <p>Ask a question to begin. I’ll provide concise, evidence-based observations to support your review.</p>
+            <div class="admin-ai-suggestions">
+              <button type="button" class="chip ai-chip" onclick="askChip(this)">How did the latest season compare with the one before it?</button>
+              <button type="button" class="chip ai-chip" onclick="askChip(this)">Is the wet season out-yielding the dry season?</button>
+              <button type="button" class="chip ai-chip" onclick="askChip(this)">Which crops are trending up or down?</button>
             </div>
           </div>
         </div>
       </div>
 
-      <form id="aiChatForm" class="ai-chat-form" onsubmit="submitChat(event)">
-        <input id="aiChatInput" class="ai-chat-input" type="text" maxlength="500"
-               placeholder="Ask about your harvest reports…" autocomplete="off"
-               aria-label="Ask about your harvest reports" />
-        <button id="aiChatSend" class="ai-ask" type="submit" title="Send">
-          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          <span>Send</span>
-        </button>
+      <form id="aiChatForm" class="chat-input-area" onsubmit="submitChat(event)">
+        <div class="chat-input-wrapper">
+          <input id="aiChatInput" class="chat-input ai-chat-input" type="text" maxlength="500" placeholder="Ask about your association data…" autocomplete="off" aria-label="Ask about association data" />
+          <button id="aiChatSend" class="send-btn" type="submit" title="Send" aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </button>
+        </div>
       </form>
     </div>
   </div>
@@ -289,12 +323,14 @@
   var aiLoading = false;
   var chatHistory = [];
   var chatInitial = null;
+  var currentHistoryId = null;
   var lastQuestion = '';
   var askUrl = @json(route('admin.harvests.ai.ask'));
 
-  var AVATAR_BOT = '<div class="ai-msg-avatar" aria-hidden="true">AI</div>';
-  var AVATAR_USER = '<div class="ai-msg-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
+  var AVATAR_BOT = '<div class="message-avatar" aria-hidden="true">AI</div>';
+  var AVATAR_USER = '<div class="message-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
   var BADGE_AI = '<span class="ai-source-badge ai" title="Wording by the model, every number from your harvest reports"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>AI assisted</span>';
+  var BADGE_DATA = '<span class="ai-source-badge ai" title="Read directly from Aquilala records"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>From system records</span>';
   var BADGE_FALLBACK = '<span class="ai-source-badge fallback" title="Computed directly from harvest_reports while the model is offline"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>Computed summary (AI offline)</span>';
 
   function chatLog() { return document.getElementById('aiChatLog'); }
@@ -308,27 +344,44 @@
     var log = chatLog();
     if (!log) return null;
     var el = document.createElement('div');
-    el.className = 'ai-msg ' + kind;
-    el.innerHTML = (kind === 'user' ? AVATAR_USER : AVATAR_BOT) + '<div class="ai-msg-body">' + inner + '</div>';
+    el.className = 'message-row ' + kind;
+    el.innerHTML = (kind === 'user' ? AVATAR_USER : AVATAR_BOT) + '<div class="message-bubble">' + inner + '</div>';
     log.appendChild(el);
     scrollChat();
     return el;
   }
 
   function appendUser(text) {
-    appendNode('user', '<div class="ai-msg-bubble">' + escapeAiHtml(text) + '</div>');
+    appendNode('user', escapeAiHtml(text));
   }
 
   function appendAssistant(html, source) {
     appendNode('bot',
-      '<div class="ai-msg-meta"><span class="ai-msg-name">Aquilala harvest assistant</span>' +
-      (source === 'ai' ? BADGE_AI : BADGE_FALLBACK) + '</div>' +
-      '<div class="ai-msg-bubble">' + html + '</div>');
+      '<div class="ai-msg-meta"><span class="ai-msg-name">Aquilala admin insight</span>' +
+      (source === 'ai' ? BADGE_AI : (source === 'data' ? BADGE_DATA : (source === 'conversation' ? '' : BADGE_FALLBACK))) + '</div>' +
+      html);
+  }
+
+  function appendClarification(options) {
+    var choices = (options || []).map(function (option, index) {
+      return '<label class="ai-clarification-option">' +
+        '<input type="radio" name="aiClarification" value="' + escapeAiHtml(option.question) + '" data-clarification-question="' + escapeAiHtml(option.question) + '">' +
+        '<span>' + escapeAiHtml(option.label) + '</span></label>';
+    }).join('');
+    appendAssistant(
+      '<div class="ai-clarification">' +
+      '<p class="ai-clarification-title">Choose what you meant, or clarify it below:</p>' +
+      '<div class="ai-clarification-options">' + choices + '</div>' +
+      '<form class="ai-clarification-custom" onsubmit="submitClarification(event)">' +
+      '<input type="text" placeholder="Type your clarification…" aria-label="Clarify your question">' +
+      '<button type="submit">Ask</button></form></div>',
+      'conversation'
+    );
   }
 
   function appendError(message) {
     appendNode('bot',
-      '<div class="ai-msg-meta"><span class="ai-msg-name">Aquilala harvest assistant</span></div>' +
+      '<div class="ai-msg-meta"><span class="ai-msg-name">Aquilala admin insight</span></div>' +
       '<div class="ai-msg-error">' +
       '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
       '<span>' + escapeAiHtml(message) + ' <button type="button" onclick="retryLast()">Try again</button></span>' +
@@ -337,8 +390,8 @@
 
   function appendTyping() {
     return appendNode('bot',
-      '<div class="ai-msg-meta"><span class="ai-msg-name">Aquilala harvest assistant</span></div>' +
-      '<div class="ai-msg-bubble"><span class="ai-typing" role="status" aria-label="Thinking"><span></span><span></span><span></span></span></div>');
+      '<div class="ai-msg-meta"><span class="ai-msg-name">Aquilala admin insight</span></div>' +
+      '<span class="ai-typing" role="status" aria-label="Thinking"><span></span><span></span><span></span></span>');
   }
 
   function setBusy(busy) {
@@ -391,7 +444,11 @@
       setBusy(false);
       if (res.ok && res.data && res.data.reply) {
         appendAssistant(renderAiMarkdown(res.data.reply), res.data.source);
+        if (res.data.source === 'clarification' && Array.isArray(res.data.clarification)) {
+          appendClarification(res.data.clarification);
+        }
         chatHistory = payload.concat([{ role: 'assistant', content: res.data.reply }]);
+        persistCurrentConversation(res.data.context || null);
       } else if (res.data && res.data.error) {
         appendError(res.data.error);
       } else {
@@ -425,16 +482,144 @@
     if (input) input.focus();
   }
 
+  function submitClarification(event) {
+    if (event) event.preventDefault();
+    var form = event && event.target;
+    if (!form) return;
+    var input = form.querySelector('input[type="text"]');
+    var radio = form.parentElement.querySelector('input[name="aiClarification"]:checked');
+    var message = input && input.value.trim()
+      ? input.value.trim()
+      : (radio ? radio.getAttribute('data-clarification-question') : '');
+    if (message) sendQuestion(message);
+  }
+
+  document.addEventListener('change', function (event) {
+    var input = event.target;
+    if (!input || input.name !== 'aiClarification' || !input.value) return;
+    if (input.value.trim() !== '') sendQuestion(input.value);
+  });
+
   function resetChat() {
     if (aiLoading) return;
     var log = chatLog();
     if (!log) return;
+    persistCurrentConversation();
     if (chatInitial === null) chatInitial = log.innerHTML;
     log.innerHTML = chatInitial;
     chatHistory = [];
+    currentHistoryId = null;
     lastQuestion = '';
     var input = document.getElementById('aiChatInput');
     if (input) { input.value = ''; input.focus(); }
   }
+
+  function csrfHeader() {
+    return {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': '{{ csrf_token() }}',
+      'Accept': 'application/json'
+    };
+  }
+
+  function persistCurrentConversation(context) {
+    if (!chatHistory.length) return;
+    fetch('{{ route("admin.harvests.ai.history.save") }}', {
+      method: 'POST',
+      headers: csrfHeader(),
+      body: JSON.stringify({
+        id: currentHistoryId,
+        messages: chatHistory,
+        context: context || {}
+      })
+    }).then(function (response) {
+      return response.json();
+    }).then(function (data) {
+      if (data && data.id) currentHistoryId = data.id;
+    }).catch(function () {});
+  }
+
+  function loadAdminHistoryMessages(messages) {
+    var log = chatLog();
+    if (!log) return;
+    log.innerHTML = '';
+    messages.forEach(function (message) {
+      if (message.role === 'user') appendUser(message.content);
+      if (message.role === 'assistant') appendAssistant(renderAiMarkdown(message.content), 'conversation');
+    });
+    scrollChat();
+  }
+
+  function renderAdminHistoryList(histories) {
+    var list = document.getElementById('adminHistoryList');
+    if (!list) return;
+    if (!histories.length) {
+      list.innerHTML = '<div class="history-empty">No conversations yet. Start chatting below!</div>';
+      return;
+    }
+    list.innerHTML = histories.map(function (history) {
+      return '<div class="history-item" data-id="' + history.id + '">' +
+        '<div class="history-item-title" title="' + escapeAiHtml(history.title) + '">' + escapeAiHtml(history.title) + '</div>' +
+        '<div class="history-item-time">' + escapeAiHtml(history.updated_at) + '</div>' +
+        '<button class="history-item-del" type="button" title="Delete conversation" aria-label="Delete conversation">×</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  function refreshAdminHistories() {
+    fetch('{{ route("admin.harvests.ai.histories") }}', { headers: csrfHeader() })
+      .then(function (response) { return response.json(); })
+      .then(function (data) { renderAdminHistoryList((data && data.histories) || []); })
+      .catch(function () {});
+  }
+
+  function loadAdminHistory(id) {
+    fetch('{{ route("admin.harvests.ai.history.show", "__ID__") }}'.replace('__ID__', id), {
+      headers: csrfHeader()
+    }).then(function (response) {
+      return response.json();
+    }).then(function (data) {
+      if (!data || !data.messages) return;
+      chatHistory = data.messages.slice();
+      currentHistoryId = Number(id);
+      loadAdminHistoryMessages(data.messages);
+      var dropdown = document.getElementById('adminHistoryDropdown');
+      if (dropdown) dropdown.classList.remove('open');
+    }).catch(function () {});
+  }
+
+  (function initialiseAdminHistory() {
+    var button = document.getElementById('adminHistoryBtn');
+    var dropdown = document.getElementById('adminHistoryDropdown');
+    var list = document.getElementById('adminHistoryList');
+    var newChat = document.getElementById('adminNewChatBtn');
+    if (!button || !dropdown || !list || !newChat) return;
+    if (chatInitial === null) {
+      var initialLog = chatLog();
+      chatInitial = initialLog ? initialLog.innerHTML : '';
+    }
+    button.addEventListener('click', function () {
+      dropdown.classList.toggle('open');
+      if (dropdown.classList.contains('open')) refreshAdminHistories();
+    });
+    newChat.addEventListener('click', function () {
+      resetChat();
+      dropdown.classList.remove('open');
+    });
+    list.addEventListener('click', function (event) {
+      var item = event.target.closest('.history-item');
+      if (!item) return;
+      var id = item.getAttribute('data-id');
+      if (event.target.closest('.history-item-del')) {
+        fetch('{{ route("admin.harvests.ai.history.destroy", "__ID__") }}'.replace('__ID__', id), {
+          method: 'DELETE',
+          headers: csrfHeader()
+        }).then(function () { refreshAdminHistories(); }).catch(function () {});
+        return;
+      }
+      loadAdminHistory(id);
+    });
+    refreshAdminHistories();
+  }());
 </script>
 @endsection

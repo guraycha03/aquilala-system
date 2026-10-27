@@ -258,8 +258,8 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->assertDontSee('Periods in scope')
             ->assertDontSee('Latest comparison')
             ->assertDontSee('Farmers to recognise')
-            // …but it still has its own data card and the chat that asks about it.
-            ->assertSee('Data this chat reads')
+            // …but it still has the chat that asks about the same digest.
+            ->assertDontSee('Data this chat reads')
             ->assertSee('id="aiChatLog"', false);
     }
 
@@ -275,9 +275,9 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->assertDontSee('Sourced only from your harvest reports and your weather log.')
             ->assertDontSee('The model also reads')
             ->assertDontSee('falling inside a recorded harvest range')
-            // The data card itself still lists what the chat is built from.
-            ->assertSee('Data this chat reads')
-            ->assertSee('Harvest reports');
+            // The standalone chat keeps the context in its conversation rather
+            // than exposing a separate raw-data panel.
+            ->assertSee('harvest reports');
     }
 
     // ── Nothing was lost to the model ─────────────────────────────
