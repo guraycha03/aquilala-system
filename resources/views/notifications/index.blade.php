@@ -55,7 +55,7 @@
     background: #fff; border: 1px solid #E0E5DB; border-radius: 16px; overflow: hidden;
   }
   .nf-list { padding: 2px 22px 18px; }
-  .nf-item { display: flex; align-items: flex-start; gap: 12px; padding: 15px 0; }
+  .nf-item { display: flex; align-items: stretch; gap: 8px; padding: 6px 0; }
   .nf-item + .nf-item { border-top: 1px solid #F0F2F1; }
 
   /* The one dot that carries "unread" — nothing else on the row shouts. */
@@ -63,17 +63,16 @@
   .nf-item.is-unread .nf-dot { background: #4A7A54; }
 
   .nf-mid { flex: 1; min-width: 0; }
+  .nf-item-link {
+    display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0;
+    padding: 12px 10px; border-radius: 12px; text-decoration: none; color: inherit;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+  }
+  .nf-item-link:hover { background: #F7F9F6; }
+  .nf-item-link:focus-visible { outline: 2px solid #8FB89A; outline-offset: 2px; }
+  [data-theme="dark"] .nf-item-link:hover { background: rgba(51, 65, 85, 0.45); }
   .nf-title { font-size: 14px; font-weight: 500; color: #344B38; line-height: 1.5; }
   .nf-item.is-unread .nf-title { font-weight: 600; color: #1f2d24; }
-
-  /* A notice that leads somewhere reads as text until the reader reaches
-     for it — then it says so. */
-  .nf-link {
-    display: block; text-decoration: none; color: inherit;
-    border-radius: 6px; transition: color 0.15s ease;
-  }
-  .nf-link:hover { color: #166534; text-decoration: underline; text-underline-offset: 2px; }
-  .nf-item.is-unread .nf-link:hover { color: #14532d; }
 
   /* Live status chip: where the notified event sits right now. The state is
      recomputed on every render, so a finished event reads "Done" instead of
@@ -97,7 +96,7 @@
   .nf-dismiss {
     border: 1px solid #E0E5DB; background: #fff; cursor: pointer; color: #94a3b8;
     width: 28px; height: 28px; flex-shrink: 0; display: inline-flex; align-items: center;
-    justify-content: center; border-radius: 50%; transition: all 0.15s ease; margin-top: 2px;
+    justify-content: center; border-radius: 50%; transition: all 0.15s ease; align-self: center;
   }
   .nf-dismiss:hover { background: #EDF1E9; border-color: #C8D5C5; color: #166534; }
   .nf-dismiss svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -175,38 +174,36 @@
         <div class="nf-list">
           @foreach($notifications as $notification)
             <div class="nf-item {{ $notification->read_at ? '' : 'is-unread' }}">
-              <span class="nf-dot"></span>
-              <div class="nf-mid">
-                {{-- A notice is a door: it opens the page the notice is
-                     about — the planting request waiting for a decision,
-                     the event on the calendar, the estimate. --}}
-                @if(!empty($notification->target_url))
-                  <a class="nf-title nf-link" href="{{ $notification->target_url }}"
-                     @if(!$notification->read_at) data-read-url="{{ route($routePrefix . '.read', $notification->id) }}" @endif>
-                    @if($notification->event_state)
-                      <span class="nf-state nf-state--{{ $notification->event_state }}">{{ $notification->event_state_label }}</span>
-                    @endif
-                    {{ $notification->display_description }}
-                  </a>
-                @else
-                  <div class="nf-title">
-                    @if($notification->event_state)
-                      <span class="nf-state nf-state--{{ $notification->event_state }}">{{ $notification->event_state_label }}</span>
-                    @endif
-                    {{ $notification->display_description }}
+              @if(!empty($notification->target_url))
+                <a class="nf-item-link" href="{{ $notification->target_url }}"
+                   @if(!$notification->read_at) data-read-url="{{ route($routePrefix . '.read', $notification->id) }}" @endif>
+              @else
+                <div class="nf-item-link">
+              @endif
+                  <span class="nf-dot"></span>
+                  <div class="nf-mid">
+                    <div class="nf-title">
+                      @if($notification->event_state)
+                        <span class="nf-state nf-state--{{ $notification->event_state }}">{{ $notification->event_state_label }}</span>
+                      @endif
+                      {{ $notification->display_description }}
+                    </div>
+                    <div class="nf-meta">
+                      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      <span>{{ optional($notification->created_at)->diffForHumans() }}</span>
+                      <span>&middot;</span>
+                      <span>{{ optional($notification->created_at)->format('M d, Y \a\t g:i A') }}</span>
+                      @if($notification->display_actor_name)
+                        <span>&middot;</span>
+                        <span>{{ $notification->display_actor_name }}</span>
+                      @endif
+                    </div>
                   </div>
-                @endif
-                <div class="nf-meta">
-                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  <span>{{ optional($notification->created_at)->diffForHumans() }}</span>
-                  <span>&middot;</span>
-                  <span>{{ optional($notification->created_at)->format('M d, Y \a\t g:i A') }}</span>
-                  @if($notification->display_actor_name)
-                    <span>&middot;</span>
-                    <span>{{ $notification->display_actor_name }}</span>
-                  @endif
+              @if(!empty($notification->target_url))
+                </a>
+              @else
                 </div>
-              </div>
+              @endif
               @if(!$notification->read_at)
                 <form method="POST" action="{{ route($routePrefix . '.read', $notification->id) }}">
                   @csrf
@@ -250,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Clicking a notice opens the page it is about, and counts as reading
   // it on the way: the row loses its unread dot, the badge counts down.
   document.addEventListener('click', function (e) {
-    var link = e.target.closest('.nf-link[data-read-url]');
+    var link = e.target.closest('.nf-item-link[data-read-url]');
     if (!link) return;
 
     var url = link.getAttribute('data-read-url');

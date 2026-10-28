@@ -324,6 +324,25 @@
     border: 1px solid #e2e8f0;
     display: flex; align-items: center; justify-content: center;
   }
+  .page-header { margin-bottom: 28px; }
+  .stats-row { gap: 18px; margin-bottom: 28px; }
+  .activity-filter-bar { padding: 14px 18px; margin-bottom: 24px; }
+  .timeline-card { box-shadow: 0 8px 24px rgba(15,23,42,0.04); }
+  .activity-item { padding: 19px 22px; gap: 18px; }
+  .activity-item > div:last-child { padding-top: 1px; }
+  .activity-item div[style*="font-size: 14px"] { line-height: 1.6 !important; }
+  .activity-item div[style*="font-size: 12px"] { margin-top: 8px !important; line-height: 1.5; }
+  [data-theme="dark"] .timeline-card,
+  [data-theme="dark"] .activity-filter-bar,
+  [data-theme="dark"] .stat-pill,
+  [data-theme="dark"] .empty-state { background: #111827 !important; border-color: #334155 !important; }
+  [data-theme="dark"] .activity-item:hover { background: #172235; }
+  [data-theme="dark"] .page-title,
+  [data-theme="dark"] .activity-item div[style*="font-size: 14px"],
+  [data-theme="dark"] .stat-val { color: #e2e8f0 !important; }
+  [data-theme="dark"] .page-subtitle,
+  [data-theme="dark"] .activity-item div[style*="font-size: 12px"],
+  [data-theme="dark"] .stat-lbl { color: #9fb3a6 !important; }
 </style>
 
 <div class="page-header">

@@ -51,6 +51,15 @@
     background: #4A7A54;
   }
   /* Filter bar uses the shared .table-toolbar design (layouts.sidebar). */
+  .header-panel { padding: 4px 0 18px !important; }
+  .header-panel h1 { letter-spacing: -0.02em; }
+  .activity-item { gap: 16px; padding: 18px 22px; }
+  .activity-desc { line-height: 1.65; }
+  .activity-meta { margin-top: 7px; line-height: 1.5; }
+  [data-theme="dark"] .activity-item:hover { background: #172235; }
+  [data-theme="dark"] .user-chip { background: #16301f !important; border-color: #245c35 !important; color: #a7f3d0 !important; }
+  [data-theme="dark"] .activity-desc { color: #e2e8f0 !important; }
+  [data-theme="dark"] .activity-meta { color: #94a3b8 !important; }
 </style>
 
 <div class="header-panel" style="margin-bottom: 10px;">

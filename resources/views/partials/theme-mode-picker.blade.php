@@ -46,6 +46,15 @@
   }
   .tmp-msg.show { opacity: 1; transform: none; }
   .tmp-msg.err { color: #dc2626; }
+  html[data-theme="dark"] .tmp-card[data-tmp-mode="light"] {
+    background: #ffffff !important; border-color: #dce5df !important; color: #1f2937 !important;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.22);
+  }
+  html[data-theme="dark"] .tmp-card[data-tmp-mode="light"] .tmp-name { color: #1f2937 !important; }
+  html[data-theme="dark"] .tmp-card[data-tmp-mode="light"] .tmp-desc { color: #64748b !important; }
+  html[data-theme="dark"] .tmp-card[data-tmp-mode="light"] .tmp-preview {
+    background: #f6f8f7 !important; border-color: #dbe5dd !important;
+  }
 </style>
 
 <div class="tmp-grid">

@@ -368,7 +368,7 @@
     /* Brand Section */
     .brand-section { padding: 20px; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.95); letter-spacing: -0.01em; line-height: 1.35; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; }
     .brand-title { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; display: block; margin-bottom: 2px; color: #ffffff; }
-    .brand-accent { color: #8FB89A; }
+    .brand-accent { color: #C8F36A; text-shadow: 0 0 14px rgba(200, 243, 106, 0.18); }
 
     /* Weather Widget Icon (real condition icons from public/images/weather) */
     .season-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; }
@@ -508,6 +508,12 @@
       font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1;
     }
     .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    /* The sidebar profile must look the same on every page. Page styles are
+       printed after this block, so without this (higher-specificity) guard a
+       page's own .user-avatar rules would repaint this placeholder — the
+       stores page, for one, turned it into a bright green tile. */
+    .sidebar-footer .user-avatar { background: #EDF1E9; color: #4A7A54; border: 1px solid #E0E5DB; border-radius: 50%; }
+    .sidebar-footer .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
     [data-theme="dark"] .user-avatar { background: #16301f; color: #a7f3d0; border-color: #334155; }
     .user-info { display: flex; flex-direction: column; min-width: 0; }
     .user-name { font-size: 14px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -576,22 +582,21 @@
     .nmodal-close:hover { background: #E0E5DB; color: #344B38; }
     .nmodal-close svg { stroke: currentColor; fill: none; }
 
-    .nmodal-body { flex: 1; overflow-y: auto; padding: 4px 18px; overscroll-behavior: contain; }
-    .nmodal-item { display: flex; align-items: flex-start; gap: 11px; padding: 13px 0; }
+    .nmodal-body { flex: 1; overflow-y: auto; padding: 6px 12px; overscroll-behavior: contain; }
+    .nmodal-item { display: flex; align-items: stretch; gap: 6px; padding: 4px 0; }
     .nmodal-item + .nmodal-item { border-top: 1px solid #F0F2F1; }
+    .nmodal-item-link {
+      display: flex; align-items: flex-start; gap: 11px; flex: 1; min-width: 0;
+      padding: 11px 8px; border-radius: 11px; text-decoration: none; color: inherit;
+      transition: background 0.15s ease;
+    }
+    .nmodal-item-link:hover { background: #F7F9F6; }
+    .nmodal-item-link:focus-visible { outline: 2px solid #8FB89A; outline-offset: 2px; }
     .nmodal-dot { width: 8px; height: 8px; border-radius: 50%; background: transparent; flex-shrink: 0; margin-top: 6px; }
     .nmodal-item.is-unread .nmodal-dot { background: #4A7A54; }
     .nmodal-mid { flex: 1; min-width: 0; }
     .nmodal-text { font-size: 13.5px; font-weight: 500; color: #344B38; line-height: 1.5; }
     .nmodal-item.is-unread .nmodal-text { font-weight: 600; color: #1f2d24; }
-    /* A notice that leads somewhere says so: it reads as text until the
-       reader reaches for it. */
-    .nmodal-link {
-      display: block; text-decoration: none; color: inherit;
-      border-radius: 6px; transition: color 0.15s ease;
-    }
-    .nmodal-link:hover { color: #166534; text-decoration: underline; text-underline-offset: 2px; }
-    .nmodal-item.is-unread .nmodal-link:hover { color: #14532d; }
     .nmodal-meta { font-size: 11.5px; color: #94a3b8; font-weight: 500; margin-top: 4px; }
     .nmodal-state {
       display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; margin-right: 7px;
@@ -603,7 +608,7 @@
     .nmodal-done {
       width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; border: 1px solid #E0E5DB;
       background: #fff; color: #94a3b8; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-      transition: all 0.15s ease; margin-top: 1px;
+      transition: all 0.15s ease; align-self: center;
     }
     .nmodal-done:hover { background: #EDF1E9; border-color: #C8D5C5; color: #166534; }
     .nmodal-done svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -639,6 +644,7 @@
     [data-theme="dark"] .nmodal-close { background: #1f2937; color: #9fb3a6; }
     [data-theme="dark"] .nmodal-close:hover { background: #26344a; color: #d6f5e3; }
     [data-theme="dark"] .nmodal-item + .nmodal-item { border-top-color: #334155; }
+    [data-theme="dark"] .nmodal-item-link:hover { background: rgba(51, 65, 85, 0.45); }
     [data-theme="dark"] .nmodal-text { color: #e2e8f0; }
     [data-theme="dark"] .nmodal-item.is-unread .nmodal-text { color: #d6f5e3; }
     [data-theme="dark"] .nmodal-meta { color: #94a3b8; }
@@ -894,7 +900,7 @@
     .sidebar-footer { background: var(--sb-deep); color: var(--sb-fg); border-top-color: var(--sb-border); }
     .brand-section { color: var(--sb-fg); border-bottom-color: var(--sb-border); }
     .brand-title { color: var(--sb-fg); }
-    .brand-accent { color: var(--sb-accent); }
+    .brand-accent { color: #C8F36A; text-shadow: 0 0 14px rgba(200, 243, 106, 0.18); }
     .menu-group-title { color: var(--sb-muted); }
     .nav-links li a { color: var(--sb-nav); }
     .nav-links li a svg { stroke: var(--sb-nav); }
@@ -1465,30 +1471,29 @@
       <div class="nmodal-body" id="notifModalBody">
         @forelse($notifItems as $item)
           <div class="nmodal-item{{ $item['unread'] ? ' is-unread' : '' }}">
-            <span class="nmodal-dot"></span>
-            <div class="nmodal-mid">
-              {{-- The notice is a door: clicking it opens the page the
-                   notice is about. --}}
               @if(!empty($item['url']))
-                <a class="nmodal-text nmodal-link" href="{{ $item['url'] }}"
+                <a class="nmodal-item-link" href="{{ $item['url'] }}"
                    @if($item['unread'] && $item['read_url']) data-read-url="{{ $item['read_url'] }}" @endif>
-                  @if($item['state_label'])
-                    <span class="nmodal-state nmodal-state--{{ $item['state'] }}">{{ $item['state_label'] }}</span>
-                  @endif{{-- the notice itself --}}
-                  {{ $item['text'] }}
+              @else
+                <div class="nmodal-item-link">
+              @endif
+                  <span class="nmodal-dot"></span>
+                  <div class="nmodal-mid">
+                    <div class="nmodal-text">
+                      @if($item['state_label'])
+                        <span class="nmodal-state nmodal-state--{{ $item['state'] }}">{{ $item['state_label'] }}</span>
+                      @endif
+                      {{ $item['text'] }}
+                    </div>
+                    <div class="nmodal-meta">
+                      {{ $item['meta'] }}@if($item['actor']) &middot; {{ $item['actor'] }}@endif
+                    </div>
+                  </div>
+              @if(!empty($item['url']))
                 </a>
               @else
-                <div class="nmodal-text">
-                  @if($item['state_label'])
-                    <span class="nmodal-state nmodal-state--{{ $item['state'] }}">{{ $item['state_label'] }}</span>
-                  @endif{{-- the notice itself --}}
-                  {{ $item['text'] }}
                 </div>
               @endif
-              <div class="nmodal-meta">
-                {{ $item['meta'] }}@if($item['actor']) &middot; {{ $item['actor'] }}@endif
-              </div>
-            </div>
             @if($item['unread'] && $item['read_url'])
               <button type="button" class="nmodal-done" data-read-url="{{ $item['read_url'] }}" aria-label="Mark as read" title="Mark as read">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1868,7 +1873,7 @@
 
         // Clicking a notice opens the page it is about, and the notice
         // counts as read on the way: it has been seen.
-        var link = e.target.closest('.nmodal-link');
+        var link = e.target.closest('.nmodal-item-link[data-read-url]');
         if (link) {
           var readUrl = link.getAttribute('data-read-url');
           if (readUrl) {
