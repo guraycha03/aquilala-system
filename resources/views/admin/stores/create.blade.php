@@ -67,6 +67,20 @@
       cursor: pointer;
     }
     .invite-field select:hover { border-color: #b9cec0; }
+    .schedule-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .schedule-label {
+      display: block; font-size: 11px; font-weight: 700; color: #64748b;
+      margin: 0 0 5px 2px; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .time-control { position: relative; }
+    .time-control input { padding-right: 42px; }
+    .time-control::after {
+      content: ""; position: absolute; right: 13px; top: 50%; width: 15px; height: 15px;
+      transform: translateY(-50%); pointer-events: none; opacity: .58;
+      background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpolyline points='12 7 12 12 15 14'/%3E%3C/svg%3E") center / contain no-repeat;
+    }
+    .schedule-note { display: block; font-size: 11px; color: #94a3b8; margin-top: 7px; line-height: 1.45; }
+    @media (max-width: 480px) { .schedule-row { grid-template-columns: 1fr; gap: 10px; } }
 
     /* Date picker: same box as the text inputs, with the calendar icon
        tinted and clickable-looking the way the Weather Log dates behave. */
@@ -212,13 +226,14 @@
           </div>
           <div class="invite-field">
             <label>Year Established</label>
-            <input type="number" name="year_established" value="{{ old('year_established') }}" min="1900" max="{{ now()->year }}" placeholder="{{ now()->year }}">
+            <input type="number" id="yearEstablished" name="year_established" value="{{ old('year_established') }}" min="1900" max="{{ now()->year }}" placeholder="{{ now()->year }}">
             <small class="field-error">@error('year_established'){{ $message }}@enderror</small>
           </div>
           <div class="invite-field">
             <label>Years Operating</label>
-            <input type="number" name="years_operating" value="{{ old('years_operating') }}" min="0" max="200" placeholder="e.g. 8">
+            <input type="number" id="yearsOperating" name="years_operating" value="{{ old('years_operating') }}" min="0" max="200" placeholder="e.g. 8">
             <small class="field-error">@error('years_operating'){{ $message }}@enderror</small>
+            <span class="field-note">Enter either value and the other will be calculated using {{ now()->year }}.</span>
           </div>
           <div class="invite-field">
             <label>Operating Status</label>
@@ -232,12 +247,48 @@
           </div>
           <div class="invite-field">
             <label>Usual Operating Days</label>
-            <input type="text" name="operating_days" value="{{ old('operating_days') }}" placeholder="Monday–Saturday" maxlength="150">
+            <input type="hidden" id="operatingDays" name="operating_days" value="{{ old('operating_days') }}">
+            <div class="schedule-row">
+              <div>
+                <label class="schedule-label" for="operatingDaysFrom">From</label>
+                <select id="operatingDaysFrom">
+                  <option value="">Select day</option>
+                  @foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as $day)
+                    <option value="{{ $day }}">{{ $day }}</option>
+                  @endforeach
+                </select>
+              </div>
+              <div>
+                <label class="schedule-label" for="operatingDaysTo">To</label>
+                <select id="operatingDaysTo">
+                  <option value="">Select day</option>
+                  @foreach (['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as $day)
+                    <option value="{{ $day }}">{{ $day }}</option>
+                  @endforeach
+                </select>
+              </div>
+            </div>
+            <span class="schedule-note">Choose the usual first and last operating day.</span>
             <small class="field-error">@error('operating_days'){{ $message }}@enderror</small>
           </div>
           <div class="invite-field full">
             <label>Usual Operating Hours</label>
-            <input type="text" name="operating_hours" value="{{ old('operating_hours') }}" placeholder="8:00 AM–5:00 PM" maxlength="100">
+            <input type="hidden" id="operatingHours" name="operating_hours" value="{{ old('operating_hours') }}">
+            <div class="schedule-row">
+              <div>
+                <label class="schedule-label" for="operatingHoursFrom">Opens at</label>
+                <div class="time-control">
+                  <input type="time" id="operatingHoursFrom" aria-label="Opening time">
+                </div>
+              </div>
+              <div>
+                <label class="schedule-label" for="operatingHoursTo">Closes at</label>
+                <div class="time-control">
+                  <input type="time" id="operatingHoursTo" aria-label="Closing time">
+                </div>
+              </div>
+            </div>
+            <span class="schedule-note">Use the clock control to choose opening and closing times.</span>
             <small class="field-error">@error('operating_hours'){{ $message }}@enderror</small>
           </div>
           <div class="invite-field full">
@@ -329,7 +380,7 @@
                 +639
               </span>
               <input type="tel" id="phoneLocal" inputmode="numeric" autocomplete="off"
-                     maxlength="9" placeholder="171234567"
+                     maxlength="9" placeholder="0000 000 00"
                      value="{{ old('phone') ? substr(preg_replace('/\D/', '', old('phone')), -9) : '' }}">
             </div>
             <small class="field-error">@error('phone'){{ $message }}@enderror</small>
@@ -398,6 +449,104 @@
       var phoneLocal = document.getElementById('phoneLocal');
       var phoneHidden = form.querySelector('input[name="phone"]');
       var submitBtn = document.getElementById('storeSubmitBtn');
+      var yearEstablished = document.getElementById('yearEstablished');
+      var yearsOperating = document.getElementById('yearsOperating');
+      var operatingDays = document.getElementById('operatingDays');
+      var operatingDaysFrom = document.getElementById('operatingDaysFrom');
+      var operatingDaysTo = document.getElementById('operatingDaysTo');
+      var operatingHours = document.getElementById('operatingHours');
+      var operatingHoursFrom = document.getElementById('operatingHoursFrom');
+      var operatingHoursTo = document.getElementById('operatingHoursTo');
+      var currentYear = {{ now()->year }};
+
+      function syncYears(source) {
+        var established = parseInt(yearEstablished.value, 10);
+        var operating = parseInt(yearsOperating.value, 10);
+
+        if (source === 'established' && Number.isInteger(established)) {
+          if (established >= 1900 && established <= currentYear) {
+            yearsOperating.value = currentYear - established;
+          } else {
+            yearsOperating.value = '';
+          }
+        }
+
+        if (source === 'operating' && Number.isInteger(operating)) {
+          if (operating >= 0 && operating <= 200) {
+            yearEstablished.value = currentYear - operating;
+          } else {
+            yearEstablished.value = '';
+          }
+        }
+      }
+
+      function setSelectFromStoredDays() {
+        var stored = (operatingDays.value || '').replace(/\s*[–—-]\s*/g, '-');
+        var parts = stored.split('-');
+        if (parts.length === 2) {
+          operatingDaysFrom.value = parts[0].trim();
+          operatingDaysTo.value = parts[1].trim();
+        }
+      }
+
+      function updateStoredDays() {
+        operatingDays.value = operatingDaysFrom.value && operatingDaysTo.value
+          ? operatingDaysFrom.value + '-' + operatingDaysTo.value
+          : '';
+      }
+
+      function toDisplayTime(value) {
+        var parts = (value || '').split(':');
+        if (parts.length !== 2) return '';
+        var hour = parseInt(parts[0], 10);
+        var minute = parts[1];
+        if (!Number.isInteger(hour) || !/^\d{2}$/.test(minute)) return '';
+        var suffix = hour >= 12 ? 'PM' : 'AM';
+        var displayHour = hour % 12 || 12;
+        return displayHour + ':' + minute + ' ' + suffix;
+      }
+
+      function fromDisplayTime(value) {
+        var match = (value || '').trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        if (!match) return '';
+        var hour = parseInt(match[1], 10);
+        var minute = match[2];
+        var suffix = match[3].toUpperCase();
+        if (hour < 1 || hour > 12) return '';
+        if (suffix === 'PM' && hour !== 12) hour += 12;
+        if (suffix === 'AM' && hour === 12) hour = 0;
+        return String(hour).padStart(2, '0') + ':' + minute;
+      }
+
+      function setTimesFromStoredHours() {
+        var stored = (operatingHours.value || '').trim();
+        var parts = stored.split(/\s*[-–—]\s*/);
+        if (parts.length === 2) {
+          operatingHoursFrom.value = fromDisplayTime(parts[0]);
+          operatingHoursTo.value = fromDisplayTime(parts[1]);
+        }
+      }
+
+      function updateStoredHours() {
+        operatingHours.value = operatingHoursFrom.value && operatingHoursTo.value
+          ? toDisplayTime(operatingHoursFrom.value) + '-' + toDisplayTime(operatingHoursTo.value)
+          : '';
+      }
+
+      yearEstablished.addEventListener('input', function () { syncYears('established'); });
+      yearsOperating.addEventListener('input', function () { syncYears('operating'); });
+      operatingDaysFrom.addEventListener('change', updateStoredDays);
+      operatingDaysTo.addEventListener('change', updateStoredDays);
+      operatingHoursFrom.addEventListener('change', updateStoredHours);
+      operatingHoursTo.addEventListener('change', updateStoredHours);
+      setSelectFromStoredDays();
+      setTimesFromStoredHours();
+
+      if (!yearEstablished.value && yearsOperating.value) {
+        syncYears('operating');
+      } else if (yearEstablished.value && !yearsOperating.value) {
+        syncYears('established');
+      }
 
       phoneLocal.addEventListener('input', function () {
         this.value = this.value.replace(/\D/g, '').slice(0, 9);
@@ -419,6 +568,8 @@
       });
 
       form.addEventListener('submit', function (e) {
+        updateStoredDays();
+        updateStoredHours();
         var digits = phoneLocal.value.replace(/\D/g, '');
         if (digits.length > 0 && digits.length !== 9) {
           e.preventDefault();

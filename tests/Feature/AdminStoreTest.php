@@ -147,6 +147,11 @@ class AdminStoreTest extends TestCase
             ->assertSee('Register a Store')
             ->assertSee('name="store_name"', false)
             ->assertSee('name="first_name"', false)
+            ->assertSee('id="operatingDaysFrom"', false)
+            ->assertSee('id="operatingDaysTo"', false)
+            ->assertSee('id="operatingHoursFrom"', false)
+            ->assertSee('id="operatingHoursTo"', false)
+            ->assertSee('placeholder="0000 000 00"', false)
             ->assertDontSee('Choose a Member');
     }
 
