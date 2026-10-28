@@ -57,3 +57,8 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# Aquilala System
+
+> **Deployment reference:** Read [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)
+> before deploying. It documents the Azure VM layout and safe manual release
+> procedure without storing private credentials.
