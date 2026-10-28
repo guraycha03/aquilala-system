@@ -39,13 +39,17 @@
     .invite-field label { display: block; font-size: 12px; font-weight: 700; color: #3d4a41; margin-bottom: 6px; }
     .invite-field label .req { color: #dc2626; }
     .invite-field input,
-    .invite-field select {
+    .invite-field select,
+    .invite-field textarea {
       width: 100%; padding: 11px 13px; border: 1px solid #e2e8f0; border-radius: 9px;
       font-size: 14px; background: #fafbfa; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
       box-sizing: border-box; color: #334155; font-family: inherit;
     }
+    .invite-field textarea { min-height: 92px; resize: vertical; line-height: 1.5; }
+    .invite-field input[type="file"] { padding: 9px 10px; background: #fff; }
     .invite-field input:focus,
-    .invite-field select:focus { border-color: #8FB89A; box-shadow: 0 0 0 3px rgba(93,194,87,0.18); }
+    .invite-field select:focus,
+    .invite-field textarea:focus { border-color: #8FB89A; box-shadow: 0 0 0 3px rgba(93,194,87,0.18); }
     .invite-field input[readonly] { background: #f1f4f1; color: #5b6b60; cursor: default; }
     .field-error { display: block; min-height: 16px; font-size: 11px; color: #dc2626; margin-top: 4px; }
     .field-note { display: block; font-size: 11px; color: #94a3b8; margin-top: 4px; line-height: 1.45; }
@@ -115,17 +119,17 @@
 
     <div class="header-row">
       <h1>Register a Store</h1>
-      <p>A store account belongs to an outside business — it does not make the owner a member of the association. The owner is emailed a
-         6&#8209;digit activation code and chooses their own password on first sign&#8209;in.</p>
+      <p>This is an administrator-only transcription of the store's paper application submitted in person.
+         Complete the business and owner sections from the offline form; the store owner does not fill this out.
+         The owner is emailed a 6&#8209;digit activation code and chooses their own password on first sign&#8209;in.</p>
     </div>
 
     <div class="form-card">
       <div class="rule-strip">
         <svg viewBox="0 0 24 24"><path d="M21 10c0-7-9-13-9-13s-9 6-9 13a9 9 0 0 0 18 0z"/><circle cx="12" cy="10" r="3"/><path d="M2 10h.01"/><path d="M22 10h.01"/></svg>
         <span>
-          After registering, the store appears in the list with an empty paperwork file.
-          <b>Legal papers are filed one at a time</b> from the store's own page — pick the document type from the
-          dropdown, attach that one file, and add the next.
+          Enter the information exactly as it appears on the paper application. You may attach the important legal
+          papers received with it now; <b>additional papers can be filed later</b> from the store's own page.
         </span>
       </div>
 
@@ -136,7 +140,7 @@
         </div>
       @endif
 
-      <form method="POST" action="{{ route('admin.stores.store') }}" id="storeForm" novalidate>
+      <form method="POST" action="{{ route('admin.stores.store') }}" id="storeForm" enctype="multipart/form-data" novalidate>
         @csrf
         <input type="hidden" name="phone" value="{{ old('phone') }}">
 
@@ -146,6 +150,66 @@
             <label>Store / Business Name <span class="req">*</span></label>
             <input type="text" name="store_name" value="{{ old('store_name') }}" placeholder="Aquilala Agri Depot" maxlength="255">
             <small class="field-error">@error('store_name'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field">
+            <label>Business Type</label>
+            <input type="text" name="business_type" value="{{ old('business_type') }}" placeholder="Agricultural supply store or service provider" maxlength="100">
+            <small class="field-error">@error('business_type'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field">
+            <label>Ownership Type</label>
+            <select name="ownership_type">
+              <option value="">— select ownership —</option>
+              @foreach (['Sole proprietorship', 'Partnership', 'Corporation', 'Cooperative', 'Other'] as $ownership)
+                <option value="{{ $ownership }}" @selected(old('ownership_type') === $ownership)>{{ $ownership }}</option>
+              @endforeach
+            </select>
+            <small class="field-error">@error('ownership_type'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field full">
+            <label>Business / Store Description</label>
+            <textarea name="business_description" maxlength="2000" placeholder="Describe the store's agricultural services, clientele, and main activities. Do not list products.">{{ old('business_description') }}</textarea>
+            <small class="field-error">@error('business_description'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field">
+            <label>Business Registration No.</label>
+            <input type="text" name="business_registration_number" value="{{ old('business_registration_number') }}" placeholder="DTI / SEC / cooperative number" maxlength="100">
+            <small class="field-error">@error('business_registration_number'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field">
+            <label>Tax Identification No.</label>
+            <input type="text" name="tax_identification_number" value="{{ old('tax_identification_number') }}" placeholder="TIN, if stated on the application" maxlength="50">
+            <small class="field-error">@error('tax_identification_number'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field">
+            <label>Year Established</label>
+            <input type="number" name="year_established" value="{{ old('year_established') }}" min="1900" max="{{ now()->year }}" placeholder="{{ now()->year }}">
+            <small class="field-error">@error('year_established'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field">
+            <label>Years Operating</label>
+            <input type="number" name="years_operating" value="{{ old('years_operating') }}" min="0" max="200" placeholder="e.g. 8">
+            <small class="field-error">@error('years_operating'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field">
+            <label>Operating Status</label>
+            <select name="operating_status">
+              <option value="">— select status —</option>
+              @foreach (['Currently operating', 'Seasonal', 'Temporarily closed'] as $status)
+                <option value="{{ $status }}" @selected(old('operating_status') === $status)>{{ $status }}</option>
+              @endforeach
+            </select>
+            <small class="field-error">@error('operating_status'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field">
+            <label>Usual Operating Days</label>
+            <input type="text" name="operating_days" value="{{ old('operating_days') }}" placeholder="Monday–Saturday" maxlength="150">
+            <small class="field-error">@error('operating_days'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field full">
+            <label>Usual Operating Hours</label>
+            <input type="text" name="operating_hours" value="{{ old('operating_hours') }}" placeholder="8:00 AM–5:00 PM" maxlength="100">
+            <small class="field-error">@error('operating_hours'){{ $message }}@enderror</small>
           </div>
           <div class="invite-field full">
             <label>Street Address <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
@@ -193,6 +257,31 @@
             <small class="field-error">@error('last_name'){{ $message }}@enderror</small>
           </div>
           <div class="invite-field">
+            <label>Sex</label>
+            <select name="sex">
+              <option value="">— select —</option>
+              @foreach (['Female', 'Male', 'Prefer not to say'] as $sex)
+                <option value="{{ $sex }}" @selected(old('sex') === $sex)>{{ $sex }}</option>
+              @endforeach
+            </select>
+            <small class="field-error">@error('sex'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field">
+            <label>Birth Date</label>
+            <input type="date" name="birth_date" value="{{ old('birth_date') }}">
+            <small class="field-error">@error('birth_date'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field">
+            <label>Civil Status</label>
+            <select name="civil_status">
+              <option value="">— select —</option>
+              @foreach (['Single', 'Married', 'Widowed', 'Separated', 'Prefer not to say'] as $status)
+                <option value="{{ $status }}" @selected(old('civil_status') === $status)>{{ $status }}</option>
+              @endforeach
+            </select>
+            <small class="field-error">@error('civil_status'){{ $message }}@enderror</small>
+          </div>
+          <div class="invite-field">
             <label>Phone <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
             <div class="phone-row">
               <span class="phone-prefix" title="Philippine mobile numbers only — prefix is fixed">
@@ -224,6 +313,36 @@
               The owner signs in with this address and receives the activation code here.
             </small>
           </div>
+          <div class="invite-field full">
+            <label>Owner's Residential Address</label>
+            <input type="text" name="owner_address" value="{{ old('owner_address') }}" placeholder="House number, street, barangay, city and province" maxlength="500">
+            <small class="field-error">@error('owner_address'){{ $message }}@enderror</small>
+          </div>
+        </div>
+
+        <div class="section-title spaced">Legal Papers from the Offline Application</div>
+        <p style="font-size:12px;color:#64748b;line-height:1.55;margin:-6px 0 16px;">
+          Attach up to five scanned or photographed papers received from the store. Select the matching paper type for each file.
+          PDFs, JPGs and PNGs up to 10 MB are accepted.
+        </p>
+        <div class="form-grid">
+          @for ($i = 0; $i < 5; $i++)
+            <div class="invite-field">
+              <label>Paper {{ $i + 1 }} type</label>
+              <select name="legal_document_types[{{ $i }}]">
+                <option value="">— no paper —</option>
+                @foreach (\App\Models\StoreDocument::TYPES as $type)
+                  <option value="{{ $type }}" @selected(old("legal_document_types.$i") === $type)>{{ $type }}</option>
+                @endforeach
+              </select>
+              <small class="field-error">@error("legal_document_types.$i"){{ $message }}@enderror</small>
+            </div>
+            <div class="invite-field">
+              <label>Paper {{ $i + 1 }} file</label>
+              <input type="file" name="legal_files[{{ $i }}]" accept=".pdf,.jpg,.jpeg,.png">
+              <small class="field-error">@error("legal_files.$i"){{ $message }}@enderror</small>
+            </div>
+          @endfor
         </div>
 
         <div class="form-actions">

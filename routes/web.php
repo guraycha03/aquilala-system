@@ -476,6 +476,12 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::post('/users/create/admin', [AdminUserController::class, 'storeAdmin'])
             ->middleware('throttle:admin-grant')
             ->name('users.storeAdmin');
+        Route::post('/users/create/admin/request-key', [AdminUserController::class, 'requestAdminCreationKey'])
+            ->middleware('throttle:admin-grant')
+            ->name('users.requestAdminCreationKey');
+        Route::post('/users/create/admin/verify-key', [AdminUserController::class, 'verifyAdminCreationKey'])
+            ->middleware('throttle:admin-grant')
+            ->name('users.verifyAdminCreationKey');
         // One account's profile — same personal data as the registry above.
         Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])
             ->name('users.edit')

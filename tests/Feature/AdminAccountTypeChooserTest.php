@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\ActivationOtpMail;
+use App\Mail\AdminCreationKeyMail;
 use App\Models\ActivityLog;
 use App\Models\Member;
 use App\Models\User;
@@ -75,6 +76,23 @@ class AdminAccountTypeChooserTest extends TestCase
         ], $overrides);
     }
 
+    private function unlockAdminCreation(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.users.requestAdminCreationKey'), [
+                'password' => 'password123',
+            ])
+            ->assertRedirect();
+
+        $keyMail = Mail::sent(AdminCreationKeyMail::class)->last();
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.users.verifyAdminCreationKey'), [
+                'key' => $keyMail->key,
+            ])
+            ->assertRedirect(route('admin.users.create', ['type' => 'admin']));
+    }
+
     // ── The chooser itself ────────────────────────────────────────
 
     #[Test]
@@ -122,6 +140,14 @@ class AdminAccountTypeChooserTest extends TestCase
         $this->actingAs($this->admin())
             ->get(route('admin.users.create', ['type' => 'admin']))
             ->assertOk()
+            ->assertSee('Verify administrator creation')
+            ->assertSee('Email Security Key');
+
+        $this->unlockAdminCreation();
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.users.create', ['type' => 'admin']))
+            ->assertOk()
             ->assertSee('Create an Administrator Account')
             ->assertSee(route('admin.users.storeAdmin'), false)
             ->assertSee('Your Password')
@@ -132,6 +158,8 @@ class AdminAccountTypeChooserTest extends TestCase
     #[Test]
     public function test_an_administrator_account_is_created_behind_the_step_up_check(): void
     {
+        $this->unlockAdminCreation();
+
         $this->actingAs($this->admin())
             ->post(route('admin.users.storeAdmin'), $this->validAdminPayload())
             ->assertRedirect(route('admin.users.index'))
@@ -164,9 +192,9 @@ class AdminAccountTypeChooserTest extends TestCase
     public function test_a_wrong_step_up_password_creates_nothing(): void
     {
         $this->actingAs($this->admin())
-            ->post(route('admin.users.storeAdmin'), $this->validAdminPayload([
+            ->post(route('admin.users.requestAdminCreationKey'), [
                 'password' => 'not-the-granters-password',
-            ]))
+            ])
             ->assertSessionHasErrors('password');
 
         $this->assertDatabaseMissing('users', ['email' => 'miguel.admin@example.com']);
@@ -175,6 +203,8 @@ class AdminAccountTypeChooserTest extends TestCase
     #[Test]
     public function test_the_consent_box_must_be_ticked(): void
     {
+        $this->unlockAdminCreation();
+
         $this->actingAs($this->admin())
             ->post(route('admin.users.storeAdmin'), $this->validAdminPayload([
                 'confirm' => null,
@@ -191,6 +221,8 @@ class AdminAccountTypeChooserTest extends TestCase
             'name' => 'Someone Else', 'email' => 'miguel.admin@example.com',
             'role' => 'store_owner', 'password' => 'password123',
         ]);
+
+        $this->unlockAdminCreation();
 
         $this->actingAs($this->admin())
             ->post(route('admin.users.storeAdmin'), $this->validAdminPayload())
@@ -239,6 +271,8 @@ class AdminAccountTypeChooserTest extends TestCase
     #[Test]
     public function test_the_invited_administrator_can_activate_and_reach_the_admin_dashboard(): void
     {
+        $this->unlockAdminCreation();
+
         $this->actingAs($this->admin())
             ->post(route('admin.users.storeAdmin'), $this->validAdminPayload())
             ->assertRedirect(route('admin.users.index'));

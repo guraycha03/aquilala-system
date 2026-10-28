@@ -6,6 +6,7 @@ use App\Exceptions\Onboarding\DuplicateAccountException;
 use App\Exceptions\Onboarding\InvalidActivationTokenException;
 use App\Exceptions\Onboarding\MailDeliveryException;
 use App\Mail\AdminAccessGrantedMail;
+use App\Services\AdminCreationKeyService;
 use App\Models\ActivityLog;
 use App\Models\Member;
 use App\Models\User;
@@ -152,6 +153,10 @@ class AdminUserController extends Controller
         $type = $request->query('type');
 
         if ($type === 'admin') {
+            if (! $this->adminCreationIsVerified($request)) {
+                return view('admin.users.create-admin-gate');
+            }
+
             return view('admin.users.create-admin');
         }
 
@@ -173,6 +178,53 @@ class AdminUserController extends Controller
             ->get();
 
         return view('admin.users.create', ['member' => null, 'members' => $members]);
+    }
+
+    public function requestAdminCreationKey(Request $request): RedirectResponse
+    {
+        $admin = $request->user();
+        abort_unless($admin !== null && $admin->role === 'admin', 403);
+
+        $validated = $request->validate([
+            'password' => ['required', 'string'],
+        ], [
+            'password.required' => 'Enter your current administrator password.',
+        ]);
+
+        if (! Hash::check($validated['password'], (string) $admin->password)) {
+            return back()->withErrors(['password' => 'Your password is incorrect.']);
+        }
+
+        try {
+            $issued = AdminCreationKeyService::issue($admin);
+            AdminCreationKeyService::send($admin, $issued['key']);
+        } catch (MailDeliveryException $e) {
+            return back()->withErrors(['password' => $e->getMessage()]);
+        }
+
+        return redirect()
+            ->route('admin.users.create', ['type' => 'admin', 'step' => 'verify'])
+            ->with('success', "A one-time administrator creation key was sent to {$admin->email}.");
+    }
+
+    public function verifyAdminCreationKey(Request $request): RedirectResponse
+    {
+        $admin = $request->user();
+        abort_unless($admin !== null && $admin->role === 'admin', 403);
+
+        $validated = $request->validate([
+            'key' => ['required', 'string', 'max:100'],
+        ], [
+            'key.required' => 'Enter the one-time key from your email.',
+        ]);
+
+        if (! AdminCreationKeyService::verify($admin, $validated['key'])) {
+            return back()->withErrors(['key' => 'That key is invalid, expired, already used, or has too many failed attempts. Request a new key.']);
+        }
+
+        $request->session()->put('admin_creation_verified_until', now()->addMinutes(AdminCreationKeyService::TTL_MINUTES)->timestamp);
+
+        return redirect()->route('admin.users.create', ['type' => 'admin']);
     }
 
     /**
@@ -478,6 +530,12 @@ class AdminUserController extends Controller
         // The route sits behind role:admin, but the invariant belongs here too.
         abort_unless($granter !== null && $granter->role === 'admin', 403);
 
+        if (! $this->adminCreationIsVerified($request)) {
+            return redirect()
+                ->route('admin.users.create', ['type' => 'admin'])
+                ->withErrors(['key' => 'Verify the emailed administrator creation key before submitting this form.']);
+        }
+
         $emailRule = app()->environment('production') ? 'email:rfc,dns,spoof' : 'email:rfc';
 
         $validated = $request->validate([
@@ -548,6 +606,8 @@ class AdminUserController extends Controller
         $message = $delivery && empty($delivery['sent'])
             ? "{$user->name}'s administrator account was created, but the activation email could not be sent — {$delivery['error']} Use Resend Invitation on the Users list once a sender domain is configured."
             : "{$user->name}'s administrator account was created. They can now sign in with {$user->email}, enter the 6-digit activation code we emailed them, and set their own password.";
+
+        $request->session()->forget('admin_creation_verified_until');
 
         return redirect()
             ->route('admin.users.index')
@@ -715,5 +775,18 @@ class AdminUserController extends Controller
         }
 
         return back()->withErrors([$field => $message])->withInput();
+    }
+
+    private function adminCreationIsVerified(Request $request): bool
+    {
+        $until = (int) $request->session()->get('admin_creation_verified_until', 0);
+
+        if ($until <= now()->timestamp) {
+            $request->session()->forget('admin_creation_verified_until');
+
+            return false;
+        }
+
+        return true;
     }
 }
