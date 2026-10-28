@@ -139,6 +139,16 @@
   }
   .admin-ai-avatar svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .admin-ai-new { margin-left: auto; }
+  /* Header order: New chat first (left), history last (right). The chat
+     shell clips anything that runs past its own box, so the history card is
+     positioned against the window instead — placeHistoryPanel() below sets
+     its left/top when it opens, which keeps it fully on screen. */
+  .admin-ai-page .history-wrap { margin-left: auto; }
+  .admin-ai-page .history-dropdown {
+    position: fixed;
+    top: auto; right: auto;
+    max-width: calc(100vw - 24px);
+  }
   .admin-ai-suggestions {
     display: flex;
     flex-wrap: wrap;
@@ -183,6 +193,7 @@
           <div class="header-title">AI Insight</div>
           <div class="header-status"><div class="status-dot"></div>Admin data assistant</div>
         </div>
+        <button id="aiClearBtn" class="chip admin-ai-new" type="button" onclick="resetChat()">New chat</button>
         <div class="history-wrap">
           <button class="history-btn" id="adminHistoryBtn" type="button" aria-label="Chat history" title="Chat history">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -199,7 +210,6 @@
             <div class="history-list" id="adminHistoryList"></div>
           </div>
         </div>
-        <button id="aiClearBtn" class="chip admin-ai-new" type="button" onclick="resetChat()">New chat</button>
       </div>
       <div class="chat-messages" id="aiChatLog" role="log" aria-live="polite">
         <div class="message-row">
@@ -230,6 +240,7 @@
           <div class="header-title">AI Insight</div>
           <div class="header-status"><div class="status-dot"></div>Admin data assistant</div>
         </div>
+        <button id="aiClearBtn" class="chip admin-ai-new" type="button" onclick="resetChat()">New chat</button>
         <div class="history-wrap">
           <button class="history-btn" id="adminHistoryBtn" type="button" aria-label="Chat history" title="Chat history">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -246,7 +257,6 @@
             <div class="history-list" id="adminHistoryList"></div>
           </div>
         </div>
-        <button id="aiClearBtn" class="chip admin-ai-new" type="button" onclick="resetChat()">New chat</button>
       </div>
 
       <div id="aiChatLog" class="chat-messages" role="log" aria-live="polite">
@@ -598,10 +608,51 @@
       var initialLog = chatLog();
       chatInitial = initialLog ? initialLog.innerHTML : '';
     }
+
+    // The chat shell (and the page itself) clip overflow, so a card anchored
+    // inside the header gets cut off at an edge. Place it against the window
+    // instead: right-aligned under the history button, flipped above it when
+    // the space below runs out, and capped to whatever room is left so it
+    // never hangs off the screen.
+    function placeHistoryPanel() {
+      if (!dropdown.classList.contains('open')) return;
+      var rect = button.getBoundingClientRect();
+      var margin = 12;
+
+      // Measure the panel at its natural size first, or a height left over
+      // from a previous (shorter) window would hide how much room it really
+      // needs on this one.
+      dropdown.style.maxHeight = '';
+      var width = dropdown.offsetWidth;
+      var height = dropdown.offsetHeight;
+
+      var left = rect.right - width;
+      if (left < margin) left = margin;
+      if (left + width > window.innerWidth - margin) left = window.innerWidth - width - margin;
+
+      var top = rect.bottom + 8;
+      if (top + height > window.innerHeight - margin) top = rect.top - 8 - height;
+      if (top < margin) top = margin;
+
+      var room = window.innerHeight - top - margin;
+      dropdown.style.left = Math.round(left) + 'px';
+      dropdown.style.top = Math.round(top) + 'px';
+      dropdown.style.maxHeight = Math.round(Math.max(room, 160)) + 'px';
+    }
+
     button.addEventListener('click', function () {
       dropdown.classList.toggle('open');
-      if (dropdown.classList.contains('open')) refreshAdminHistories();
+      if (dropdown.classList.contains('open')) {
+        placeHistoryPanel();
+        refreshAdminHistories();
+      }
     });
+    // Reposition while it is open: the window can change, and the list grows
+    // or shrinks as histories load and are deleted.
+    window.addEventListener('resize', placeHistoryPanel);
+    if (window.MutationObserver) {
+      new MutationObserver(placeHistoryPanel).observe(list, { childList: true });
+    }
     newChat.addEventListener('click', function () {
       resetChat();
       dropdown.classList.remove('open');

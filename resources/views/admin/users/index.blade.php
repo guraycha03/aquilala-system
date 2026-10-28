@@ -101,11 +101,13 @@
 
     /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
     .user-cell { display: flex; align-items: center; gap: 11px; min-width: 0; }
-    .user-avatar {
+    /* Scoped to the table cell: an unscoped .user-avatar rule is emitted after
+       the layout's own avatar rules and would restyle the sidebar profile. */
+    .user-cell .user-avatar {
       width: 36px; height: 36px; border-radius: 10px; background: #edf1e9; color: #648268;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .user-avatar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .user-cell .user-avatar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .user-cell .u-name { font-weight: 600; color: #1e293b; white-space: nowrap; }
     .user-cell .u-mail { font-size: 11px; color: #94a3b8; margin-top: 1px; }
     .role-badge { display: inline-block; padding: 3px 10px; border-radius: 7px; font-size: 11px; font-weight: 700; white-space: nowrap; }

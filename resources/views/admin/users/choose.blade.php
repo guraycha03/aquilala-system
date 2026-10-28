@@ -96,14 +96,18 @@
       {{-- ── Store owners: their form lives on the Stores page ────────── --}}
       <a class="type-card" href="{{ route('admin.stores.create') }}">
         <span class="type-icon">
-          <svg viewBox="0 0 24 24"><path d="M6 7h12l1 13H5z"/><path d="M9 7a3 3 0 0 1 6 0"/><path d="M3 7h18"/></svg>
+          <svg viewBox="0 0 24 24">
+            <path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/>
+            <path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/>
+            <path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/>
+          </svg>
         </span>
         <span class="t-sub">For an accredited supply store</span>
         <h2>Store Owner Account</h2>
         <p>Register a store and its owner together on the Stores page — business details and the sign-in account
            in one form. Legal papers are filed afterwards, from the store's own page.</p>
         <span class="type-go">
-          Open the store form
+          Create store owner account
           <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </span>
       </a>
@@ -111,14 +115,18 @@
       {{-- ── Administrators: typed in, behind a password re-check ─────── --}}
       <a class="type-card" href="{{ route('admin.users.create', ['type' => 'admin']) }}">
         <span class="type-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+          <svg viewBox="0 0 24 24">
+            <path d="M10 15H6a4 4 0 0 0-4 4v2"/>
+            <path d="M22 17.5c0 2.499-1.75 3.749-3.83 4.474a.5.5 0 0 1-.335-.005c-2.085-.72-3.835-1.97-3.835-4.47V14a.5.5 0 0 1 .5-.499c1 0 2.25-.6 3.12-1.36a.6.6 0 0 1 .76-.001c.875.765 2.12 1.36 3.12 1.36a.5.5 0 0 1 .5.5z"/>
+            <circle cx="9" cy="7" r="4"/>
+          </svg>
         </span>
         <span class="t-sub">Full system access</span>
         <h2>Administrator Account</h2>
         <p>Manage members, accounts, stores and every association record. Because this is the highest level of
            access, the form asks for your own password and an explicit confirmation.</p>
         <span class="type-go">
-          Open the admin form
+          Create admin account
           <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </span>
       </a>

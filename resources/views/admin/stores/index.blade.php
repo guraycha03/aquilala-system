@@ -47,12 +47,14 @@
     }
     /* Table base style lives in the shared .data-table rules (layouts.sidebar). */
     .user-cell { display: flex; align-items: center; gap: 11px; min-width: 0; }
-    .user-avatar {
+    /* Scoped to the table cell: an unscoped .user-avatar rule is emitted after
+       the layout's own avatar rules and would repaint the sidebar profile. */
+    .user-cell .user-avatar {
       width: 36px; height: 36px; border-radius: 10px; background: rgb(172, 242, 121);
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .user-avatar img { width: 20px; height: 20px; object-fit: contain; }
-    .user-avatar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .user-cell .user-avatar img { width: 20px; height: 20px; object-fit: contain; }
+    .user-cell .user-avatar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .user-cell .u-name { font-weight: 600; color: #1e293b; white-space: nowrap; }
     .user-cell .u-mail { font-size: 11px; color: #94a3b8; margin-top: 1px; }
     .user-joined { font-size: 12px; color: #64748b; white-space: nowrap; }
