@@ -52,7 +52,6 @@
     .invite-field textarea:focus { border-color: #8FB89A; box-shadow: 0 0 0 3px rgba(93,194,87,0.18); }
     .invite-field input[readonly] { background: #f1f4f1; color: #5b6b60; cursor: default; }
     .field-error { display: block; min-height: 16px; font-size: 11px; color: #dc2626; margin-top: 4px; }
-    .field-note { display: block; font-size: 11px; color: #94a3b8; margin-top: 4px; line-height: 1.45; }
 
     /* Dropdowns: the same chevron treatment as the catalog filter selects —
        the native arrow is hidden and drawn back as a background so the full
@@ -79,7 +78,6 @@
       transform: translateY(-50%); pointer-events: none; opacity: .58;
       background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpolyline points='12 7 12 12 15 14'/%3E%3C/svg%3E") center / contain no-repeat;
     }
-    .schedule-note { display: block; font-size: 11px; color: #94a3b8; margin-top: 7px; line-height: 1.45; }
     @media (max-width: 480px) { .schedule-row { grid-template-columns: 1fr; gap: 10px; } }
 
     /* Date picker: same box as the text inputs, with the calendar icon
@@ -233,7 +231,6 @@
             <label>Years Operating</label>
             <input type="number" id="yearsOperating" name="years_operating" value="{{ old('years_operating') }}" min="0" max="200" placeholder="e.g. 8">
             <small class="field-error">@error('years_operating'){{ $message }}@enderror</small>
-            <span class="field-note">Enter either value and the other will be calculated using {{ now()->year }}.</span>
           </div>
           <div class="invite-field">
             <label>Operating Status</label>
@@ -268,7 +265,6 @@
                 </select>
               </div>
             </div>
-            <span class="schedule-note">Choose the usual first and last operating day.</span>
             <small class="field-error">@error('operating_days'){{ $message }}@enderror</small>
           </div>
           <div class="invite-field full">
@@ -288,7 +284,6 @@
                 </div>
               </div>
             </div>
-            <span class="schedule-note">Use the clock control to choose opening and closing times.</span>
             <small class="field-error">@error('operating_hours'){{ $message }}@enderror</small>
           </div>
           <div class="invite-field full">
@@ -305,7 +300,6 @@
               @endforeach
             </select>
             <small class="field-error">@error('barangay'){{ $message }}@enderror</small>
-            <span class="field-note">Bulan, Sorsogon's 63 barangays only.</span>
           </div>
           <div class="invite-field">
             <label>City / Municipality <span style="color:#94a3b8;font-weight:400;">(fixed)</span></label>
@@ -389,9 +383,6 @@
             <label>Email Address <span class="req">*</span></label>
             <input type="email" name="email" value="{{ old('email') }}" placeholder="store@example.com" autocomplete="off">
             <small class="field-error">@error('email'){{ $message }}@enderror</small>
-            <small style="display:block;font-size:11px;color:#94a3b8;margin-top:4px;">
-              The owner signs in with this address and receives the activation code here.
-            </small>
           </div>
           <div class="invite-field full">
             <label>Owner's Residential Address</label>
