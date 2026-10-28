@@ -54,6 +54,51 @@
     .field-error { display: block; min-height: 16px; font-size: 11px; color: #dc2626; margin-top: 4px; }
     .field-note { display: block; font-size: 11px; color: #94a3b8; margin-top: 4px; line-height: 1.45; }
 
+    /* Dropdowns: the same chevron treatment as the catalog filter selects —
+       the native arrow is hidden and drawn back as a background so the full
+       tap target the browser gives on phones is kept. */
+    .invite-field select {
+      -webkit-appearance: none; -moz-appearance: none; appearance: none;
+      padding-right: 34px;
+      background-color: #fafbfa;
+      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      cursor: pointer;
+    }
+    .invite-field select:hover { border-color: #b9cec0; }
+
+    /* Date picker: same box as the text inputs, with the calendar icon
+       tinted and clickable-looking the way the Weather Log dates behave. */
+    .invite-field input[type="date"] { cursor: pointer; }
+    .invite-field input[type="date"]::-webkit-calendar-picker-indicator {
+      opacity: 0.45; cursor: pointer; transition: opacity 0.15s ease;
+    }
+    .invite-field input[type="date"]:hover::-webkit-calendar-picker-indicator,
+    .invite-field input[type="date"]:focus::-webkit-calendar-picker-indicator { opacity: 0.8; }
+
+    /* File picker: a light button (same green family as the rest of the
+       admin, kept soft) instead of the raw browser control. The real input
+       stays in the DOM — only visually hidden — so the label still opens
+       the file dialog and the form still posts the file. */
+    .file-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .file-row input[type="file"] {
+      position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none;
+    }
+    .file-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: #edf1e9; color: #4A7A54;
+      border: 1.5px solid #d8e3db; border-radius: 9px;
+      padding: 9px 16px; font-size: 13px; font-weight: 700;
+      cursor: pointer; user-select: none;
+      transition: all 0.15s ease;
+    }
+    .file-btn:hover { background: #e4ece0; border-color: #b9cec0; transform: translateY(-1px); }
+    .file-btn:active { transform: translateY(0); }
+    .file-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .file-name { font-size: 12px; color: #94a3b8; word-break: break-all; }
+    .file-name.has-file { color: #4A7A54; font-weight: 600; }
+
     .phone-row {
       display: flex; align-items: stretch; border: 1px solid #e2e8f0; border-radius: 9px;
       background: #fafbfa; overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s;
@@ -101,14 +146,6 @@
     .btn-users svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .btn-users.ghost { background: #ffffff; color: #334c3e; border-color: #d8e3db; box-shadow: 0 1px 2px rgba(20,61,35,0.05); }
     .btn-users.ghost:hover { background: #f3f8f4; border-color: #b9cec0; color: #1e3829; transform: translateY(-1px); }
-
-    .rule-strip {
-      display: flex; align-items: flex-start; gap: 10px; padding: 13px 16px; border-radius: 12px;
-      background: #f3f8f4; border: 1px solid #dce8df; color: #2f4a39;
-      font-size: 13px; line-height: 1.55; margin-bottom: 22px;
-    }
-    .rule-strip svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; margin-top: 1px; }
-    .rule-strip b { color: #14532d; }
   </style>
 
   <div class="store-page">
@@ -125,14 +162,6 @@
     </div>
 
     <div class="form-card">
-      <div class="rule-strip">
-        <svg viewBox="0 0 24 24"><path d="M21 10c0-7-9-13-9-13s-9 6-9 13a9 9 0 0 0 18 0z"/><circle cx="12" cy="10" r="3"/><path d="M2 10h.01"/><path d="M22 10h.01"/></svg>
-        <span>
-          Enter the information exactly as it appears on the paper application. You may attach the important legal
-          papers received with it now; <b>additional papers can be filed later</b> from the store's own page.
-        </span>
-      </div>
-
       @if ($errors->any())
         <div class="form-alert error">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -339,7 +368,14 @@
             </div>
             <div class="invite-field">
               <label>Paper {{ $i + 1 }} file</label>
-              <input type="file" name="legal_files[{{ $i }}]" accept=".pdf,.jpg,.jpeg,.png">
+              <div class="file-row">
+                <input type="file" id="legal_file_{{ $i }}" name="legal_files[{{ $i }}]" accept=".pdf,.jpg,.jpeg,.png">
+                <label for="legal_file_{{ $i }}" class="file-btn">
+                  <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                  Choose file
+                </label>
+                <span class="file-name" data-file-name="{{ $i }}">No file chosen</span>
+              </div>
               <small class="field-error">@error("legal_files.$i"){{ $message }}@enderror</small>
             </div>
           @endfor
@@ -365,6 +401,21 @@
 
       phoneLocal.addEventListener('input', function () {
         this.value = this.value.replace(/\D/g, '').slice(0, 9);
+      });
+
+      // File picker buttons: show the chosen file name beside the button.
+      document.querySelectorAll('.file-row input[type="file"]').forEach(function (input) {
+        input.addEventListener('change', function () {
+          var nameEl = document.querySelector('[data-file-name="' + this.id.replace('legal_file_', '') + '"]');
+          if (!nameEl) return;
+          if (this.files && this.files.length) {
+            nameEl.textContent = this.files[0].name;
+            nameEl.classList.add('has-file');
+          } else {
+            nameEl.textContent = 'No file chosen';
+            nameEl.classList.remove('has-file');
+          }
+        });
       });
 
       form.addEventListener('submit', function (e) {

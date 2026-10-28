@@ -39,6 +39,33 @@ free-seed-release effect.
 Both importers accept CSV and XLSX, and both stop before writing anything
 until you confirm the preview.
 
+## Store owners — typed in by hand
+
+`store-info/` holds three copy-paste sheets (`01-maya-santos.txt`,
+`02-gina-gime.txt`, `03-alo-mantes.txt`) — one per owner, with every value
+sitting on its own line so it can be selected and pasted straight into
+**Admin → Stores → Add Store**. Dropdown choices are spelled exactly as the
+form's options show them (barangay, ownership, status, paper types), the
+phone is given as the 9 digits that follow the fixed `+639` prefix, and each
+owner's three sample PDFs are matched to their paper-type slots.
+
+`store-owners.txt` is the longer paper version of the same thing: the three
+owners field by field with rules and a paper trail, for reference. Store-owner
+accounts are never imported or seeded — each one is transcribed from its
+offline application, and the owner sets their own password with the emailed
+activation code.
+
+Nine PDFs — three per owner (`-maya-santos`, `-gina-gime`, `-alo-mantes`
+suffixes on `mayors-permit`, `barangay-clearance`, `dti-certificate`) — act as
+each owner's sample paperwork. They are specimen documents marked "SAMPLE —
+NOT VALID" with a watermark, a red banner and a footnote, signed by invented
+officials in a decorative script font (not any real person's signature). The
+dates tell one deliberately old, consistent story per owner: the DTI
+certificate carries the year the store was established (2020 / 2014 / 2011),
+and the barangay clearance and expired CY2023 mayor's permit were filed
+together in January 2023, cross-referencing each other's numbers. They are
+not real permits and must be replaced with the owners' actual scans.
+
 ## Regenerating
 
 ```bash

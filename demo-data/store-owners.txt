@@ -1,0 +1,225 @@
+===============================================================================
+ STORE OWNERS — MANUAL ENTRY SHEET
+ For: Admin → Stores → Add Store  (type these in by hand; nothing is imported)
+ Prepared for the deployed Aquilala system · values valid as of October 2026
+===============================================================================
+
+HOW TO USE THIS FILE
+  1. Sign in as admin → sidebar → Stores → "Add Store".
+  2. Type each owner's block below, section by section, in the same order the
+     form shows them.
+  3. Submit. The account is created as PENDING: a 6-digit activation code is
+     emailed to the address you typed, and the owner sets their own password
+     on first sign-in.
+  4. Repeat for the next owner.
+
+RULES THE FORM ENFORCES (from AdminStoreController::validateStore)
+  * REQUIRED — only four things: Store/Business Name, Owner First Name,
+    Owner Last Name, Email. Nothing else blocks the save.
+  * FIXED — City and Province are read-only and are overwritten server-side
+    to "Bulan" / "Sorsogon". Do not try to change them.
+  * BARANGAY — pick from the dropdown only (Bulan's 63 barangays); all three
+    below are in that list. Leaving it blank is allowed.
+  * PHONE — the "+639" prefix is already there, so type ONLY the 9 digits
+    after it. Optional, but it must not be already used by another account.
+  * EMAIL — must be new. It is the sign-in name AND where the activation code
+    goes, so use an inbox you can actually open (their real email, or one
+    you control).
+  * Tax ID and Business Registration No. are OPTIONAL — leave them blank
+    unless you are holding the owner's real certificate.
+  * Legal papers: up to 5 at once, each needs BOTH a type and a file, and the
+    type must be picked from the dropdown (free text is rejected). Zero papers
+    is fine; more can be filed later from the store's own page.
+
+-------------------------------------------------------------------------------
+ OWNER 1 of 3 — MAYA SANTOS        female, age 32 (born 12 June 1994)
+ Business since 2020 · sample papers for her are in THIS folder
+-------------------------------------------------------------------------------
+
+  STORE DETAILS
+    Store / Business Name *        : Santos Agri Supply
+    Business Type                  : Agricultural supply store
+    Ownership Type                 : Sole proprietorship
+    Business / Store Description   : Retail of agricultural inputs for rice and
+                                    corn farmers in the barangay — seeds,
+                                    fertilizers and crop protection products,
+                                    with seasonal pre-orders during the planting
+                                    period. Established in 2020 and serving
+                                    farmers of Bulan.
+    Business Registration No.      : (leave blank unless she gives you the DTI
+                                    certificate — see papers below)
+    Tax Identification No.         : (leave blank unless she states her TIN)
+    Year Established               : 2020
+    Years Operating                : 6
+    Operating Status               : Currently operating
+    Usual Operating Days           : Monday-Saturday
+    Usual Operating Hours          : 7:30 AM-5:30 PM
+    Street Address                 : Sitio Pulot
+    Barangay                       : San Francisco        <- dropdown
+    City / Municipality            : Bulan                (locked)
+    Province                       : Sorsogon             (locked)
+
+  OWNER'S ACCOUNT
+    First Name *                   : Maya
+    Middle Name                    : M.
+    Last Name *                    : Santos
+    Sex                            : Female
+    Birth Date                     : 1994-06-12           (date picker)
+    Civil Status                   : Married
+    Phone                          : 171234567            (9 digits = +639171234567)
+    Email *                        : maya.santos.bulan@gmail.com
+    Owner's Residential Address    : Sitio Pulot, Barangay San Francisco,
+                                    Bulan, Sorsogon
+
+  LEGAL PAPERS FROM THE OFFLINE APPLICATION  (this folder)
+    Paper 1 type                   : Mayor's Permit / Business Permit
+    Paper 1 file                   : mayors-permit-maya-santos.pdf
+    Paper 2 type                   : Barangay Clearance
+    Paper 2 file                   : barangay-clearance-maya-santos.pdf
+    Paper 3 type                   : DTI or SEC Certificate of Registration
+    Paper 3 file                   : dti-certificate-maya-santos.pdf
+    Papers 4 and 5                 : "— no paper —"
+
+  PAPER TRAIL — one consistent, deliberately OLD story (matches her details)
+    2020  opens Santos Agri Supply; DTI certificate issued 12 March 2020
+          (same date as Year Established; she was 25 at the time)
+    2023  barangay clearance issued 9 January 2023 (Control BGF-SF-2023-0064);
+          the CY2023 mayor's permit follows on 16 January 2023
+          (BP-2023-BLN-03917, OR 0064218) citing that clearance — the permit
+          says "3 years operating" because it was written in 2023
+    2026  this system record; Years Operating above is the CURRENT count (6)
+    NOTE: the three PDFs are SPECIMENS marked "SAMPLE — NOT VALID", signed with
+    invented names in a script font. They show the paperwork screen, not proof
+    of a real permit. Replace them with her actual scans before this record is
+    relied on. The permit expired 31 December 2023 on purpose — it is an old
+    paper on file, not a current one.
+
+-------------------------------------------------------------------------------
+ OWNER 2 of 3 — GINA GIME          female, age 47 (born 14 February 1979)
+-------------------------------------------------------------------------------
+
+  STORE DETAILS
+    Store / Business Name *        : Gime Agri-Trading
+    Business Type                  : Farm inputs and feed store
+    Ownership Type                 : Sole proprietorship
+    Business / Store Description   : Retail of farm inputs and animal feed for
+                                    smallholder farmers and households, with
+                                    credit arrangements during the planting
+                                    season and buying of surplus produce for
+                                    local resale.
+    Business Registration No.      : (blank unless she has a DTI/SEC certificate)
+    Tax Identification No.         : (blank unless she states her TIN)
+    Year Established               : 2014
+    Years Operating                : 12
+    Operating Status               : Currently operating
+    Usual Operating Days           : Monday-Saturday
+    Usual Operating Hours          : 6:00 AM-5:00 PM
+    Street Address                 : Sitio Pulot
+    Barangay                       : San Francisco        <- dropdown
+    City / Municipality            : Bulan                (locked)
+    Province                       : Sorsogon             (locked)
+
+  OWNER'S ACCOUNT
+    First Name *                   : Gina
+    Middle Name                    : D.
+    Last Name *                    : Gime
+    Sex                            : Female
+    Birth Date                     : 1979-02-14           (date picker)
+    Civil Status                   : Married
+    Phone                          : 176554321            (9 digits = +639176554321)
+    Email *                        : gina.gime.bulan@gmail.com
+    Owner's Residential Address    : Sitio Pulot, Barangay San Francisco,
+                                    Bulan, Sorsogon
+
+  LEGAL PAPERS                      (sample papers are in THIS folder)
+    Paper 1 type                   : Mayor's Permit / Business Permit
+    Paper 1 file                   : mayors-permit-gina-gime.pdf
+    Paper 2 type                   : Barangay Clearance
+    Paper 2 file                   : barangay-clearance-gina-gime.pdf
+    Paper 3 type                   : DTI or SEC Certificate of Registration
+    Paper 3 file                   : dti-certificate-gina-gime.pdf
+    Papers 4 and 5                 : "— no paper —"
+
+  PAPER TRAIL — one consistent, deliberately OLD story (matches her details)
+    2014  opens Gime Agri-Trading; DTI certificate issued 5 May 2014
+          (same date as Year Established; she was 35 at the time)
+    2023  barangay clearance issued 11 January 2023 (Control BGF-SF-2023-0067,
+          same barangay officials as Maya's — both stores are in San Francisco);
+          CY2023 mayor's permit on 17 January 2023 (BP-2023-BLN-03924,
+          OR 0064225) — says "9 years operating" because it was written in 2023
+    2026  this system record; Years Operating above is the CURRENT count (12)
+    NOTE: same as Maya — SPECIMENS marked "SAMPLE — NOT VALID", fictitious
+    signatories, expired permit on purpose. Replace with her real scans before
+    relying on the record.
+
+-------------------------------------------------------------------------------
+ OWNER 3 of 3 — ALO MANTES         male, age 45 (born 9 April 1981)
+-------------------------------------------------------------------------------
+
+  STORE DETAILS
+    Store / Business Name *        : Mantes Farm Supply
+    Business Type                  : Agricultural inputs and equipment store
+    Ownership Type                 : Sole proprietorship
+    Business / Store Description   : Retail of fertilizers, pesticides and small
+                                    farm implements, with after-sales servicing
+                                    and coordination of equipment repair for
+                                    farmer-customers in the northern barangays.
+    Business Registration No.      : (blank unless he has a DTI/SEC certificate)
+    Tax Identification No.         : (blank unless he states his TIN)
+    Year Established               : 2011
+    Years Operating                : 15
+    Operating Status               : Currently operating
+    Usual Operating Days           : Monday-Saturday
+    Usual Operating Hours          : 7:00 AM-6:00 PM
+    Street Address                 : Zone IV Poblacion
+    Barangay                       : Zone IV Pob.         <- dropdown
+    City / Municipality            : Bulan                (locked)
+    Province                       : Sorsogon             (locked)
+
+  OWNER'S ACCOUNT
+    First Name *                   : Alo
+    Middle Name                    : R.
+    Last Name *                    : Mantes
+    Sex                            : Male
+    Birth Date                     : 1981-04-09           (date picker)
+    Civil Status                   : Married
+    Phone                          : 178998765            (9 digits = +639178998765)
+    Email *                        : alo.mantes.bulan@gmail.com
+    Owner's Residential Address    : Zone IV Poblacion, Barangay Zone IV Pob.,
+                                    Bulan, Sorsogon
+
+  LEGAL PAPERS                      (sample papers are in THIS folder)
+    Paper 1 type                   : Mayor's Permit / Business Permit
+    Paper 1 file                   : mayors-permit-alo-mantes.pdf
+    Paper 2 type                   : Barangay Clearance
+    Paper 2 file                   : barangay-clearance-alo-mantes.pdf
+    Paper 3 type                   : DTI or SEC Certificate of Registration
+    Paper 3 file                   : dti-certificate-alo-mantes.pdf
+    Papers 4 and 5                 : "— no paper —"
+
+  PAPER TRAIL — one consistent, deliberately OLD story (matches his details)
+    2011  opens Mantes Farm Supply; DTI certificate issued 18 August 2011
+          (same date as Year Established; he was 30 at the time — the oldest
+          business of the three owners)
+    2023  barangay clearance issued 12 January 2023 (Control BZ4-2023-0041,
+          Zone IV Pob. officials); CY2023 mayor's permit on 18 January 2023
+          (BP-2023-BLN-03931, OR 0064231) — says "12 years operating"
+          because it was written in 2023
+    2026  this system record; Years Operating above is the CURRENT count (15)
+    NOTE: he lives and works in the town poblacion (both addresses are Zone IV
+    Pob.). Change the Street Address to another barangay line if you prefer his
+    store somewhere else — the papers above would then no longer match, so
+    regenerate or replace them too. Same specimen caveats as the others.
+
+-------------------------------------------------------------------------------
+ AFTER ALL THREE ARE CREATED
+-------------------------------------------------------------------------------
+  * Each store appears in Admin → Stores with status "pending" until its owner
+    signs in, enters the emailed 6-digit code and picks a password.
+  * If the activation email does not arrive (sender domain not configured on
+    the server yet), the store is still registered — use "Resend Invitation"
+    on the Admin → Users list once sending works.
+  * Add or remove papers any time: Stores → the store → file paper
+    (PDF/JPG/PNG up to 10 MB, one paper per upload).
+  * Correct anything later from Stores → Edit. City/Province stay fixed there
+    too; everything else stays editable.
