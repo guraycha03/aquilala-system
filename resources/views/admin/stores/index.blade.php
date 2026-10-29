@@ -50,10 +50,10 @@
     /* Scoped to the table cell: an unscoped .user-avatar rule is emitted after
        the layout's own avatar rules and would repaint the sidebar profile. */
     .user-cell .user-avatar {
-      width: 36px; height: 36px; border-radius: 10px; background: rgb(172, 242, 121);
+      width: 36px; height: 36px; border-radius: 10px; background: #f6f0e6; color: #a57f43;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .user-cell .user-avatar img { width: 20px; height: 20px; object-fit: contain; }
+    .user-cell .user-avatar .lucide { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
     .user-cell .user-avatar svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .user-cell .u-name { font-weight: 600; color: #1e293b; white-space: nowrap; }
     .user-cell .u-mail { font-size: 11px; color: #94a3b8; margin-top: 1px; }
@@ -177,7 +177,7 @@
                   <td>
                     <div class="user-cell">
                       <div class="user-avatar">
-                        <img src="{{ asset('images/store.png') }}" alt="Store">
+                        <i data-lucide="store" aria-label="Store"></i>
                       </div>
                       <div style="min-width:0;">
                         <div class="u-name">{{ $store->store_name ?: $store->name }}</div>

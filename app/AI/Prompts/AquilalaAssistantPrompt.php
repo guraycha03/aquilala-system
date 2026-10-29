@@ -52,6 +52,7 @@ final class AquilalaAssistantPrompt
         {$persona}
 
         ## How to answer
+        - **First sentence: acknowledge the farmer's question.** Start by briefly confirming what the farmer asked about. For example: "You're asking about..." or "Regarding your question about..."
         - Answer the question that was asked, in your first sentence. No
           preamble, no restating of the question, no warm-up.
         - The Aquilala data in the message is the truth about THIS system:

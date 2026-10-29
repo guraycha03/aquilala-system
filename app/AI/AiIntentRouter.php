@@ -299,13 +299,10 @@ class AiIntentRouter
     {
         $detected = $detected + ['crop' => null, 'season' => null, 'area' => null];
 
-        // A greeting is a greeting, and gets a greeting back. Tested before
-        // everything else because "hi" and "what can you do" were sharing a
-        // branch, and the wrong one of the two was answering far more often.
-        foreach (self::GREETING_PATTERNS as $pattern) {
-            if (preg_match($pattern, $text) === 1) {
-                return AiIntent::GREETING;
-            }
+        // Check for empty utterances first - these are not greetings, just
+        // the farmer pausing mid-thought or sending an empty message.
+        if ($this->isEmptyUtterance($text)) {
+            return AiIntent::CLARIFICATION;
         }
 
         foreach (self::SYSTEM_HELP_PATTERNS as $pattern) {
@@ -318,12 +315,6 @@ class AiIntentRouter
             if (preg_match($pattern, $text) === 1) {
                 return AiIntent::UNSUPPORTED;
             }
-        }
-
-        // A question with no content at all is a clarification, not an
-        // unsupported request: the farmer is mid-thought, not off topic.
-        if ($this->isEmptyUtterance($text)) {
-            return AiIntent::CLARIFICATION;
         }
 
         // The farmer's own quotation is a real, retrievable record. Hand it to
@@ -436,6 +427,16 @@ class AiIntentRouter
 
         if ($this->mentionsFarming($text)) {
             return AiIntent::GENERAL_FARMING;
+        }
+
+        // A greeting is a greeting, and gets a greeting back. Tested after
+        // everything else because we want to make sure the farmer's actual
+        // question is answered first. A pure greeting with no question content
+        // will fall through to here.
+        foreach (self::GREETING_PATTERNS as $pattern) {
+            if (preg_match($pattern, $text) === 1) {
+                return AiIntent::GREETING;
+            }
         }
 
         return AiIntent::UNSUPPORTED;

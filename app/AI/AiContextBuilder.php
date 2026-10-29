@@ -256,7 +256,7 @@ class AiContextBuilder
             ->get();
     }
 
-    /**
+    /***
      * "What fruits can I plant?" — the directory, narrowed to the category the
      * farmer named.
      *
@@ -284,7 +284,7 @@ class AiContextBuilder
         return array_map(fn (array $crop) => $this->describe($crop), $crops);
     }
 
-    /**
+    /***
      * "What fruit should I plant?" — the choices, with the reason Aquilala is
      * willing to give for each: its category, and whether the association has
      * formulas for it.
@@ -317,7 +317,7 @@ class AiContextBuilder
         return $choices;
     }
 
-    /**
+    /***
      * "What can I plant this October?" — the crops with decision formulas in the
      * season that month falls in.
      *
@@ -339,7 +339,7 @@ class AiContextBuilder
         return array_map(fn (array $entry) => $this->describe($entry), $this->crops->forSeason($season));
     }
 
-    /**
+    /***
      * A directory crop with its formula coverage attached, so the answer can say
      * what Aquilala can actually do for it.
      *
@@ -388,7 +388,7 @@ class AiContextBuilder
         return $a !== '' && $b !== '' && (str_contains($a, $b) || str_contains($b, $a));
     }
 
-    /**
+    /***
      * Products, but only when the farmer actually asked about buying something.
      *
      * "What fruit should I plant that's available?" is two questions in one: what
@@ -396,12 +396,36 @@ class AiContextBuilder
      * is the whole point; attaching a product carousel to every crop question
      * would be answering a question nobody asked.
      *
+     * NOTE: This method is intentionally restrictive. Previously it triggered on
+     * any occurrence of shopping-related words, which caused the assistant to
+     * dump product catalog data even when the user was asking about crops,
+     * farming practice, or other topics. Now it only triggers when the farmer
+     * explicitly asks about products in the context of a crop question, and even
+     * then only if the message clearly seeks purchase/availability information.
+     *
      * @param  array<string, mixed>  $slots
      * @return Collection<int, \App\Models\Product>
      */
     private function productsIfAskedFor(string $message, array $slots, ?User $user): Collection
     {
-        if (preg_match('/\b(available|in\s+stock|buy|purchase|price|cost|how\s+much|supplier|store|where\s+can|order)\b/i', $message) !== 1) {
+        // Only look for products when the user explicitly asks about buying/purchasing
+        // in the context of a specific crop or category they've already named.
+        // This prevents dumping the entire catalog when the user mentions words
+        // like "price", "cost", or "available" in a different context.
+        $shoppingKeywords = '/\b(buy|purchase|order)\b/i';
+
+        if (preg_match($shoppingKeywords, $message) !== 1) {
+            return new Collection();
+        }
+
+        // Additional guard: only show products if there's a clear crop or category context.
+        // This prevents "I'm interested in fertilizers" from triggering a product list
+        // when the user was actually asking about planting advice or crop discovery.
+        $hasCropContext = ($slots['crop'] ?? null) !== null
+            || ($slots['crop_category'] ?? null) !== null;
+
+        if (! $hasCropContext) {
+            // User mentioned shopping keywords without a crop context - ask for clarification
             return new Collection();
         }
 
@@ -430,7 +454,7 @@ class AiContextBuilder
         return new Collection();
     }
 
-    /**
+    /***
      * A catalogue question: "do you have mango products?", "how much is the
      * urea?", or a follow-up that points back at ids already established in the
      * conversation.
@@ -491,7 +515,7 @@ class AiContextBuilder
             ->values();
     }
 
-    /**
+    /***
      * "What fertilizers for rice?" — names the crop's approved products. No
      * quantities, because a quantity without a farm area is a guess.
      *
@@ -528,7 +552,7 @@ class AiContextBuilder
         return [$products, null, $missing];
     }
 
-    /**
+    /***
      * A cost question runs the deterministic engine. There is no path where the
      * model is asked for a peso figure.
      *
@@ -587,7 +611,7 @@ class AiContextBuilder
         return [$products, $result, [], $result['assumptions']];
     }
 
-    /**
+    /***
      * The farmer's most recent live quotation, read straight from the record
      * the engine already saved. The model explains it; it never recomputes it.
      *
