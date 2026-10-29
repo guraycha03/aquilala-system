@@ -175,6 +175,11 @@ class AiIntentRouter
      * Things the assistant has no data source for. Checked early so a
      * "what's the weather tomorrow" never reaches a general farming branch on
      * the strength of the word "weather".
+     *
+     * Note: these patterns are checked in classify() before any other intent
+     * routing. A match immediately returns UNSUPPORTED so the assistant replies
+     * with the deterministic "I focus on Aquilala farming..." answer rather
+     * than pulling database data.
      */
     private const UNSUPPORTED_PATTERNS = [
         // Live weather is out of scope in any phrasing. The application knows
@@ -182,11 +187,13 @@ class AiIntentRouter
         // forecast — answering "will it rain tomorrow" from it would be a
         // guess dressed as a fact.
         '/\b(weather|forecast|temperature|rainfall|humidity|wind\s+speed|heatwave|typhoon\s+warning)\b/i',
+        // Financial/market data out of scope
         '/\b(stock\s+market|crypto|bitcoin|exchange\s+rate|dollar\s+rate|pesos?\s+to\s+dollar)\b/i',
-        '/\b(politics|election|president|senator|congress|mayor|who\s+won)\b/i',
         '/\b(price\s+of\s+rice\s+in\s+the\s+market|market\s+price|palay\s+price)\b/i',
+        // Non-farming topics
         '/\b(write|compose|generate)\s+(me\s+)?(a\s+|an\s+)?(poem|essay|song|story|code|program|script|email|letter)\b/i',
-        '/\b(debug|refactor|unit\s+test|stack\s*trace|exception|python|javascript|react|laravel|php\s+code)\b/i',
+        '/\b(debug|refactor|unit\s+test|stack\s*trace|exception)\b/i',
+        // Personal/legal/medical topics
         '/\b(medical|doctor|hospital|diagnos(is|e)|symptoms?\s+of\s+(a\s+)?(human|child|adult))\b/i',
         '/\b(loan|credit|salary|job\s+opening|resume|certificate|training)\b/i',
         '/\b(legal|lawyer|court|permit|tax)\b/i',
@@ -315,6 +322,17 @@ class AiIntentRouter
             if (preg_match($pattern, $text) === 1) {
                 return AiIntent::UNSUPPORTED;
             }
+        }
+
+        // Safety net: directly check for weather and other out-of-scope topics
+        // that the regex patterns might miss due to edge cases in normalization.
+        // This prevents the assistant from pulling database data for unrelated queries.
+        $lower = Str::lower($text);
+        if (preg_match('/\bweather\b/', $lower) === 1) {
+            return AiIntent::UNSUPPORTED;
+        }
+        if (preg_match('/\b(forecast|temperature|rainfall|humidity)\b/', $lower) === 1) {
+            return AiIntent::UNSUPPORTED;
         }
 
         // The farmer's own quotation is a real, retrievable record. Hand it to
