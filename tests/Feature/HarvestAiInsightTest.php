@@ -14,6 +14,7 @@ use App\Services\HarvestInsightService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 /**
@@ -280,6 +281,78 @@ class HarvestAiInsightTest extends TestCase
         $this->assertStringContainsString('harvest records', $reply);
         $this->assertStringNotContainsString('Performance Snapshot', $reply);
         $this->assertStringNotContainsString('718', $reply);
+        Http::assertNothingSent();
+    }
+
+    public function test_time_specific_greeting_is_acknowledged_naturally(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'Good morning']);
+
+        $response->assertOk()->assertJson(['source' => 'conversation']);
+        $this->assertStringStartsWith('Good morning!', $response->json('reply'));
+        Http::assertNothingSent();
+    }
+
+    public function test_admin_can_see_new_farmer_activity_recorded_today(): void
+    {
+        ActivityLog::create([
+            'user_id' => $this->admin->id,
+            'actor_id' => $this->farmerA->id,
+            'type' => ActivityLog::TYPE_CROP_PLANTED,
+            'description' => 'Planted Rice (FIELD-001) - 2.00 ha',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        ActivityLog::create([
+            'user_id' => $this->admin->id,
+            'actor_id' => $this->farmerB->id,
+            'type' => ActivityLog::TYPE_HARVEST_CREATED,
+            'description' => 'Recorded harvest of Corn (wet)',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        ActivityLog::create([
+            'user_id' => $this->admin->id,
+            'actor_id' => $this->farmerA->id,
+            'type' => ActivityLog::TYPE_CROP_UPDATED,
+            'description' => 'Old crop update',
+        ]);
+        ActivityLog::where('description', 'Old crop update')->update([
+            'created_at' => Carbon::now()->subDays(2),
+            'updated_at' => Carbon::now()->subDays(2),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'Is there any new activity today by farmers?']);
+
+        $response->assertOk()->assertJson(['source' => 'data']);
+        $reply = $response->json('reply');
+        $this->assertStringContainsString('**2** farmer activities', $reply);
+        $this->assertStringContainsString('Farmer Ana', $reply);
+        $this->assertStringContainsString('Farmer Ben', $reply);
+        $this->assertStringNotContainsString('Old crop update', $reply);
+        Http::assertNothingSent();
+    }
+
+    public function test_admin_gets_a_clear_answer_when_no_farmer_activity_was_recorded_today(): void
+    {
+        ActivityLog::create([
+            'user_id' => $this->admin->id,
+            'actor_id' => $this->farmerA->id,
+            'type' => ActivityLog::TYPE_CROP_PLANTED,
+            'description' => 'Yesterday planting',
+        ]);
+        ActivityLog::where('description', 'Yesterday planting')->update([
+            'created_at' => Carbon::now()->subDays(2),
+            'updated_at' => Carbon::now()->subDays(2),
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.ai.ask'), ['message' => 'What have farmers done today?']);
+
+        $response->assertOk()->assertJson(['source' => 'data']);
+        $this->assertStringContainsString('no new planting, crop, land, or harvest activity', $response->json('reply'));
         Http::assertNothingSent();
     }
 

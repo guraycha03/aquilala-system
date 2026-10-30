@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\AI\AiLlmClient;
+use App\AI\AiResponseValidatorAi;
 use App\AI\Prompts\HarvestQaPrompt;
 use App\Helpers\SeasonHelper;
 use App\Models\ActivityLog;
@@ -14,6 +15,7 @@ use App\Support\HarvestDigestRow;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /**
  * HarvestInsightService — powers the admin "AI Harvest Insights" chat.
@@ -65,6 +67,7 @@ class HarvestInsightService
     public function __construct(
         private readonly AiLlmClient $llm,
         private readonly CropLibraryService $crops,
+        private readonly AiResponseValidatorAi $validatorAi,
     ) {}
 
     /**
@@ -173,7 +176,7 @@ class HarvestInsightService
                     ? ($this->isSelfRecognitionQuestion($message)
                         ? 'I know you as the signed-in Aquilala administrator for this session. I can use only what this account makes available in the system; I do not infer or reveal personal identity beyond that.'
                         : 'I’m Aquilala’s administrative insight assistant. I can discuss the association’s harvest records, explain general agricultural concepts, help interpret trends, and think through practical questions that relate to your work.')
-                    : 'Hello. I’m ready to help you review the association’s harvest records. Ask me about seasons, crops, yield, costs, or recorded activities.',
+                    : $this->greetingReply($message),
                 'context' => [],
             ];
         }
@@ -190,6 +193,10 @@ class HarvestInsightService
         }
 
         $context = $this->context();
+
+        if ($this->isFarmerActivityQuestion($message)) {
+            return $this->farmerActivityAnswer($message);
+        }
 
         if (($ageQuestion = $this->memberAgeQuestion($message)) !== null) {
             $minimumAge = $ageQuestion['minimum_age'];
@@ -263,6 +270,27 @@ class HarvestInsightService
 
         $reply = $this->decode($completion['raw'] ?? '', 'reply');
 
+        if ($reply !== null && $reply !== '') {
+            // ── AI2: re-evaluate whether the answer actually addresses the
+            // administrator's question, without dumping unrelated history. ──
+            $ai2 = $this->validatorAi->validate(
+                $message,
+                'admin',
+                $reply,
+                $context,
+            );
+
+            if ($ai2 !== null) {
+                match ($ai2['verdict']) {
+                    AiResponseValidatorAi::VERDICT_REJECT => $reply = $this->unrelatedAnswer($message),
+                    AiResponseValidatorAi::VERDICT_REVISE => $reply = $ai2['suggested_answer'] !== '' && $ai2['suggested_answer'] !== null
+                        ? $ai2['suggested_answer']
+                        : $this->fallbackFor($context, $message),
+                    default => null, // accept — keep AI1's answer
+                };
+            }
+        }
+
         return [
             'source'  => $reply !== null ? 'ai' : 'fallback',
             'reply'   => $reply ?? $this->fallbackFor($context, $message),
@@ -276,6 +304,108 @@ class HarvestInsightService
             '/^(?:hi|hello|hey|greetings|good\s+(?:morning|afternoon|evening)|how\s+are\s+you)(?:\s+there)?[!?.\s]*$/iu',
             trim($message)
         ) === 1;
+    }
+
+    private function greetingReply(string $message): string
+    {
+        $text = mb_strtolower(trim($message));
+
+        if (str_contains($text, 'good morning')) {
+            return 'Good morning! I’m here and ready to help you review Aquilala’s harvest records or talk through a farming question.';
+        }
+
+        if (str_contains($text, 'good afternoon')) {
+            return 'Good afternoon! I’m here and ready to help you review Aquilala’s harvest records or talk through a farming question.';
+        }
+
+        if (str_contains($text, 'good evening')) {
+            return 'Good evening! I’m here and ready to help you review Aquilala’s harvest records or talk through a farming question.';
+        }
+
+        if (str_contains($text, 'how are you')) {
+            return 'I’m doing well, thank you. I’m here to help with Aquilala’s records, farming questions, and anything you would like to look into.';
+        }
+
+        return 'Hello. I’m here and ready to help you review Aquilala’s harvest records or talk through a farming question.';
+    }
+
+    private function isFarmerActivityQuestion(string $message): bool
+    {
+        $hasActivityNoun = preg_match(
+            '/\b(?:activity|activities|action|actions|update|updates|submission|submissions)\b/iu',
+            $message
+        ) === 1;
+        $hasActivityVerb = preg_match(
+            '/\b(?:submitted|created|planted|harvested|recorded|done)\b/iu',
+            $message
+        ) === 1;
+        $hasFarmerOrTime = preg_match(
+            '/\b(?:farmer|farmers|today|currently|recent|recently|new|latest)\b/iu',
+            $message
+        ) === 1;
+
+        return $hasFarmerOrTime && ($hasActivityNoun || $hasActivityVerb);
+    }
+
+    /**
+     * Answer current farmer activity from audit rows, not from harvest history.
+     *
+     * @return array{source: string, reply: string, context: array<string, mixed>}
+     */
+    private function farmerActivityAnswer(string $message): array
+    {
+        $timezone = config('app.timezone');
+        $start = Carbon::now($timezone)->startOfDay();
+        $end = $start->copy()->addDay();
+
+        $activities = ActivityLog::query()
+            ->with(['actor', 'user'])
+            ->whereIn('type', self::FARM_ACTIVITY_TYPES)
+            ->where(function ($query) {
+                $query->whereHas('actor', fn ($actor) => $actor->where('role', 'farmer'))
+                    ->orWhere(function ($legacy) {
+                        $legacy->whereNull('actor_id')
+                            ->whereHas('user', fn ($user) => $user->where('role', 'farmer'));
+                    });
+            })
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<', $end)
+            ->latest('created_at')
+            ->get();
+
+        $rows = $activities->map(function (ActivityLog $activity): array {
+            $farmer = $activity->actor ?? $activity->user;
+            $farmerName = $farmer
+                ? trim(implode(' ', array_filter([$farmer->first_name, $farmer->last_name])))
+                : '';
+
+            return [
+                'farmer' => $farmer?->name ?: ($farmerName ?: 'A farmer'),
+                'type' => $activity->type,
+                'description' => $activity->description,
+                'recorded_at' => $activity->created_at?->timezone(config('app.timezone'))->format('g:i A'),
+            ];
+        })->values()->all();
+
+        if ($rows === []) {
+            return [
+                'source' => 'data',
+                'reply' => 'I checked the farmer activity records for today, and no new planting, crop, land, or harvest activity has been recorded yet.',
+                'context' => ['farmer_activity' => ['date' => $start->toDateString(), 'count' => 0, 'items' => []]],
+            ];
+        }
+
+        $lines = collect($rows)->map(
+            fn (array $row) => '- **' . $row['farmer'] . '**: ' . $row['description']
+                . ($row['recorded_at'] ? ' (' . $row['recorded_at'] . ')' : '')
+        )->implode("\n");
+
+        return [
+            'source' => 'data',
+            'reply' => 'Yes — I found **' . number_format(count($rows)) . '** farmer '
+                . (count($rows) === 1 ? 'activity' : 'activities') . ' recorded today:' . "\n" . $lines,
+            'context' => ['farmer_activity' => ['date' => $start->toDateString(), 'count' => count($rows), 'items' => $rows]],
+        ];
     }
 
     private function isIdentityQuestion(string $message): bool
@@ -454,16 +584,49 @@ class HarvestInsightService
         }
 
         if (! $this->isHarvestDataQuestion($message)) {
-            return 'I can help with questions related to Aquilala’s work, including harvest performance, crops, seasons, costs, planting records, and practical agricultural context. I’ll connect the answer to the system when the records contain something relevant.';
+            return $this->unrelatedAnswer($message);
         }
 
         return $this->fallback($context);
     }
 
+    /**
+     * A clear, human-like answer when the question is unrelated to harvest
+     * records and the system cannot help. The user is told exactly why, in one
+     or two sentences, and what the assistant can do instead.
+     */
+    private function unrelatedAnswer(string $message): string
+    {
+        $lower = mb_strtolower(trim($message));
+
+        // Greetings and courtesy get a human-like reply back, not a refusal.
+        if (preg_match('/\b(good\s+(morning|afternoon|evening)|hello|hi|hey|good\s+day)\b/i', $lower) === 1) {
+            return $this->greetingReply($message);
+        }
+
+        // Thanks and identity get a short, direct reply.
+        if (preg_match('/\b(thanks|thank\s+you)\b/i', $lower)) {
+            return 'You are welcome. I am here to help with Aquilala’s harvest records — yields, seasons, crops, farmers, costs, and the activity log.';
+        }
+
+        if (preg_match('/\b(who\s+are\s+you|what\s+are\s+you|what\s+can\s+you\s+do)\b/i', $lower)) {
+            return 'I am Aquilala’s administrative insight assistant. I can discuss the association’s harvest records, explain general agricultural concepts, help interpret trends, and think through practical questions that relate to your work.';
+        }
+
+        return "I cannot answer that from Aquilala’s harvest records. I cover harvest yields, seasons, crops, farmers, costs, planting and harvest records, weather events, and variety notes — ask me about a harvest, a farmer’s performance, or a season comparison instead.";
+    }
+
     private function isHarvestDataQuestion(string $message): bool
     {
+        // Weather forecasts, other cities, and future-tense queries are not
+        // about Aquilala's recorded harvest data, even though the words
+        // "weather" and "today" appear in them.
+        if (preg_match('/\b(?:forecast|temperature|tokyo|manila|tomorrow)\b/iu', $message) === 1) {
+            return false;
+        }
+
         return preg_match(
-            '/\b(harvest|yield|crop|season|farmer|plant|planting|report|cost|expense|weather|rain|flood|drought|typhoon|area|hectare|ton|tonne|rice|corn|eggplant|tomato|performance|trend|compare|highest|lowest|best|worst|summary|summarise|summarize|overview|data|how\s+many|how\s+much)\b/iu',
+            '/\b(harvest|yield|crop|season|farmer|plant|planting|report|cost|expense|weather|rain|flood|drought|typhoon|area|hectare|ton|tonne|rice|corn|eggplant|tomato|performance|trend|compare|highest|lowest|best|worst|summary|summarise|summarize|overview|data|activity|activities|action|actions|update|updates|submission|submissions|today|recent|how\s+many|how\s+much)\b/iu',
             $message
         ) === 1;
     }

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Rules\CropRecommendationEngine;
 use App\Services\FarmingKnowledgeService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * AquilalaAssistant
@@ -87,6 +88,7 @@ class AquilalaAssistant
         private readonly AiIntentRouter $router,
         private readonly AiContextBuilder $contextBuilder,
         private readonly AiResponseValidator $validator,
+        private readonly AiResponseValidatorAi $validatorAi,
         private readonly AiLlmClient $llm,
         private readonly FarmingKnowledgeService $knowledge,
     ) {
@@ -271,6 +273,33 @@ class AquilalaAssistant
         // pipeline is meant to avoid — so Laravel's own answer takes over.
         if ($this->isMetaAnswer($answer)) {
             $answer = $fallback;
+        }
+
+        // ── AI2: the second model re-evaluates relevance and proportion ──
+        //
+        // The PHP validator checks facts (product ids, prices, URLs). AI2
+        // checks whether the answer actually answers the user's question,
+        // whether it dumps unrelated historical data, and whether it sounds
+        // like it heard what the user said. AI2 cannot introduce new facts;
+        // it can only accept, revise with its own corrected wording, or
+        // reject so the deterministic fallback is used.
+        if ($answer !== $fallback && $answer !== '') {
+            $ai2 = $this->validatorAi->validate(
+                $message,
+                $user?->role ?? 'guest',
+                $answer,
+                $contextData,
+            );
+
+            if ($ai2 !== null) {
+                match ($ai2['verdict']) {
+                    AiResponseValidatorAi::VERDICT_REJECT => $answer = $fallback,
+                    AiResponseValidatorAi::VERDICT_REVISE => $answer = $ai2['suggested_answer'] !== '' && $ai2['suggested_answer'] !== null
+                        ? $ai2['suggested_answer']
+                        : $fallback,
+                    default => null, // accept — keep AI1's answer
+                };
+            }
         }
 
         // Laravel's wording wins outright on two grounds. A clarification the

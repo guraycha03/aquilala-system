@@ -221,9 +221,10 @@ class AdminStoreController extends Controller
         DB::transaction(function () use ($store) {
             foreach ($store->documents as $document) {
                 Storage::disk(self::PRIVATE_DISK)->delete($document->path);
+                $document->delete();
             }
 
-            $store->delete();
+            $store->forceDelete();
         });
 
         return redirect()

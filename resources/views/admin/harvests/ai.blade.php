@@ -341,7 +341,7 @@
   var AVATAR_USER = '<div class="message-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
   var BADGE_AI = '<span class="ai-source-badge ai" title="Wording by the model, every number from your harvest reports"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>AI assisted</span>';
   var BADGE_DATA = '<span class="ai-source-badge ai" title="Read directly from Aquilala records"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>From system records</span>';
-  var BADGE_FALLBACK = '<span class="ai-source-badge fallback" title="Computed directly from harvest_reports while the model is offline"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>Computed summary (AI offline)</span>';
+  var BADGE_FALLBACK = '<span class="ai-source-badge fallback" title="Computed directly from Aquilala records"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>Computed from system records</span>';
 
   function chatLog() { return document.getElementById('aiChatLog'); }
 

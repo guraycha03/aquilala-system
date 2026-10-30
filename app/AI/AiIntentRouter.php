@@ -738,7 +738,10 @@ class AiIntentRouter
     {
         $stripped = preg_replace('/[^\p{L}\p{N}]+/u', '', $text) ?? '';
 
-        return $stripped === '' || mb_strlen($stripped) <= 2;
+        // A single character or nothing at all is a pause, not a message.
+        // Two-letter greetings like "hi" and "yo" must reach the greeting
+        // check, so the threshold is one, not two.
+        return $stripped === '' || mb_strlen($stripped) <= 1;
     }
 
     private function isFollowUp(string $text): bool

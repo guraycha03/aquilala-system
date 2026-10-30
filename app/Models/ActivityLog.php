@@ -21,6 +21,8 @@ class ActivityLog extends Model
         'metadata',
         'read_at',
         'ip_address',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [
