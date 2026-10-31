@@ -276,16 +276,30 @@ class HarvestInsightService
             $context['farmer_focus'] = $focus;
         }
 
-        $completion = $this->llm->completeJson([
-            ['role' => 'system', 'content' => HarvestQaPrompt::system()],
-            ['role' => 'user', 'content' => HarvestQaPrompt::user($context, $message, $history)],
-        ], self::MAX_TOKENS);
+        $reply = null;
+        $feedback = '';
 
-        $reply = $this->decode($completion['raw'] ?? '', 'reply');
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            $userContent = HarvestQaPrompt::user($context, $message, $history);
 
-        if ($reply !== null && $reply !== '') {
-            // ── AI2: re-evaluate whether the answer actually addresses the
-            // administrator's question, without dumping unrelated history. ──
+            if ($feedback !== '') {
+                $userContent .= "\n\nYour previous answer was rejected because: " . $feedback
+                    . "\nWrite a corrected answer that actually responds to the question, stays proportional, and acknowledges what the user asked.";
+            }
+
+            $completion = $this->llm->completeJson([
+                ['role' => 'system', 'content' => HarvestQaPrompt::system()],
+                ['role' => 'user', 'content' => $userContent],
+            ], self::MAX_TOKENS);
+
+            $candidate = $this->decode($completion['raw'] ?? '', 'reply');
+
+            if ($candidate === null || $candidate === '') {
+                break;
+            }
+
+            $reply = $candidate;
+
             $ai2 = $this->validatorAi->validate(
                 $message,
                 'admin',
@@ -293,14 +307,25 @@ class HarvestInsightService
                 $context,
             );
 
-            if ($ai2 !== null) {
-                match ($ai2['verdict']) {
-                    AiResponseValidatorAi::VERDICT_REJECT => $reply = $this->unrelatedAnswer($message),
-                    AiResponseValidatorAi::VERDICT_REVISE => $reply = $ai2['suggested_answer'] !== '' && $ai2['suggested_answer'] !== null
-                        ? $ai2['suggested_answer']
-                        : $this->fallbackFor($context, $message),
-                    default => null, // accept — keep AI1's answer
-                };
+            if ($ai2 === null) {
+                break;
+            }
+
+            if ($ai2['verdict'] === AiResponseValidatorAi::VERDICT_ACCEPT) {
+                break;
+            }
+
+            if ($ai2['verdict'] === AiResponseValidatorAi::VERDICT_REVISE) {
+                if ($ai2['suggested_answer'] !== '' && $ai2['suggested_answer'] !== null) {
+                    $reply = $ai2['suggested_answer'];
+                }
+                break;
+            }
+
+            $feedback = $ai2['reason'] ?? 'the answer did not address the user\'s question';
+
+            if ($attempt === 3) {
+                $reply = $this->unrelatedAnswer($message);
             }
         }
 
@@ -456,21 +481,12 @@ class HarvestInsightService
 
     private function isFarmerActivityQuestion(string $message): bool
     {
-        $hasActivityNoun = preg_match(
-            '/\b(?:activity|activities|action|actions|update|updates|submission|submissions)\b/iu',
+        return preg_match(
+            '/\b(?:activity|activities|action|actions|update|updates|submission|submissions|recent|today|this\s+(?:week|month|year))\b/iu',
             $message
         ) === 1;
-        $hasActivityVerb = preg_match(
-            '/\b(?:submitted|created|planted|harvested|recorded|done)\b/iu',
-            $message
-        ) === 1;
-        $hasFarmerOrTime = preg_match(
-            '/\b(?:farmer|farmers|today|currently|recent|recently|new|latest)\b/iu',
-            $message
-        ) === 1;
-
-        return $hasFarmerOrTime && ($hasActivityNoun || $hasActivityVerb);
     }
+
 
     /**
      * Answer current farmer activity from audit rows, not from harvest history.
@@ -480,8 +496,7 @@ class HarvestInsightService
     private function farmerActivityAnswer(string $message): array
     {
         $timezone = config('app.timezone');
-        $start = Carbon::now($timezone)->startOfDay();
-        $end = $start->copy()->addDay();
+        [$start, $end, $label] = $this->activityWindow($message, $timezone);
 
         $activities = ActivityLog::query()
             ->with(['actor', 'user'])
@@ -515,8 +530,8 @@ class HarvestInsightService
         if ($rows === []) {
             return [
                 'source' => 'data',
-                'reply' => 'I checked the farmer activity records for today, and no new planting, crop, land, or harvest activity has been recorded yet.',
-                'context' => ['farmer_activity' => ['date' => $start->toDateString(), 'count' => 0, 'items' => []]],
+                'reply' => 'I checked the farmer activity records for **' . $label . '**, and no new planting, crop, land, or harvest activity has been recorded yet.',
+                'context' => ['farmer_activity' => ['period' => $label, 'count' => 0, 'items' => []]],
             ];
         }
 
@@ -527,10 +542,69 @@ class HarvestInsightService
 
         return [
             'source' => 'data',
-            'reply' => 'Yes — I found **' . number_format(count($rows)) . '** farmer '
-                . (count($rows) === 1 ? 'activity' : 'activities') . ' recorded today:' . "\n" . $lines,
-            'context' => ['farmer_activity' => ['date' => $start->toDateString(), 'count' => count($rows), 'items' => $rows]],
+            'reply' => 'I found **' . number_format(count($rows)) . '** farmer '
+                . (count($rows) === 1 ? 'activity' : 'activities') . ' recorded in **' . $label . '**:' . "\n" . $lines,
+            'context' => ['farmer_activity' => ['period' => $label, 'count' => count($rows), 'items' => $rows]],
         ];
+    }
+
+    private function activityWindow(string $message, string $timezone): array
+    {
+        $now = Carbon::now($timezone);
+        $lower = mb_strtolower($message);
+
+        if (preg_match('/\byesterday\b/u', $lower) === 1) {
+            $start = $now->copy()->subDay()->startOfDay();
+            $end = $start->copy()->addDay();
+            return [$start, $end, 'Yesterday'];
+        }
+
+        if (preg_match('/\btoday\b/u', $lower) === 1) {
+            $start = $now->copy()->startOfDay();
+            $end = $start->copy()->addDay();
+            return [$start, $end, 'Today'];
+        }
+
+        if (preg_match('/\bthis\s+week\b/u', $lower) === 1) {
+            $start = $now->copy()->startOfWeek();
+            $end = $start->copy()->addWeek();
+            return [$start, $end, 'This Week'];
+        }
+
+        if (preg_match('/\blast\s+week\b/u', $lower) === 1) {
+            $start = $now->copy()->subWeek()->startOfWeek();
+            $end = $start->copy()->addWeek();
+            return [$start, $end, 'Last Week'];
+        }
+
+        if (preg_match('/\blast\s+month\b/u', $lower) === 1) {
+            $month = $now->copy()->subMonthNoOverflow();
+            $start = $month->copy()->startOfMonth();
+            $end = $start->copy()->addMonth();
+            return [$start, $end, $month->format('F Y')];
+        }
+
+        if (preg_match('/\bthis\s+month\b/u', $lower) === 1 || preg_match('/\bmonth\b/u', $lower) === 1) {
+            $start = $now->copy()->startOfMonth();
+            $end = $start->copy()->addMonth();
+            return [$start, $end, $now->format('F Y')];
+        }
+
+        if (preg_match('/\blast\s+year\b/u', $lower) === 1) {
+            $start = $now->copy()->subYear()->startOfYear();
+            $end = $start->copy()->addYear();
+            return [$start, $end, (string) ($now->year - 1)];
+        }
+
+        if (preg_match('/\bthis\s+year\b/u', $lower) === 1 || preg_match('/\byear\b/u', $lower) === 1) {
+            $start = $now->copy()->startOfYear();
+            $end = $start->copy()->addYear();
+            return [$start, $end, (string) $now->year];
+        }
+
+        $start = $now->copy()->startOfMonth();
+        $end = $start->copy()->addMonth();
+        return [$start, $end, $now->format('F Y')];
     }
 
     private function isIdentityQuestion(string $message): bool

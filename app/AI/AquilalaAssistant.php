@@ -249,91 +249,104 @@ class AquilalaAssistant
         ?User $user,
         string $fallback,
     ): array {
-        $completion = $this->llm->completeJson([
-            ['role' => 'system', 'content' => AquilalaAssistantPrompt::system($user?->role)],
-            ['role' => 'user', 'content' => AquilalaAssistantPrompt::user($contextData, $message)],
-        ]);
+        $answer = $fallback;
+        $violations = [];
+        $source = 'fallback';
+        $feedback = '';
+        $validated = null;
 
-        if ($completion === null) {
-            return ['answer' => $fallback, 'violations' => [], 'source' => 'fallback'];
-        }
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            $userContent = AquilalaAssistantPrompt::user($contextData, $message);
 
-        $decoded = $this->validator->parse($completion['raw']);
+            if ($feedback !== '') {
+                $userContent .= "\n\nYour previous answer was rejected because: " . $feedback
+                    . "\nWrite a corrected answer that actually responds to the question.";
+            }
 
-        if ($decoded === null) {
-            return [
-                'answer'     => $fallback,
-                'violations' => [AiResponseValidator::VIOLATION_MALFORMED],
-                'source'     => 'fallback',
-            ];
-        }
+            $completion = $this->llm->completeJson([
+                ['role' => 'system', 'content' => AquilalaAssistantPrompt::system($user?->role)],
+                ['role' => 'user', 'content' => $userContent],
+            ]);
 
-        $validated = $this->validator->validate(
-            $decoded,
-            $contextData['products'],
-            $fallback,
-            $this->trustedCropNames($contextData),
-        );
+            if ($completion === null) {
+                break;
+            }
 
-        $answer = $validated['answer'] !== '' ? $validated['answer'] : $fallback;
+            $decoded = $this->validator->parse($completion['raw']);
 
-        // The model sometimes writes the same line again and again — the same
-        // bullet, the same sentence, the same closing note. It reads as a
-        // stuck record, so the repeats are removed before the reader sees
-        // them. The first occurrence is kept: it is the one that is in the
-        // right place.
-        $answer = $this->dedupeRepeatedLines($answer);
+            if ($decoded === null) {
+                $violations = [AiResponseValidator::VIOLATION_MALFORMED];
+                break;
+            }
 
-        // An answer about the assistant instead of an answer to the question.
-        // "My capabilities are limited to the catalog" is not an answer to
-        // "do you have urea?", and reading it is exactly the experience this
-        // pipeline is meant to avoid — so Laravel's own answer takes over.
-        if ($this->isMetaAnswer($answer)) {
-            $answer = $fallback;
-        }
-
-        // ── AI2: the second model re-evaluates relevance and proportion ──
-        //
-        // The PHP validator checks facts (product ids, prices, URLs). AI2
-        // checks whether the answer actually answers the user's question,
-        // whether it dumps unrelated historical data, and whether it sounds
-        // like it heard what the user said. AI2 cannot introduce new facts;
-        // it can only accept, revise with its own corrected wording, or
-        // reject so the deterministic fallback is used.
-        if ($answer !== $fallback && $answer !== '') {
-            $ai2 = $this->validatorAi->validate(
-                $message,
-                $user?->role ?? 'guest',
-                $answer,
-                $contextData,
+            $validated = $this->validator->validate(
+                $decoded,
+                $contextData['products'],
+                $fallback,
+                $this->trustedCropNames($contextData),
             );
 
-            if ($ai2 !== null) {
-                match ($ai2['verdict']) {
-                    AiResponseValidatorAi::VERDICT_REJECT => $answer = $fallback,
-                    AiResponseValidatorAi::VERDICT_REVISE => $answer = $ai2['suggested_answer'] !== '' && $ai2['suggested_answer'] !== null
+            $candidate = $validated['answer'] !== '' ? $validated['answer'] : $fallback;
+            $candidate = $this->dedupeRepeatedLines($candidate);
+
+            if ($this->isMetaAnswer($candidate)) {
+                $candidate = $fallback;
+            }
+
+            if ($validated['needs_clarification'] || $validated['violations'] !== []) {
+                $answer = $fallback;
+                $violations = $validated['violations'];
+                break;
+            }
+
+            $answer = $candidate;
+            $violations = $validated['violations'];
+            $source = 'ai';
+
+            if ($answer !== $fallback && $answer !== '') {
+                $ai2 = $this->validatorAi->validate(
+                    $message,
+                    $user?->role ?? 'guest',
+                    $answer,
+                    $contextData,
+                );
+
+                if ($ai2 === null) {
+                    break;
+                }
+
+                if ($ai2['verdict'] === AiResponseValidatorAi::VERDICT_ACCEPT) {
+                    break;
+                }
+
+                if ($ai2['verdict'] === AiResponseValidatorAi::VERDICT_REVISE) {
+                    $answer = $ai2['suggested_answer'] !== '' && $ai2['suggested_answer'] !== null
                         ? $ai2['suggested_answer']
-                        : $fallback,
-                    default => null, // accept — keep AI1's answer
-                };
+                        : $fallback;
+                    break;
+                }
+
+                $feedback = $ai2['reason'] ?? 'the answer did not address the user\'s question';
+
+                if ($attempt === 3) {
+                    $answer = $fallback;
+                }
+            } else {
+                break;
             }
         }
 
-        // Laravel's wording wins outright on two grounds. A clarification the
-        // model wrote is never used, because the router's question is the more
-        // precise of the two and a reworded question is a way to slip an
-        // assumption in. And any violation at all — an invented product, a
-        // price that disagrees with the database — costs the farmer the model's
-        // phrasing and nothing else.
-        if ($validated['needs_clarification'] || $validated['violations'] !== []) {
+        if ($answer === null || $answer === '') {
             $answer = $fallback;
         }
 
         return [
             'answer'     => $answer,
-            'violations' => $validated['violations'],
-            'source'     => 'ai',
+            'violations' => $violations,
+            'source'     => $source === 'fallback' || $answer === $fallback ? 'fallback' : 'ai',
         ];
+
+
     }
 
     /**
