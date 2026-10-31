@@ -192,11 +192,24 @@ class HarvestInsightService
             ];
         }
 
+        if ($this->isAcknowledgement($message)) {
+            return [
+                'source'  => 'conversation',
+                'reply'   => $this->acknowledgementReply($message, $history),
+                'context' => [],
+            ];
+        }
+
         $context = $this->context();
 
         if ($this->isFarmerActivityQuestion($message)) {
             return $this->farmerActivityAnswer($message);
         }
+
+        if (($yearAnswer = $this->yearScopedAnswer($message, $context)) !== null) {
+            return $yearAnswer;
+        }
+
 
         if (($ageQuestion = $this->memberAgeQuestion($message)) !== null) {
             $minimumAge = $ageQuestion['minimum_age'];
@@ -327,6 +340,118 @@ class HarvestInsightService
         }
 
         return 'Hello. I’m here and ready to help you review Aquilala’s harvest records or talk through a farming question.';
+    }
+
+    private function isAcknowledgement(string $message): bool
+    {
+        return preg_match(
+            '/^(?:ok(?:ay)?|alright|got\s+it|sure|fine|great|cool|thanks|thank\s+you|yes|no)[!?.\s]*$/iu',
+            trim($message)
+        ) === 1;
+    }
+
+    private function acknowledgementReply(string $message, array $history): string
+    {
+        $lower = mb_strtolower(trim($message));
+
+        $lastUserQuestion = '';
+        foreach (array_reverse($history) as $turn) {
+            if (($turn['role'] ?? '') === 'user' && trim((string) ($turn['content'] ?? '')) !== '') {
+                $lastUserQuestion = trim((string) $turn['content']);
+                break;
+            }
+        }
+
+        if (preg_match('/\b(thanks|thank\s+you)\b/i', $lower)) {
+            return 'You are welcome. I am here whenever you would like to dig deeper into Aquilala’s records.';
+        }
+
+        if ($lastUserQuestion !== '') {
+            return 'Understood. I will hold onto that thread — just ask when you want to continue from "' . mb_substr($lastUserQuestion, 0, 60) . '".';
+        }
+
+        return 'Understood. I am here whenever you need anything else about Aquilala’s records.';
+    }
+
+    private function targetYearFromMessage(string $message): ?int
+    {
+        $lower = mb_strtolower(trim($message));
+
+        if (preg_match('/\bthis\s+year\b/u', $lower) === 1) {
+            return (int) Carbon::now(config('app.timezone'))->year;
+        }
+
+        if (preg_match('/\blast\s+year\b/u', $lower) === 1) {
+            return (int) Carbon::now(config('app.timezone'))->year - 1;
+        }
+
+        if (preg_match('/\b(19\d{2}|20\d{2})\b/u', $lower, $match) === 1) {
+            return (int) $match[1];
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{source: string, reply: string, context: array<string, mixed>}|null
+     */
+    private function yearScopedAnswer(string $message, array $context): ?array
+    {
+        $year = $this->targetYearFromMessage($message);
+
+        if ($year === null) {
+            return null;
+        }
+
+        if (preg_match('/\b(overview|summary|activity|activities|harvest|harvests|season|seasons|performance|report|review|trend|trends)\b/iu', $message) !== 1) {
+            return null;
+        }
+
+        $periods = collect($context['periods'] ?? [])
+            ->filter(fn (array $period) => (int) ($period['year'] ?? 0) === $year)
+            ->values();
+
+        if ($periods->isEmpty()) {
+            return [
+                'source' => 'data',
+                'reply'  => 'No harvest reports were recorded in **' . $year . '**, so there is nothing to summarise for that year.',
+                'context' => ['year' => $year],
+            ];
+        }
+
+        $totalReports = (int) $periods->sum('reports');
+        $totalYield   = (float) $periods->sum('yield_tons');
+        $totalArea    = (float) $periods->sum('area_ha');
+        $yieldPerHa   = $totalArea > 0 ? round($totalYield / $totalArea, 3) : null;
+
+        $lines = [
+            '### ' . $year . ' harvest overview',
+            '',
+            '**' . number_format($totalReports) . '** reports across **' . $periods->count() . '** period'
+                . ($periods->count() === 1 ? '' : 's') . ', covering **' . number_format($totalArea, 2) . ' ha**, '
+                . '**' . number_format($totalYield, 2) . ' MT** total yield'
+                . ($yieldPerHa !== null ? ' (' . $yieldPerHa . ' MT/ha)' : '') . '.',
+            '',
+        ];
+
+        foreach ($periods as $period) {
+            $label = (string) ($period['label'] ?? ($year . ' season'));
+            $lines[] = '- **' . $label . '**: ' . number_format((int) $period['reports']) . ' reports, '
+                . number_format((float) $period['yield_tons'], 2) . ' MT'
+                . (isset($period['yield_per_ha']) && $period['yield_per_ha'] !== null
+                    ? ' (' . $period['yield_per_ha'] . ' MT/ha)'
+                    : '')
+                . '.';
+        }
+
+        $lines[] = '';
+        $lines[] = 'Ask about a different year or a specific crop/farmer if you want to go deeper.';
+
+        return [
+            'source'  => 'data',
+            'reply'   => implode("\n", $lines),
+            'context' => ['year' => $year],
+        ];
     }
 
     private function isFarmerActivityQuestion(string $message): bool

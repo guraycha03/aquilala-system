@@ -101,10 +101,6 @@
     <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0;">Planting Requests</h1>
     <p style="font-size: 13px; color: #64748b; margin: 5px 0 0 0;">Confirm farmer crop batches before their growth tracking and harvest reporting unlock.</p>
   </div>
-  <a href="{{ route('admin.operations.catalog') }}" class="btn-act ghost">
-    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
-    Back to Crops &amp; Inputs
-  </a>
 </div>
 
 
@@ -181,9 +177,6 @@
               data-planted="{{ $crop->planting_date?->format('Y-m-d') ?? '' }}">
             <td>
               <div class="pr-crop">
-                <span class="pr-crop-ic">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
-                </span>
                 <div>
                   <div class="pr-crop-name">{{ $crop->crop?->name ?? 'Unknown crop' }}</div>
                   <div class="pr-crop-sub">

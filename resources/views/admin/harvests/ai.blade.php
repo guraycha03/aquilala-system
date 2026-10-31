@@ -670,6 +670,11 @@
       }
       loadAdminHistory(id);
     });
+    document.addEventListener('click', function (event) {
+      if (!dropdown.classList.contains('open')) return;
+      if (event.target.closest('#adminHistoryBtn') || event.target.closest('#adminHistoryDropdown')) return;
+      dropdown.classList.remove('open');
+    });
     refreshAdminHistories();
   }());
 </script>

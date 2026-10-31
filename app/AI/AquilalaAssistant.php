@@ -113,6 +113,23 @@ class AquilalaAssistant
         ?array $conversationContext = null,
     ): array {
         $context = AiConversationContext::fromArray($conversationContext);
+
+        if (preg_match('/^(?:ok(?:ay)?|alright|got\s+it|sure|fine|great|cool|thanks|thank\s+you|yes|no)[!?.\s]*$/iu', trim($message)) === 1) {
+            $reply = preg_match('/^(?:thanks|thank\s+you)$/iu', trim($message)) === 1
+                ? 'You are welcome. I am here whenever you need help with Aquilala farming.'
+                : 'Understood. I will keep that in mind — ask me anything about your crop, product, or cost estimate whenever you are ready.';
+
+            return [
+                'reply'       => $reply,
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::GREETING,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
         $routing = $this->router->route($message, $context, $history);
         $intent = $routing['intent'];
 
