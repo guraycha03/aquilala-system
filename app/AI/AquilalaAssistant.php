@@ -6,6 +6,8 @@ use App\AI\Prompts\AquilalaAssistantPrompt;
 use App\Models\User;
 use App\Rules\CropRecommendationEngine;
 use App\Services\FarmingKnowledgeService;
+use App\Services\WeatherService;
+use App\Models\HarvestReport;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -128,6 +130,36 @@ class AquilalaAssistant
                 'source'      => 'conversation',
                 'violations'  => [],
             ];
+        }
+
+        if (($pageReply = $this->pageLinkReply($message, (string) ($user?->role ?? ''))) !== null) {
+            return [
+                'reply'       => $pageReply['reply'],
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
+        if (preg_match('/\bweather\b/iu', $message) === 1
+            && preg_match('/\b(tokyo|manila|cebu|davao|makati|quezon|baguio)\b/iu', $message) !== 1) {
+            return [
+                'reply'       => $this->weatherSummary($message),
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::GENERAL_FARMING,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
+        if (preg_match('/\bharvest\b/iu', $message) === 1
+            && preg_match('/\b(overview|performance|summary|activity|report|this\s+(?:year|month))\b/iu', $message) === 1) {
+            return $this->harvestOverviewAnswer($message, $user);
         }
 
         $routing = $this->router->route($message, $context, $history);
@@ -1179,8 +1211,8 @@ class AquilalaAssistant
 
     private function unsupportedAnswer(): string
     {
-        return "I focus on Aquilala farming and this system — the product catalog, the recommendation formulas, "
-            . "and the cost estimates Aquilala calculates. I can't help with that one. "
+        return "I can’t answer that. I focus on Aquilala farming and this system — the product catalog, the recommendation formulas, "
+            . "and the cost estimates Aquilala calculates. I can’t help with that one. "
             . 'Try asking what products you need for a crop, or what a cost estimate came to.';
     }
 
@@ -1249,6 +1281,211 @@ class AquilalaAssistant
      * @param  array<string, mixed>  $contextData
      * @return array<int, string>
      */
+    private function pageLinkReply(string $message, string $role): ?array
+    {
+        $pages = $this->assistantPageCatalog($role);
+        if ($pages === []) {
+            return null;
+        }
+
+        $lower = mb_strtolower(trim($message));
+
+        $hasTrigger = str_contains($lower, 'page')
+            || str_contains($lower, 'where')
+            || str_contains($lower, 'find')
+            || str_contains($lower, 'link')
+            || str_contains($lower, 'open')
+            || str_contains($lower, 'navigate')
+            || str_contains($lower, 'menu')
+            || str_contains($lower, 'location')
+            || str_contains($lower, 'go to')
+            || str_contains($lower, 'take me');
+
+        if (! $hasTrigger) {
+            return null;
+        }
+
+        $messageWords = array_values(array_unique(preg_split('/\s+/u', preg_replace('/[^a-z0-9\s]+/iu', ' ', $lower) ?? '') ?: []));
+        $matches = [];
+
+        foreach ($pages as $label => $routeName) {
+            $labelWords = array_values(array_unique(preg_split('/\s+/u', preg_replace('/[^a-z0-9\s]+/iu', ' ', mb_strtolower($label)) ?? '') ?: []));
+            $score = count(array_intersect($labelWords, $messageWords));
+
+            if ($score > 0) {
+                $matches[$label] = ['route' => $routeName, 'score' => $score];
+            }
+        }
+
+        if ($matches === []) {
+            return null;
+        }
+
+        uasort($matches, fn (array $left, array $right): int => $right['score'] <=> $left['score']);
+        $matches = array_slice($matches, 0, 8, true);
+
+        $links = [];
+
+        foreach ($matches as $label => $details) {
+            try {
+                $url = route((string) $details['route']);
+            } catch (\Throwable $e) {
+                continue;
+            }
+
+            $links[] = '- [' . $label . '](' . $url . ')';
+        }
+
+        if ($links === []) {
+            return null;
+        }
+
+        return [
+            'reply'  => "Here are the page" . (count($links) === 1 ? '' : 's') . " that match:\n" . implode("\n", $links) . "\n\nTap any link above to open the page directly.",
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function assistantPageCatalog(string $role): array
+    {
+        $pages = [];
+
+        if ($role === 'farmer') {
+            $pages = [
+                'Dashboard' => 'dashboard.farmer',
+                'Home' => 'farmer.dashboard',
+                'Submit Harvest Report' => 'farmer.harvests.create',
+                'My Crops' => 'farmer.crops.index',
+                'Harvest Reports' => 'farmer.harvests.index',
+                'Estimate vs Actual Harvest' => 'farmer.harvests.compare',
+                'My Cost Quotations' => 'farmer.quotations.index',
+                'Browse Supplies' => 'farmer.products.browse',
+                'Recommended Supplies' => 'farmer.recommendations.index',
+                'Top Quoted Products' => 'farmer.top-quoted.index',
+                'Available Stores' => 'farmer.stores.index',
+                'Crop Guide' => 'farmer.crops-directory.index',
+                'AI Assistant' => 'farmer.ai-chat.index',
+                'Calendar' => 'farmer.calendar.index',
+                'Events' => 'farmer.calendar.events',
+                'Account Settings' => 'farmer.settings.index',
+            ];
+        } elseif ($role === 'store_owner') {
+            $pages = [
+                'Dashboard' => 'store.dashboard',
+                'Top Products' => 'store.dashboard.performance',
+                'Product Listings' => 'store.storefront.index',
+                'Inventory' => 'store.inventory.index',
+                'Input Formulas' => 'store.formulas.index',
+                'Quotation Demand Trends' => 'store.quotations.index',
+                'AI Assistant' => 'store.ai-chat.index',
+                'Settings' => 'store.settings.index',
+                'Activity History' => 'store.activity.index',
+            ];
+        }
+
+        $available = [];
+
+        foreach ($pages as $label => $routeName) {
+            if (\Illuminate\Support\Facades\Route::has($routeName)) {
+                $available[$label] = $routeName;
+            }
+        }
+
+        return $available;
+    }
+
+    private function weatherSummary(string $message): string
+    {
+        $weather = \App\Services\WeatherService::getCurrentWeather();
+
+        if (empty($weather['is_available'])) {
+            return 'Current weather for **Bulan, Sorsogon** is temporarily unavailable. Please try again in a moment.';
+        }
+
+        $temperature = isset($weather['temperature']) ? round((float) $weather['temperature'], 1) . '°C' : 'n/a';
+        $condition = (string) ($weather['condition'] ?? 'unknown conditions');
+        $humidity = $weather['humidity'] ?? null;
+        $wind = $weather['wind_speed'] ?? null;
+        $updated = (string) ($weather['updated_at'] ?? '');
+
+        $line = '**Bulan, Sorsogon** right now: **' . $temperature . ' · ' . $condition . '**'
+            . ($humidity !== null ? ', humidity **' . $humidity . '%**' : '')
+            . ($wind !== null ? ', wind **' . $wind . ' km/h**' : '')
+            . ($updated !== '' ? ' (updated ' . $updated . ')' : '') . '.';
+
+        return $line;
+    }
+
+    /**
+     * @return array{reply: string, type: string, suggestions: array<int,mixed>, context: array<string,mixed>, intent: string, source: string, violations: array<int,string>}
+     */
+    private function harvestOverviewAnswer(string $message, ?\App\Models\User $user): array
+    {
+        $makeResponse = fn (string $reply): array => [
+            'reply'       => $reply,
+            'type'        => 'answer',
+            'suggestions' => [],
+            'context'     => [],
+            'intent'      => \App\AI\AiIntent::SYSTEM_HELP,
+            'source'      => 'conversation',
+            'violations'  => [],
+        ];
+
+        if (($user?->role ?? '') !== 'farmer') {
+            return $makeResponse("I can’t answer that. There is no harvest overview available in your account. "
+                . "If you are looking for your own account pages, ask me to show the page links.");
+        }
+
+        $year = null;
+
+        if (preg_match('/\b(20\d{2})\b/u', $message, $match) === 1) {
+            $year = (int) $match[1];
+        } elseif (preg_match('/\bthis\s+(?:year|month)\b/iu', $message) === 1) {
+            $year = (int) now()->year;
+        }
+
+        $query = \App\Models\HarvestReport::where('user_id', $user->id);
+
+        if ($year !== null) {
+            $query->whereYear('harvest_date', $year);
+            $period = "in $year";
+        } else {
+            $period = 'so far';
+        }
+
+        $reports = $query->get();
+
+        if ($reports->isEmpty()) {
+            return $makeResponse("You have no harvest reports recorded $period. "
+                . "You can submit one on the [My Harvest Reports](" . route('farmer.harvests.index') . ") page.");
+        }
+
+        $totalArea = (float) $reports->sum('land_area');
+        $totalYield = (float) $reports->sum('actual_yield_metric_tons');
+        $yieldPerHectare = $totalArea > 0 ? round($totalYield / $totalArea, 3) : null;
+        $crops = $reports->pluck('crop_type')->filter()->unique()->sort()->values()->all();
+
+        $lines = [
+            'Here is your harvest overview ' . $period . ':',
+            '',
+            '**' . number_format($reports->count()) . '** reports across **' . count($crops) . '** crop'
+                . (count($crops) === 1 ? '' : 's') . ', covering **' . number_format($totalArea, 2) . ' ha**, '
+                . '**' . number_format($totalYield, 2) . ' MT** total yield'
+                . ($yieldPerHectare !== null ? ' (**' . $yieldPerHectare . ' MT/ha**)' : '') . '.',
+        ];
+
+        if ($crops !== []) {
+            $lines[] = '**Crops:** ' . implode(', ', $crops) . '.';
+        }
+
+        $lines[] = '';
+        $lines[] = 'See the full detail on your [My Harvest Reports](' . route('farmer.harvests.index') . ') page.';
+
+        return $makeResponse(implode("\n", $lines));
+    }
+
     private function trustedCropNames(array $contextData): array
     {
         $names = [];

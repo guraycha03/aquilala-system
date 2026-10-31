@@ -11,6 +11,7 @@ use App\Models\FarmerCrop;
 use App\Models\HarvestReport;
 use App\Models\Member;
 use App\Models\WeatherLog;
+use App\Services\WeatherService;
 use App\Support\HarvestDigestRow;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -192,6 +193,27 @@ class HarvestInsightService
             ];
         }
 
+        if (($pageReply = $this->pageLinkReply($message)) !== null) {
+            return $pageReply;
+        }
+
+        if (preg_match('/\b(?:what\s+day\s+is\s+it|what\s+is\s+today(?:\'s)?\s+date|today\'s?\s+date)\b/iu', $message) === 1) {
+            $date = Carbon::now(config('app.timezone'));
+            $reply = 'Today is **' . $date->isoFormat('dddd, MMMM D, YYYY') . '**.';
+            if (preg_match('/\bweather\b/iu', $message) === 1) {
+                $reply .= "\n\n" . $this->weatherSummary($message);
+            }
+            return [
+                'source'  => 'conversation',
+                'reply'   => $reply,
+                'context' => [],
+            ];
+        }
+
+        if (preg_match('/\bweather\b/iu', $message) === 1) {
+            return $this->weatherAnswer($message);
+        }
+
         if ($this->isAcknowledgement($message)) {
             return [
                 'source'  => 'conversation',
@@ -337,7 +359,9 @@ class HarvestInsightService
                     ? $this->fallbackFor($context, $message)
                     : (isset($context['farmer_focus'])
                         ? $this->focusFallback($context['farmer_focus'])
-                        : 'AI is temporarily unavailable right now. Please check your internet connection and try again in a moment.')),
+                        : ($this->isHarvestDataQuestion($message)
+                            ? 'AI is temporarily unavailable right now. Please check your internet connection and try again in a moment.'
+                            : $this->unrelatedAnswer($message)))),
             'context' => $context,
         ];
     }
@@ -423,6 +447,19 @@ class HarvestInsightService
         }
 
         return 'Understood. I am here whenever you need anything else about Aquilala’s records.';
+    }
+
+    private function isFollowUpContinuation(string $message): bool
+    {
+        $text = trim($message);
+        if ($text === '' || mb_strlen($text) > 40) {
+            return false;
+        }
+
+        return preg_match(
+            '/^(?:why|how|what|which|who|explain|and|then|also|tell\s+me\s+more)(?:\s+\w+){0,6}[?!.]*$/iu',
+            $text
+        ) === 1;
     }
 
     private function targetYearFromMessage(string $message): ?int
@@ -554,6 +591,11 @@ class HarvestInsightService
             ];
         })->values()->all();
 
+        // Drop duplicated audit rows (the same event is logged more than once
+        // in some paths) so the answer stays focused on what actually changed.
+        $rows = array_values(array_unique($rows, SORT_REGULAR));
+        $rows = collect($rows)->unique(fn (array $row) => $row['farmer'] . '|' . $row['description'])->values()->all();
+
         if ($rows === []) {
             return [
                 'source' => 'data',
@@ -562,15 +604,25 @@ class HarvestInsightService
             ];
         }
 
-        $lines = collect($rows)->map(
+        $shown = array_slice($rows, 0, 8);
+        $hidden = count($rows) - count($shown);
+
+        $lines = collect($shown)->map(
             fn (array $row) => '- **' . $row['farmer'] . '**: ' . $row['description']
                 . ($row['recorded_at'] ? ' (' . $row['recorded_at'] . ')' : '')
         )->implode("\n");
 
+        $reply = 'I found **' . number_format(count($rows)) . '** farmer '
+            . (count($rows) === 1 ? 'activity' : 'activities') . ' recorded in **' . $label . '**:'
+            . "\n" . $lines;
+
+        if ($hidden > 0) {
+            $reply .= "\n…plus " . number_format($hidden) . " more recent entr" . ($hidden === 1 ? 'y' : 'ies') . ".";
+        }
+
         return [
             'source' => 'data',
-            'reply' => 'I found **' . number_format(count($rows)) . '** farmer '
-                . (count($rows) === 1 ? 'activity' : 'activities') . ' recorded in **' . $label . '**:' . "\n" . $lines,
+            'reply' => $reply,
             'context' => ['farmer_activity' => ['period' => $label, 'count' => count($rows), 'items' => $rows]],
         ];
     }
@@ -814,6 +866,194 @@ class HarvestInsightService
         }
 
         return $this->fallback($context);
+    }
+
+    private function weatherSummary(string $message): string
+    {
+        $weather = WeatherService::getCurrentWeather();
+
+        if (empty($weather['is_available'])) {
+            return 'Current weather for **Bulan, Sorsogon** is temporarily unavailable. Please try again in a moment.';
+        }
+
+        $temperature = isset($weather['temperature']) ? round((float) $weather['temperature'], 1) . '°C' : 'n/a';
+        $condition = (string) ($weather['condition'] ?? 'unknown conditions');
+        $humidity = $weather['humidity'] ?? null;
+        $wind = $weather['wind_speed'] ?? null;
+        $updated = (string) ($weather['updated_at'] ?? '');
+
+        $lines = [
+            '**Bulan, Sorsogon** right now: **' . $temperature . ' · ' . $condition . '**'
+                . ($humidity !== null ? ', humidity **' . $humidity . '%**' : '')
+                . ($wind !== null ? ', wind **' . $wind . ' km/h**' : '')
+                . ($updated !== '' ? ' (updated ' . $updated . ')' : '') . '.',
+        ];
+
+        if (preg_match('/\bforecast\b/iu', $message) === 1) {
+            $forecast = WeatherService::getHourlyForecast();
+
+            if ($forecast !== []) {
+                $samples = array_values(array_intersect_key($forecast, array_flip([0, 3, 7])));
+
+                if ($samples !== []) {
+                    $lines[] = '';
+                    $lines[] = 'Next up:';
+
+                    foreach ($samples as $hour) {
+                        $lines[] = '- ' . (string) ($hour['time'] ?? '?')
+                            . ': ' . (isset($hour['temperature']) ? round((float) $hour['temperature'], 1) . '°C' : 'n/a')
+                            . ', ' . (string) ($hour['condition'] ?? 'n/a')
+                            . ' (' . (int) ($hour['rain_prob'] ?? 0) . '% rain).';
+                    }
+                }
+            }
+        }
+
+        $lines[] = '';
+        $lines[] = 'This is a live OpenWeather reading for Bulan, Sorsogon, not a harvest-records answer.';
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @return array{source: string, reply: string, context: array<string, mixed>}
+     */
+    private function weatherAnswer(string $message): array
+    {
+        if (preg_match('/\b(tokyo|manila|cebu|davao|makati|quezon|baguio)\b/iu', $message) === 1) {
+            return [
+                'source' => 'fallback',
+                'reply'  => $this->unrelatedAnswer($message),
+                'context' => [],
+            ];
+        }
+
+        return [
+            'source'  => 'data',
+            'reply'   => $this->weatherSummary($message),
+            'context' => ['weather' => WeatherService::getCurrentWeather()],
+        ];
+    }
+
+    /**
+     * @return array{source: string, reply: string, context: array<string, mixed>}|null
+     */
+    private function pageLinkReply(string $message): ?array
+    {
+        $pages = $this->adminPageCatalog();
+        if ($pages === []) {
+            return null;
+        }
+
+        $lower = mb_strtolower(trim($message));
+
+        $hasTrigger = str_contains($lower, 'page')
+            || str_contains($lower, 'where')
+            || str_contains($lower, 'find')
+            || str_contains($lower, 'link')
+            || str_contains($lower, 'open')
+            || str_contains($lower, 'navigate')
+            || str_contains($lower, 'menu')
+            || str_contains($lower, 'location')
+            || str_contains($lower, 'go to')
+            || str_contains($lower, 'take me');
+
+        if (! $hasTrigger) {
+            return null;
+        }
+
+        $messageWords = array_values(array_unique(preg_split('/\s+/u', preg_replace('/[^a-z0-9\s]+/iu', ' ', $lower) ?? '') ?: []));
+        $matches = [];
+
+        foreach ($pages as $label => $routeName) {
+            $labelLower = mb_strtolower($label);
+            $labelWords = array_values(array_unique(preg_split('/\s+/u', preg_replace('/[^a-z0-9\s]+/iu', ' ', $labelLower) ?? '') ?: []));
+
+            $score = count(array_intersect($labelWords, $messageWords));
+
+            if ($score > 0) {
+                $matches[$label] = ['route' => $routeName, 'score' => $score];
+            }
+        }
+
+        if ($matches === [] && preg_match('/\bpages?\b/iu', $lower) === 1) {
+            foreach ($pages as $label => $routeName) {
+                $matches[$label] = ['route' => $routeName, 'score' => 1];
+            }
+        }
+
+        if ($matches === []) {
+            return null;
+        }
+
+        uasort($matches, fn (array $left, array $right): int => $right['score'] <=> $left['score']);
+        $matches = array_slice($matches, 0, 8, true);
+
+        $links = [];
+
+        foreach ($matches as $label => $details) {
+            try {
+                $url = route((string) $details['route']);
+            } catch (\Throwable $e) {
+                continue;
+            }
+
+            $links[] = '- [' . $label . '](' . $url . ')';
+        }
+
+        if ($links === []) {
+            return null;
+        }
+
+        return [
+            'source'  => 'conversation',
+            'reply'   => "Here are the page" . (count($links) === 1 ? '' : 's') . " that match:\n" . implode("\n", $links) . "\n\nTap any link above to open the page directly.",
+            'context' => [],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function adminPageCatalog(): array
+    {
+        $pages = [
+            'Dashboard' => 'dashboard.admin',
+            'AI Harvest Insights' => 'admin.harvests.ai',
+            'Members' => 'admin.members.index',
+            'Import Members' => 'admin.members.import',
+            'Import Uploads' => 'admin.members.uploads',
+            'All Users' => 'admin.users.index',
+            'Create Account' => 'admin.users.create',
+            'Harvest Performance' => 'admin.harvests.index',
+            'All Harvest Reports' => 'admin.harvests.reports',
+            'Estimate vs Actual Harvest' => 'admin.harvests.compare',
+            'Farming Cost Reports' => 'admin.analytics.expenses',
+            'Planting Requests' => 'admin.plantings.index',
+            'Calendar' => 'admin.calendar.index',
+            'Events' => 'admin.calendar.events',
+            'Planting Seasons' => 'admin.operations.seasons',
+            'Product Catalog' => 'admin.operations.catalog',
+            'Stores' => 'admin.stores.index',
+            'Quotation Demand Trends' => 'admin.quotations.index',
+            'General Settings' => 'admin.settings.index',
+            'Season Settings' => 'admin.settings.seasons',
+            'Appearance' => 'admin.settings.interface',
+            'Weather Log' => 'admin.settings.weather',
+            'Archive' => 'admin.archive',
+            'Audit Log' => 'admin.audit.index',
+            'Activity History' => 'admin.activity.index',
+        ];
+
+        $available = [];
+
+        foreach ($pages as $label => $routeName) {
+            if (\Illuminate\Support\Facades\Route::has($routeName)) {
+                $available[$label] = $routeName;
+            }
+        }
+
+        return $available;
     }
 
     /**
@@ -1319,6 +1559,20 @@ class HarvestInsightService
         $texts = [$message];
 
         foreach (array_reverse($history) as $turn) {
+            // Only the farmer's own follow-up turns may carry a subject forward.
+            // Assistant messages can name farmers incidentally, and letting them
+            // supply the subject makes unrelated follow-up questions drift into
+            // that farmer's dossier. A short follow-up such as a bare "why"
+            // may still use them, because the previous answer is exactly what
+            // the administrator refers to then.
+            if (($turn['role'] ?? null) === 'assistant' && ! $this->isFollowUpContinuation($message)) {
+                continue;
+            }
+
+            if (($turn['role'] ?? null) !== 'user' && ($turn['role'] ?? null) !== 'assistant') {
+                continue;
+            }
+
             $texts[] = (string) ($turn['content'] ?? '');
         }
 
