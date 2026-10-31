@@ -3,6 +3,11 @@
 @section('title', 'Weather Log')
 
 @section('content')
+  <div style="margin:0 0 14px 0;font-size:13px;color:#64748b;">
+    <a href="{{ route('admin.settings.index') }}" style="color:#4A7A54;text-decoration:none;font-weight:600;">General Settings</a>
+    <span style="color:#94a3b8;"> / Weather Log</span>
+  </div>
+
   @php
     $types     = \App\Models\WeatherLog::TYPES;
     $severities = \App\Models\WeatherLog::SEVERITIES;

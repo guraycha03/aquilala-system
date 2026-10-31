@@ -71,7 +71,7 @@ return [
     // planting requests, so the title promises both halves of the name.
     'harvest' => [
         'label' => 'Report and Request',
-        'icon' => '<svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M12 10C9 10 6 9 6 5c3 0 6 2 6 5"/><path d="M12 14c3 0 6-1 6-5-3 0-6 2-6 5"/><path d="M3 20h18"/><path d="M3 12l4-4 4 4 5-5 5 5"/></svg>',
+        'icon' => '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
         // Importing and the archive of its files carry no menu entries of
         // their own: both pages are one button away on "All Harvest Reports",
         // so a sidebar line would only repeat that page and pad the menu.
@@ -128,12 +128,8 @@ return [
         'icon' => '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
         'items' => [
             ['label' => 'General Settings', 'routes' => ['admin.settings.index']],
-            ['label' => 'Season Settings', 'routes' => ['admin.settings.seasons']],
-            ['label' => 'Appearance', 'routes' => ['admin.settings.interface']],
-            ['label' => 'Weather Log', 'routes' => ['admin.settings.weather']],
-            ['label' => 'Archive', 'routes' => ['admin.archive']],
-            ['label' => 'Audit Log', 'routes' => ['admin.audit.index']],
             ['label' => 'Activity History', 'routes' => ['admin.activity.index']],
+            ['label' => 'Audit Log', 'routes' => ['admin.audit.index']],
         ],
     ],
 ];

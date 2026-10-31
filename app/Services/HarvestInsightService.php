@@ -170,14 +170,70 @@ class HarvestInsightService
      */
     public function ask(string $message, array $history = []): array
     {
-        if ($this->isGreeting($message) || $this->isIdentityQuestion($message)) {
+        $greetingPrefix = null;
+        $trimmedMessage = trim($message);
+        $afterGreeting = preg_replace(
+            '/^(?:magandang\s+(?:umaga|hapon|gabi)|good\s+(?:morning|afternoon|evening)|hello|hi|hey)\b\s*(?:po|ka)?[!,.?\s]*/iu',
+            '',
+            $trimmedMessage
+        );
+
+        if (is_string($afterGreeting) && trim($afterGreeting) !== '' && preg_replace('/\s+/u', ' ', trim($afterGreeting)) !== preg_replace('/\s+/u', ' ', $trimmedMessage)) {
+            $greetingPrefix = $this->greetingReplyFlexible($trimmedMessage);
+            $message = trim($afterGreeting);
+        }
+
+        if ($this->isGreetingFlexible($message) || $this->isIdentityQuestion($message)) {
             return [
                 'source'  => 'conversation',
                 'reply'   => $this->isIdentityQuestion($message)
                     ? ($this->isSelfRecognitionQuestion($message)
                         ? 'I know you as the signed-in Aquilala administrator for this session. I can use only what this account makes available in the system; I do not infer or reveal personal identity beyond that.'
                         : 'I’m Aquilala’s administrative insight assistant. I can discuss the association’s harvest records, explain general agricultural concepts, help interpret trends, and think through practical questions that relate to your work.')
-                    : $this->greetingReply($message),
+                    : $this->greetingReplyFlexible($message),
+                'context' => [],
+            ];
+        }
+
+        if ($this->isSystemHelpQuestion($message)) {
+            return [
+                'source'  => 'conversation',
+                'reply'   => $this->systemHelpReply($message),
+                'context' => [],
+            ];
+        }
+
+        if ($this->isTimeQuestion($message)) {
+            $now = Carbon::now(config('app.timezone'));
+            return [
+                'source'  => 'conversation',
+                'reply'   => 'Ngayon ay **' . $now->format('g:i A, d F Y') . '** sa **' . $now->timezoneName . '**.',
+                'context' => [],
+            ];
+        }
+
+        if ($this->isDayQuestion($message)) {
+            $now = Carbon::now(config('app.timezone'));
+            return [
+                'source'  => 'conversation',
+                'reply'   => 'Ngayon ay **' . $now->format('l, d F Y') . '**.',
+                'context' => [],
+            ];
+        }
+
+        if ($this->isTimeQuestion($message)) {
+            $now = Carbon::now(config('app.timezone'));
+            return [
+                'source'  => 'conversation',
+                'reply'   => 'Ngayon ay **' . $now->format('g:i A, d F Y') . '** sa **' . $now->timezoneName . '**.',
+                'context' => [],
+            ];
+        }
+
+        if ($this->isWhyQuestion($message)) {
+            return [
+                'source'  => 'conversation',
+                'reply'   => 'Hindi ko masasagot iyan dahil ang sakop ko ay mga tala ng Aquilala — mga ani, season, aktibidad ng magsasaka, gastos, at tala ng panahon. Maaari mo akong tanungin tungkol doon. Maaari mo rin kitang gabayan sa mga page kung may kailangan mo.',
                 'context' => [],
             ];
         }
@@ -286,6 +342,24 @@ class HarvestInsightService
             ];
         }
 
+        $parsedMonth = $this->parseRequestedMonth($message);
+
+        if (! $this->isFarmerActivityQuestion($message)
+            && $this->previousMessageIsFarmerActivity($history)
+            && $parsedMonth !== null) {
+            return $this->farmerActivityAnswer($message);
+        }
+
+        if (! $this->isFarmerActivityQuestion($message)
+            && $this->previousMessageIsFarmerActivity($history)
+            && preg_match('/\b(?:i\s+mean|i\s+meant|october|september|november|december|january|february|march|april|may|june|july|august)\b/iu', $message) === 1) {
+            return $this->farmerActivityAnswer($message);
+        }
+
+        if ($parsedMonth !== null && preg_match('/\b(report|harvest|harvests|overview|summary|review|records|comparison|compare)\b/iu', $message) === 1) {
+            return $this->harvestMonthAnswer($message);
+        }
+
         if (($context['coverage']['reports'] ?? 0) === 0) {
             return [
                 'source'  => 'fallback',
@@ -309,10 +383,17 @@ class HarvestInsightService
                     . "\nWrite a corrected answer that actually responds to the question, stays proportional, and acknowledges what the user asked.";
             }
 
-            $completion = $this->llm->completeJson([
-                ['role' => 'system', 'content' => HarvestQaPrompt::system()],
-                ['role' => 'user', 'content' => $userContent],
-            ], self::MAX_TOKENS);
+            $completion = $this->llm->completeJson(
+                [
+                    ['role' => 'system', 'content' => HarvestQaPrompt::system()],
+                    ['role' => 'user', 'content' => $userContent],
+                ],
+                self::MAX_TOKENS,
+                60,
+                ($harvestModel = trim((string) env('GROQ_MODEL_HARVEST', ''))) !== ''
+                    ? $harvestModel
+                    : null
+            );
 
             $candidate = $this->decode($completion['raw'] ?? '', 'reply');
 
@@ -351,6 +432,10 @@ class HarvestInsightService
             }
         }
 
+        if ($greetingPrefix !== null && $reply !== null) {
+            $reply = $greetingPrefix . "\n\n" . $reply;
+        }
+
         return [
             'source'  => $reply !== null ? 'ai' : 'fallback',
             'reply'   => $reply !== null
@@ -364,6 +449,79 @@ class HarvestInsightService
                             : $this->unrelatedAnswer($message)))),
             'context' => $context,
         ];
+    }
+
+    private function isSystemHelpQuestion(string $message): bool
+    {
+        return preg_match(
+            '/\b(how\s+(?:do|can|to)\s+(?:i|we|you)?\s*(?:use|navigate|find|open|get\s+started)|what\s+can\s+you\s+(?:do|help)|what\s+is\s+this|how\s+does\s+this\s+work|use\s+this|this\s+system|what\s+can\s+you\s+do|ano\s+ang\s+pwede|ano\s+kaya|pwede|magtanong|magsaya|mong|gawin|gagawin|tulong|tumulong)\b/iu',
+            $message
+        ) === 1;
+    }
+
+    private function systemHelpReply(string $message): string
+    {
+        return "I can help you work with Aquilala’s records and pages.\n\n"
+            . "**Things I can help with**\n"
+            . "- Harvest performance, seasons, crops, costs, and farmer activity\n"
+            . "- Planting requests, members, audit/activity pages\n"
+            . "- Showing the page link for the area you need\n"
+            . "- Explaining how a page or record works\n\n"
+            . "Tell me what you would like to do next, and I will guide you through it.";
+    }
+
+    private function isGreetingFlexible(string $message): bool
+    {
+        $normalized = trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message));
+        $normalized = trim((string) preg_replace('/\s+/u', ' ', $normalized));
+
+        if ($normalized === '' || mb_strlen($normalized) > 45) {
+            return false;
+        }
+
+        return preg_match(
+            '/\b(good\s+(morning|afternoon|evening)|hello|hi|hey|greetings|morning|afternoon|evening|how\s+are\s+you|magandang\s+(umaga|hapon|gabi)|kumusta)\b/iu',
+            $normalized
+        ) === 1;
+    }
+
+    private function greetingReplyFlexible(string $message): string
+    {
+        $normalized = mb_strtolower(trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message)));
+
+        if (str_contains($normalized, 'gabi')) {
+            return 'Magandang gabi! Naririto ako upang tumulong sa mga tala at tanong tungkol sa Aquilala at pagsasaka.';
+        }
+
+        if (str_contains($normalized, 'hapon')) {
+            return 'Magandang hapon! Naririto ako upang tumulong sa mga tala at tanong tungkol sa Aquilala at pagsasaka.';
+        }
+
+        if (str_contains($normalized, 'umaga') || str_contains($normalized, 'magandang')) {
+            return 'Magandang umaga! Naririto ako upang tumulong sa mga tala at tanong tungkol sa Aquilala at pagsasaka.';
+        }
+
+        if (str_contains($normalized, 'kumusta')) {
+            return 'Mabuti naman, salamat sa pagtatanong. Naririto ako upang tumulong sa Aquilala.';
+        }
+
+        if (str_contains($normalized, 'good evening') || str_contains($normalized, 'evening')) {
+            return 'Good evening! I am here and ready to help you review Aquilala’s records or talk through a farming question.';
+        }
+
+        if (str_contains($normalized, 'good afternoon') || str_contains($normalized, 'afternoon')) {
+            return 'Good afternoon! I am here and ready to help you review Aquilala’s records or talk through a farming question.';
+        }
+
+        if (str_contains($normalized, 'good morning') || str_contains($normalized, 'morning')) {
+            return 'Good morning! I am here and ready to help you review Aquilala’s records or talk through a farming question.';
+        }
+
+        if (str_contains($normalized, 'how are you')) {
+            return "I'm doing well, thank you. I am here to help with Aquilala's records and farming questions.";
+        }
+
+        return 'Hello. I’m here and ready to help you review Aquilala’s harvest records or talk through a farming question.';
     }
 
     private function isGreeting(string $message): bool
@@ -399,20 +557,21 @@ class HarvestInsightService
 
     private function isAcknowledgement(string $message): bool
     {
-        $text = mb_strtolower(trim($message));
-        $text = preg_replace('/[!?.]+$/u', '', (string) $text) ?? (string) $text;
-        $text = (string) preg_replace('/\s+/u', ' ', trim((string) $text));
+        $text = mb_strtolower(trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message)));
+        $text = (string) preg_replace('/\s+/u', ' ', $text);
 
         if ($text === '') {
             return false;
         }
 
         $allowed = ['ok', 'okay', 'alright', 'got it', 'sure', 'fine', 'great', 'cool',
-            'thanks', 'thank you', 'thankyou', 'yes', 'no', 'understood', 'gotcha'];
+            'thanks', 'thank you', 'thankyou', 'yes', 'no', 'understood', 'gotcha',
+            'salamat', 'salamatpo', 'salamatpo.', 'salamatpang', 'maramingsalamat', 'po',
+            'okna', 'okaylang', 'tapos', 'taposna', 'oo', 'hindi', 'na'];
 
         $tokens = explode(' ', $text);
 
-        if (count($tokens) > 2) {
+        if (count($tokens) > 5) {
             return false;
         }
 
@@ -438,8 +597,8 @@ class HarvestInsightService
             }
         }
 
-        if (preg_match('/\b(thanks|thank\s+you)\b/i', $lower)) {
-            return 'You are welcome. I am here whenever you would like to dig deeper into Aquilala’s records.';
+        if (preg_match('/\b(salamat|thanks|thank\s+you)\b/i', $lower)) {
+            return 'Walang anuman. Naririto ako kapag may kailangan ka sa Aquilala at mga tala ng samahan.';
         }
 
         if ($lastUserQuestion !== '') {
@@ -462,7 +621,220 @@ class HarvestInsightService
         ) === 1;
     }
 
+
+    private function isTaglish(string $message): bool
+    {
+        $lower = mb_strtolower(trim($message));
+
+        foreach (['magandang', 'kumusta', 'salamat', ' paano ', ' paano', 'tulong', 'tayo', 'ikaw', 'aking', 'ano ang', ' ang ', ' sa ', ' po ', ' po', ' ba ', 'muna', 'talaga'] as $token) {
+            if (str_contains(' ' . $lower . ' ', ' ' . trim($token) . ' ')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array{source: string, reply: string, context: array<string, mixed>}|null
+     */
+    private function taglishAssist(string $message, array $history): ?array
+    {
+        if (! $this->llm->available()) {
+            return null;
+        }
+
+        $context = $this->context();
+        $completion = $this->llm->completeJson([
+            ['role' => 'system', 'content' => 'You are Aquilala\'s administrative insight assistant. You may discuss Aquilala harvest records, general agricultural concepts, trends, and system pages. If the user writes in Tagalog or Taglish, answer helpfully in the same language. Do not invent numbers, weather events, farmer facts, or system data. Never mention user roles, permissions, or internal implementation. If the request is outside this scope, politely say you cannot answer it from Aquilala records.'],
+            ['role' => 'user', 'content' => 'Question: ' . $message . "
+
+Verified context summary: " . $this->taglishContextSummary($context) . "
+
+Keep the answer to three sentences or fewer."],
+        ], 500);
+
+        if ($completion === null) {
+            return null;
+        }
+
+        $reply = $this->decode($completion['raw'] ?? '', 'reply');
+
+        if ($reply === null || trim($reply) === '') {
+            return null;
+        }
+
+        $ai2 = $this->validatorAi->validate($message, 'admin', $reply, $context);
+
+        if ($ai2 !== null && $ai2['verdict'] === AiResponseValidatorAi::VERDICT_REJECT) {
+            return null;
+        }
+
+        if ($ai2 !== null && $ai2['verdict'] === AiResponseValidatorAi::VERDICT_REVISE) {
+            if ($ai2['suggested_answer'] !== '' && $ai2['suggested_answer'] !== null) {
+                $reply = $ai2['suggested_answer'];
+            }
+        }
+
+        return [
+            'source'  => 'ai',
+            'reply'   => $reply,
+            'context' => [],
+        ];
+    }
+
+    private function taglishContextSummary(array $context): string
+    {
+        $coverage = $context['coverage'] ?? [];
+
+        return sprintf(
+            '%d reports, %d farmers, %s to %s',
+            (int) ($coverage['reports'] ?? 0),
+            (int) ($coverage['farmers'] ?? 0),
+            (string) ($coverage['first_harvest'] ?? '-'),
+            (string) ($coverage['last_harvest'] ?? '-')
+        );
+    }
+
+    private function isTimeQuestion(string $message): bool
+    {
+        return preg_match('/\b(?:anong\s+oras|oras\s+na|kailan)\b/iu', $message) === 1;
+    }
+
+    private function isWhyQuestion(string $message): bool
+    {
+        $text = trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message));
+        $text = (string) preg_replace('/\s+/u', ' ', $text);
+        if ($text === '' || mb_strlen($text) > 25) {
+            return false;
+        }
+
+        return preg_match('/\bbakit\b/iu', $text) === 1;
+    }
+
+
+    private function isDayQuestion(string $message): bool
+    {
+        $lower = mb_strtolower(trim($message));
+        if ($lower === '' || mb_strlen($lower) > 60) {
+            return false;
+        }
+
+        return preg_match('/\b(?:anong\s+araw|araw\s+ba|anong\s+petsa|petsa\s+ba)\b/iu', $lower) === 1;
+    }
+
+    /**
+     * @return array{0: int, 1: int}|null  [month, year]
+     */
+    private function parseRequestedMonth(string $message): ?array
+    {
+        $lower = mb_strtolower($message);
+        $months = [
+            'january' => 1, 'february' => 2, 'march' => 3, 'april' => 4,
+            'may' => 5, 'june' => 6, 'july' => 7, 'august' => 8,
+            'september' => 9, 'october' => 10, 'november' => 11, 'december' => 12,
+            'jan' => 1, 'feb' => 2, 'mar' => 3, 'apr' => 4,
+            'jun' => 6, 'jul' => 7, 'aug' => 8, 'sep' => 9, 'sept' => 9,
+            'oct' => 10, 'nov' => 11, 'dec' => 12,
+        ];
+
+        $year = null;
+        if (preg_match('/\b(19\d{2}|20\d{2})\b/u', $lower, $match) === 1) {
+            $year = (int) $match[1];
+        }
+
+        foreach ($months as $name => $number) {
+            if (preg_match('/\b' . preg_quote($name, '/') . '\b/u', $lower) === 1) {
+                return [$number, $year ?: (int) Carbon::now(config('app.timezone'))->year];
+            }
+        }
+
+        if (preg_match('/\bthis\s+month\b|ang\s+buwan\s+na\s+ito/iu', $lower) === 1) {
+            $now = Carbon::now(config('app.timezone'));
+
+            return [(int) $now->month, (int) $now->year];
+        }
+
+        if (preg_match('/\blast\s+month\b|nakaraang\s+buwan/iu', $lower) === 1) {
+            $month = Carbon::now(config('app.timezone'))->subMonthNoOverflow();
+
+            return [(int) $month->month, (int) $month->year];
+        }
+
+        return null;
+    }
+
+    private function previousMessageIsFarmerActivity(array $history): bool
+    {
+        foreach (array_reverse($history) as $turn) {
+            if (($turn['role'] ?? null) !== 'user') {
+                continue;
+            }
+
+            return $this->isFarmerActivityQuestion((string) ($turn['content'] ?? ''));
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array{source: string, reply: string, context: array<string, mixed>}
+     */
+    private function harvestMonthAnswer(string $message): array
+    {
+        $parsed = $this->parseRequestedMonth($message);
+
+        if ($parsed === null) {
+            return [
+                'source'  => 'clarification',
+                'reply'   => 'Pwede mo bang sabihin kung anong buwan at taon ang gusto mong tingnan?',
+                'context' => [],
+            ];
+        }
+
+        [$month, $year] = $parsed;
+
+        $reports = \App\Models\HarvestReport::query()
+            ->whereYear('harvest_date', $year)
+            ->whereMonth('harvest_date', $month)
+            ->with(['farmer', 'member'])
+            ->get();
+
+        $monthName = Carbon::create($year, $month, 1)->format('F Y');
+
+        if ($reports->isEmpty()) {
+            return [
+                'source'  => 'data',
+                'reply'   => "Walang naitalang harvest report para sa **{$monthName}**.",
+                'context' => ['month' => $monthName, 'reports' => 0],
+            ];
+        }
+
+        $totalYield = (float) $reports->sum('actual_yield_metric_tons');
+        $totalArea = (float) $reports->sum('land_area');
+        $yieldPerHectare = $totalArea > 0 ? round($totalYield / $totalArea, 3) : null;
+        $crops = $reports->pluck('crop_type')->filter()->unique()->sort()->values()->all();
+        $farmerCount = $reports->map(fn (\App\Models\HarvestReport $report) => $report->reporterKey())->unique()->count();
+
+        $lines = [
+            "## Harvest report for {$monthName}",
+            '',
+            '**' . number_format($reports->count()) . '** reports from **' . $farmerCount . '** farmers, covering **' . implode(', ', $crops) . '**.',
+            '**' . number_format($totalYield, 2) . ' MT** total yield from **' . number_format($totalArea, 2) . ' ha**'
+                . ($yieldPerHectare !== null ? ' (**' . $yieldPerHectare . ' MT/ha**)' : '') . '.',
+        ];
+
+        return [
+            'source'  => 'data',
+            'reply'   => implode("\n", $lines),
+            'context' => ['month' => $monthName, 'reports' => $reports->count()],
+        ];
+    }
+
     private function targetYearFromMessage(string $message): ?int
+
+
+
     {
         $lower = mb_strtolower(trim($message));
 
@@ -631,6 +1003,16 @@ class HarvestInsightService
     {
         $now = Carbon::now($timezone);
         $lower = mb_strtolower($message);
+
+        $parsed = $this->parseRequestedMonth($message);
+
+        if ($parsed !== null && ! preg_match('/\b(?:today|yesterday|week)\b/u', $lower) === 1) {
+            [$month, $year] = $parsed;
+            $start = Carbon::create($year, $month, 1, 0, 0, 0, $timezone)->startOfMonth();
+            $end = $start->copy()->addMonth();
+
+            return [$start, $end, Carbon::create($year, $month, 1)->format('F Y')];
+        }
 
         if (preg_match('/\byesterday\b/u', $lower) === 1) {
             $start = $now->copy()->subDay()->startOfDay();
@@ -956,7 +1338,17 @@ class HarvestInsightService
             || str_contains($lower, 'menu')
             || str_contains($lower, 'location')
             || str_contains($lower, 'go to')
-            || str_contains($lower, 'take me');
+            || str_contains($lower, 'take me')
+            || str_contains($lower, 'pano')
+            || str_contains($lower, 'paano')
+            || str_contains($lower, 'makikita')
+            || str_contains($lower, 'saan')
+            || str_contains($lower, 'punntahan')
+            || str_contains($lower, 'dark')
+            || str_contains($lower, 'mode')
+            || str_contains($lower, 'theme')
+            || str_contains($lower, 'schedule')
+            || str_contains($lower, 'meeting');
 
         if (! $hasTrigger) {
             return null;
@@ -965,11 +1357,40 @@ class HarvestInsightService
         $messageWords = array_values(array_unique(preg_split('/\s+/u', preg_replace('/[^a-z0-9\s]+/iu', ' ', $lower) ?? '') ?: []));
         $matches = [];
 
+        $aliases = [
+            'Appearance' => ['dark mode', 'display theme', 'sidebar color', 'theme', 'kulay'],
+            'Members' => ['members list', 'lista ng mga member', 'member list', 'mga member'],
+            'Weather Log' => ['weather log', 'weather history', 'tala ng panahon'],
+            'Calendar' => ['calendar', 'schedule', 'meeting', 'event'],
+            'Events' => ['events', 'meeting', 'schedule'],
+            'All Harvest Reports' => ['reports', 'report for october', 'reports for october'],
+            'General Settings' => ['settings', 'appearance', 'dark mode', 'theme'],
+        ];
+
         foreach ($pages as $label => $routeName) {
             $labelLower = mb_strtolower($label);
             $labelWords = array_values(array_unique(preg_split('/\s+/u', preg_replace('/[^a-z0-9\s]+/iu', ' ', $labelLower) ?? '') ?: []));
+            $extraWords = [];
 
-            $score = count(array_intersect($labelWords, $messageWords));
+            if (isset($aliases[$label])) {
+                foreach ($aliases[$label] as $alias) {
+                    $extraWords = array_merge($extraWords, preg_split('/\s+/u', preg_replace('/[^a-z0-9\s]+/iu', ' ', mb_strtolower($alias)) ?? '') ?: []);
+                }
+            }
+
+            $stopWords = ['ako', 'ang', 'ang', 'sa', 'ng', 'mga', 'po', 'ba', 'kung', 'at', 'na', 'kong'];
+            $significantMessageWords = array_values(array_diff($messageWords, $stopWords));
+            $significantAllWords = array_values(array_diff(array_merge($labelWords, $extraWords), $stopWords));
+
+            $score = count(array_intersect($significantAllWords, $significantMessageWords));
+
+            if ($score === 0) {
+                foreach ($aliases[$label] ?? [] as $alias) {
+                    if (str_contains($lower, mb_strtolower($alias))) {
+                        $score = max($score, 2);
+                    }
+                }
+            }
 
             if ($score > 0) {
                 $matches[$label] = ['route' => $routeName, 'score' => $score];
@@ -989,6 +1410,34 @@ class HarvestInsightService
         uasort($matches, fn (array $left, array $right): int => $right['score'] <=> $left['score']);
         $matches = array_slice($matches, 0, 8, true);
 
+        $descriptions = [
+            'Dashboard' => 'where you can see the overall association overview.',
+            'AI Harvest Insights' => 'where you can chat about harvest data and trends.',
+            'Members' => 'where you can view, search, and manage members.',
+            'Import Members' => 'where you can import member records.',
+            'Import Uploads' => 'where you can check import files and previews.',
+            'All Users' => 'where you can view and manage user accounts.',
+            'Create Account' => 'where you can create and register a new account.',
+            'Harvest Performance' => 'where you can review harvest performance.',
+            'All Harvest Reports' => 'where you can filter, search, and archive harvest reports.',
+            'Estimate vs Actual Harvest' => 'where you can compare estimates with actual harvests.',
+            'Farming Cost Reports' => 'where you can review expense and cost analytics.',
+            'Planting Requests' => 'where you can confirm or reject planting requests.',
+            'Calendar' => 'where you can view the association calendar.',
+            'Events' => 'where you can manage association events.',
+            'Planting Seasons' => 'where you can configure planting seasons.',
+            'Product Catalog' => 'where you can manage products and inputs.',
+            'Stores' => 'where you can manage store owners and paperwork.',
+            'Quotation Demand Trends' => 'where you can review quotation demand.',
+            'General Settings' => 'where you can open the settings hub.',
+            'Season Settings' => 'where you can set season parameters.',
+            'Appearance' => 'where you can change sidebar colors and display mode.',
+            'Weather Log' => 'where you can log typhoons, floods, and weather events.',
+            'Archive' => 'where you can restore archived records.',
+            'Audit Log' => 'where you can review user audit activity.',
+            'Activity History' => 'where you can check activity timelines.',
+        ];
+
         $links = [];
 
         foreach ($matches as $label => $details) {
@@ -998,7 +1447,7 @@ class HarvestInsightService
                 continue;
             }
 
-            $links[] = '- [' . $label . '](' . $url . ')';
+            $links[] = '- [' . $label . '](' . $url . ') — ' . ($descriptions[$label] ?? 'Open this page directly.');
         }
 
         if ($links === []) {
@@ -1007,7 +1456,7 @@ class HarvestInsightService
 
         return [
             'source'  => 'conversation',
-            'reply'   => "Here are the page" . (count($links) === 1 ? '' : 's') . " that match:\n" . implode("\n", $links) . "\n\nTap any link above to open the page directly.",
+            'reply'   => "Here are the page links that match your request. Open the one that fits what you need:\n" . implode("\n", $links),
             'context' => [],
         ];
     }
@@ -1063,11 +1512,14 @@ class HarvestInsightService
      */
     private function unrelatedAnswer(string $message): string
     {
+        if ($this->isTaglish($message)) {
+            return 'Hindi ko masasagot iyan mula sa datos ng Aquilala. Maaari mo akong tanungin tungkol sa mga ani, season, aktibidad ng magsasaka, gastos, miyembro, tala ng panahon, at mga page ng sistema. Maaari mo rin kitang gabayan kung paano gamitin ang system.';
+        }
         $lower = mb_strtolower(trim($message));
 
         // Greetings and courtesy get a human-like reply back, not a refusal.
         if (preg_match('/\b(good\s+(morning|afternoon|evening)|hello|hi|hey|good\s+day)\b/i', $lower) === 1) {
-            return $this->greetingReply($message);
+            return $this->greetingReplyFlexible($message);
         }
 
         // Thanks and identity get a short, direct reply.
@@ -1079,7 +1531,7 @@ class HarvestInsightService
             return 'I am Aquilala’s administrative insight assistant. I can discuss the association’s harvest records, explain general agricultural concepts, help interpret trends, and think through practical questions that relate to your work.';
         }
 
-        return "I cannot answer that from Aquilala’s harvest records. I cover harvest yields, seasons, crops, farmers, costs, planting and harvest records, weather events, and variety notes — ask me about a harvest, a farmer’s performance, or a season comparison instead.";
+        return "I cannot answer that from Aquilala’s data. I can help with harvest yields, seasons, crops, farmers, costs, member counts, activity logs, weather records, and page navigation (including the harvest records UI). Ask me about one of those, or ask me to show the page you need.";
     }
 
     private function isHarvestDataQuestion(string $message): bool

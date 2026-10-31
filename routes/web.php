@@ -556,6 +556,9 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/settings', function () {
             return view('admin.settings.index');
         })->name('settings.index');
+        Route::get('/settings/general', function () {
+            return view('admin.settings.general');
+        })->name('settings.general');
         Route::get('/archive', [\App\Http\Controllers\AdminArchiveController::class, 'index'])
             ->name('archive');
         Route::post('/archive/users/{user}/restore', [\App\Http\Controllers\AdminArchiveController::class, 'restoreUser'])

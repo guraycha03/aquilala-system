@@ -27,6 +27,5 @@
       @include('partials.theme-mode-picker')
     </div>
 
-    @include('partials.notifications-settings')
-  </div>
+      </div>
 @endsection

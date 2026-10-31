@@ -112,6 +112,21 @@
   .ai-source-badge.ai { background: #edf1e9; color: #648268; border: 1px solid #ddd6fe; }
   .ai-source-badge.fallback { background: #edf1e9; color: #648268; border: 1px solid #e2e8f0; }
 
+  /* Professional, clearly identifiable page links from the AI. */
+  .ai-page-link {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+    border-radius: 999px; text-decoration: none; font-weight: 600; font-size: 13px;
+    color: #14532d; background: #edf1e9; border: 1px solid #648268;
+    transition: all .15s ease; margin: 2px 4px 2px 0;
+  }
+  .ai-page-link::before {
+    content: '↗'; font-size: 12px;
+  }
+  .ai-page-link:hover { background: #d8f1e0; border-color: #4A7A54; transform: translateY(-1px); }
+  .ai-page-link:focus { outline: 2px solid #4A7A54; outline-offset: 2px; }
+  .ai-page-link-list li { margin-bottom: 4px; list-style: none; position: relative; padding-left: 14px; }
+  .ai-page-link-list li::before { content: '•'; position: absolute; left: 0; color: #648268; }
+
   .basis-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px dashed #eef1f4; font-size: 13px; }
   .basis-row:last-child { border-bottom: none; }
   .basis-key { color: #64748b; font-weight: 500; }
@@ -293,6 +308,7 @@
   }
   function inlineAi(t) {
     return t
+      .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a class="ai-page-link" href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')

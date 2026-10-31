@@ -162,6 +162,62 @@ class AquilalaAssistant
             return $this->harvestOverviewAnswer($message, $user);
         }
 
+        if ($this->assistantIsGreetingFlexible($message)) {
+            return [
+                'reply'       => $this->assistantGreetingReply($message, []),
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::GREETING,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
+        if ($this->assistantIsSystemHelp($message)) {
+            $pages = $this->pageLinkReply('where can I find a page', (string) ($user?->role ?? ''))['reply'] ?? null;
+            $pages = $this->assistantPageCatalog($user?->role ?? '');
+            $links = [];
+
+            foreach ($pages as $label => $routeName) {
+                try {
+                    $links[] = '- [' . $label . '](' . route($routeName) . ')';
+                } catch (\Throwable $e) {
+                    continue;
+                }
+
+                if (count($links) >= 6) {
+                    break;
+                }
+            }
+
+            $reply = "I'm Aquilala's assistant for your farm. I can help with product prices, fertilizer and crop advice, cost estimates, and planting guidance.\n\n"
+                . "Ask me directly, for example:\n"
+                . '- "Do you have urea products?"\n'
+                . '- "What fertilizers for corn?"\n'
+                . '- "How much would 2 hectares of corn cost?"\n'
+                . '- "How do I plant corn?"\n'
+                . '- "Where can I find My Cost Quotations?"\n';
+
+            if ($links !== []) {
+                $reply .= "\nSome pages you may need:\n" . implode("\n", $links);
+            }
+
+            if (trim($message) === '' || preg_match('/\bthis\b/iu', $message) === 1) {
+                $reply .= "\n\nIf you mean a specific page or step, tell me which one and I will guide you.";
+            }
+
+            return [
+                'reply'       => $reply,
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
         $routing = $this->router->route($message, $context, $history);
         $intent = $routing['intent'];
 
@@ -1211,9 +1267,8 @@ class AquilalaAssistant
 
     private function unsupportedAnswer(): string
     {
-        return "I can’t answer that. I focus on Aquilala farming and this system — the product catalog, the recommendation formulas, "
-            . "and the cost estimates Aquilala calculates. I can’t help with that one. "
-            . 'Try asking what products you need for a crop, or what a cost estimate came to.';
+        return "I can’t answer that. I focus on Aquilala farming and this system — including product prices, fertilizer advice, crop guidance, cost estimates, page links, and weather updates. I can’t help with that one. "
+            . 'Try asking what products you need for a crop, what a cost estimate came to, or ask me to open a page for you.';
     }
 
     /**
@@ -1299,7 +1354,12 @@ class AquilalaAssistant
             || str_contains($lower, 'menu')
             || str_contains($lower, 'location')
             || str_contains($lower, 'go to')
-            || str_contains($lower, 'take me');
+            || str_contains($lower, 'take me')
+            || str_contains($lower, 'pano')
+            || str_contains($lower, 'paano')
+            || str_contains($lower, 'makikita')
+            || str_contains($lower, 'saan')
+            || str_contains($lower, 'punntahan');
 
         if (! $hasTrigger) {
             return null;
@@ -1324,6 +1384,32 @@ class AquilalaAssistant
         uasort($matches, fn (array $left, array $right): int => $right['score'] <=> $left['score']);
         $matches = array_slice($matches, 0, 8, true);
 
+        $descriptions = [
+            'Dashboard' => 'where you can see your overview.',
+            'Submit Harvest Report' => 'where you can add your own harvest report.',
+            'My Crops' => 'where you can manage your crop batches.',
+            'Harvest Reports' => 'where you can view your harvest history and reports.',
+            'Estimate vs Actual Harvest' => 'where you can compare your estimated and reported harvest.',
+            'My Cost Quotations' => 'where you can create and review your cost quotations.',
+            'Browse Supplies' => 'where you can browse available farming supplies.',
+            'Recommended Supplies' => 'where you can see recommendation results.',
+            'Top Quoted Products' => 'where you can check frequently quoted products.',
+            'Available Stores' => 'where you can find stores.',
+            'Crop Guide' => 'where you can check available crops and guidance.',
+            'AI Assistant' => 'where you can chat with the AI assistant.',
+            'Calendar' => 'where you can view the association calendar.',
+            'Events' => 'where you can check association events.',
+            'Account Settings' => 'where you can manage your account settings.',
+            'Dashboard' => 'where you can see your overview.',
+            'Top Products' => 'where you can check product performance.',
+            'Product Listings' => 'where you can manage your product listings.',
+            'Inventory' => 'where you can manage your store inventory.',
+            'Input Formulas' => 'where you can manage farm input formulas.',
+            'Quotation Demand Trends' => 'where you can see quotation demand trends.',
+            'Settings' => 'where you can manage your account settings.',
+            'Activity History' => 'where you can check your activity history.',
+        ];
+
         $links = [];
 
         foreach ($matches as $label => $details) {
@@ -1333,7 +1419,7 @@ class AquilalaAssistant
                 continue;
             }
 
-            $links[] = '- [' . $label . '](' . $url . ')';
+            $links[] = '- [' . $label . '](' . $url . ') — ' . ($descriptions[$label] ?? 'Open this page directly.');
         }
 
         if ($links === []) {
@@ -1341,7 +1427,7 @@ class AquilalaAssistant
         }
 
         return [
-            'reply'  => "Here are the page" . (count($links) === 1 ? '' : 's') . " that match:\n" . implode("\n", $links) . "\n\nTap any link above to open the page directly.",
+            'reply'  => "Here are the page links that match your request. Open the one that fits what you need:\n" . implode("\n", $links),
         ];
     }
 
@@ -1484,6 +1570,54 @@ class AquilalaAssistant
         $lines[] = 'See the full detail on your [My Harvest Reports](' . route('farmer.harvests.index') . ') page.';
 
         return $makeResponse(implode("\n", $lines));
+    }
+
+    private function assistantIsGreetingFlexible(string $message): bool
+    {
+        $normalized = trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message));
+        $normalized = trim((string) preg_replace('/\s+/u', ' ', $normalized));
+
+        if ($normalized === '' || mb_strlen($normalized) > 45) {
+            return false;
+        }
+
+        return preg_match(
+            '/\b(good\s+(morning|afternoon|evening)|hello|hi|hey|greetings|morning|afternoon|evening|how\s+are\s+you)\b/iu',
+            $normalized
+        ) === 1;
+    }
+
+    private function assistantGreetingReply(string $message, array $contextData): string
+    {
+        $normalized = mb_strtolower(trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message)));
+
+        if (str_contains($normalized, 'evening')) {
+            $base = 'Good evening! How can I help with your farm today?';
+        } elseif (str_contains($normalized, 'afternoon')) {
+            $base = 'Good afternoon! How can I help with your farm today?';
+        } elseif (str_contains($normalized, 'morning')) {
+            $base = 'Good morning! How can I help with your farm today?';
+        } else {
+            $base = 'Hello! How can I help with your farm today?';
+        }
+
+        $season = $contextData['facts']['season_profile'] ?? [];
+
+        if (! empty($season['label'])) {
+            return $base . ' It is **' . $season['label'] . '** in Bulan right now.';
+        }
+
+        return $base;
+    }
+
+    private function assistantIsSystemHelp(string $message): bool
+    {
+        $normalized = trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message));
+
+        return trim($normalized) !== '' && (
+            preg_match('/\b(how\s+(?:do|can|to)\s+(?:i|we|you)?\s*(?:use|navigate|find|open|get\s+started)|what\s+(?:can|does)\s+(?:this|you|ai)?\s*(?:do|help)|how\s+does\s+(?:this|it)\s+work|use\s+this|this\s+system)\b/iu', $normalized) === 1
+            || trim($normalized) === 'how do i use the this'
+        );
     }
 
     private function trustedCropNames(array $contextData): array
