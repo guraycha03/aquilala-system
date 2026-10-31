@@ -235,21 +235,9 @@ class HarvestAiInsightTest extends TestCase
 
         $reply = $response->json('reply');
 
-        foreach ([
-            '### Performance Snapshot',
-            '### Recent vs. Past',
-            '### What The Data Suggests',
-            '### Farmers To Recognise',
-            '### Recommended Follow-Up',
-        ] as $heading) {
-            $this->assertStringContainsString($heading, $reply);
-        }
-
-        // Figures must come from the records, not from thin air.
-        $this->assertStringContainsString('24.50', $reply);
-        $this->assertStringContainsString('-15.5%', $reply);
-        $this->assertStringContainsString('Farmer Ana', $reply);
-        $this->assertStringContainsString('Wet Season', $reply);
+        // When the model is unavailable, the assistant must say so plainly
+        // instead of dressing up a database dump as a reply.
+        $this->assertStringContainsString('temporarily unavailable', $reply);
 
         // Nothing was sent to a provider.
         Http::assertNothingSent();

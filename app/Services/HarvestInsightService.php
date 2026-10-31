@@ -331,7 +331,13 @@ class HarvestInsightService
 
         return [
             'source'  => $reply !== null ? 'ai' : 'fallback',
-            'reply'   => $reply ?? $this->fallbackFor($context, $message),
+            'reply'   => $reply !== null
+                ? $reply
+                : ($this->llm->available()
+                    ? $this->fallbackFor($context, $message)
+                    : (isset($context['farmer_focus'])
+                        ? $this->focusFallback($context['farmer_focus'])
+                        : 'AI is temporarily unavailable right now. Please check your internet connection and try again in a moment.')),
             'context' => $context,
         ];
     }
@@ -369,11 +375,32 @@ class HarvestInsightService
 
     private function isAcknowledgement(string $message): bool
     {
-        return preg_match(
-            '/^(?:ok(?:ay)?|alright|got\s+it|sure|fine|great|cool|thanks|thank\s+you|yes|no)[!?.\s]*$/iu',
-            trim($message)
-        ) === 1;
+        $text = mb_strtolower(trim($message));
+        $text = preg_replace('/[!?.]+$/u', '', (string) $text) ?? (string) $text;
+        $text = (string) preg_replace('/\s+/u', ' ', trim((string) $text));
+
+        if ($text === '') {
+            return false;
+        }
+
+        $allowed = ['ok', 'okay', 'alright', 'got it', 'sure', 'fine', 'great', 'cool',
+            'thanks', 'thank you', 'thankyou', 'yes', 'no', 'understood', 'gotcha'];
+
+        $tokens = explode(' ', $text);
+
+        if (count($tokens) > 2) {
+            return false;
+        }
+
+        foreach ($tokens as $token) {
+            if (! in_array($token, $allowed, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
+
 
     private function acknowledgementReply(string $message, array $history): string
     {
