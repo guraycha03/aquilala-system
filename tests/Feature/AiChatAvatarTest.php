@@ -90,13 +90,13 @@ class AiChatAvatarTest extends TestCase
             ->assertSee('data-ai-avatar', false)
             ->assertSee('avatarPicker', false);
 
-        // Every choice in the set is offered, and every one of them is a
-        // file the system owns.
-        foreach (AiAvatars::all() as $key => $avatar) {
+        // Every visible choice is offered, and every one of them is a file
+        // from the numbered assistant avatar set.
+        foreach (AiAvatars::choices() as $choice) {
             $this->actingAs($farmer->fresh())
                 ->get(route('farmer.ai-chat.index'))
                 ->assertOk()
-                ->assertSee('data-avatar-key="' . $key . '"', false);
+                ->assertSee('data-avatar-key="' . $choice['key'] . '"', false);
         }
     }
 

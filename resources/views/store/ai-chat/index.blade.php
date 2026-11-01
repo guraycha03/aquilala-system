@@ -3,18 +3,12 @@
 @section('page-styles')
     {{-- One shared skin for every AI chat page: mute warm-sage palette and a
          viewport-locked layout so the composer is always on screen. --}}
-    <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=2" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=13" data-turbo-track="dynamic">
 @endsection
 
 @section('content')
 
-<div class="breadcrumb">
-    <a href="{{ route('store.quotations.index') }}">Quotation Demand Trends</a>
-    <span>/</span>
-    AI Assistant
-</div>
-
-<div class="chat-page">
+<div class="chat-page assistant-chat-page">
     <div class="chat-container">
 
         <div class="chat-header">
@@ -45,13 +39,6 @@
                     </div>
                 </div>
             </div>
-            <div class="header-info">
-                <div class="header-title">AI Assistant</div>
-                <div class="header-status">
-                    <div class="status-dot"></div>
-                    Online
-                </div>
-            </div>
             <div class="history-wrap">
                 <button class="history-btn" id="historyBtn" aria-label="Chat history" title="Chat history">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -72,9 +59,6 @@
 
         <div class="chat-messages" id="chatMessages">
             <div class="message-row">
-                <div class="message-avatar">
-                    <img src="{{ $aiAvatar }}" alt="AI" data-ai-avatar>
-                </div>
                 <div class="message-bubble">
                     <div>
                         Hello! I'm the Aquilala assistant for stores.
@@ -87,9 +71,6 @@
             </div>
 
             <div class="message-row">
-                <div class="message-avatar">
-                    <img src="{{ $aiAvatar }}" alt="AI" data-ai-avatar>
-                </div>
                 <div class="message-bubble">
                     <div class="quick-chips">
                         <button class="chip" onclick="sendChip(this)">
@@ -191,19 +172,6 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    function getAiAvatarSvg() {
-        return '<img src="' + aiAvatarUrl + '" alt="AI" data-ai-avatar>';
-    }
-
-    // The signed-in member's own picture, or their initials when they
-    // have not set one. The same account avatar the profile page and the
-    // side menu show.
-    function getUserAvatarHtml() {
-        @if($myPhoto)
-            return '<img src="{{ $myPhoto }}" alt="{{ $myName }}" data-user-avatar>';
-        @endif
-        return '<span class="user-avatar" style="width:34px;height:34px;font-size:12px;" title="{{ $myName }}">{{ $myInitials }}</span>';
-    }
     // ─── Per-account AI avatar ──────────────────────────────────
     // The header avatar is a button: it opens the picker, the reader picks
     // one of the system's avatars, and the account remembers which one so it
@@ -379,18 +347,16 @@
         const row = document.createElement('div');
         row.className = 'message-row';
         row.innerHTML =
-            '<div class="message-avatar">' + getAiAvatarSvg() + '</div>' +
             '<div class="message-bubble"><div>' + renderMarkdown(content) + '</div></div>';
         chatMessages.appendChild(row);
         scrollToBottom();
         return row;
     }
 
-    function addUserMessage(text) {        const row = document.createElement('div');
-        row.className = 'message-row user';
-        row.innerHTML =
-            '<div class="message-avatar">' + getUserAvatarHtml() + '</div>' +
-            '<div class="message-bubble" style="background:#edf0e8;border-color:#e1e5da;"><div>' + escapeHtml(text).replace(/\n/g, '<br>') + '</div></div>';
+    function addUserMessage(text) {            const row = document.createElement('div');
+    row.className = 'message-row user';
+    row.innerHTML =
+        '<div class="message-bubble" style="background:#edf0e8;border-color:#e1e5da;"><div>' + escapeHtml(text).replace(/\n/g, '<br>') + '</div></div>';
         chatMessages.appendChild(row);
         scrollToBottom();
         return row;
@@ -401,7 +367,6 @@
         row.className = 'message-row';
         row.id = 'loadingMsg';
         row.innerHTML =
-            '<div class="message-avatar">' + getAiAvatarSvg() + '</div>' +
             '<div class="message-bubble"><div style="color:#9ca3af;">Thinking...</div></div>';
         chatMessages.appendChild(row);
         scrollToBottom();
@@ -478,8 +443,31 @@
 
     function sendChip(btn) {
         const text = btn.textContent.trim();
+        const next = quickSuggestionPool[quickSuggestionIndex % quickSuggestionPool.length];
+        quickSuggestionIndex++;
+        btn.textContent = next;
         sendMessage(text);
     }
+
+    const quickSuggestionPool = [
+        'Show me my quotation trends',
+        'Which products should I restock?',
+        "What's trending this week?",
+        'Which crops are in demand?',
+        'Which products have the lowest stock?',
+        'What are farmers asking for most?',
+        'Show products with rising demand',
+        'Which items should I price-check?',
+        'What should I stock before wet season?',
+        'Which crops are farmers planning next?',
+        'Show my best-selling farm inputs',
+        'Which products have slow movement?',
+    ];
+    quickSuggestionPool.sort(function () { return Math.random() - 0.5; });
+    document.querySelectorAll('.quick-chips .chip').forEach(function (chip, index) {
+        chip.textContent = quickSuggestionPool[index];
+    });
+    let quickSuggestionIndex = document.querySelectorAll('.quick-chips .chip').length;
 
     const productModal = document.getElementById('productModal');
 

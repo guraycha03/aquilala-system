@@ -24,17 +24,33 @@ return [
     'dashboard' => [
         'label' => 'Dashboard',
         'icon' => '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+        'standalone' => true,
         'items' => [
-            ['label' => 'Overview',             'routes' => ['dashboard.farmer', 'farmer.dashboard']],
+            ['label' => 'Dashboard', 'routes' => ['dashboard.farmer', 'farmer.dashboard']],
+        ],
+    ],
+    'ai_assistant' => [
+        'label' => 'AI Assistant',
+        'icon' => '<i data-lucide="sparkles" aria-hidden="true"></i>',
+        'standalone' => true,
+        'items' => [
+            ['label' => 'AI Assistant', 'routes' => ['farmer.ai-chat.index', 'farmer.ai-chat.history.show']],
+        ],
+    ],
+    'harvest' => [
+        'label' => 'Harvest',
+        'icon' => '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
+        'items' => [
+            ['label' => 'Harvest Reports', 'routes' => ['farmer.harvests.index']],
             ['label' => 'Submit Harvest Report', 'routes' => ['farmer.harvests.create']],
         ],
     ],
-    'my-farm' => [
+'my-farm' => [
         'label' => 'My Farm',
         'icon' => '<svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>',
         'items' => [
             ['label' => 'My Crops', 'routes' => ['farmer.crops.index', 'farmer.crops.show']],
-            ['label' => 'Harvest Reports', 'routes' => ['farmer.harvests.index']],
+            ['label' => 'Submit Harvest Report', 'routes' => ['farmer.harvests.create']],
             ['label' => 'Estimate vs Actual Harvest', 'routes' => ['farmer.harvests.compare']],
         ],
     ],
@@ -63,7 +79,6 @@ return [
         'icon' => '<svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>',
         'items' => [
             ['label' => 'Crop Guide', 'routes' => ['farmer.crops-directory.index']],
-            ['label' => 'AI Assistant', 'routes' => ['farmer.ai-chat.index', 'farmer.ai-chat.history.show']],
         ],
     ],
     'calendar' => [

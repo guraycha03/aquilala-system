@@ -23,9 +23,17 @@ return [
     'dashboard' => [
         'label' => 'Dashboard',
         'icon' => '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+        'standalone' => true,
         'items' => [
-            ['label' => 'Overview', 'routes' => ['store.dashboard']],
-            ['label' => 'Top Products', 'routes' => ['store.dashboard.performance']],
+            ['label' => 'Dashboard', 'routes' => ['store.dashboard']],
+        ],
+    ],
+    'ai_assistant' => [
+        'label' => 'AI Assistant',
+        'icon' => '<i data-lucide="sparkles" aria-hidden="true"></i>',
+        'standalone' => true,
+        'items' => [
+            ['label' => 'AI Assistant', 'routes' => ['store.ai-chat.index', 'store.ai-chat.history.show']],
         ],
     ],
     'store-management' => [
@@ -34,6 +42,7 @@ return [
         'items' => [
             ['label' => 'Product Listings', 'routes' => ['store.storefront.index']],
             ['label' => 'Inventory', 'routes' => ['store.inventory.index']],
+            ['label' => 'Top Products', 'routes' => ['store.dashboard.performance']],
             ['label' => 'Input Formulas', 'routes' => ['store.formulas.index', 'store.formulas.create', 'store.formulas.edit']],
         ],
     ],
@@ -42,7 +51,6 @@ return [
         'icon' => '<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
         'items' => [
             ['label' => 'Quotation Demand Trends', 'routes' => ['store.quotations.index', 'store.quotations.show']],
-            ['label' => 'AI Assistant', 'routes' => ['store.ai-chat.index', 'store.ai-chat.history.show']],
         ],
     ],
     'account-settings' => [

@@ -366,8 +366,8 @@
     .app-scrollbar.dragging .app-scrollbar-thumb { background: var(--aq-sage-500, #648268); }
     
     /* Brand Section */
-    .brand-section { padding: 20px; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.95); letter-spacing: -0.01em; line-height: 1.35; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; }
-    .brand-title { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; display: block; margin-bottom: 2px; color: #ffffff; }
+    .brand-section { padding: 15px 20px 14px 20px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.95); letter-spacing: -0.01em; line-height: 1.35; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; }
+    .brand-title { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; display: block; margin-bottom: 1px; color: #ffffff; line-height: 1.05; }
     .brand-accent { color: #C8F36A; text-shadow: 0 0 14px rgba(200, 243, 106, 0.18); }
 
     /* Weather Widget Icon (real condition icons from public/images/weather) */
@@ -449,11 +449,11 @@
     .nav-links li a:hover:not(.active) svg { stroke: #ffffff; }
 
     /* Continuous Active Hook */
-    .nav-links li a.active { background: #f3f6f4; color: #143d23; font-weight: 700; position: relative; margin-right: -1px; z-index: 10; }
+    .nav-links li a.active { background: #f4f5f0; color: #1e2922; font-weight: 700; position: relative; margin-right: -1px; z-index: 10; }
     .nav-links li a.active svg { stroke: #143d23; }
     .nav-links li:not(.nav-dropdown):has(a.active) { z-index: 12; }
-    .nav-links li:not(.nav-dropdown):has(a.active)::before { content: ""; position: absolute; top: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-bottom-right-radius: 20px; box-shadow: 10px 10px 0 10px #f3f6f4; pointer-events: none; z-index: 12; }
-    .nav-links li:not(.nav-dropdown):has(a.active)::after { content: ""; position: absolute; bottom: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-top-right-radius: 20px; box-shadow: 10px -10px 0 10px #f3f6f4; pointer-events: none; z-index: 12; }
+    .nav-links li:not(.nav-dropdown):has(a.active)::before { content: ""; position: absolute; top: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-bottom-right-radius: 20px; box-shadow: 10px 10px 0 10px #f4f5f0; pointer-events: none; z-index: 12; }
+    .nav-links li:not(.nav-dropdown):has(a.active)::after { content: ""; position: absolute; bottom: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-top-right-radius: 20px; box-shadow: 10px -10px 0 10px #f4f5f0; pointer-events: none; z-index: 12; }
 
     /* Dropdown Sub-Navigation */
     .nav-dropdown { display: flex; flex-direction: column; }
@@ -534,7 +534,7 @@
     .burger-btn { background: none; border: none; color: var(--sb-fg); font-size: 24px; cursor: pointer; padding: 0; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; }
     .burger-btn:active { background: rgba(255, 255, 255, 0.08); }
 
-    .desktop-notif-wrap { position: fixed; top: 26px; right: 20px; z-index: 200; transition: transform 0.3s ease; display: flex; align-items: flex-start; gap: 10px; }
+    .desktop-notif-wrap { position: fixed !important; top: 26px; right: 20px; z-index: 200; transition: transform 0.3s ease; display: flex; align-items: flex-start; gap: 10px; }
     .desktop-notif-wrap.hidden { transform: translateY(-80px); }
     .desktop-notif {
       width: 40px; height: 40px; border-radius: 50%;
@@ -671,8 +671,9 @@
   .sidebar-overlay.open { display: block; }
 
   .desktop-notif { background: transparent; border: none; box-shadow: none; color: var(--sb-fg); }
-  .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(255, 255, 255, 0.08); }
-  .desktop-notif-wrap { top: 11px; right: 16px; }
+  .desktop-notif { border-radius: 8px; }
+  .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(255, 255, 255, 0.12); }
+  .desktop-notif-wrap { position: fixed !important; top: 11px; right: 16px; }
 
   /* On a phone the panel sits under the bell, across the width of the
      screen, where the thumb already is. */
@@ -906,10 +907,10 @@
     .nav-links li a svg { stroke: var(--sb-nav); }
     .nav-links li a:hover:not(.active) { background: var(--sb-hover-bg); color: var(--sb-nav-hover); }
     .nav-links li a:hover:not(.active) svg { stroke: var(--sb-nav-hover); }
-    .nav-links li a.active { background: var(--sb-active-bg); color: var(--sb-active-fg); }
-    .nav-links li a.active svg { stroke: var(--sb-active-fg); }
-    .nav-links li:not(.nav-dropdown):has(a.active)::before { box-shadow: 10px 10px 0 10px var(--sb-active-bg); }
-    .nav-links li:not(.nav-dropdown):has(a.active)::after { box-shadow: 10px -10px 0 10px var(--sb-active-bg); }
+    .nav-links li a.active { background: #f4f5f0; color: #1e2922; }
+    .nav-links li a.active svg { stroke: #1e2922; }
+    .nav-links li:not(.nav-dropdown):has(a.active)::before { box-shadow: 10px 10px 0 10px #f4f5f0; }
+    .nav-links li:not(.nav-dropdown):has(a.active)::after { box-shadow: 10px -10px 0 10px #f4f5f0; }
     .nav-dropdown-btn { color: var(--sb-nav); }
     .nav-dropdown-btn:hover { background: var(--sb-hover-bg); color: var(--sb-nav-hover); }
     .nav-dropdown-title svg { stroke: var(--sb-nav); }
@@ -950,7 +951,7 @@
     .sub-nav-links li a { border-radius: 8px; transition: color 0.18s ease, background 0.18s ease; }
     .sub-nav-links li a:hover { color: var(--sb-nav-hover); background: var(--sb-hover-bg); }
     .sub-nav-links li a.active {
-      background: var(--sb-active-bg); color: var(--sb-active-fg);
+    background: #ffffff; color: #1e2922;
       font-weight: 700; position: relative;
       margin-right: -1px;
       border-top-left-radius: 12px; border-bottom-left-radius: 12px;
@@ -1064,10 +1065,13 @@
       <button class="burger-btn" onclick="toggleSidebar()" aria-label="Open menu">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <div style="font-weight: 700; font-size: 18px; line-height: 1;">
-        Aqui<span style="color: var(--sb-accent, #8FB89A); font-weight: 800;">lala</span>
+      <div class="aq-mobile-header-brand" style="font-weight: 700; font-size: 18px; line-height: 1;">
+        Aqui<span style="color: #C8F36A; text-shadow: 0 0 14px rgba(200, 243, 106, 0.18); font-weight: 800;">lala</span>
       </div>
     </div>
+    <button id="aqMobileSearchToggle" class="aq-mobile-search-toggle" type="button" aria-label="Search pages" aria-expanded="false" title="Search pages">
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
   </header>
 
   <aside class="sidebar" id="sidebar">
@@ -1772,17 +1776,10 @@
       var wrap = document.querySelector('.desktop-notif-wrap');
       if (!wrap) return;
 
-      var lastY = window.scrollY;
       window.addEventListener('scroll', function () {
-        var y = window.scrollY;
-        if (window.innerWidth > 768) {
-          if (y > lastY && y > 80) {
-            wrap.classList.add('hidden');
-          } else if (y < lastY || y <= 80) {
-            wrap.classList.remove('hidden');
-          }
+        if (wrap.classList.contains('hidden')) {
+          wrap.classList.remove('hidden');
         }
-        lastY = y;
       }, { passive: true });
     });
 
@@ -2189,7 +2186,555 @@
       });
     })();
   </script>
+  <script>
+  (function () {
+    var button = document.getElementById('aqMobileSearchToggle');
+
+    function closeSearch() {
+      var results = document.getElementById('aqGlobalSearchResults');
+      document.documentElement.classList.remove('aq-mobile-search-open');
+      if (results) {
+        results.classList.remove('aq-show');
+        results.classList.remove('aq-expanded');
+      }
+      if (button) button.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggle() {
+      var isOpen = document.documentElement.classList.toggle('aq-mobile-search-open');
+      if (!isOpen) {
+        closeSearch();
+      } else {
+        if (button) button.setAttribute('aria-expanded', 'true');
+        var input = document.getElementById('aqGlobalSearch');
+        if (input) window.setTimeout(function () { input.focus(); }, 80);
+      }
+    }
+    if (button) button.addEventListener('click', function (event) {
+      event.stopPropagation();
+      toggle();
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        closeSearch();
+      }
+    });
+    document.addEventListener('click', function (event) {
+      if (
+        document.documentElement.classList.contains('aq-mobile-search-open') &&
+        (!event.target.closest || !event.target.closest('#aqGlobalSearchHost'))
+      ) {
+        closeSearch();
+      }
+    });
+  })();
+  </script>
+
   @stack('scripts')
+
+
+@php
+  $aqSearchUser = Auth::user();
+  $aqSearchRole = $aqSearchUser?->role ?? '';
+  $aqSearchPages = [];
+  $aqAddSearchPage = function (string $label, string $routeName, string $aliases = '') use (&$aqSearchPages) {
+      if (\Illuminate\Support\Facades\Route::has($routeName)) {
+          $aqSearchPages[] = [
+              'label' => $label,
+              'url' => route($routeName),
+              'aliases' => $aliases,
+          ];
+      }
+  };
+
+  if ($aqSearchRole === 'admin') {
+      foreach ([
+          ['Dashboard', 'dashboard.admin', 'home overview admin'],
+          ['AI Harvest Insights', 'admin.harvests.ai', 'ai insight assistant harvest'],
+          ['Members', 'admin.members.index', 'member list view members'],
+          ['Import Members', 'admin.members.import', 'import member csv excel'],
+          ['Import Uploads', 'admin.members.uploads', 'uploads imported files'],
+          ['All Users', 'admin.users.index', 'users list account management'],
+          ['Create Account', 'admin.users.create', 'add account register user'],
+          ['Harvest Performance', 'admin.harvests.index', 'harvest reports performance'],
+          ['All Harvest Reports', 'admin.harvests.reports', 'report list records'],
+          ['Estimate vs Actual Harvest', 'admin.harvests.compare', 'compare estimate actual'],
+          ['Farming Cost Reports', 'admin.analytics.expenses', 'expense cost budget'],
+          ['Planting Requests', 'admin.plantings.index', 'planting request confirm reject'],
+          ['Calendar', 'admin.calendar.index', 'calendar schedule'],
+          ['Events', 'admin.calendar.events', 'association events meetings'],
+          ['Planting Seasons', 'admin.operations.seasons', 'season wet dry'],
+          ['Product Catalog', 'admin.operations.catalog', 'products catalog inputs'],
+          ['Stores', 'admin.stores.index', 'stores owners paperwork'],
+          ['Quotation Demand Trends', 'admin.quotations.index', 'demand quotation products'],
+          ['General Settings', 'admin.settings.index', 'settings general subpages'],
+          ['Appearance', 'admin.settings.interface', 'theme color sidebar dark light'],
+          ['Season Settings', 'admin.settings.seasons', 'season settings climate'],
+          ['Weather Log', 'admin.settings.weather', 'weather log flood typhoon drought'],
+          ['Archive', 'admin.archive', 'archive deleted records'],
+          ['Audit Log', 'admin.audit.index', 'audit activity logs'],
+          ['Activity History', 'admin.activity.index', 'activity history timeline'],
+      ] as [$label, $route, $aliases]) {
+          $aqAddSearchPage($label, $route, $aliases);
+      }
+  } elseif ($aqSearchRole === 'farmer') {
+      foreach ([
+          ['Dashboard', 'farmer.dashboard', 'home overview'],
+          ['Submit Harvest Report', 'farmer.harvests.create', 'submit add report'],
+          ['My Crops', 'farmer.crops.index', 'crops batches'],
+          ['Harvest Reports', 'farmer.harvests.index', 'harvest list reports'],
+          ['Estimate vs Actual Harvest', 'farmer.harvests.compare', 'compare estimate actual'],
+          ['My Cost Quotations', 'farmer.quotations.index', 'quotation request cost'],
+          ['Browse Supplies', 'farmer.products.browse', 'products supplies inputs'],
+          ['Recommended Supplies', 'farmer.recommendations.index', 'recommendation supplies'],
+          ['Top Quoted Products', 'farmer.top-quoted.index', 'quoted products'],
+          ['Available Stores', 'farmer.stores.index', 'stores partner'],
+          ['Crop Guide', 'farmer.crops-directory.index', 'crop guide'],
+          ['AI Assistant', 'farmer.ai-chat.index', 'ai chat assistant'],
+          ['Calendar', 'farmer.calendar.index', 'calendar schedule'],
+          ['Events', 'farmer.calendar.events', 'association events'],
+          ['Account Settings', 'farmer.settings.index', 'settings account'],
+          ['Activity History', 'farmer.activity.index', 'activity timeline'],
+      ] as [$label, $route, $aliases]) {
+          $aqAddSearchPage($label, $route, $aliases);
+      }
+  } elseif ($aqSearchRole === 'store_owner') {
+      foreach ([
+          ['Dashboard', 'store.dashboard', 'home overview'],
+          ['Top Products', 'store.dashboard.performance', 'performance top products'],
+          ['Product Listings', 'store.storefront.index', 'products listings catalog'],
+          ['Inventory', 'store.inventory.index', 'inventory stock'],
+          ['Input Formulas', 'store.formulas.index', 'formula inputs'],
+          ['Quotation Demand Trends', 'store.quotations.index', 'quotation demand trends'],
+          ['AI Assistant', 'store.ai-chat.index', 'ai chat assistant'],
+          ['Settings', 'store.settings.index', 'settings account'],
+          ['Activity History', 'store.activity.index', 'activity timeline'],
+      ] as [$label, $route, $aliases]) {
+          $aqAddSearchPage($label, $route, $aliases);
+      }
+  }
+@endphp
+
+<style>
+  .aq-global-search-host {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    z-index: 190;
+    display: none;
+    opacity: 0;
+    transition: opacity .16s ease, transform .16s ease, width .16s ease;
+  }
+  .aq-global-search-host.aq-search-open { opacity: 1; }
+  @media (min-width: 769px) {
+    body { padding-top: 60px; }
+    .aq-global-search-host {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 260px;
+      right: 0;
+      margin-left: 0;
+      transform: none;
+      width: auto;
+      max-width: none;
+      height: 60px;
+      padding: 10px 88px 10px 24px;
+      justify-content: center;
+      align-items: center;
+      background: var(--sb-bg, #14532d);
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 1px 0 rgba(15,23,42,0.06), 0 2px 14px rgba(15,23,42,0.04);
+      z-index: 185;
+      opacity: 1;
+      pointer-events: auto;
+      overflow: visible;
+    }
+    .aq-global-search-host .aq-global-search-wrap { position: relative; width: min(620px, 46vw); }
+    .desktop-notif-wrap {
+      position: fixed;
+      top: 14px;
+      right: 24px;
+      z-index: 195;
+    }
+  }
+  @media (max-width: 768px) {
+    .aq-mobile-search-toggle {
+      position: absolute;
+      right: 64px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border: 0;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      padding: 0;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 195;
+    }
+    .aq-mobile-search-toggle:hover { background: rgba(255,255,255,0.12); }
+    .aq-mobile-search-open .aq-mobile-header-brand { display: none; }
+    .aq-global-search-host {
+      position: fixed;
+      top: 14px;
+      left: 56px;
+      right: 112px;
+      width: auto;
+      max-width: none;
+      overflow: visible;
+      opacity: 0;
+      display: block;
+      pointer-events: none;
+      transform: none;
+      z-index: 192;
+      padding: 0;
+      transition: left .22s ease, right .22s ease, opacity .18s ease, padding .22s ease, transform .18s ease;
+    }
+    .aq-mobile-search-open .aq-global-search-host {
+      display: block;
+      left: 56px;
+      right: 112px;
+      opacity: 1;
+      padding: 0;
+      pointer-events: auto;
+      transform: none;
+      overflow: visible;
+    }
+    .aq-mobile-search-toggle {
+      position: absolute;
+      right: 64px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      border: 0;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      padding: 0;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 195;
+    }
+    .aq-mobile-search-toggle:hover { background: rgba(255,255,255,0.12); }
+    .aq-mobile-search-open .aq-mobile-header-brand { display: none; }
+  }
+  .aq-global-search-wrap {
+    position: relative;
+  }
+  .aq-global-search-input {
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #0f172a;
+    border-radius: 8px;
+    padding: 7px 34px 7px 34px;
+    font-size: 12px;
+    line-height: 18px;
+    outline: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .aq-global-search-input::-webkit-search-cancel-button,
+  .aq-global-search-input::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+  }
+  .aq-global-search-input::-ms-clear {
+    display: none;
+  }
+  .aq-global-search-input::placeholder { color: #8a94a6; }
+  .aq-global-search-input:focus {
+    background: #ffffff;
+    border-color: #d1d5db;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .aq-global-search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+  .aq-global-search-clear {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    width: 22px; height: 22px; border: 0; border-radius: 8px; background: #eef2f0; color: #526257;
+    cursor: pointer; font-size: 12px; line-height: 1; display: none; align-items: center; justify-content: center;
+  }
+  .aq-global-search-clear.aq-show { display: flex; }
+  .aq-global-search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e0e5e1;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+    overflow: hidden;
+    display: none;
+  }
+  .aq-global-search-results.aq-show { display: block; }
+  .aq-global-search-results a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px; text-decoration: none; color: #26352b;
+    border-bottom: 1px solid #edf1ee; font-size: 13px;
+  }
+  .aq-global-search-results a:last-child { border-bottom: 0; }
+  .aq-global-search-results a:hover { background: #f3f6f3; }
+  .aq-global-search-empty { color: #68756c; padding: 12px 14px; font-size: 13px; }
+  .aq-global-search-more {
+    display: block; padding: 11px 14px; border-top: 1px solid #edf1ee;
+    color: #4f6a56; font-size: 12px; font-weight: 700; text-decoration: none;
+    cursor: pointer;
+  }
+  .aq-global-search-more:hover { background: #f3f6f3; }
+  .aq-global-search-results.aq-expanded {
+    position: fixed;
+    top: 60px;
+    left: 260px;
+    right: 0;
+    bottom: 0;
+    max-height: none;
+    overflow-y: auto;
+    border-radius: 0;
+    padding: 24px max(24px, 8vw) 40px;
+    box-shadow: 0 10px 30px rgba(15,23,42,0.12);
+  }
+  .aq-global-search-results.aq-expanded::before {
+    content: 'Search results';
+    display: block;
+    margin-bottom: 14px;
+    color: #26352b;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  [data-theme="dark"] .aq-global-search-results {
+    background: #0f172a;
+    border-color: #334155;
+  }
+  [data-theme="dark"] .aq-global-search-results a {
+    color: #d6f5e3;
+    border-bottom-color: #334155;
+  }
+  [data-theme="dark"] .aq-global-search-results a:hover,
+  [data-theme="dark"] .aq-global-search-more:hover { background: #1f2937; }
+  [data-theme="dark"] .aq-global-search-empty { color: #9fb3a6; }
+  [data-theme="dark"] .aq-global-search-more { color: #a7f3d0; border-top-color: #334155; }
+  [data-theme="dark"] .aq-global-search-results.aq-expanded::before { color: #d6f5e3; }
+  @media (max-width: 768px) {
+    .aq-global-search-results.aq-expanded {
+      top: 88px;
+      left: 0;
+      right: 0;
+      padding: 20px 16px 32px;
+    }
+  }
+</style>
+
+<div id="aqGlobalSearchHost" class="aq-global-search-host">
+  <div class="aq-global-search-wrap">
+    <svg class="aq-global-search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="aqGlobalSearch" class="aq-global-search-input" type="search" placeholder="Search pages..." autocomplete="off" spellcheck="false">
+    <button id="aqGlobalSearchClear" class="aq-global-search-clear" type="button" aria-label="Clear search">×</button>
+    <div id="aqGlobalSearchResults" class="aq-global-search-results"></div>
+  </div>
+</div>
+
+<script type="application/json" id="aqSearchCatalog">
+{!! json_encode($aqSearchPages, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var host = document.getElementById('aqGlobalSearchHost');
+  var input = document.getElementById('aqGlobalSearch');
+  var clear = document.getElementById('aqGlobalSearchClear');
+  var results = document.getElementById('aqGlobalSearchResults');
+  if (!host || !input || !results) return;
+
+  var pages = JSON.parse((document.getElementById('aqSearchCatalog') || {}).textContent || '[]');
+  var stop = new Set(['a','an','the','to','of','for','page','pages','show','me','where','find','open','how','do','i','can','system','and','my','the']);
+  var activeIndex = -1;
+  var expanded = false;
+
+  function normalize(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function tokens(value) {
+    return normalize(value).split(' ').filter(function (word) { return word && !stop.has(word); });
+  }
+
+  function levenshtein(a, b) {
+    if (a === b) return 0;
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+
+    var prev = [];
+    for (var j = 0; j <= b.length; j++) prev[j] = j;
+    for (var i = 1; i <= a.length; i++) {
+      var curr = [i];
+      for (var j = 1; j <= b.length; j++) {
+        curr[j] = (a.charAt(i - 1) === b.charAt(j - 1))
+          ? prev[j - 1]
+          : 1 + Math.min(prev[j], curr[j - 1], prev[j - 1]);
+      }
+      prev = curr;
+    }
+    return prev[b.length];
+  }
+
+  function score(item, query) {
+    var label = normalize(item.label || '');
+    var aliases = normalize(item.aliases || '');
+    var q = normalize(query);
+    var qTokens = tokens(q);
+    var words = tokens(label + ' ' + aliases);
+
+    if (!q) return 0;
+    if (q === label) return 1000;
+    if (label.indexOf(q) >= 0) return 920;
+    if (aliases.indexOf(q) >= 0) return 900;
+
+    var total = 0;
+    for (var i = 0; i < qTokens.length; i++) {
+      var token = qTokens[i];
+      if (words.indexOf(token) >= 0) total += 120;
+      else if (token.length >= 4 && words.some(function (word) { return levenshtein(word, token) <= 2; })) total += 70;
+      else if (aliases.indexOf(token) >= 0) total += 40;
+      else if (label.indexOf(token) >= 0) total += 35;
+    }
+
+    if (q.length >= 3 && label.indexOf(q) < 0 && qTokens.length === 1) total += Math.max(0, 20 - levenshtein(label, q));
+    return total;
+  }
+
+  function getMatches(query) {
+    return pages
+      .map(function (item) { return { item: item, score: score(item, query) }; })
+      .filter(function (entry) { return entry.score >= 45; })
+      .sort(function (left, right) {
+        if (right.score !== left.score) return right.score - left.score;
+        return left.item.label.localeCompare(right.item.label);
+      })
+      .map(function (entry) { return entry.item; });
+  }
+
+  function renderResults(query) {
+    var matches = getMatches(query);
+    var visible = expanded ? matches : matches.slice(0, 5);
+
+    results.innerHTML = '';
+
+    if (!query.trim()) {
+      results.classList.remove('aq-show');
+      results.classList.remove('aq-expanded');
+      expanded = false;
+      return;
+    }
+
+    if (!matches.length) {
+      var empty = document.createElement('div');
+      empty.className = 'aq-global-search-empty';
+      empty.textContent = 'No matching pages. Try terms like members, reports, products, settings, events, or crops.';
+      results.appendChild(empty);
+      results.classList.add('aq-show');
+      results.classList.toggle('aq-expanded', expanded);
+      activeIndex = -1;
+      return;
+    }
+
+    visible.forEach(function (item) {
+      var anchor = document.createElement('a');
+      anchor.href = item.url;
+      anchor.innerHTML = '<span>' + item.label.replace(/</g, '&lt;') + '</span>';
+      anchor.addEventListener('click', function () {
+        results.classList.remove('aq-show');
+        results.classList.remove('aq-expanded');
+        expanded = false;
+      });
+      results.appendChild(anchor);
+    });
+
+    if (!expanded && matches.length > 5) {
+      var more = document.createElement('a');
+      more.href = '#';
+      more.className = 'aq-global-search-more';
+      more.textContent = 'Show more results (' + matches.length + ')';
+      more.addEventListener('click', function (event) {
+        event.preventDefault();
+        expanded = true;
+        renderResults(input.value);
+      });
+      results.appendChild(more);
+    }
+
+    results.classList.add('aq-show');
+    results.classList.toggle('aq-expanded', expanded);
+    activeIndex = -1;
+  }
+
+  input.addEventListener('input', function () {
+    var query = input.value || '';
+    if (clear) clear.classList.toggle('aq-show', query.trim() !== '');
+    renderResults(query);
+  });
+
+  input.addEventListener('keydown', function (event) {
+    if (event.key !== 'Enter') return;
+    var query = input.value.trim();
+    if (!query) return;
+    if (activeIndex >= 0) return;
+    event.preventDefault();
+    expanded = true;
+    renderResults(query);
+  });
+
+  if (clear) {
+    clear.addEventListener('click', function () {
+      input.value = '';
+      clear.classList.remove('aq-show');
+      results.classList.remove('aq-show');
+      results.classList.remove('aq-expanded');
+      expanded = false;
+      input.focus();
+    });
+  }
+
+  document.addEventListener('keydown', function (event) {
+    if (!results.classList.contains('aq-show')) return;
+    var links = results.querySelectorAll('a');
+    if (!links.length) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      activeIndex = Math.min(activeIndex + 1, links.length - 1);
+      links.forEach(function (link, index) { link.style.background = index === activeIndex ? 'rgba(255,255,255,0.08)' : ''; });
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      activeIndex = Math.max(activeIndex - 1, 0);
+      links.forEach(function (link, index) { link.style.background = index === activeIndex ? 'rgba(255,255,255,0.08)' : ''; });
+    } else if (event.key === 'Enter' && activeIndex >= 0 && links[activeIndex]) {
+      event.preventDefault();
+      links[activeIndex].click();
+    } else if (event.key === 'Escape') {
+      results.classList.remove('aq-show');
+      results.classList.remove('aq-expanded');
+      expanded = false;
+    }
+  });
+
+  document.addEventListener('click', function (event) {
+    if (!host.contains(event.target)) results.classList.remove('aq-show');
+  });
+});
+</script>
+
 
 </body>
 </html>

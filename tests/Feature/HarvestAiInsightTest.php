@@ -59,7 +59,7 @@ class HarvestAiInsightTest extends TestCase
 
         $response = $this->actingAs($this->admin)->get(route('admin.harvests.ai'));
 
-        $response->assertOk()->assertSee('AI Insight');
+        $response->assertOk()->assertSee('AI Assistant');
 
         // The chat container, its suggested-question buttons and its input.
         $response->assertSee('id="aiChatLog"', false)

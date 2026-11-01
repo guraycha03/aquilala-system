@@ -231,8 +231,16 @@ class HarvestReportController extends Controller
     public function aiIndex()
     {
         $context = $this->insights->context();
+        $user = auth()->user();
 
-        return view('admin.harvests.ai', ['context' => $context]);
+        return view('admin.harvests.ai', [
+            'context' => $context,
+            'aiAvatar' => $user?->aiAvatarUrl() ?? \App\Services\AiAvatars::url(\App\Services\AiAvatars::defaultKey()),
+            'aiAvatarKey' => $user?->ai_avatar && \App\Services\AiAvatars::has($user->ai_avatar)
+                ? $user->ai_avatar
+                : \App\Services\AiAvatars::defaultKey(),
+            'aiAvatars' => \App\Services\AiAvatars::choices(),
+        ]);
     }
 
     /**

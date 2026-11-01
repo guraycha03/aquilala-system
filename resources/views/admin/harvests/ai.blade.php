@@ -1,9 +1,9 @@
 @extends('layouts.sidebar')
 
-@section('title', 'AI Insight')
+@section('title', 'AI Assistant')
 
 @section('page-styles')
-  <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=2" data-turbo-track="dynamic">
+  <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=16" data-turbo-track="dynamic">
 @endsection
 
 @section('content')
@@ -151,8 +151,10 @@
     width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
     display: inline-flex; align-items: center; justify-content: center;
     background: var(--aq-sage-100, #e6ebe2); color: var(--aq-sage-600, #4f6a56);
+    border: 0; padding: 0; overflow: hidden; position: relative; cursor: pointer;
   }
-  .admin-ai-avatar svg { width: 21px; height: 21px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .admin-ai-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .admin-ai-avatar-legacy { display: none; }
   .admin-ai-new { margin-left: auto; }
   /* Header order: New chat first (left), history last (right). The chat
      shell clips anything that runs past its own box, so the history card is
@@ -193,20 +195,16 @@
   .ai-clarification-custom button { border: 0; border-radius: 8px; padding: 0 12px; background: #6d28d9; color: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 </style>
 
-<div class="breadcrumb">
-  <span>AI Insight</span>
-</div>
-
 @if(! $hasData)
-  <div class="chat-page admin-ai-page">
+  <div class="chat-page assistant-chat-page admin-ai-page">
     <div class="chat-container">
       <div class="chat-header">
-        <div class="admin-ai-avatar" aria-hidden="true">
+        <button type="button" class="admin-ai-avatar" id="adminAiAvatarBtn" title="Change AI avatar" aria-label="Change AI avatar">
+          <img src="{{ $aiAvatar }}" alt="AI Assistant" data-ai-avatar>
+        </button>
+        @include('admin.harvests.partials.ai-avatar-picker')
+        <div class="admin-ai-avatar-legacy" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"/></svg>
-        </div>
-        <div class="header-info">
-          <div class="header-title">AI Insight</div>
-          <div class="header-status"><div class="status-dot"></div>Admin data assistant</div>
         </div>
         <button id="aiClearBtn" class="chip admin-ai-new" type="button" onclick="resetChat()">New chat</button>
         <div class="history-wrap">
@@ -228,7 +226,6 @@
       </div>
       <div class="chat-messages" id="aiChatLog" role="log" aria-live="polite">
         <div class="message-row">
-          <div class="message-avatar"><span aria-hidden="true">AI</span></div>
           <div class="message-bubble">
             No harvest reports are available yet. Once records are added, I can explain performance, crops, seasons, costs, and the next items to verify.
           </div>
@@ -245,15 +242,15 @@
     </div>
   </div>
 @else
-  <div class="chat-page admin-ai-page">
+  <div class="chat-page assistant-chat-page admin-ai-page">
     <div class="chat-container">
       <div class="chat-header">
-        <div class="admin-ai-avatar" aria-hidden="true">
+        <button type="button" class="admin-ai-avatar" id="adminAiAvatarBtn" title="Change AI avatar" aria-label="Change AI avatar">
+          <img src="{{ $aiAvatar }}" alt="AI Assistant" data-ai-avatar>
+        </button>
+        @include('admin.harvests.partials.ai-avatar-picker')
+        <div class="admin-ai-avatar-legacy" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 15 .7 2.3L22 18l-.7 2.3L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"/></svg>
-        </div>
-        <div class="header-info">
-          <div class="header-title">AI Insight</div>
-          <div class="header-status"><div class="status-dot"></div>Admin data assistant</div>
         </div>
         <button id="aiClearBtn" class="chip admin-ai-new" type="button" onclick="resetChat()">New chat</button>
         <div class="history-wrap">
@@ -276,9 +273,8 @@
 
       <div id="aiChatLog" class="chat-messages" role="log" aria-live="polite">
         <div class="message-row">
-          <div class="message-avatar" aria-hidden="true">AI</div>
           <div class="message-bubble">
-            <p>Hello. I’m Aquilala’s administrative insight assistant.</p>
+            <p>Hello. I’m Aquilala’s administrative AI Assistant.</p>
             <p>I can help you interpret association performance, harvest trends, costs, crops, seasons, and recorded activities.</p>
             <p>Ask a question to begin. I’ll provide concise, evidence-based observations to support your review.</p>
             <div class="admin-ai-suggestions">
@@ -303,6 +299,42 @@
 @endif
 
 <script>
+  (function () {
+    var button = document.getElementById('adminAiAvatarBtn');
+    var picker = document.getElementById('adminAvatarPicker');
+    if (!button || !picker) return;
+
+    button.addEventListener('click', function () { picker.hidden = false; });
+    picker.addEventListener('click', function (event) {
+      if (event.target.closest('[data-admin-avatar-close]')) {
+        picker.hidden = true;
+        return;
+      }
+
+      var choice = event.target.closest('[data-admin-avatar-key]');
+      if (!choice) return;
+
+      var key = choice.getAttribute('data-admin-avatar-key');
+      var url = choice.getAttribute('data-admin-avatar-url');
+      document.querySelectorAll('[data-ai-avatar]').forEach(function (image) { image.src = url; });
+
+      fetch('{{ route("admin.harvests.ai.avatar") }}', {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ avatar: key })
+      }).then(function (response) {
+        if (!response.ok) throw new Error('avatar update failed');
+        picker.hidden = true;
+      }).catch(function () {
+        picker.hidden = true;
+      });
+    });
+  })();
+
   function escapeAiHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -352,9 +384,26 @@
   var currentHistoryId = null;
   var lastQuestion = '';
   var askUrl = @json(route('admin.harvests.ai.ask'));
+  var adminSuggestionPool = [
+    'How did the latest season compare with the one before it?',
+    'Is the wet season out-yielding the dry season?',
+    'Which crops are trending up or down?',
+    'Which crop has the highest average yield?',
+    'Which season had the highest total harvest?',
+    'Are harvest costs rising over time?',
+    'Which crops have the most recorded reports?',
+    'What changed most in the latest reporting period?',
+    'Which farmers have submitted reports recently?',
+    'Which crop should we review for unusual results?',
+    'How consistent are yields across seasons?',
+    'Summarize the association harvest performance.',
+  ];
+  adminSuggestionPool.sort(function () { return Math.random() - 0.5; });
+  document.querySelectorAll('.admin-ai-suggestions .ai-chip').forEach(function (chip, index) {
+    chip.textContent = adminSuggestionPool[index];
+  });
+  var adminSuggestionIndex = document.querySelectorAll('.admin-ai-suggestions .ai-chip').length;
 
-  var AVATAR_BOT = '<div class="message-avatar" aria-hidden="true">AI</div>';
-  var AVATAR_USER = '<div class="message-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
   var BADGE_AI = '<span class="ai-source-badge ai" title="Wording by the model, every number from your harvest reports"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>AI assisted</span>';
   var BADGE_DATA = '<span class="ai-source-badge ai" title="Read directly from Aquilala records"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>From system records</span>';
   var BADGE_FALLBACK = '<span class="ai-source-badge fallback" title="Computed directly from Aquilala records"><svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>Computed from system records</span>';
@@ -371,7 +420,7 @@
     if (!log) return null;
     var el = document.createElement('div');
     el.className = 'message-row ' + kind;
-    el.innerHTML = (kind === 'user' ? AVATAR_USER : AVATAR_BOT) + '<div class="message-bubble">' + inner + '</div>';
+    el.innerHTML = '<div class="message-bubble">' + inner + '</div>';
     log.appendChild(el);
     scrollChat();
     return el;
@@ -383,7 +432,7 @@
 
   function appendAssistant(html, source) {
     appendNode('bot',
-      '<div class="ai-msg-meta"><span class="ai-msg-name">Aquilala admin insight</span>' +
+      '<div class="ai-msg-meta"><span class="ai-msg-name">AI Assistant</span>' +
       (source === 'ai' ? BADGE_AI : (source === 'data' ? BADGE_DATA : (source === 'conversation' ? '' : BADGE_FALLBACK))) + '</div>' +
       html);
   }
@@ -407,7 +456,7 @@
 
   function appendError(message) {
     appendNode('bot',
-      '<div class="ai-msg-meta"><span class="ai-msg-name">Aquilala admin insight</span></div>' +
+      '<div class="ai-msg-meta"><span class="ai-msg-name">AI Assistant</span></div>' +
       '<div class="ai-msg-error">' +
       '<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" style="flex-shrink:0;margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
       '<span>' + escapeAiHtml(message) + ' <button type="button" onclick="retryLast()">Try again</button></span>' +
@@ -416,7 +465,7 @@
 
   function appendTyping() {
     return appendNode('bot',
-      '<div class="ai-msg-meta"><span class="ai-msg-name">Aquilala admin insight</span></div>' +
+      '<div class="ai-msg-meta"><span class="ai-msg-name">AI Assistant</span></div>' +
       '<span class="ai-typing" role="status" aria-label="Thinking"><span></span><span></span><span></span></span>');
   }
 
@@ -503,7 +552,10 @@
 
   function askChip(btn) {
     if (!btn || aiLoading) return;
-    sendQuestion(btn.textContent);
+    var question = btn.textContent;
+    btn.textContent = adminSuggestionPool[adminSuggestionIndex % adminSuggestionPool.length];
+    adminSuggestionIndex++;
+    sendQuestion(question);
     var input = document.getElementById('aiChatInput');
     if (input) input.focus();
   }

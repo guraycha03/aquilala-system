@@ -17,23 +17,29 @@ class AiAvatars
     /**
      * The choices, in the order the picker shows them.
      *
-     * These are the pictures the application already owns, in
-     * public/images. They stand in until a proper assistant picture is
-     * dropped in there: the account stores the key, the file is ours.
+     * These are the assistant pictures in public/images/ai-avatar. The first
+     * picture is the default; the rest remain available as choices.
      *
      * @return array<string, array{label: string, file: string}>
      */
     public static function all(): array
     {
         return [
-            'robot'    => ['label' => 'Robot',    'file' => 'ai-avatar.png'],
-            'aquilala' => ['label' => 'Aquilala', 'file' => 'logo.png'],
-            'water'    => ['label' => 'Water',    'file' => 'logo_.png'],
-            'leaf'     => ['label' => 'Leaf',     'file' => 'logo_2.png'],
-            'sprout'   => ['label' => 'Sprout',   'file' => 'crop.png'],
-            'store'    => ['label' => 'Store',    'file' => 'store.png'],
-            'farmer'   => ['label' => 'Farmer',   'file' => 'farmer.png'],
-            'product'  => ['label' => 'Product',  'file' => 'product.png'],
+            '1' => ['label' => 'Assistant 1', 'file' => 'ai-avatar/1.png'],
+            '2' => ['label' => 'Assistant 2', 'file' => 'ai-avatar/2.png'],
+            '3' => ['label' => 'Assistant 3', 'file' => 'ai-avatar/3.png'],
+            '4' => ['label' => 'Assistant 4', 'file' => 'ai-avatar/4.png'],
+            '5' => ['label' => 'Assistant 5', 'file' => 'ai-avatar/5.png'],
+            // Legacy keys remain valid for existing API clients and records;
+            // the picker exposes only the numbered assistant choices above.
+            'robot' => ['label' => 'Assistant 1', 'file' => 'ai-avatar/1.png'],
+            'aquilala' => ['label' => 'Assistant 2', 'file' => 'ai-avatar/2.png'],
+            'water' => ['label' => 'Assistant 3', 'file' => 'ai-avatar/3.png'],
+            'leaf' => ['label' => 'Assistant 3', 'file' => 'ai-avatar/3.png'],
+            'sprout' => ['label' => 'Assistant 4', 'file' => 'ai-avatar/4.png'],
+            'store' => ['label' => 'Assistant 5', 'file' => 'ai-avatar/5.png'],
+            'farmer' => ['label' => 'Assistant 2', 'file' => 'ai-avatar/2.png'],
+            'product' => ['label' => 'Assistant 1', 'file' => 'ai-avatar/1.png'],
         ];
     }
 
@@ -42,7 +48,7 @@ class AiAvatars
      */
     public static function defaultKey(): string
     {
-        return 'robot';
+        return '1';
     }
 
     /**
@@ -76,7 +82,7 @@ class AiAvatars
     {
         $out = [];
 
-        foreach (self::all() as $key => $avatar) {
+        foreach (array_filter(self::all(), static fn ($avatar, $key) => in_array((string) $key, ['1', '2', '3', '5'], true), ARRAY_FILTER_USE_BOTH) as $key => $avatar) {
             $out[] = [
                 'key'   => $key,
                 'label' => $avatar['label'],

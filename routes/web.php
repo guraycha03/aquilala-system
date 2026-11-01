@@ -811,6 +811,8 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // Declared before the index so the literal path can never be shadowed.
         Route::get('/harvests/ai', [HarvestReportController::class, 'aiIndex'])
             ->name('harvests.ai');
+        Route::post('/harvests/ai/avatar', [\App\Http\Controllers\AiChatController::class, 'updateAvatar'])
+            ->name('harvests.ai.avatar');
 
         // One chat turn. Returns JSON so the chat keeps its own loading and
         // error state instead of round tripping the whole page.

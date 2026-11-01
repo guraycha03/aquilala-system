@@ -4,9 +4,9 @@
  * Why this exists: when the connection drops, the page the user is already
  * looking at is what should stay on screen — the service worker serves a
  * cached copy instead of taking the display over, and this strip is how the
- * user is told. It sits at the top of the viewport, shifts the sidebar /
- * mobile header / notifications down by its own height so nothing is
- * covered, and clears itself the moment the connection comes back.
+ * user is told. It sits above the app chrome as a viewport overlay, so
+ * appearing or disappearing never changes the page layout or pushes the
+ * header down.
  *
  * Detection uses two signals, because they mean different things:
  *   - navigator.onLine === false  -> the device has no network at all
@@ -38,25 +38,28 @@
         var style = document.createElement('style');
         style.id = STYLE_ID;
         style.textContent = [
-            ':root { --aq-netbar-h: 34px; }',
-
             /* Calm sage for both warning states — the strip reads as a
                notice, not an alarm; the words tell "no internet" from
                "server unreachable". Dark mode gets its own deeper sage so
                the strip still stands apart from the dark page behind it. */
             '#' + BAR_ID + ' {',
-            '  position: fixed; top: 0; left: 0; right: 0; z-index: 20000;',
-            '  box-sizing: border-box; min-height: var(--aq-netbar-h);',
+            '  position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: auto !important; z-index: 2147483647 !important;',
+            '  contain: layout style paint; isolation: isolate;',
+            '  box-sizing: border-box; width: 100vw; height: 34px; min-height: 34px; margin: 0 !important;',
             '  display: none; align-items: center; justify-content: center; gap: 9px;',
             '  padding: 7px 14px; text-align: center; flex-wrap: wrap;',
             '  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;',
             '  font-size: 12.5px; font-weight: 600; line-height: 1.4; letter-spacing: 0.01em;',
-            '  color: #14532d; background: #dcecda;',
-            '  box-shadow: 0 2px 12px rgba(0,0,0,0.20);',
+            '  color: #052e16; background: rgba(236, 253, 243, 0.42);',
+            '  border-bottom: 1px solid rgba(22, 101, 52, 0.18);',
+            '  backdrop-filter: blur(8px) saturate(1.2);',
+            '  -webkit-backdrop-filter: blur(8px) saturate(1.2);',
+            '  box-shadow: 0 4px 16px rgba(0,0,0,0.12);',
+            '  pointer-events: none;',
             '}',
             '#' + BAR_ID + '.aq-net-show { display: flex; }',
             '#' + BAR_ID + '.aq-net-back { background: #14532d; color: #ffffff; }',
-            '[data-theme="dark"] #' + BAR_ID + ':not(.aq-net-back) { background: #1a3a28; color: #a7f3d0; }',
+            '[data-theme="dark"] #' + BAR_ID + ':not(.aq-net-back) { background: rgba(5, 46, 22, 0.52); color: #d1fae5; border-bottom-color: rgba(167, 243, 208, 0.18); }',
             '.aq-net-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor;',
             '  flex: 0 0 8px; animation: aq-net-pulse 1.4s ease-in-out infinite; }',
             '#' + BAR_ID + '.aq-net-back .aq-net-dot { animation: none; }',
@@ -65,17 +68,6 @@
             '  0%, 100% { opacity: 0.3; transform: scale(0.75); }',
             '  50%      { opacity: 1;   transform: scale(1.2);  }',
             '}',
-
-            /* Push the fixed chrome down by the strip's height instead of
-               covering it. body padding moves the in-flow page content, and
-               the fixed pieces get the same offset, so their relative
-               positions to the content never change. */
-            'body.aq-netbar-on { padding-top: var(--aq-netbar-h) !important; }',
-            'body.aq-netbar-on .sidebar,',
-            'body.aq-netbar-on .mobile-header,',
-            'body.aq-netbar-on .sidebar-overlay { top: var(--aq-netbar-h); }',
-            'body.aq-netbar-on .desktop-notif-wrap { top: calc(26px + var(--aq-netbar-h)); }',
-            'body.aq-netbar-on .nmodal { top: calc(74px + var(--aq-netbar-h)); }',
 
             '@media (prefers-reduced-motion: reduce) { .aq-net-dot { animation: none !important; } }',
             '@media (max-width: 520px) { .aq-net-hint { display: none; } }'
@@ -119,7 +111,7 @@
         bar.classList.toggle('aq-net-unreachable', mode === 'down');
         bar.classList.toggle('aq-net-back', mode === 'back');
         bar.setAttribute('aria-hidden', mode === 'ok' ? 'true' : 'false');
-        document.body.classList.toggle('aq-netbar-on', mode !== 'ok');
+        document.body.classList.remove('aq-netbar-on');
 
         if (mode === 'offline') {
             text.textContent = 'No internet connection';
