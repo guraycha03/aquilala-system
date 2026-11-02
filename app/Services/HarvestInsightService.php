@@ -188,9 +188,23 @@ class HarvestInsightService
                 'source'  => 'conversation',
                 'reply'   => $this->isIdentityQuestion($message)
                     ? ($this->isSelfRecognitionQuestion($message)
-                        ? 'I know you as the signed-in Aquilala administrator for this session. I can use only what this account makes available in the system; I do not infer or reveal personal identity beyond that.'
-                        : 'I’m Aquilala’s administrative insight assistant. I can discuss the association’s harvest records, explain general agricultural concepts, help interpret trends, and think through practical questions that relate to your work.')
+                        ? ($this->isTaglish($message)
+                            ? 'Kilala kita bilang naka-sign in na administrador ng Aquilala para sa session na ito. Gumagamit lang ako ng makikita sa account mo sa system; hindi ako nag-iinfer o nagbubunyag ng personal na pagkakakilanlan higit pa roon.'
+                            : 'I know you as the signed-in Aquilala administrator for this session. I can use only what this account makes available in the system; I do not infer or reveal personal identity beyond that.')
+                        : ($this->isTaglish($message)
+                            ? 'AI assistant lang ako ng Aquilala, hindi ako tunay na tao o agronomist. Maaari akong tumulong sa mga datos ng harvest, konsepto ng pagsasaka, trends, at praktikal na tanong na may kaugnayan sa inyong gawain.'
+                            : 'I am Aquilala’s administrative insight assistant (an AI, not a real person or agronomist). I can discuss the association’s harvest records, explain general agricultural concepts, help interpret trends, and think through practical questions that relate to your work.'))
                     : $this->greetingReplyFlexible($message),
+                'context' => [],
+            ];
+        }
+
+        if ($this->isLanguageCapabilityQuestion($message)) {
+            return [
+                'source'  => 'conversation',
+                'reply'   => $this->isTaglish($message)
+                    ? 'Oo, pwede akong mag-Tagalog at Taglish. Maaari mo akong kausapin sa Tagalog, Taglish, o Ingles, at sasagot ako sa wika na mas kumportable sa iyo. Huwag mag-atubiling magtanong sa pinakakumportable mong wika.'
+                    : 'Yes, I can answer in Tagalog and Taglish. You can talk to me in Tagalog, Taglish, or English, and I will reply in the language that is most comfortable for you.',
                 'context' => [],
             ];
         }
@@ -456,6 +470,14 @@ class HarvestInsightService
         return preg_match(
             '/\b(how\s+(?:do|can|to)\s+(?:i|we|you)?\s*(?:use|navigate|find|open|get\s+started)|what\s+can\s+you\s+(?:do|help)|what\s+is\s+this|how\s+does\s+this\s+work|use\s+this|this\s+system|what\s+can\s+you\s+do|ano\s+ang\s+pwede|ano\s+kaya|pwede|magtanong|magsaya|mong|gawin|gagawin|tulong|tumulong)\b/iu',
             $message
+        ) === 1;
+    }
+
+    private function isLanguageCapabilityQuestion(string $message): bool
+    {
+        return preg_match(
+            '/\b(pwede\s+ka\s+magtagalog|pwede\s+ba\s+magtagalog|can\s+you\s+(?:speak|use|answer\s+in)\s+(?:tagalog|taglish)|magtagalog\s+ka(?:\s+ba)?|tagalog\s+ka(?:\s+ba)?|do\s+you\s+(?:speak|know)\s+tagalog)\b/iu',
+            trim($message)
         ) === 1;
     }
 
@@ -1071,7 +1093,7 @@ Keep the answer to three sentences or fewer."],
     private function isIdentityQuestion(string $message): bool
     {
         return preg_match(
-            '/^(?:who\s+are\s+you|who\s+r\s+u|who\s+u|do\s+you\s+know\s+who\s+i\s+am|do\s+you\s+recognize\s+me|what\s+are\s+you|what\s+can\s+you\s+do|what\s+do\s+you\s+do|tell\s+me\s+about\s+yourself)[!?.\s]*$/iu',
+            '/^(?:who\s+are\s+you|who\s+r\s+u|who\s+u|do\s+you\s+know\s+who\s+i\s+am|do\s+you\s+recognize\s+me|what\s+are\s+you|what\s+can\s+you\s+do|what\s+do\s+you\s+do|tell\s+me\s+about\s+yourself|sino\s+ka(?:\s+ba)?|ano\s+ka(?:\s+ba)?|ai\s+ka\s+ba|ikaw\s+ba\s+ang\s+ai|tunay\s+ka\s+ba)[!?.\s]*$/iu',
             trim($message)
         ) === 1;
     }

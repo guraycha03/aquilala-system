@@ -2250,7 +2250,7 @@
   if ($aqSearchRole === 'admin') {
       foreach ([
           ['Dashboard', 'dashboard.admin', 'home overview admin'],
-          ['AI Harvest Insights', 'admin.harvests.ai', 'ai insight assistant harvest'],
+          ['AI Harvest Insights', 'admin.harvests.ai', 'ai insight harvest reports'],
           ['Members', 'admin.members.index', 'member list view members'],
           ['Import Members', 'admin.members.import', 'import member csv excel'],
           ['Import Uploads', 'admin.members.uploads', 'uploads imported files'],
