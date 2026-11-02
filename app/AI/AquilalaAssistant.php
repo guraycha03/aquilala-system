@@ -4,6 +4,7 @@ namespace App\AI;
 
 use App\AI\Prompts\AquilalaAssistantPrompt;
 use App\Models\User;
+use App\Models\AssociationEvent;
 use App\Rules\CropRecommendationEngine;
 use App\Services\FarmingKnowledgeService;
 use App\Services\WeatherService;
@@ -114,6 +115,14 @@ class AquilalaAssistant
         array $history = [],
         ?array $conversationContext = null,
     ): array {
+        if ($user !== null) {
+            $calendarResult = $this->handleCalendarAction($message, $user);
+
+            if ($calendarResult !== null) {
+                return $calendarResult;
+            }
+        }
+
         $context = AiConversationContext::fromArray($conversationContext);
 
         if (preg_match('/^(?:ok(?:ay)?|alright|got\s+it|sure|fine|great|cool|thanks|thank\s+you|yes|no)[!?.\s]*$/iu', trim($message)) === 1) {
@@ -1730,5 +1739,682 @@ class AquilalaAssistant
             'valid'            => $violations === [],
             'violations'       => $violations,
         ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Calendar event creation (human-confirmed, low-AI)
+    |--------------------------------------------------------------------------
+    */
+
+    private function calendarDraftKey(User $user): string
+    {
+        return 'aquilala:calendar_draft:' . $user->id;
+    }
+
+    private function calendarDraft(User $user): ?array
+    {
+        $draft = cache()->get($this->calendarDraftKey($user));
+
+        return is_array($draft) ? $draft : null;
+    }
+
+    private function setCalendarDraft(User $user, array $draft): void
+    {
+        cache()->put($this->calendarDraftKey($user), $draft, now()->addMinutes(30));
+    }
+
+    private function clearCalendarDraft(User $user): void
+    {
+        cache()->forget($this->calendarDraftKey($user));
+    }
+
+    private function handleCalendarAction(string $message, User $user): ?array
+    {
+        if ($user->role !== 'admin') {
+            if (preg_match('/\b(schedule|calendar|event|meeting)\b/iu', $message) === 1
+                && preg_match('/\b(create|add|make|schedule|book)\b/iu', $message) === 1) {
+                return $this->calendarResponse(
+                    'Only administrators can create calendar events. You can ask an administrator to schedule it for you.'
+                );
+            }
+
+            return null;
+        }
+
+        $pending = $this->calendarDraft($user);
+        $trimmed = trim($message);
+
+        // Confirm a pending draft.
+        if ($pending !== null
+            && preg_match('/^(?:yes|y|confirm|go\s+ahead|ok(?:ay)?|create\s+it|proceed|do\s+it)[!?.\s]*$/iu', $trimmed) === 1) {
+            return $this->createCalendarEventFromDraft($user, $pending);
+        }
+
+        // Cancel a pending draft.
+        if ($pending !== null
+            && preg_match('/^(?:no|n|cancel|stop|abort|nevermind|never\s+mind)[!?.\s]*$/iu', $trimmed) === 1) {
+            $this->clearCalendarDraft($user);
+
+            return $this->calendarResponse('Cancelled. No event was created.');
+        }
+
+        // New scheduling request.
+        if ($pending === null && $this->isCalendarCreateIntent($trimmed)) {
+            $draft = [
+                'step' => 'collect',
+                'data' => [
+                    'title'       => null,
+                    'event_type'  => 'meeting',
+                    'event_date'  => null,
+                    'start_time'  => null,
+                    'end_time'    => null,
+                    'location'    => null,
+                    'description' => null,
+                ],
+                'notes' => [],
+            ];
+
+            $this->updateCalendarDraft($draft, $trimmed);
+
+            // If no title was provided, suggest one from the available clues
+            // instead of asking the user to invent one.
+            if (empty($draft['data']['title'])) {
+                $draft['data']['title'] = $this->suggestCalendarTitleWithAi($draft, '');
+            }
+
+            // If the user explicitly asked for help, regenerate from the
+            // clues gathered before the help request.
+            if ($this->isCalendarTitleHelp($trimmed)) {
+                $suggestDraft = $draft;
+
+                if (! empty($suggestDraft['notes']) && is_array($suggestDraft['notes'])) {
+                    array_pop($suggestDraft['notes']);
+                }
+
+                $draft['data']['title'] = $this->suggestCalendarTitleWithAi($suggestDraft, '');
+            }
+
+            $this->setCalendarDraft($user, $draft);
+
+            return $this->calendarNextReply($draft, $user);
+        }
+
+        // Continue an existing draft.
+        if ($pending !== null) {
+            // Let an explicit title-help or new scheduling request be handled
+            // by the dedicated branches below.
+
+            // A greeting or a general system question is not a reply to the
+            // pending event draft: clear it and let the normal conversation
+            // handle the message.
+            if ($this->assistantIsGreetingFlexible($message)
+                || $this->assistantIsSystemHelp($message)
+                || (! $this->isCalendarTitleHelp($trimmed)
+                    && preg_match('/^(what|how|where|which|show|open|who|list|display|find|give|tell)\\b/i', trim($trimmed)) === 1)
+                || (! $this->isCalendarTitleHelp($trimmed)
+                    && preg_match('/\\?/', $trimmed) === 1
+                    && preg_match('/\\b\\d{4}-\\d{2}-\\d{2}\\b|\\b\\d{1,2}:\\d{2}\\b|\\btoday\\b|\\btomorrow\\b/i', $trimmed) !== 1)) {
+                $this->clearCalendarDraft($user);
+
+                return null;
+            }
+
+            // If the user starts a brand-new scheduling request, reset.
+            if ($this->isCalendarCreateIntent($trimmed) && str_contains(mb_strtolower($trimmed), 'schedule a new')) {
+                $this->clearCalendarDraft($user);
+
+                return $this->handleCalendarAction($message, $user);
+            }
+
+            $draft = $pending;
+            $this->updateCalendarDraft($draft, $trimmed);
+
+            // Always suggest a title when one is missing, so the user is never
+            // prompted to invent one.
+            if (empty($draft['data']['title'])) {
+                $draft['data']['title'] = $this->suggestCalendarTitleWithAi($draft, '');
+            }
+
+            // Regenerate the title when the user explicitly asks to change it.
+            if ($this->isCalendarTitleChangeIntent($trimmed)) {
+                $draft['data']['title'] = $this->suggestCalendarTitleWithAi($draft, $trimmed);
+
+                if (empty($draft['data']['title'])) {
+                    $draft['data']['title'] = $this->suggestCalendarTitle($draft, $trimmed);
+                }
+            }
+
+            // If the user explicitly asked for help, regenerate from the clues
+            // gathered before the help request.
+            if ($this->isCalendarTitleHelp($trimmed)) {
+                $suggestDraft = $draft;
+
+                if (! empty($suggestDraft['notes']) && is_array($suggestDraft['notes'])) {
+                    array_pop($suggestDraft['notes']);
+                }
+
+                $draft['data']['title'] = $this->suggestCalendarTitleWithAi($suggestDraft, '');
+            }
+
+            $this->setCalendarDraft($user, $draft);
+
+            return $this->calendarNextReply($draft, $user);
+        }
+
+        return null;
+    }
+
+    private function isCalendarCreateIntent(string $message): bool
+    {
+        $lower = mb_strtolower(trim($message));
+
+        if (preg_match('/\b(?:schedule|book|create|add|make|set\s*up|arrange|gumawa|mag-sched|plan)\b/iu', $lower) === 1
+            && preg_match('/\b(?:event|meeting|seminar|calendar|gathering|activity)\b/iu', $lower) === 1) {
+            return true;
+        }
+
+        if (preg_match('/\b(?:gumawa|magawa|gawan|gawin)\b.*\b(?:meeting|event|seminar)\b/iu', $lower) === 1) {
+            return true;
+        }
+
+        if (preg_match('/\b(?:meeting|event|seminar|gathering)\b.*\b(?:bukas|tomorrow|today|ngayon)\b/iu', $lower) === 1) {
+            return true;
+        }
+
+        if (preg_match('/\b(?:meeting|event|seminar)\b/iu', $lower) === 1
+            && preg_match('/\d/iu', $lower) === 1) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Best-effort, deterministic extraction from a free-text turn.
+     * Missing fields are asked for one at a time, so no AI calls are made.
+     *
+     * @param  array<string, mixed>  $draft
+     */
+    private function updateCalendarDraft(array &$draft, string $message): void
+    {
+        if (! isset($draft['notes']) || ! is_array($draft['notes'])) {
+            $draft['notes'] = [];
+        }
+
+        $trimmedMessage = trim($message);
+
+        if ($trimmedMessage !== '' && ! in_array($trimmedMessage, $draft['notes'], true)) {
+            $draft['notes'][] = $trimmedMessage;
+        }
+
+        $data = &$draft['data'];
+        $lower = mb_strtolower(trim($message));
+
+        // Event type detection.
+        foreach ([
+            'water'   => AssociationEvent::TYPE_WATER_SCHEDULE,
+            'watering'=> AssociationEvent::TYPE_WATER_SCHEDULE,
+            'input'   => AssociationEvent::TYPE_FREE_INPUT,
+            'free input' => AssociationEvent::TYPE_FREE_INPUT,
+            'meeting' => AssociationEvent::TYPE_MEETING,
+            'seminar' => AssociationEvent::TYPE_MEETING,
+            'training'=> AssociationEvent::TYPE_MEETING,
+        ] as $needle => $type) {
+            if (str_contains($lower, $needle)) {
+                $data['event_type'] = $type;
+                break;
+            }
+        }
+
+        // Date: YYYY-MM-DD (allow a natural "today"/"tomorrow" too).
+        // Accept common misspellings ("tommorow", "tomorow") and Taglish
+        // ("bukas", "ngayon") as well.
+        if (empty($data['event_date'])) {
+            if (preg_match('/\b(\d{4}-\d{2}-\d{2})\b/', $message, $m) === 1) {
+                $data['event_date'] = $m[1];
+            } elseif (str_contains($lower, 'today') || str_contains($lower, 'ngayon')) {
+                $data['event_date'] = now()->toDateString();
+            } elseif (str_contains($lower, 'tomorrow')
+                || str_contains($lower, 'tommorow')
+                || str_contains($lower, 'tomorow')
+                || str_contains($lower, 'bukas')) {
+                $data['event_date'] = now()->addDay()->toDateString();
+            }
+        }
+
+        // Times: first HH:MM becomes start, second becomes end.
+        preg_match_all('/\b(\d{1,2}:\d{2})\b/', $message, $timeMatches);
+
+        // Also accept "8am", "8 am", "8pm" style inputs.
+        preg_match_all('/\b(\d{1,2})\s*(am|pm)\b/iu', $message, $ampmMatches, PREG_SET_ORDER);
+
+        $ampmTimes = [];
+
+        foreach ($ampmMatches as $match) {
+            $hour = (int) $match[1];
+            $meridian = mb_strtolower($match[2]);
+
+            if ($meridian === 'pm' && $hour < 12) {
+                $hour += 12;
+            }
+
+            if ($meridian === 'am' && $hour === 12) {
+                $hour = 0;
+            }
+
+            $ampmTimes[] = sprintf('%02d:00', $hour);
+        }
+
+        if (empty($timeMatches[1]) && $ampmTimes !== []) {
+            $timeMatches[1] = $ampmTimes;
+        }
+
+        if (! empty($timeMatches[1])) {
+            if (empty($data['start_time'])) {
+                $data['start_time'] = $timeMatches[1][0];
+            }
+            if (empty($data['end_time']) && isset($timeMatches[1][1])) {
+                $data['end_time'] = $timeMatches[1][1];
+            }
+        }
+
+        // Location: "at ..." (taken to end of line).
+        if (empty($data['location']) && preg_match('/\bat\s+([A-Za-z].+)$/iu', $message, $m) === 1) {
+            $clean = trim($m[1]);
+            if ($clean !== '') {
+                $data['location'] = mb_substr($clean, 0, 255);
+            }
+        }
+
+        // Title: prefer an explicit "title: ..." else use the first text turn
+        // when nothing else has been captured.
+        if (empty($data['title'])) {
+            if (preg_match('/\btitle\s*[:=-]\s*(.+)$/iu', $message, $m) === 1) {
+                $data['title'] = trim($m[1]);
+            } elseif ($data['event_date'] === null && $data['start_time'] === null) {
+                // Treat a non-data question/answer as the title candidate.
+                $candidate = trim($message);
+                // Drop a leading intent phrase so it doesn't become the title.
+                $candidate = preg_replace(
+                    '/^(?:please\s+)?(?:can\s+you\s+)?(?:schedule|create|add|book|set\s+up)\s+(?:a\s+|an\s+)?(?:meeting|event|seminar|gathering)?\s*/iu',
+                    '',
+                    $candidate
+                );
+                $candidate = trim((string) $candidate);
+                $candidate = preg_replace('/[?!.]+$/u', '', $candidate);
+                $candidate = trim((string) $candidate);
+
+                if ($candidate !== '' && mb_strlen($candidate) <= 120
+                    && ! preg_match('/^[?!.]+$/u', $candidate)) {
+                    $data['title'] = $candidate;
+                }
+            }
+        }
+
+        // If a title candidate still contains a date, trim it back to the
+        // human-readable part before the date token.
+        if (! empty($data['title']) && preg_match('/^(.+?)\s+\d{4}-\d{2}-\d{2}/', $data['title'], $m) === 1) {
+            $data['title'] = trim($m[1]);
+        }
+
+        // Any leftover free text (not date/time/location) can become a
+        // short description, only if the user explicitly adds it.
+        if (empty($data['description'])
+            && preg_match('/\b(?:about|description|notes?)\s*[:=-]\s*(.+)$/iu', $message, $m) === 1) {
+            $data['description'] = trim($m[1]);
+        }
+    }
+
+    private function calendarNextReply(array $draft, ?User $user = null): array
+    {
+        $data = $draft['data'];
+
+        $missing = [];
+        if (empty($data['title'])) {
+            $missing[] = 'title';
+        }
+        if (empty($data['event_date'])) {
+            $missing[] = 'date (YYYY-MM-DD)';
+        }
+
+        if ($missing !== []) {
+            $ask = 'I can schedule that for you. Please provide the missing: ' . implode(', ', $missing) . '.';
+
+            if (empty($data['title'])) {
+                $ask .= "\n\nWhat should the event be called?";
+            } elseif (empty($data['event_date'])) {
+                $ask .= "\n\nWhat date should it be on? (use YYYY-MM-DD; you may also say today or tomorrow)";
+            }
+
+            return $this->calendarResponse($ask);
+        }
+
+        // Present the plan and wait for explicit confirmation.
+        $draft['step'] = 'confirm';
+
+        if ($user !== null) {
+            $this->setCalendarDraft($user, $draft);
+        }
+
+        return $this->calendarPlanResponse($draft);
+    }
+
+    private function calendarPlanResponse(array $draft): array
+    {
+        $data = $draft['data'];
+
+        $lines = [
+            'Here is what I plan to add to the calendar:',
+            '',
+            '- **Title:** ' . $data['title'],
+            '- **Type:** ' . (AssociationEvent::TYPES[$data['event_type']] ?? 'Meeting / Seminar'),
+            '- **Date:** ' . $data['event_date'],
+        ];
+
+        if (! empty($data['start_time'])) {
+            $lines[] = '- **Start time:** ' . $data['start_time']
+                . (empty($data['end_time']) ? '' : '  (end ' . $data['end_time'] . ')');
+        }
+
+        if (! empty($data['location'])) {
+            $lines[] = '- **Location:** ' . $data['location'];
+        }
+
+        if (! empty($data['description'])) {
+            $lines[] = '- **Description:** ' . $data['description'];
+        }
+
+        $lines[] = '';
+        $lines[] = 'This looks correct? Reply **yes** to create it, **cancel** to stop, or add more details (time, location, description) before confirming.';
+
+        return $this->calendarResponse(implode("\n", $lines));
+    }
+
+    private function createCalendarEventFromDraft(User $user, array $draft): array
+    {
+        $data = $draft['data'];
+
+        if (empty($data['title']) || empty($data['event_date'])) {
+            $this->setCalendarDraft($user, $draft);
+
+            return $this->calendarResponse(
+                'I still need a title and a date. Please provide them first.'
+            );
+        }
+
+        try {
+            $eventDate = \Carbon\Carbon::parse($data['event_date'])->toDateString();
+
+            if (\Carbon\Carbon::parse($eventDate)->lt(today())) {
+                throw new \InvalidArgumentException('past date');
+            }
+        } catch (\Throwable $e) {
+            $draft['data']['event_date'] = null;
+            $this->setCalendarDraft($user, $draft);
+
+            return $this->calendarResponse(
+                'That date is not valid or is in the past. Please provide a valid date (YYYY-MM-DD).'
+            );
+        }
+
+        try {
+            $event = AssociationEvent::create([
+                'title'       => $data['title'],
+                'event_type'  => $data['event_type'] ?? AssociationEvent::TYPE_MEETING,
+                'event_date'  => $eventDate,
+                'start_time'  => $data['start_time'] ?: null,
+                'end_time'    => $data['end_time'] ?: null,
+                'location'    => $data['location'],
+                'description' => $data['description'],
+                'created_by'  => $user->id,
+            ]);
+
+            if (\Illuminate\Support\Facades\Auth::user() === null) {
+                \Illuminate\Support\Facades\Auth::login($user);
+            }
+
+            \App\Services\ActivityLogger::eventCreated($event);
+        } catch (\Throwable $e) {
+            $this->setCalendarDraft($user, $draft);
+
+            return $this->calendarResponse(
+                'I could not create the event: ' . $e->getMessage()
+            );
+        }
+
+        $this->clearCalendarDraft($user);
+
+        return $this->calendarResponse(sprintf(
+            'Created **%s** on **%s**%s. You can view or edit it on the calendar page.',
+            $event->title,
+            $event->event_date->format('M d, Y'),
+            empty($data['start_time']) ? '' : ' at ' . $data['start_time']
+        ));
+    }
+
+    private function isCalendarTitleChangeIntent(string $message): bool
+    {
+        $lower = mb_strtolower(trim($message));
+
+        if (preg_match('/\b(palitan|baguhin|change|rename|make it about|make the title|gawin mong|gawin mo|instead of|instead)\b/iu', $lower) === 1) {
+            return true;
+        }
+
+        if (str_contains($lower, 'tungkol sa') || str_contains($lower, 'about ')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function isCalendarTitleHelp(string $message): bool
+    {
+        $lower = mb_strtolower(trim($message));
+
+        if (preg_match('/\b(help|suggest|generate|create|make|give)\b.*\b(title|name)\b/iu', $lower) === 1) {
+            return true;
+        }
+
+        if (preg_match('/\b(title|name)\b.*\b(help|suggest|generate|create|make|give)\b/iu', $lower) === 1) {
+            return true;
+        }
+
+        return str_contains($lower, 'help with title')
+            || str_contains($lower, 'suggest title')
+            || $lower === 'help'
+            || $lower === 'help me';
+    }
+
+    /*
+     * Best-effort title suggestion. Prefers a short LLM-generated title when
+     * the model is available (one small call), then falls back to a fast
+     * deterministic heuristic so scheduling still works with no AI quota.
+     */
+    private function suggestCalendarTitleWithAi(array $draft, string $hint = ''): string
+    {
+        $heuristic = $this->suggestCalendarTitle($draft, $hint);
+
+        if (! $this->llm->available()) {
+            return $heuristic;
+        }
+
+        $data = $draft['data'] ?? [];
+        $notes = $draft['notes'] ?? [];
+        $context = trim(implode(' ', $notes));
+
+        if ($hint !== '') {
+            if ($context !== '') {
+                $context .= ' Latest change request: ' . trim($hint);
+            } else {
+                $context = trim($hint);
+            }
+        }
+
+        if ($context === '') {
+            $context = trim(($data['description'] ?? '') . ' ' . ($data['location'] ?? ''));
+        }
+
+        if ($context === '') {
+            return $heuristic;
+        }
+
+        try {
+            $completion = app(\App\AI\AiLlmClient::class)->completeJson([
+                [
+                    'role'    => 'system',
+                    'content' => 'You write clear, human-friendly calendar event titles. '
+                        . 'Return ONLY a JSON object: {"title": "3 to 6 words"}. '
+                        . 'Focus on the event topic or purpose, not commands like "tell members", '
+                        . 'not filler words, and not random phrases. '
+                        . 'Example: for "schedule a meeting tomorrow at 8 to elect officers and take attendance", '
+                        . 'return "Election of Officers Meeting".',
+                ],
+                [
+                    'role'    => 'user',
+                    'content' => 'Suggest an event title for this request: ' . $context,
+                ],
+            ], 512, 30);
+        } catch (\Throwable $e) {
+            return $heuristic;
+        }
+
+
+        $raw = is_array($completion) ? (string) ($completion['raw'] ?? '') : '';
+
+
+        if ($raw === '') {
+            return $heuristic;
+        }
+
+        $parsed = json_decode($raw, true);
+        $title = '';
+
+        if (is_array($parsed) && isset($parsed['title'])) {
+            $title = trim((string) $parsed['title']);
+        }
+
+        if ($title === '') {
+            if (preg_match('/"title"\s*:\s*"([^"]+)"/iu', $raw, $m) === 1) {
+                $title = trim($m[1]);
+            }
+        }
+
+        if ($title === '') {
+            return $heuristic;
+        }
+
+        // Keep the title short and clean.
+        $title = preg_replace('/[?!.]+$/u', '', $title);
+        $title = trim((string) $title);
+
+        if (mb_strlen($title) > 120) {
+            $title = mb_substr($title, 0, 120);
+        }
+
+        return $title !== '' ? $title : $heuristic;
+    }
+
+    private function suggestCalendarTitle(array $draft, string $hint = ''): string
+    {
+        $data = $draft['data'] ?? [];
+        $notes = $draft['notes'] ?? [];
+        $raw = mb_strtolower(trim(($data['location'] ?? '') . ' ' . implode(' ', $notes) . ' ' . $hint));
+
+        // Prefer a clear, human-readable title for common intents instead of
+        // echoing the user's full sentence back as the title.
+        if (str_contains($raw, 'budget')) {
+            return 'Budget review meeting';
+        }
+
+        if (str_contains($raw, 'attendance')) {
+            return 'Attendance meeting';
+        }
+
+        if (str_contains($raw, 'training') || str_contains($raw, 'seminar')) {
+            return 'Training session';
+        }
+
+        if (str_contains($raw, 'harvest') && str_contains($raw, 'report')) {
+            return 'Harvest report review';
+        }
+
+        if (str_contains($raw, 'updates') || str_contains($raw, 'update')) {
+            return 'Updates meeting';
+        }
+
+        if (! empty($data['description'])) {
+            $words = preg_split('/\s+/u', trim((string) $data['description']));
+            $candidate = implode(' ', array_slice($words ?: [], 0, 6));
+
+            if ($candidate !== '') {
+                return ucfirst(mb_substr(trim($candidate), 0, 120));
+            }
+        }
+
+        $text = trim(($data['location'] ?? '') . ' ' . implode(' ', $notes) . ' ' . $hint);
+
+        // Drop common scheduling words and date/time tokens, leaving the
+        // substantive topic of the requested event.
+        $text = preg_replace(
+            '/\b(schedule|create|add|book|set|up|a|an|the|event|meeting|seminar|gathering|activity|title|help|suggest|generate|create|make|give|name|today|tomorrow|at|on|for|about|my|your|our|me|with|this|can|you|the)\b/iu',
+            ' ',
+            $text
+        );
+        $text = preg_replace('/\b\d{4}-\d{2}-\d{2}\b/u', ' ', $text);
+        $text = preg_replace('/\b\d{1,2}:\d{2}\b/u', ' ', $text);
+        $text = preg_replace('/\b\d{1,2}\s*(?:am|pm)\b/iu', ' ', $text);
+        $text = trim((string) preg_replace('/\s+/u', ' ', $text));
+
+        if ($text === '') {
+            $date = $data['event_date'] ?? '';
+
+            return $date !== '' ? 'Event on ' . $date : 'Scheduled Event';
+        }
+
+        $words = preg_split('/\s+/u', $text);
+        $unique = [];
+        $seen = [];
+
+        foreach ($words ?: [] as $word) {
+            $word = trim($word);
+
+            if ($word === '') {
+                continue;
+            }
+
+            $key = mb_strtolower($word);
+
+            if (in_array($key, $seen, true)) {
+                continue;
+            }
+
+            $seen[] = $key;
+            $unique[] = $word;
+        }
+
+        $candidate = implode(' ', array_slice($unique, 0, 6));
+
+        return ucfirst(mb_substr(trim($candidate), 0, 120));
+    }
+
+    private function calendarResponse(string $reply): array
+    {
+        $context = new AiConversationContext();
+
+        return [
+            'reply'       => $reply,
+            'type'        => 'answer',
+            'suggestions' => [],
+            'context'     => $context->toArray(),
+            'intent'      => \App\AI\AiIntent::SYSTEM_HELP,
+            'source'      => 'conversation',
+            'violations'  => [],
+        ];
+    }
+
+    private function setCalendarDraftResolved(array $draft): void
+    {
+        // no-op
     }
 }

@@ -65,10 +65,15 @@
                                     data-location="{{ $ev->location }}"
                                     data-description="{{ $ev->description }}">Edit</button>
                             <form method="POST" action="{{ route('admin.calendar.events.destroy', $ev) }}"
-                                  onsubmit="return confirm('Remove this event from the calendar?');">
+                                  onsubmit="return false;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="ael-btn danger">Delete</button>
+                                <button type="submit" class="ael-btn danger"
+                                    data-aqui-confirm="Remove this event from the calendar?"
+                                    data-aqui-tone="warn"
+                                    data-aqui-title="Confirm"
+                                    data-aqui-confirm-label="Remove">Delete</button>
+                                @method('DELETE')
                             </form>
                         </div>
                     @endif
@@ -126,10 +131,15 @@
                                     data-location="{{ $ev->location }}"
                                     data-description="{{ $ev->description }}">Edit</button>
                             <form method="POST" action="{{ route('admin.calendar.events.destroy', $ev) }}"
-                                  onsubmit="return confirm('Remove this event from the calendar?');">
+                                  onsubmit="return false;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="ael-btn danger">Delete</button>
+                                <button type="submit" class="ael-btn danger"
+                                    data-aqui-confirm="Remove this event from the calendar?"
+                                    data-aqui-tone="warn"
+                                    data-aqui-title="Confirm"
+                                    data-aqui-confirm-label="Remove">Delete</button>
+                                @method('DELETE')
                             </form>
                         </div>
                     @endif

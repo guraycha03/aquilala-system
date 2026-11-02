@@ -400,6 +400,15 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         Route::get('/dashboard', [AuthController::class, 'showAdminDashboard'])->name('dashboard');
 
+        Route::get('/ai-chat', [AiChatController::class, 'index'])->name('ai-chat.index');
+        Route::post('/ai-chat', [AiChatController::class, 'send'])->name('ai-chat.send');
+        Route::post('/ai-chat/avatar', [AiChatController::class, 'updateAvatar'])->name('ai-chat.avatar');
+        Route::post('/ai-chat/suggestions', [AiChatController::class, 'suggestions'])->name('ai-chat.suggestions');
+        Route::get('/ai-chat/histories', [AiChatController::class, 'histories'])->name('ai-chat.histories');
+        Route::get('/ai-chat/histories/{chatHistory}', [AiChatController::class, 'history'])->name('ai-chat.history.show');
+        Route::post('/ai-chat/histories', [AiChatController::class, 'saveHistory'])->name('ai-chat.history.save');
+        Route::delete('/ai-chat/histories/{chatHistory}', [AiChatController::class, 'destroyHistory'])->name('ai-chat.history.destroy');
+
         // ── Capture shield ── these pages carry ->middleware('shield'), which
         // blocks the browser's display-capture API on them and shows the blank
         // app-switcher cover while the page is in the background. Add the token

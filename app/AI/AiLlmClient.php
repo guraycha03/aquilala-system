@@ -125,9 +125,11 @@ class AiLlmClient
             ]);
 
             return null;
-        }
+        } 
 
-        $raw = (string) $response->json('choices.0.message.content', '');
+
+        $extracted = (string) $response->json('choices.0.message.content', '');
+        $raw = $extracted;
 
         if (trim($raw) === '') {
             return null;

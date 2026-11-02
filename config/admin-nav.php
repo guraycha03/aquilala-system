@@ -45,7 +45,7 @@ return [
         'icon' => '<i data-lucide="sparkles" aria-hidden="true"></i>',
         'standalone' => true,
         'items' => [
-            ['label' => 'AI Insight', 'routes' => ['admin.harvests.ai']],
+            ['label' => 'AI Assistant', 'routes' => ['admin.ai-chat.index']],
         ],
     ],
     // The association's members. Accounts are always created by picking

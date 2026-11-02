@@ -38,12 +38,12 @@ class AiChatController extends Controller
             'myPhoto' => $user?->profilePhotoUrl(),
             'myInitials' => $user?->initials() ?? '?',
             'myName' => $user?->name ?? '',
+            'aiModel' => app(\App\AI\AiLlmClient::class)->modelName(),
+            'aiProvider' => app(\App\AI\AiLlmClient::class)->provider(),
         ];
 
-        if ($user?->role === 'store_owner') {
-            return view('store.ai-chat.index', $data);
-        }
-
+        // One shared chat view for every role keeps the UI consistent.
+        // Role-specific routes are resolved from $routeBase inside the view.
         return view('farmer.ai-chat.index', $data);
     }
 

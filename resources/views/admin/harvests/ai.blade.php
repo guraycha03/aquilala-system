@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'AI Harvest Insights')
+@section('title', 'AI Assistant')
 
 @section('page-styles')
   <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=16" data-turbo-track="dynamic">
@@ -274,7 +274,7 @@
       <div id="aiChatLog" class="chat-messages" role="log" aria-live="polite">
         <div class="message-row">
           <div class="message-bubble">
-            <p>Hello. I’m Aquilala’s administrative AI Assistant for harvest insights.</p>
+            <p>Hello. I’m Aquilala’s administrative AI Assistant.</p>
             <p>I can help you interpret association performance, harvest trends, costs, crops, seasons, and recorded activities.</p>
             <p>Ask a question to begin. I’ll provide concise, evidence-based observations to support your review.</p>
             <div class="admin-ai-suggestions">

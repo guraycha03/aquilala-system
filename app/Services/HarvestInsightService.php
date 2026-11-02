@@ -192,8 +192,8 @@ class HarvestInsightService
                             ? 'Kilala kita bilang naka-sign in na administrador ng Aquilala para sa session na ito. Gumagamit lang ako ng makikita sa account mo sa system; hindi ako nag-iinfer o nagbubunyag ng personal na pagkakakilanlan higit pa roon.'
                             : 'I know you as the signed-in Aquilala administrator for this session. I can use only what this account makes available in the system; I do not infer or reveal personal identity beyond that.')
                         : ($this->isTaglish($message)
-                            ? 'AI assistant lang ako ng Aquilala, hindi ako tunay na tao o agronomist. Maaari akong tumulong sa mga datos ng harvest, konsepto ng pagsasaka, trends, at praktikal na tanong na may kaugnayan sa inyong gawain.'
-                            : 'I am Aquilala’s administrative insight assistant (an AI, not a real person or agronomist). I can discuss the association’s harvest records, explain general agricultural concepts, help interpret trends, and think through practical questions that relate to your work.'))
+                            ? 'AI assistant lang ako ng Aquilala, hindi ako tunay na tao o agronomist. Maaari akong tumulong sa mga datos ng sistema, konsepto ng pagsasaka, trends, at praktikal na tanong na may kaugnayan sa inyong gawain.'
+                            : 'I am Aquilala’s administrative AI assistant (an AI, not a real person or agronomist). I can discuss Aquilala system records, explain general agricultural concepts, help interpret trends, and think through practical questions that relate to your work.'))
                     : $this->greetingReplyFlexible($message),
                 'context' => [],
             ];

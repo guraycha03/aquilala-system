@@ -149,6 +149,16 @@
     </div>
   </div>
 
+  <div class="set-card" style="margin-top:12px;">
+    <div class="set-field">
+      <label>Language <small style="color:#64748b;">(display only, not active yet)</small></label>
+      <select disabled style="padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#64748b;">
+        <option selected>English</option>
+        <option>Tagalog</option>
+      </select>
+    </div>
+  </div>
+
   <div class="set-toast" id="setToast">
     <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
     <span id="setToastMsg">Settings saved successfully.</span>

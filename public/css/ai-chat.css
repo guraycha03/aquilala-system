@@ -307,6 +307,24 @@ body:has(.chat-page) {
     /* The transparent header still owns this top strip so the first message
        never slides underneath the history/avatar controls. */
     padding-top: 64px;
+    padding-bottom: 160px;
+    scroll-padding-bottom: 160px;
+}
+
+.chat-greeting {
+    margin: 20px 0 18px;
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1.1;
+    text-align: center;
+    color: var(--aq-sage-700, #3f5a46);
+    letter-spacing: -0.03em;
+}
+
+@media (max-width: 768px) {
+    .chat-greeting {
+        font-size: 28px;
+    }
 }
 
 .admin-ai-page .chat-messages {
@@ -416,6 +434,34 @@ body:has(.chat-page) {
     margin-top: 4px;
 }
 
+/* Centered welcome focus: greeting + starter suggestions. */
+.welcome-suggestions {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 720px;
+    justify-content: center;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.welcome-suggestions .message-bubble {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    width: 100%;
+}
+
+.welcome-suggestions .quick-chips {
+    justify-content: center;
+    gap: 10px;
+}
+
+.welcome-suggestions .quick-chips .chip {
+    font-size: 14px;
+    padding: 10px 16px;
+}
+
 .chat-page .chip {
     display: inline-flex;
     align-items: center;
@@ -449,14 +495,31 @@ body:has(.chat-page) {
     right: 0;
     bottom: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 10px 20px 20px;
     border-top: 0;
     background: transparent !important;
     border: 0;
-    box-shadow: none;
-    z-index: 25;
+}
+
+.chat-input-area .chat-input-wrapper {
+    width: 100%;
+    max-width: 720px;
+}
+
+.ai-model-badge {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #64748b;
+    opacity: 0.85;
+    text-align: center;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 0 0 auto;
 }
 
 .chat-input-wrapper {
@@ -958,6 +1021,9 @@ body:has(.chat-page) {
     position: relative;
     margin-left: auto;
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .history-btn {
@@ -983,6 +1049,18 @@ body:has(.chat-page) {
 .history-btn svg {
     width: 18px;
     height: 18px;
+}
+
+#newChatVisibleBtn {
+    width: auto;
+    min-width: 76px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    height: 38px;
+    line-height: 1;
+    vertical-align: middle;
 }
 
 .history-dropdown {
@@ -1241,6 +1319,8 @@ body:has(.chat-page) .app-toast.show {
     }
     .assistant-chat-page .chat-messages {
         padding-top: 60px;
+        padding-bottom: 160px;
+        scroll-padding-bottom: 160px;
     }
     .admin-ai-page .chat-messages {
         padding-top: 76px;

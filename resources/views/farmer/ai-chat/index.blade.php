@@ -3,8 +3,67 @@
 @section('page-styles')
     {{-- One shared skin for every AI chat page: mute warm-sage palette and a
          viewport-locked layout so the composer is always on screen. --}}
-    <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=13" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=30" data-turbo-track="dynamic">
 @endsection
+
+@php
+    $routeBase = auth()->user()?->role === 'admin'
+        ? 'admin'
+        : (auth()->user()?->role === 'store_owner' ? 'store' : 'farmer');
+
+    $role = auth()->user()?->role;
+    $suggestionPool = match ($role) {
+        'admin' => [
+            'Show harvest performance summary',
+            'Show recent activity logs',
+            'Open member list',
+            'Open audit log',
+            'Schedule a meeting',
+            'How do I create an event?',
+            'Show quotation demand trends',
+            'Open planting requests',
+            'Show all harvest reports',
+            'Where can I manage members?',
+            'How do I import members?',
+            'Show system settings',
+            'How do I use the weather log?',
+            'Show store list',
+            'Open product catalog',
+        ],
+        'store_owner' => [
+            'Show my store inventory',
+            'Which products sell most?',
+            'Show quotations that include my products',
+            'How do I update a product listing?',
+            'Open top products page',
+            'Show product demand trends',
+            'How do I add a new product?',
+            'Show my product formulas',
+            'What products are low in stock?',
+            'How do I manage inventory?',
+            'Open store settings',
+            'Show activity history',
+        ],
+        default => [
+            'What fertilizers for rice?',
+            'Best products for wet season',
+            'Help me plan for corn',
+            'Estimate costs for 2 hectares',
+            'How can I improve rice yield?',
+            'What should I plant this month?',
+            'Which products help with pests?',
+            'Compare rice and corn costs',
+            'What is a good dry-season crop?',
+            'How much seed do I need for 1 hectare?',
+            'How do I prepare soil for vegetables?',
+            'What can I do about yellowing leaves?',
+            'Show my harvest reports',
+            'Show my cost quotations',
+            'How do I submit a harvest report?',
+            'Where is the product catalog?',
+        ],
+    };
+@endphp
 
 @section('content')
 
@@ -40,6 +99,9 @@
                 </div>
             </div>
             <div class="history-wrap">
+                <button class="history-btn" id="newChatVisibleBtn" aria-label="New chat" title="New chat">
+                    New chat
+                </button>
                 <button class="history-btn" id="historyBtn" aria-label="Chat history" title="Chat history">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v5h5" />
@@ -58,19 +120,11 @@
         </div>
 
         <div class="chat-messages" id="chatMessages">
-            <div class="message-row">
-                <div class="message-bubble">
-                    <div>
-                        Hello! I'm the Aquilala farming assistant for Bulan, Sorsogon.
-                    </div>
-                    <div style="margin-top: 6px;">
-                        Ask me what to plant, what to use on it, what it will cost, or how to grow something — and I will
-                        answer from the association's own records and from general farming practice.
-                    </div>
-                </div>
+            <div class="chat-greeting">
+                Hello{{ $myName ? ', ' . $myName : '' }}!
             </div>
 
-            <div class="message-row">
+            <div class="message-row welcome-suggestions">
                 <div class="message-bubble">
                     <div class="quick-chips">
                         <button class="chip" onclick="sendChip(this)">
@@ -104,6 +158,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                     </svg>
                 </button>
+            </div>
+            <div class="ai-model-badge" aria-label="Current AI model">
+                Powered by {{ ucfirst($aiProvider ?? 'AI') }}{{ ($aiModel ?? '') ? ' (' . $aiModel . ')' : '' }}
             </div>
         </div>
 
@@ -161,12 +218,25 @@
     const chatMessages = document.getElementById('chatMessages');
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
+    const chatInputArea = document.querySelector('.chat-input-area');
     const chatHistory = [];
     // Structured conversation state from the server (last intent, crop, product
     // ids, season, area). Sent with every turn so "how much is it?" resolves
     // to the right product without replaying the whole transcript.
     let aiContext = null;
     let isSending = false;
+
+    // Give the last message just enough space to sit above the floating
+    // composer instead of a fixed (often wrong on mobile) bottom padding.
+    function fitChatBottomPadding() {
+        if (!chatMessages || !chatInputArea) return;
+        const h = (chatInputArea.offsetHeight || 0) + 24;
+        chatMessages.style.paddingBottom = h + 'px';
+        chatMessages.style.scrollPaddingBottom = h + 'px';
+    }
+    window.addEventListener('load', fitChatBottomPadding);
+    window.addEventListener('resize', fitChatBottomPadding);
+    fitChatBottomPadding();
 
     function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -210,7 +280,7 @@
                 b.classList.toggle('is-active', b === choice);
             });
 
-            fetch('{{ route("farmer.ai-chat.avatar") }}', {
+            fetch('{{ route("$routeBase.ai-chat.avatar") }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -398,6 +468,13 @@
         if (!text || isSending) return;
         chatInput.value = '';
 
+        // Hide the one-time welcome greeting and starter suggestions once
+        // the conversation begins, so the chat starts on the user's message.
+        var greeting = chatMessages.querySelector('.chat-greeting');
+        if (greeting) greeting.remove();
+        var welcomeChips = chatMessages.querySelector('.welcome-suggestions');
+        if (welcomeChips) welcomeChips.remove();
+
         // Add user message to UI
         addUserMessage(text);
         chatHistory.push({ role: 'user', content: text });
@@ -406,7 +483,7 @@
         addLoadingMessage();
 
         try {
-            const resp = await fetch('{{ route("farmer.ai-chat.send") }}', {
+            const resp = await fetch('{{ route("$routeBase.ai-chat.send") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -450,20 +527,7 @@
         sendMessage(text);
     }
 
-    const quickSuggestionPool = [
-        'What fertilizers for rice?',
-        'Best products for wet season',
-        'Help me plan for corn',
-        'Estimate costs for 2 hectares',
-        'How can I improve rice yield?',
-        'What should I plant this month?',
-        'Which products help with pests?',
-        'Compare rice and corn costs',
-        'What is a good dry-season crop?',
-        'How much seed do I need for 1 hectare?',
-        'How do I prepare soil for vegetables?',
-        'What can I do about yellowing leaves?',
-    ];
+    const quickSuggestionPool = @json($suggestionPool);
     quickSuggestionPool.sort(function () { return Math.random() - 0.5; });
     document.querySelectorAll('.quick-chips .chip').forEach(function (chip, index) {
         chip.textContent = quickSuggestionPool[index];
@@ -542,7 +606,7 @@
     }
 
     function fetchSuggestionsFor(keywords, anchorRow) {
-        fetch('{{ route("farmer.ai-chat.suggestions") }}', {
+        fetch('{{ route("$routeBase.ai-chat.suggestions") }}', {
             method: 'POST',
             headers: csrfHeader(),
             body: JSON.stringify({ keywords: keywords }),
@@ -593,8 +657,8 @@
     let currentHistoryId = null;
     let activeChatHasMessages = false;
 
-    // Static welcome rows to restore on "New Chat"
-    const staticRows = Array.prototype.slice.call(chatMessages.querySelectorAll('.message-row'));
+    // Static welcome rows to restore on "New Chat" (greeting + suggestion chips).
+    const staticRows = Array.prototype.slice.call(chatMessages.children);
 
     function csrfHeader() {
         return {
@@ -606,7 +670,7 @@
 
     function persistCurrentConversation() {
         if (!chatHistory.length) return;
-        fetch('{{ route("farmer.ai-chat.history.save") }}', {
+        fetch('{{ route("$routeBase.ai-chat.history.save") }}', {
             method: 'POST',
             headers: csrfHeader(),
             body: JSON.stringify({ id: currentHistoryId, messages: chatHistory, context: aiContext }),
@@ -693,7 +757,7 @@
 
     function loadHistoryConversation(id) {
         closeDeleteModal();
-        fetch('{{ route("farmer.ai-chat.history.show", "__ID__") }}'.replace('__ID__', id), {
+        fetch('{{ route("$routeBase.ai-chat.history.show", "__ID__") }}'.replace('__ID__', id), {
             method: 'GET',
             headers: csrfHeader(),
         })
@@ -779,7 +843,7 @@
     });
 
     function deleteHistoryConversation(id, itemEl) {
-        fetch('{{ route("farmer.ai-chat.history.destroy", "__ID__") }}'.replace('__ID__', id), {
+        fetch('{{ route("$routeBase.ai-chat.history.destroy", "__ID__") }}'.replace('__ID__', id), {
             method: 'DELETE',
             headers: csrfHeader(),
         })
@@ -802,7 +866,7 @@
             return;
         }
         historyDropdown.classList.add('open');
-        fetch('{{ route("farmer.ai-chat.histories") }}', {
+        fetch('{{ route("$routeBase.ai-chat.histories") }}', {
             method: 'GET',
             headers: csrfHeader(),
         })
@@ -824,6 +888,14 @@
         e.stopPropagation();
         startNewChat();
     });
+
+    const newChatVisibleBtn = document.getElementById('newChatVisibleBtn');
+    if (newChatVisibleBtn) {
+        newChatVisibleBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            startNewChat();
+        });
+    }
 
     document.addEventListener('click', function (e) {
         if (!historyDropdown.contains(e.target) && !historyBtn.contains(e.target)) {

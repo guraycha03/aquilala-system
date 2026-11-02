@@ -99,7 +99,7 @@ class SubPagesNavTest extends TestCase
             ->get(route('admin.harvests.ai'));
 
         $response->assertOk()
-            ->assertSee('AI Insight')
+            ->assertSee('AI Assistant')
             ->assertSee(
                 '<a href="'.route('admin.harvests.ai').'" class="active">',
                 false

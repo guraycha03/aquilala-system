@@ -537,14 +537,14 @@
     .desktop-notif-wrap { position: fixed !important; top: 26px; right: 20px; z-index: 200; transition: transform 0.3s ease; display: flex; align-items: flex-start; gap: 10px; }
     .desktop-notif-wrap.hidden { transform: translateY(-80px); }
     .desktop-notif {
-      width: 40px; height: 40px; border-radius: 50%;
-      background: #ffffff; border: 1px solid #eef1f4;
-      box-shadow: 0 2px 10px rgba(16, 24, 40, 0.10);
+      width: 32px; height: 32px; border-radius: 8px;
+      background: transparent; border: none;
+      box-shadow: none;
       display: flex; align-items: center; justify-content: center;
       color: #6d7d46; text-decoration: none; cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: color 0.2s ease, background 0.2s ease;
     }
-    .desktop-notif:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(16, 24, 40, 0.14); }
+    .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(109, 125, 70, 0.10); color: #4f6d4e; }
     .desktop-notif svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .desktop-notif { position: relative; }
     .notif-badge {
@@ -1146,24 +1146,35 @@
           @if($farmerNav)
             @foreach($farmerNav as $fi => $section)
               @php $isFarmerOpen = ($activeFarmerSection === $fi); @endphp
-              <li class="nav-dropdown {{ $isFarmerOpen ? 'open' : '' }}">
-                <button type="button" class="nav-dropdown-btn" aria-expanded="{{ $isFarmerOpen ? 'true' : 'false' }}">
-                  <span class="nav-dropdown-title">
+              @php $isFarmerStandalone = !empty($section['standalone']) && count($section['items']) === 1; @endphp
+              @php $farmerStandaloneItem = $section['items'][0] ?? null; @endphp
+              @if($isFarmerStandalone && $farmerStandaloneItem)
+                <li>
+                  <a href="{{ route($farmerStandaloneItem['routes'][0]) }}" class="{{ request()->routeIs(...$farmerStandaloneItem['routes']) ? 'active' : '' }}">
                     {!! $section['icon'] !!}
-                    <span>{{ $section['label'] }}</span>
-                  </span>
-                  <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
-                <ul class="sub-nav-links">
-                  @foreach($section['items'] as $item)
-                    <li>
-                      <a href="{{ route($item['routes'][0]) }}" class="{{ request()->routeIs(...$item['routes']) ? 'active' : '' }}">
-                        {{ $item['label'] }}
-                      </a>
-                    </li>
-                  @endforeach
-                </ul>
-              </li>
+                    {{ $section['label'] }}
+                  </a>
+                </li>
+              @else
+                <li class="nav-dropdown {{ $isFarmerOpen ? 'open' : '' }}">
+                  <button type="button" class="nav-dropdown-btn" aria-expanded="{{ $isFarmerOpen ? 'true' : 'false' }}">
+                    <span class="nav-dropdown-title">
+                      {!! $section['icon'] !!}
+                      <span>{{ $section['label'] }}</span>
+                    </span>
+                    <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <ul class="sub-nav-links">
+                    @foreach($section['items'] as $item)
+                      <li>
+                        <a href="{{ route($item['routes'][0]) }}" class="{{ request()->routeIs(...$item['routes']) ? 'active' : '' }}">
+                          {{ $item['label'] }}
+                        </a>
+                      </li>
+                    @endforeach
+                  </ul>
+                </li>
+              @endif
             @endforeach
           @else
           <li>
@@ -1250,24 +1261,35 @@
           @if($storeNav)
             @foreach($storeNav as $si => $section)
               @php $isStoreOpen = ($activeStoreSection === $si); @endphp
-              <li class="nav-dropdown {{ $isStoreOpen ? 'open' : '' }}">
-                <button type="button" class="nav-dropdown-btn" aria-expanded="{{ $isStoreOpen ? 'true' : 'false' }}">
-                  <span class="nav-dropdown-title">
+              @php $isStoreStandalone = !empty($section['standalone']) && count($section['items']) === 1; @endphp
+              @php $storeStandaloneItem = $section['items'][0] ?? null; @endphp
+              @if($isStoreStandalone && $storeStandaloneItem)
+                <li>
+                  <a href="{{ route($storeStandaloneItem['routes'][0]) }}" class="{{ request()->routeIs(...$storeStandaloneItem['routes']) ? 'active' : '' }}">
                     {!! $section['icon'] !!}
-                    <span>{{ $section['label'] }}</span>
-                  </span>
-                  <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
-                <ul class="sub-nav-links">
-                  @foreach($section['items'] as $item)
-                    <li>
-                      <a href="{{ route($item['routes'][0]) }}" class="{{ request()->routeIs(...$item['routes']) ? 'active' : '' }}">
-                        {{ $item['label'] }}
-                      </a>
-                    </li>
-                  @endforeach
-                </ul>
-              </li>
+                    {{ $section['label'] }}
+                  </a>
+                </li>
+              @else
+                <li class="nav-dropdown {{ $isStoreOpen ? 'open' : '' }}">
+                  <button type="button" class="nav-dropdown-btn" aria-expanded="{{ $isStoreOpen ? 'true' : 'false' }}">
+                    <span class="nav-dropdown-title">
+                      {!! $section['icon'] !!}
+                      <span>{{ $section['label'] }}</span>
+                    </span>
+                    <svg class="dropdown-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  <ul class="sub-nav-links">
+                    @foreach($section['items'] as $item)
+                      <li>
+                        <a href="{{ route($item['routes'][0]) }}" class="{{ request()->routeIs(...$item['routes']) ? 'active' : '' }}">
+                          {{ $item['label'] }}
+                        </a>
+                      </li>
+                    @endforeach
+                  </ul>
+                </li>
+              @endif
             @endforeach
           @else
             <li>
@@ -2250,7 +2272,7 @@
   if ($aqSearchRole === 'admin') {
       foreach ([
           ['Dashboard', 'dashboard.admin', 'home overview admin'],
-          ['AI Harvest Insights', 'admin.harvests.ai', 'ai insight harvest reports'],
+          ['AI Assistant', 'admin.ai-chat.index', 'ai chat assistant general'],
           ['Members', 'admin.members.index', 'member list view members'],
           ['Import Members', 'admin.members.import', 'import member csv excel'],
           ['Import Uploads', 'admin.members.uploads', 'uploads imported files'],
@@ -2293,7 +2315,7 @@
           ['AI Assistant', 'farmer.ai-chat.index', 'ai chat assistant'],
           ['Calendar', 'farmer.calendar.index', 'calendar schedule'],
           ['Events', 'farmer.calendar.events', 'association events'],
-          ['Account Settings', 'farmer.settings.index', 'settings account'],
+          ['Account Settings', 'farmer.settings.index', 'settings account theme color appearance dark light ui sidebar profile'],
           ['Activity History', 'farmer.activity.index', 'activity timeline'],
       ] as [$label, $route, $aliases]) {
           $aqAddSearchPage($label, $route, $aliases);
@@ -2307,7 +2329,7 @@
           ['Input Formulas', 'store.formulas.index', 'formula inputs'],
           ['Quotation Demand Trends', 'store.quotations.index', 'quotation demand trends'],
           ['AI Assistant', 'store.ai-chat.index', 'ai chat assistant'],
-          ['Settings', 'store.settings.index', 'settings account'],
+          ['Settings', 'store.settings.index', 'settings account theme color appearance dark light ui sidebar profile'],
           ['Activity History', 'store.activity.index', 'activity timeline'],
       ] as [$label, $route, $aliases]) {
           $aqAddSearchPage($label, $route, $aliases);
