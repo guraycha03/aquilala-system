@@ -11,29 +11,17 @@ use Illuminate\Validation\Rule;
 class FormulaController extends Controller
 {
     /**
-     * List all DSS formulas grouped by crop type and season.
+     * List all products owned by the current store so the store owner can
+     * manage each product's application rules (DSS formulas) in one place.
      */
     public function index()
     {
-        $formulas = DecisionFormula::with('product.category')
-            ->orderBy('crop_type')
-            ->orderBy('season')
-            ->orderBy('stage')
+        $products = Product::where('user_id', auth()->id())
+            ->with(['category', 'decisionFormulas'])
+            ->orderBy('name')
             ->get();
 
-        $stats = [
-            'total'    => DecisionFormula::count(),
-            'crops'    => DecisionFormula::distinct()->count('crop_type'),
-            'products' => DecisionFormula::distinct()->count('product_id'),
-            'seasons'  => DecisionFormula::distinct()->count('season'),
-        ];
-
-        $crops = DecisionFormula::query()
-            ->distinct()
-            ->orderBy('crop_type')
-            ->pluck('crop_type');
-
-        return view('store.formulas.index', compact('formulas', 'stats', 'crops'));
+        return view('store.formulas.index', compact('products'));
     }
 
     /**
@@ -50,6 +38,8 @@ class FormulaController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validateFormula($request);
+        $product = Product::findOrFail($validated['product_id']);
+        $this->authorizeProduct($product);
 
         $formula = DecisionFormula::create([
             'crop_type'            => $validated['crop_type'],
@@ -66,7 +56,7 @@ class FormulaController extends Controller
         ActivityLogger::formulaCreated($formula);
 
         return redirect()
-            ->route('store.formulas.index')
+            ->to($request->boolean('return_to_product') ? $this->productRulesUrl($product) : route('store.formulas.index'))
             ->with('success', 'Formula added for ' . ucwords(strtolower($validated['crop_type'])) . ' (' . ucfirst($validated['season']) . ' season).');
     }
 
@@ -85,7 +75,11 @@ class FormulaController extends Controller
      */
     public function update(Request $request, DecisionFormula $formula)
     {
+        $formula->load('product');
+        $this->authorizeProduct($formula->product);
         $validated = $this->validateFormula($request, $formula->id);
+        $product = Product::findOrFail($validated['product_id']);
+        $this->authorizeProduct($product);
 
         $payload = [
             'crop_type'            => $validated['crop_type'],
@@ -130,7 +124,7 @@ class FormulaController extends Controller
         }
 
         return redirect()
-            ->route('store.formulas.index')
+            ->to($request->boolean('return_to_product') ? $this->productRulesUrl($product) : route('store.formulas.index'))
             ->with('success', 'Formula updated for ' . ucwords(strtolower($validated['crop_type'])) . ' (' . ucfirst($validated['season']) . ' season).');
     }
 
@@ -140,6 +134,7 @@ class FormulaController extends Controller
     public function destroy(DecisionFormula $formula)
     {
         $formula->load('product');
+        $this->authorizeProduct($formula->product);
 
         $label = $formula->crop_type . ' / ' . ucfirst($formula->season) . ' / '
             . ($formula->stage && $formula->stage !== 'standard' ? $formula->stageLabel() . ' / ' : '')
@@ -150,7 +145,7 @@ class FormulaController extends Controller
         $formula->delete();
 
         return redirect()
-            ->route('store.formulas.index')
+            ->to(request()->boolean('return_to_product') ? $this->productRulesUrl($formula->product) : route('store.formulas.index'))
             ->with('success', 'Formula removed: ' . $label . '.');
     }
 
@@ -161,6 +156,62 @@ class FormulaController extends Controller
     /**
      * Shared payload for the create/edit forms.
      */
+    public function aiSuggest(\Illuminate\Http\Request $request)
+    {
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+        ]);
+
+        $product = Product::findOrFail($validated['product_id']);
+
+        if ((int) $product->user_id !== (int) auth()->id()) {
+            abort(403);
+        }
+
+        $llm = app(\App\AI\AiLlmClient::class);
+
+        if (! $llm->available()) {
+            return response()->json(['error' => 'AI is currently unavailable.'], 503);
+        }
+
+        $context = trim(implode(' ', array_filter([
+            $product->name,
+            $product->brand,
+            $product->category_display_name ?? '',
+            $product->description,
+            $product->product_type,
+        ])));
+
+        $completion = $llm->completeJson([
+            [
+                'role' => 'system',
+                'content' => 'You suggest one agricultural application formula. Return ONLY a JSON object with keys: crop_type, season, stage, rate_per_hectare, unit, min_rate_per_hectare, max_rate_per_hectare, notes. crop_type is a crop name; season is wet or dry; stage is one of: standard, basal, topdress, split, final; unit is a quantity unit; rates are numbers as strings. Do not include markdown.',
+            ],
+            [
+                'role' => 'user',
+                'content' => 'Suggest a sensible application rule for this product: ' . $context,
+            ],
+        ], 512, 30);
+
+        if (! is_array($completion) || empty($completion['raw'])) {
+            return response()->json(['error' => 'AI did not return a suggestion.'], 502);
+        }
+
+        $parsed = json_decode($completion['raw'], true);
+
+        if (! is_array($parsed)) {
+            if (preg_match('/\{.*\}/s', (string) $completion['raw'], $m)) {
+                $parsed = json_decode($m[0], true);
+            }
+        }
+
+        if (! is_array($parsed)) {
+            return response()->json(['error' => 'AI response was not valid JSON.'], 502);
+        }
+
+        return response()->json($parsed);
+    }
+
     private function formData(): array
     {
         $products = Product::active()
@@ -174,7 +225,23 @@ class FormulaController extends Controller
             ->orderBy('crop_type')
             ->pluck('crop_type');
 
-        return compact('products', 'existingCrops');
+        $compatibleCrops = app(\App\Services\FarmingKnowledgeService::class)->cropNames();
+        $compatibleCrops = array_values(array_unique(array_filter($compatibleCrops)));
+        sort($compatibleCrops);
+
+        return compact('products', 'existingCrops', 'compatibleCrops');
+    }
+
+    private function authorizeProduct(Product $product): void
+    {
+        if ((int) $product->user_id !== (int) auth()->id()) {
+            abort(403);
+        }
+    }
+
+    private function productRulesUrl(Product $product): string
+    {
+        return route('store.products.edit', ['product' => $product->id, 'tab' => 'rules']);
     }
 
     /**

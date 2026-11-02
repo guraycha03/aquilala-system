@@ -347,6 +347,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/formulas', [FormulaController::class, 'index'])->name('formulas.index');
         Route::get('/formulas/create', [FormulaController::class, 'create'])->name('formulas.create');
         Route::post('/formulas', [FormulaController::class, 'store'])->name('formulas.store');
+        Route::post('/formulas/ai-suggest', [FormulaController::class, 'aiSuggest'])->name('formulas.ai-suggest');
         Route::get('/formulas/{formula}/edit', [FormulaController::class, 'edit'])->name('formulas.edit');
         Route::put('/formulas/{formula}', [FormulaController::class, 'update'])->name('formulas.update');
         Route::delete('/formulas/{formula}', [FormulaController::class, 'destroy'])->name('formulas.destroy');

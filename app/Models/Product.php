@@ -142,6 +142,11 @@ class Product extends Model
         return $this->hasMany(DecisionFormula::class);
     }
 
+    public function cropTypes(): HasMany
+    {
+        return $this->hasMany(ProductCropType::class);
+    }
+
     public function quotationItems(): HasMany
     {
         return $this->hasMany(QuotationItem::class);

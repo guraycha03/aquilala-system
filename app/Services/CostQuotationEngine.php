@@ -573,12 +573,23 @@ class CostQuotationEngine
                 ->values()
                 ->toArray();
 
-            if (!empty($formulaProductIds)) {
-                $query->whereIn('id', $formulaProductIds);
-            } else {
+            $query->where(function ($products) use ($formulaProductIds, $cropType, $season) {
+                if (! empty($formulaProductIds)) {
+                    $products->whereIn('products.id', $formulaProductIds);
+                }
+
+                $products->orWhereHas('cropTypes', function ($cropTypes) use ($cropType) {
+                    $cropTypes->whereRaw('LOWER(crop_type) = ?', [strtolower($cropType)]);
+                })->where(function ($seasonQuery) use ($season) {
+                    $seasonQuery->whereIn('recommended_season', [$season, 'both'])
+                        ->orWhereNull('recommended_season');
+                });
+            });
+
+            if (empty($formulaProductIds) && ! $query->exists()) {
                 // Fallback: match by category name patterns
                 $categoryPatterns = $this->getCategoryPatternsForCrop($cropType);
-                $query->whereHas('category', function ($q) use ($categoryPatterns) {
+                $query = Product::active()->with('category')->whereHas('category', function ($q) use ($categoryPatterns) {
                     $q->where(function ($sub) use ($categoryPatterns) {
                         foreach ($categoryPatterns as $pattern) {
                             $sub->orWhere('name', 'like', $pattern);
@@ -994,4 +1005,3 @@ class CostQuotationEngine
         ];
     }
 }
-

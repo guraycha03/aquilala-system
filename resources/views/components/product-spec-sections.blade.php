@@ -22,7 +22,7 @@
 
 <!-- SECTION: FERTILIZER ANALYSIS -->
 <div class="section-header">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"></path></svg>
+    <i data-lucide="chart-pie" style="width:18px;height:18px;"></i>
     Fertilizer Analysis <span style="font-weight: 400; font-size: 13px; color: #64748b;">(Optional — fertilizers only)</span>
 </div>
 

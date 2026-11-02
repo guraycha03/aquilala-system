@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Services\ActivityLogger;
+use App\Services\CropLibraryService;
 use App\Support\ProductImageResizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -370,11 +371,14 @@ class ProductController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $product->load(['category', 'fertilizerDetail', 'registration', 'images', 'documents', 'mainImage']);
+        $product->load(['category', 'fertilizerDetail', 'registration', 'images', 'documents', 'mainImage', 'cropTypes']);
         $categories = Category::active()->parents()->with('children')->get();
+        $cropTypes = app(CropLibraryService::class)->offeredNames();
+        $formulas = $product->decisionFormulas()->orderBy('crop_type')->orderBy('season')->orderBy('stage')->get();
+        $tab = request()->query('tab', 'details') === 'rules' ? 'rules' : 'details';
         $isEdit = true;
 
-        return view('store.storefront.edit', compact('product', 'categories', 'isEdit'));
+        return view('store.storefront.edit', compact('product', 'categories', 'cropTypes', 'formulas', 'tab', 'isEdit'));
     }
 
     /**
@@ -415,6 +419,23 @@ class ProductController extends Controller
 
         DB::transaction(function () use ($validated, $request, $product, $payload, &$notes) {
             $product->update($payload);
+
+            $cropLibrary = app(CropLibraryService::class);
+            $selectedCropTypes = collect($validated['crop_types'] ?? [])
+                ->map(fn (string $cropType) => $cropLibrary->forName($cropType)['name'] ?? null)
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+            $previousCropTypes = $product->cropTypes->pluck('crop_type')->values()->all();
+            $product->cropTypes()->delete();
+            $product->cropTypes()->createMany(array_map(
+                fn (string $cropType) => ['crop_type' => $cropType],
+                $selectedCropTypes
+            ));
+            if ($previousCropTypes !== $selectedCropTypes) {
+                $notes[] = 'crop types updated';
+            }
 
             // Append any newly uploaded images; existing ones are left alone
             // and managed individually from the edit form.

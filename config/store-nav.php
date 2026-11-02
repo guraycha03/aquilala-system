@@ -43,7 +43,7 @@ return [
             ['label' => 'Product Listings', 'routes' => ['store.storefront.index']],
             ['label' => 'Inventory', 'routes' => ['store.inventory.index']],
             ['label' => 'Top Products', 'routes' => ['store.dashboard.performance']],
-            ['label' => 'Input Formulas', 'routes' => ['store.formulas.index', 'store.formulas.create', 'store.formulas.edit']],
+
         ],
     ],
     'demand-reports' => [

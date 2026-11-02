@@ -285,10 +285,32 @@
         <p class="page-subtitle">Manage items displayed in the public marketplace browse view for association farmers.</p>
     </div>
     <div class="page-actions">
-        <a href="{{ route('store.products.create') }}" class="btn-primary">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Add Product
-        </a>
+        <details class="add-product-menu" style="position: relative; display: inline-block;">
+            <summary class="btn-primary" style="list-style: none; cursor: pointer;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add Product
+            </summary>
+            <div style="position: absolute; top: calc(100% + 8px); right: 0; min-width: 230px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 30px rgba(15,23,42,0.12); padding: 8px; z-index: 20;">
+                <a href="{{ route('store.products.create') }}" class="menu-link">Create manually</a>
+                <a href="{{ route('store.products.import') }}" class="menu-link">Import from file</a>
+                <div style="margin: 6px 4px 4px; padding: 8px 10px; background: #f3f6f3; border-radius: 8px; font-size: 12px; color: #4b5c50; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="download" style="width:14px;height:14px;"></i>
+                    Download template
+                </div>
+                <div style="display: flex; gap: 8px; padding: 4px 8px 8px;">
+                    <a href="{{ route('store.products.import.template', 'csv') }}" class="menu-link menu-sub" data-aqui-confirm="Download the CSV product template?" data-aqui-tone="template" data-aqui-title="Download template" data-aqui-confirm-label="Download" style="flex: 1; text-align: center;">CSV</a>
+                    <span style="width:1px; background:#cbd5e1; margin:4px 2px;"></span>
+                    <a href="{{ route('store.products.import.template', 'xlsx') }}" class="menu-link menu-sub" data-aqui-confirm="Download the Excel (XLSX) product template?" data-aqui-tone="template" data-aqui-title="Download template" data-aqui-confirm-label="Download" style="flex: 1; text-align: center;">XLSX</a>
+                </div>
+            </div>
+        </details>
+        <style>
+            .add-product-menu > summary::-webkit-details-marker { display: none; }
+            .add-product-menu > summary::marker { content: ""; }
+            .menu-link { display: block; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: #1e2922; font-weight: 600; font-size: 14px; }
+            .menu-link:hover { background: #f3f6f3; }
+            .menu-sub { padding-left: 24px; }
+        </style>
     </div>
 </div>
 
@@ -371,7 +393,7 @@
     </button>
     <button class="tab-btn" onclick="switchCatalogTab('preview-tab', this)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-        Farmer's View (Preview)
+        Preview
     </button>
 </div>
 
@@ -388,11 +410,13 @@
     </div>
     @else
     <div class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+            <path d="M3.3 7l8.7 5 8.7-5"/>
+            <path d="M12 22V12"/>
         </svg>
-        <h3>No Products Listed Yet</h3>
-        <p>Your product catalog is currently empty. Click "Add Product" above to create your first item, or use "Import" in Inventory to bring in a whole list from a CSV or Excel sheet.</p>
+        <h3>No products yet</h3>
+        <p>Add your first product to start selling.</p>
     </div>
     @endif
 
@@ -405,10 +429,7 @@
 
 <!-- TAB 2: FARMER PREVIEW VIEW -->
 <div id="preview-tab" class="tab-content">
-    <div class="preview-banner">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-        <span><strong>Preview Mode:</strong> This is how your store products appear to farmers in the marketplace. Action controls like Edit/Delete are hidden. Click any product to open the farmer-facing detail page.</span>
-    </div>
+    @php /* preview notice removed for minimal UI */ @endphp
 
     @if(isset($products) && $products->count() > 0)
     <div class="product-grid">

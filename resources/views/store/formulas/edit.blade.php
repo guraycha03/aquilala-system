@@ -95,6 +95,9 @@
 
   <form action="{{ route('store.formulas.update', $formula) }}" method="POST" class="form-card-body">
     @csrf @method('PUT')
+    @if(request()->boolean('return_to_product'))
+      <input type="hidden" name="return_to_product" value="1">
+    @endif
 
     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
       <div>
@@ -205,7 +208,7 @@
     </div>
 
     <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
-      <a href="{{ route('store.formulas.index') }}" class="btn-ghost">Cancel</a>
+      <a href="{{ request()->boolean('return_to_product') ? route('store.products.edit', ['product' => $formula->product_id, 'tab' => 'rules']) : route('store.formulas.index') }}" class="btn-ghost">Cancel</a>
       <button type="submit" class="btn-primary">
         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
         Save Changes

@@ -312,7 +312,7 @@ class ProductImportController extends Controller
         }
 
         $headers = array_keys(ProductFields::COLUMNS);
-        $examples = $this->templateExampleRows();
+        $examples = [];
 
         if ($format === 'csv') {
             return response()->streamDownload(function () use ($headers, $examples) {
@@ -349,7 +349,7 @@ class ProductImportController extends Controller
 
         for ($i = 1; $i <= $columnCount; $i++) {
             $letter = Coordinate::stringFromColumnIndex($i);
-            $width = max(14, min(34, strlen((string) ($examples[0][$headers[$i - 1]] ?? '')) + 4));
+            $width = max(14, min(34, strlen((string) ($headers[$i - 1] ?? '')) + 4));
             $sheet->getColumnDimension($letter)->setWidth($width);
         }
 
@@ -361,8 +361,7 @@ class ProductImportController extends Controller
         $headerStyle->getFont()->setBold(true);
         $headerStyle->getFont()->getColor()->setARGB('FFFFFFFF');
 
-        $this->addInstructionsSheet($spreadsheet);
-
+        // No instruction sheet: keep only the ready-to-fill data sheet.
         $temporary = tempnam(sys_get_temp_dir(), 'aquilala_template_');
 
         (new Xlsx($spreadsheet))->save($temporary);

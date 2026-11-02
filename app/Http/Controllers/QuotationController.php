@@ -490,12 +490,15 @@ PROMPT;
         $cropType = ucwords(strtolower(trim($validated['crop_type'])));
 
         $products = Product::select('products.id', 'products.name', 'products.sku', 'products.price', 'products.price_unit', 'products.stock_quantity', 'products.stock_unit', 'products.brand', 'products.status', 'products.category_id', 'products.package_size', 'products.package_unit')
-            ->join('decision_formulas', 'decision_formulas.product_id', '=', 'products.id')
-            // Both sides must be lowercased: relying on MySQL's case-insensitive
-            // collation makes the match silently fail on any case-sensitive
-            // engine (sqlite in tests, Postgres in production-like setups).
-            ->whereRaw('LOWER(decision_formulas.crop_type) = ?', [strtolower($cropType)])
-            ->where('decision_formulas.season', $validated['season'])
+            ->where(function ($query) use ($cropType, $validated) {
+                $query->whereHas('decisionFormulas', function ($formulas) use ($cropType, $validated) {
+                    $formulas->whereRaw('LOWER(crop_type) = ?', [strtolower($cropType)])
+                        ->where('season', $validated['season']);
+                })->orWhereHas('cropTypes', function ($cropTypes) use ($cropType) {
+                    $cropTypes->whereRaw('LOWER(crop_type) = ?', [strtolower($cropType)]);
+                });
+            })
+            ->whereIn('products.recommended_season', [$validated['season'], 'both'])
             ->where('products.status', 'active')
             ->with('category:id,name')
             ->distinct()
