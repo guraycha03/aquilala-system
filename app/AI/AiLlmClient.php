@@ -17,7 +17,7 @@ class AiLlmClient
 
     public function provider(): string
     {
-        $provider = trim((string) env('AI_PROVIDER', 'groq'));
+        $provider = trim((string) config('services.ai.provider', 'groq'));
 
         return $provider !== '' ? $provider : 'groq';
     }
@@ -25,7 +25,7 @@ class AiLlmClient
     public function available(): bool
     {
         if ($this->provider() === 'openrouter') {
-            return trim((string) env('OPENROUTER_API_KEY', '')) !== '';
+            return trim((string) config('services.openrouter.key', '')) !== '';
         }
 
         return trim((string) config('services.groq.key', '')) !== '';
@@ -34,10 +34,14 @@ class AiLlmClient
     public function modelName(): string
     {
         if ($this->provider() === 'openrouter') {
-            return trim((string) env('OPENROUTER_MODEL', 'openai/gpt-oss-20b')) ?: 'openai/gpt-oss-20b';
+            $model = trim((string) config('services.openrouter.model', self::DEFAULT_MODEL));
+
+            return $model !== '' ? $model : self::DEFAULT_MODEL;
         }
 
-        return self::MODEL;
+        $model = trim((string) config('services.groq.model', self::MODEL));
+
+        return $model !== '' ? $model : self::MODEL;
     }
 
     public function defaultModel(): string
@@ -46,19 +50,13 @@ class AiLlmClient
             return $this->modelName();
         }
 
-        $override = trim((string) env('GROQ_MODEL_HARVEST', ''));
+        $harvestOverride = trim((string) config('services.groq.harvest_model', ''));
 
-        if ($override !== '') {
-            return $override;
+        if ($harvestOverride !== '') {
+            return $harvestOverride;
         }
 
-        $single = trim((string) env('GROQ_MODEL', ''));
-
-        if ($single !== '') {
-            return $single;
-        }
-
-        return self::MODEL;
+        return $this->modelName();
     }
 
     public function completeJson(array $messages, int $maxTokens = 1200, int $timeout = 60, ?string $model = null): ?array
@@ -71,7 +69,7 @@ class AiLlmClient
             ? trim($model)
             : $this->defaultModel();
 
-        $thinkingDelay = max(0, (int) env('AI_THINKING_DELAY_MS', 0));
+        $thinkingDelay = max(0, (int) config('services.ai.thinking_delay_ms', 0));
 
         if ($thinkingDelay > 0) {
             usleep($thinkingDelay * 1000);
@@ -82,12 +80,12 @@ class AiLlmClient
         try {
             if ($provider === 'openrouter') {
                 $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . trim((string) env('OPENROUTER_API_KEY', '')),
+                    'Authorization' => 'Bearer ' . trim((string) config('services.openrouter.key', '')),
                     'Content-Type' => 'application/json',
-                    'HTTP-Referer' => (string) env('APP_URL', 'https://aquilala.me'),
+                    'HTTP-Referer' => (string) config('app.url', 'https://aquilala.me'),
                     'X-Title' => 'Aquilala',
                 ])->withoutVerifying()->connectTimeout(5)->timeout($timeout)->post(
-                    'https://openrouter.ai/api/v1/chat/completions',
+                    (string) config('services.openrouter.url', 'https://openrouter.ai/api/v1/chat/completions'),
                     [
                         'model' => $resolvedModel,
                         'messages' => $messages,

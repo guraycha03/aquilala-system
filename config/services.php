@@ -54,8 +54,32 @@ return [
         'forecast_url' => env('OPENWEATHER_FORECAST_API_URL', 'https://api.openweathermap.org/data/2.5/forecast'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | AI provider selection + credentials
+    |--------------------------------------------------------------------------
+    |
+    | `AI_PROVIDER` picks the backend (`groq` or `openrouter`). Values are
+    | read here (from .env at config-cache time) instead of via env() in
+    | application code so they keep working once `php artisan config:cache`
+    | has been run in production.
+    |
+    */
+    'ai' => [
+        'provider' => env('AI_PROVIDER', 'groq'),
+        'thinking_delay_ms' => (int) env('AI_THINKING_DELAY_MS', 0),
+    ],
+
     'groq' => [
         'key' => env('GROQ_API_KEY'),
+        'model' => env('GROQ_MODEL', 'openai/gpt-oss-20b'),
+        'harvest_model' => env('GROQ_MODEL_HARVEST'),
+    ],
+
+    'openrouter' => [
+        'key' => env('OPENROUTER_API_KEY'),
+        'model' => env('OPENROUTER_MODEL', 'openai/gpt-oss-20b'),
+        'url' => 'https://openrouter.ai/api/v1/chat/completions',
     ],
 
     /*
