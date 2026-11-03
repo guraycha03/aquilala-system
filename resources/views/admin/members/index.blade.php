@@ -43,12 +43,13 @@
     .users-kpi .uk-sub { display: block; font-size: 12px; letter-spacing: 0.04em; color: #8da096; margin-top: 10px; line-height: 1.5; }
     .users-kpi .uk-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 10px; vertical-align: 1px; }
 
-    a.users-kpi { display: block; text-decoration: none; transition: all 0.2s ease; }
-    a.users-kpi:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(20,61,35,0.10), 0 2px 6px rgba(20,61,35,0.05); border-color: rgba(20,61,35,0.16); }
-    a.users-kpi.active { background: #e9f6d2; border-color: #b5d97d; box-shadow: 0 10px 26px rgba(20,61,35,0.12); }
-    a.users-kpi.active .uk-label { color: #4d7c0f; }
-    a.users-kpi.active .uk-value { color: #14532d; }
-    a.users-kpi.active .uk-sub { color: #5f7d5c; }
+    button.users-kpi { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+    .users-kpi { transition: all 0.2s ease; }
+    .users-kpi:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(20,61,35,0.10), 0 2px 6px rgba(20,61,35,0.05); border-color: rgba(20,61,35,0.16); }
+    .users-kpi.active { background: #e9f6d2; border-color: #b5d97d; box-shadow: 0 10px 26px rgba(20,61,35,0.12); }
+    .users-kpi.active .uk-label { color: #4d7c0f; }
+    .users-kpi.active .uk-value { color: #14532d; }
+    .users-kpi.active .uk-sub { color: #5f7d5c; }
 
     @media (max-width: 768px) {
       .users-kpis { grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -142,26 +143,26 @@
 
       <!-- Overview — each card filters the list below -->
       <div class="users-kpis">
-        <a href="{{ route('admin.members.index') }}" class="users-kpi {{ $account === '' && $status === '' && $q === '' ? 'active' : '' }}">
+        <button type="button" class="users-kpi {{ $account === '' && $status === '' && $q === '' ? 'active' : '' }}" data-member-filter="all">
           <span class="uk-label"><span class="uk-dot" style="background:#3f6b3e;"></span>All Members</span>
           <span class="uk-value">{{ $stats['total'] }}</span>
           <span class="uk-sub">{{ $stats['active'] }} active · {{ $stats['inactive'] }} inactive</span>
-        </a>
-        <a href="{{ route('admin.members.index', ['account' => 'none']) }}" class="users-kpi {{ $account === 'none' ? 'active' : '' }}">
+        </button>
+        <button type="button" class="users-kpi {{ $account === 'none' ? 'active' : '' }}" data-member-filter="account-none">
           <span class="uk-label"><span class="uk-dot" style="background:#9dbe5c;"></span>No Account Yet</span>
           <span class="uk-value">{{ $stats['without_account'] }}</span>
           <span class="uk-sub">Listed, cannot sign in yet</span>
-        </a>
-        <a href="{{ route('admin.members.index', ['account' => 'linked']) }}" class="users-kpi {{ $account === 'linked' ? 'active' : '' }}">
+        </button>
+        <button type="button" class="users-kpi {{ $account === 'linked' ? 'active' : '' }}" data-member-filter="account-linked">
           <span class="uk-label"><span class="uk-dot" style="background:#8b6a44;"></span>With Account</span>
           <span class="uk-value">{{ $stats['with_account'] }}</span>
           <span class="uk-sub">Already given sign-in access</span>
-        </a>
-        <a href="{{ route('admin.members.index', ['status' => 'inactive']) }}" class="users-kpi {{ $status === 'inactive' ? 'active' : '' }}">
+        </button>
+        <button type="button" class="users-kpi {{ $status === 'inactive' ? 'active' : '' }}" data-member-filter="status-inactive">
           <span class="uk-label"><span class="uk-dot" style="background:#d4a42e;"></span>Inactive</span>
           <span class="uk-value">{{ $stats['inactive'] }}</span>
           <span class="uk-sub">Suspended member</span>
-        </a>
+        </button>
       </div>
 
       <x-table-toolbar
@@ -393,6 +394,33 @@
         clearBtn.addEventListener('click', function () { selected.clear(); sync(); });
         refresh();
       }
+    })();
+  </script>
+  <script>
+    (function () {
+      function initMemberKpiFilters() {
+        var cards = document.querySelectorAll('[data-member-filter]');
+        if (!cards.length || cards[0].dataset.filterBound === 'true') return;
+
+        cards.forEach(function (card) {
+          card.dataset.filterBound = 'true';
+          card.addEventListener('click', function () {
+            var filter = card.dataset.memberFilter;
+            var filters = {};
+            if (filter === 'account-none') filters.account = 'none';
+            if (filter === 'account-linked') filters.account = 'linked';
+            if (filter === 'status-inactive') filters.status = 'inactive';
+
+            cards.forEach(function (item) { item.classList.toggle('active', item === card); });
+            document.dispatchEvent(new CustomEvent('ttb:set-filters', {
+              detail: { table: 'membersTable', filters: filters, clearSearch: true }
+            }));
+          });
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', initMemberKpiFilters);
+      document.addEventListener('turbo:load', initMemberKpiFilters);
     })();
   </script>
 @endsection

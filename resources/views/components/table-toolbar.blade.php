@@ -434,6 +434,35 @@
             });
         }
 
+        document.addEventListener('ttb:set-filters', function (event) {
+            var detail = event.detail || {};
+            if (detail.table !== tableId) return;
+
+            if (detail.clearSearch && searchEl) searchEl.value = '';
+            if (detail.clearSearch) state.search = '';
+
+            Object.keys(state.filters).forEach(function (key) {
+                state.filters[key] = Object.prototype.hasOwnProperty.call(detail.filters || {}, key)
+                    ? String(detail.filters[key] || '')
+                    : '';
+                var group = tb.querySelector('[data-ttb-filter="' + key + '"]');
+                if (!group) return;
+                var value = state.filters[key];
+                var option = Array.prototype.slice.call(group.querySelectorAll('.ncb-select-option'))
+                    .find(function (candidate) { return (candidate.dataset.value || '') === value; });
+                if (!option) return;
+                group.querySelectorAll('.ncb-select-option').forEach(function (candidate) {
+                    candidate.classList.toggle('selected', candidate === option);
+                });
+                var trigger = group.querySelector('.ncb-select-trigger');
+                trigger.querySelector('.ncb-select-label').textContent =
+                    option.dataset.label || trigger.dataset.defaultLabel;
+                trigger.classList.toggle('placeholder', value === '');
+            });
+            state.page = 1;
+            render();
+        });
+
         var tries = 0;
         (function poll() {
             if (document.getElementById(tableId)) { render(); return; }
