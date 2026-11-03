@@ -133,7 +133,8 @@
   <script src="{{ asset('js/alpine.min.js') }}" defer></script>
   {{-- Display theme: every rule is scoped to [data-theme="dark"], so this file
        costs nothing while the user is in light mode. --}}
-  <link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=12">
+  <link id="aqDarkModeStylesheet" rel="stylesheet" href="{{ asset('css/dark-mode.css') }}?v=12"
+        media="{{ optional(auth()->user())->theme_mode === 'dark' ? 'all' : 'not all' }}">
   {{-- App lockdown: kills text selection, copy/cut, long-press & right-click
        browser menus, and printing outside form fields — applies to every page
        and role, so the portal behaves like a native app and long-press is
@@ -2276,14 +2277,19 @@
       'admin.operations.catalog' => 'Browse the product catalog and review farm inputs available to the association.',
       'admin.settings.general' => 'Review general association settings and administrative information.',
   ];
-  $aqAddSearchPage = function (string $label, string $routeName, string $aliases = '', string $description = '') use (&$aqSearchPages, $aqSearchDescriptions) {
+  $aqAddSearchPage = function (string $label, string $routeName, string $aliases = '', string $description = '', string $parent = '', string $fragment = '') use (&$aqSearchPages, $aqSearchDescriptions) {
       if (\Illuminate\Support\Facades\Route::has($routeName)) {
+          $url = route($routeName);
+          if ($fragment !== '') {
+              $url .= '#' . ltrim($fragment, '#');
+          }
           $aqSearchPages[] = [
               'label' => $label,
-              'url' => route($routeName),
-              'aliases' => $aliases,
+              'url' => $url,
+              'aliases' => trim($aliases . ' ' . $parent),
               'heading' => $label,
               'description' => $description !== '' ? $description : ($aqSearchDescriptions[$routeName] ?? ''),
+              'parent' => $parent,
           ];
       }
   };
@@ -2319,12 +2325,12 @@
           $aqAddSearchPage($label, $route, $aliases);
       }
       foreach ([
-          ['General Settings', 'admin.settings.general', 'association profile general information'],
-          ['Appearance Settings', 'admin.settings.interface', 'theme colors sidebar interface display'],
-          ['Season Settings', 'admin.settings.seasons', 'planting season wet dry configuration'],
-          ['Weather Log', 'admin.settings.weather', 'weather typhoon flood drought field conditions'],
-      ] as [$label, $route, $aliases]) {
-          $aqAddSearchPage($label, $route, $aliases);
+          ['General Settings', 'admin.settings.general', 'association profile general information', 'Organization identity, regional formatting, and location.'],
+          ['Appearance Settings', 'admin.settings.interface', 'theme colors sidebar interface display', 'Sidebar color theme and dark/light mode.'],
+          ['Season Settings', 'admin.settings.seasons', 'planting season wet dry configuration', 'Wet and dry season references and climate information.'],
+          ['Weather Log', 'admin.settings.weather', 'weather typhoon flood drought field conditions', 'Log typhoons, floods, and weather events.'],
+      ] as [$label, $route, $aliases, $description]) {
+          $aqAddSearchPage($label, $route, $aliases, $description, 'Settings');
       }
   } elseif ($aqSearchRole === 'farmer') {
       foreach ([
@@ -2348,11 +2354,16 @@
           $aqAddSearchPage($label, $route, $aliases);
       }
       foreach ([
-          ['Request Cost Quotation', 'farmer.quotations.request', 'create quotation crop area season products inputs'],
-          ['Quotation Archive', 'farmer.quotations.archive', 'archived old quotations history'],
-          ['Saved Items', 'farmer.settings.index', 'saved products bookmarks supplies'],
-      ] as [$label, $route, $aliases]) {
-          $aqAddSearchPage($label, $route, $aliases);
+          ['Request Cost Quotation', 'farmer.quotations.request', 'create quotation crop area season products inputs', '', '', ''],
+          ['Quotation Archive', 'farmer.quotations.archive', 'archived old quotations history', '', '', ''],
+          ['Account Profile', 'farmer.settings.index', 'account profile name contact email', 'Name, contact, and account details.', 'Settings', 'account-profile'],
+          ['Appearance', 'farmer.settings.index', 'appearance theme color dark light sidebar', 'Sidebar color theme and dark/light mode.', 'Settings', 'appearance'],
+          ['Saved Items', 'farmer.settings.index', 'saved products bookmarks supplies', 'Products you saved from product cards.', 'Settings', 'saved-items'],
+          ['Notification Preferences', 'farmer.settings.index', 'notifications alerts planting events reminders', 'Choose which planting and association alerts appear in your notifications.', 'Settings', 'notifications'],
+          ['Security', 'farmer.settings.index', 'security password account', 'Change password and account security.', 'Settings', 'security'],
+          ['Language', 'farmer.settings.index', 'language display', 'Display language preferences.', 'Settings', 'language'],
+      ] as [$label, $route, $aliases, $description, $parent, $fragment]) {
+          $aqAddSearchPage($label, $route, $aliases, $description ?? '', $parent ?? '', $fragment ?? '');
       }
   } elseif ($aqSearchRole === 'store_owner') {
       foreach ([
@@ -2366,6 +2377,15 @@
           ['Activity History', 'store.activity.index', 'activity timeline'],
       ] as [$label, $route, $aliases]) {
           $aqAddSearchPage($label, $route, $aliases);
+      }
+      foreach ([
+          ['Store Profile', 'store.settings.index', 'store profile name contact address', 'Store name, address, and contact details.', 'Settings', 'store-profile'],
+          ['Appearance', 'store.settings.index', 'appearance theme color dark light sidebar', 'Sidebar color theme and dark/light mode.', 'Settings', 'appearance'],
+          ['Notification Preferences', 'store.settings.index', 'notifications quotation demand alerts', 'Quotation demand alerts.', 'Settings', 'notifications'],
+          ['Security', 'store.settings.index', 'security password account', 'Change password and account security.', 'Settings', 'security'],
+          ['Language', 'store.settings.index', 'language display', 'Display language preferences.', 'Settings', 'language'],
+      ] as [$label, $route, $aliases, $description, $parent, $fragment]) {
+          $aqAddSearchPage($label, $route, $aliases, $description, $parent, $fragment);
       }
       foreach ([
           ['Create Product', 'store.products.create', 'add product price stock crop types application rules'],
@@ -2548,6 +2568,9 @@
     border-bottom: 1px solid #edf1ee; font-size: 13px;
   }
   .aq-global-search-result-label { font-weight: 700; }
+  .aq-global-search-result-parent {
+    color: #68756c; font-size: 11px; font-weight: 600; margin-right: 4px;
+  }
   .aq-global-search-result-snippet {
     color: #68756c; font-size: 12px; line-height: 1.4; font-weight: 400;
   }
@@ -2589,6 +2612,7 @@
     border-bottom-color: #334155;
   }
   [data-theme="dark"] .aq-global-search-result-snippet { color: #9fb3a6; }
+  [data-theme="dark"] .aq-global-search-result-parent { color: #9fb3a6; }
   [data-theme="dark"] .aq-global-search-results a:hover,
   [data-theme="dark"] .aq-global-search-more:hover { background: #1f2937; }
   [data-theme="dark"] .aq-global-search-empty { color: #9fb3a6; }
@@ -2749,7 +2773,8 @@ document.addEventListener('DOMContentLoaded', function () {
       var anchor = document.createElement('a');
       anchor.href = item.url;
       var detail = snippet(item, query);
-      anchor.innerHTML = '<span class="aq-global-search-result-label">' + escapeHtml(item.label) + '</span>' +
+      var parent = item.parent ? '<span class="aq-global-search-result-parent">' + escapeHtml(item.parent) + ' &gt;</span>' : '';
+      anchor.innerHTML = '<span class="aq-global-search-result-label">' + parent + escapeHtml(item.label) + '</span>' +
         (detail ? '<span class="aq-global-search-result-snippet">' + escapeHtml(detail) + '</span>' : '');
       anchor.addEventListener('click', function () {
         results.classList.remove('aq-show');

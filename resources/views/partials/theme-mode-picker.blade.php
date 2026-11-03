@@ -140,6 +140,8 @@
       c.addEventListener('click', function () {
         var mode = c.getAttribute('data-tmp-mode');
         if (document.documentElement) document.documentElement.setAttribute('data-theme', mode);
+        var darkStylesheet = document.getElementById('aqDarkModeStylesheet');
+        if (darkStylesheet) darkStylesheet.media = mode === 'dark' ? 'all' : 'not all';
         applySidebarForMode(mode);
         markActive(mode);
 

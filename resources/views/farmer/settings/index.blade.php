@@ -129,6 +129,8 @@
         wrap.style.display = 'none';
         home.style.display = 'block';
       });
+      var initialPanel = window.location.hash ? window.location.hash.slice(1) : '';
+      if (initialPanel && document.getElementById(initialPanel)) show(initialPanel);
     })();
   </script>
 @endsection
