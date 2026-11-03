@@ -635,7 +635,9 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/operations', fn () => redirect()->route('admin.operations.catalog'))->name('operations.index');
         Route::get('/operations/formulas', fn () => redirect()->route('admin.operations.catalog'))->name('operations.formulas');
         Route::get('/operations/catalog', function () {
-            $products = Product::with('category')->get();
+            $products = Product::with(['category', 'storeOwner'])
+                ->orderBy('name')
+                ->get();
 
             $productStats = [
                 'total' => $products->count(),
@@ -648,21 +650,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
                 ->orderByDesc('count')
                 ->get();
 
-            // Demand snapshot: products ranked by how many distinct farmer
-            // quotations include them — a real-intent signal, not opinions.
-            $topQuoted = DB::table('quotation_items')
-                ->join('products', 'quotation_items.product_id', '=', 'products.id')
-                ->select(
-                    'quotation_items.product_id',
-                    'products.name',
-                    DB::raw('COUNT(DISTINCT quotation_items.quotation_id) as quote_count')
-                )
-                ->groupBy('quotation_items.product_id', 'products.name')
-                ->orderByDesc('quote_count')
-                ->take(12)
-                ->get();
-
-            return view('admin.operations.catalog', compact('productStats', 'productsByCategory', 'topQuoted'));
+            return view('admin.operations.catalog', compact('productStats', 'productsByCategory', 'products'));
         })->name('operations.catalog');
         Route::get('/operations/seasons', function () {
             $climate = SeasonHelper::getClimateInfo();

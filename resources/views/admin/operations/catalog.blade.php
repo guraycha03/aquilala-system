@@ -7,7 +7,6 @@
   <style>
     .cat-page { position: relative; }
     .cat-content { position: relative; z-index: 1; }
-
     .cat-head { margin: 0 0 10px; }
     .cat-head h1 { font-size: 24px; font-weight: 700; color: #1e293b; margin: 0 0 4px 0; letter-spacing: 0.02em; }
     .cat-head p { font-size: 13px; color: #64748b; margin: 0; }
@@ -21,11 +20,10 @@
     .cat-kpi .kpi-value { font-size: 24px; font-weight: 800; color: #143d23; margin-top: 6px; line-height: 1; }
     .cat-kpi .kpi-sub { font-size: 11.5px; color: #64748b; margin-top: 6px; }
 
-    .cat-grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; margin-bottom: 22px; }
+    .cat-grid { margin-bottom: 22px; }
     .cat-panel {
       background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px;
-      box-shadow: 0 1px 3px rgba(15,23,42,0.04);
-      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(15,23,42,0.04); overflow: hidden;
     }
     .cat-panel .panel-head { padding: 16px 20px; border-bottom: 1px solid rgba(0,0,0,0.05); }
     .cat-panel .panel-head h3 { font-size: 14px; font-weight: 700; color: #1e293b; margin: 0; letter-spacing: 0.03em; }
@@ -38,27 +36,20 @@
     .cat-track { flex: 1; max-width: 130px; height: 8px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
     .cat-fill { height: 100%; border-radius: 99px; background: #648268; }
 
-    .quote-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; }
-    .quote-item + .quote-item { border-top: 1px solid #f1f5f9; }
-    .quote-rank {
-      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: #edf1e9; color: #648268; font-size: 12px; font-weight: 800;
+    .cat-table-panel { margin-bottom: 22px; }
+    .cat-table-scroll { overflow-x: auto; }
+    .cat-table-note { font-size: 12px; color: #64748b; margin: 4px 0 0; }
+    .cat-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .cat-table .cell-strong { color: #1e2922; font-weight: 600; }
+    .cat-table .cell-muted { color: #64748b; }
+    .cat-status {
+      display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 6px;
+      font-size: 12px; font-weight: 600; text-transform: capitalize;
     }
-    .quote-name { flex: 1; min-width: 0; font-size: 13px; color: #1e293b; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .quote-count {
-      display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
-      font-size: 12px; font-weight: 700; color: #3f5a46;
-      background: #f1f5f2; border: 1px solid #d5e0d8;
-      padding: 4px 10px; border-radius: 999px;
-    }
-
+    .cat-status-active { background: #edf1e9; color: #3f5a46; }
+    .cat-status-inactive { background: #f1f5f9; color: #64748b; }
     .cat-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 20px; color: #94a3b8; font-size: 13px; text-align: center; }
-    .cat-empty svg { width: 34px; height: 34px; stroke: #c3cec7; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
-    @media (max-width: 920px) {
-      .cat-grid { grid-template-columns: 1fr; }
-    }
     @media (max-width: 480px) {
       .cat-kpis { grid-template-columns: 1fr; }
     }
@@ -66,12 +57,10 @@
 
   <div class="cat-page">
     <div class="cat-content">
-
       <div class="cat-head">
         <h1>Product Catalog</h1>
-        <p>Overview of the supply catalog and what farmers are asking for.</p>
+        <p>Monitor the supply catalog and store inventory.</p>
       </div>
-
 
       <div class="cat-kpis kpi-strip">
         <div class="cat-kpi">
@@ -98,7 +87,7 @@
             @else
               @php $catMax = max($productsByCategory->max('count'), 1) ?: 1; @endphp
               @foreach($productsByCategory as $cat)
-                @php $pct = $catMax > 0 ? round(($cat->count / $catMax) * 100) : 0; @endphp
+                @php $pct = round(($cat->count / $catMax) * 100); @endphp
                 <div class="cat-row">
                   <span class="lbl">{{ $cat->category }}</span>
                   <div class="cat-track"><div class="cat-fill" style="width: {{ $pct }}%;"></div></div>
@@ -108,31 +97,53 @@
             @endif
           </div>
         </div>
-
-        <div class="cat-panel">
-          <div class="panel-head">
-            <h3>What Farmers Ask For</h3>
-            <p>Products ranked by how many farmer quotations include them</p>
-          </div>
-          <div class="panel-body">
-            @if($topQuoted->isEmpty())
-              <div class="cat-empty">No quotations generated yet. Products farmers request will appear here.</div>
-            @else
-              @foreach($topQuoted as $idx => $row)
-                <div class="quote-item">
-                  <span class="quote-rank">#{{ $idx + 1 }}</span>
-                  <span class="quote-name">{{ $row->name }}</span>
-                  <span class="quote-count">
-                    <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    {{ $row->quote_count }} {{ Str::plural('quote', $row->quote_count) }}
-                  </span>
-                </div>
-              @endforeach
-            @endif
-          </div>
-        </div>
       </div>
 
+      <div class="cat-panel cat-table-panel">
+        <div class="panel-head">
+          <h3>Product Inventory</h3>
+          <p class="cat-table-note">View-only inventory monitoring. Stores manage their own products and stock.</p>
+        </div>
+        <div class="cat-table-scroll">
+          <table class="data-table cat-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Store</th>
+                <th>Category</th>
+                <th class="num">Price</th>
+                <th class="num">Stock</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @forelse($products as $product)
+                @php
+                  $storeName = $product->storeOwner?->store_name
+                      ?: trim(($product->storeOwner?->first_name ?? '') . ' ' . ($product->storeOwner?->last_name ?? ''));
+                  $stock = (int) ($product->stock_quantity ?? 0);
+                @endphp
+                <tr>
+                  <td class="cell-strong">{{ $product->name }}</td>
+                  <td class="cell-muted">{{ $storeName ?: 'Unknown store' }}</td>
+                  <td class="cell-muted">{{ $product->category?->name ?? $product->category ?? 'Uncategorized' }}</td>
+                  <td class="num">₱{{ number_format((float) $product->price, 2) }}</td>
+                  <td class="num">{{ number_format($stock) }} {{ $product->stock_unit ?: 'units' }}</td>
+                  <td>
+                    <span class="cat-status {{ $product->status === 'active' ? 'cat-status-active' : 'cat-status-inactive' }}">
+                      {{ str_replace('_', ' ', $product->status ?: 'unknown') }}
+                    </span>
+                  </td>
+                </tr>
+              @empty
+                <tr>
+                  <td colspan="6"><div class="cat-empty">No catalog data yet.</div></td>
+                </tr>
+              @endforelse
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 @endsection
