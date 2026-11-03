@@ -74,7 +74,7 @@ return [
                 'hover_strong'      => 'rgba(51, 66, 29, 0.14)',
                 'active_bg'         => '#f3f6f4',
                 'active_fg'         => '#5f7c2e',
-                'accent'            => '#7FA886',
+                'accent'            => '#33421d',
                 'avatar_bg'         => 'rgba(51, 66, 29, 0.12)',
 
                

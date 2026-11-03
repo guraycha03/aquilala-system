@@ -368,7 +368,7 @@
     /* Brand Section */
     .brand-section { padding: 15px 20px 14px 20px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.95); letter-spacing: -0.01em; line-height: 1.35; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; }
     .brand-title { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; display: block; margin-bottom: 1px; color: #ffffff; line-height: 1.05; }
-    .brand-accent { color: #C8F36A; text-shadow: 0 0 14px rgba(200, 243, 106, 0.18); }
+    .brand-accent { color: var(--sb-accent, #C8F36A); text-shadow: 0 0 14px color-mix(in srgb, var(--sb-accent, #C8F36A) 18%, transparent); }
 
     /* Weather Widget Icon (real condition icons from public/images/weather) */
     .season-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; }
@@ -901,7 +901,7 @@
     .sidebar-footer { background: var(--sb-deep); color: var(--sb-fg); border-top-color: var(--sb-border); }
     .brand-section { color: var(--sb-fg); border-bottom-color: var(--sb-border); }
     .brand-title { color: var(--sb-fg); }
-    .brand-accent { color: #C8F36A; text-shadow: 0 0 14px rgba(200, 243, 106, 0.18); }
+    .brand-accent { color: var(--sb-accent); text-shadow: 0 0 14px color-mix(in srgb, var(--sb-accent) 18%, transparent); }
     .menu-group-title { color: var(--sb-muted); }
     .nav-links li a { color: var(--sb-nav); }
     .nav-links li a svg { stroke: var(--sb-nav); }
@@ -1066,7 +1066,7 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div class="aq-mobile-header-brand" style="font-weight: 700; font-size: 18px; line-height: 1;">
-        Aqui<span style="color: #C8F36A; text-shadow: 0 0 14px rgba(200, 243, 106, 0.18); font-weight: 800;">lala</span>
+        Aqui<span class="brand-accent" style="font-weight: 800;">lala</span>
       </div>
     </div>
     <button id="aqMobileSearchToggle" class="aq-mobile-search-toggle" type="button" aria-label="Search pages" aria-expanded="false" title="Search pages">
