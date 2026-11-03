@@ -112,8 +112,7 @@
       <div class="data-table-container">
         <div class="table-head">
           <div>
-          <h3>Product Inventory</h3>
-            <p>View-only inventory monitoring. Stores manage their own products and stock.</p>
+            <h3>Product Listings</h3>
           </div>
         </div>
         <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
