@@ -307,8 +307,29 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
 
         // Settings (UI preferences)
         Route::get('/settings', function () {
-            return view('farmer.settings.index');
+            $savedProducts = Auth::user()
+                ->savedProducts()
+                ->with(['category.parent', 'mainImage', 'images', 'storeOwner'])
+                ->latest('saved_products.created_at')
+                ->get();
+
+            Product::markSavedState($savedProducts, Auth::user());
+
+            return view('farmer.settings.index', compact('savedProducts'));
         })->name('settings.index');
+        Route::post('/settings/notifications', function (Request $request) {
+            $preferences = $request->validate([
+                'notify_planting_updates' => ['sometimes', 'boolean'],
+                'notify_association_events' => ['sometimes', 'boolean'],
+            ]);
+
+            Auth::user()->update([
+                'notify_planting_updates' => (bool) ($preferences['notify_planting_updates'] ?? false),
+                'notify_association_events' => (bool) ($preferences['notify_association_events'] ?? false),
+            ]);
+
+            return back()->with('success', 'Notification preferences saved.');
+        })->name('settings.notifications');
     });
 
     // Explicit fallback alias for dashboard.farmer reference in layout

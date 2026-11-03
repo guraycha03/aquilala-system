@@ -2255,12 +2255,35 @@
   $aqSearchUser = Auth::user();
   $aqSearchRole = $aqSearchUser?->role ?? '';
   $aqSearchPages = [];
-  $aqAddSearchPage = function (string $label, string $routeName, string $aliases = '') use (&$aqSearchPages) {
+  $aqSearchDescriptions = [
+      'admin.settings.index' => 'Manage system preferences and open the settings subpages.',
+      'admin.settings.interface' => 'Choose display, harvest units, number formatting, and interface preferences.',
+      'admin.settings.seasons' => 'Configure planting seasons used by harvest reports and quotations.',
+      'admin.settings.weather' => 'Record weather events such as typhoons, floods, droughts, and other field conditions.',
+      'farmer.settings.index' => 'Manage your account, appearance, saved items, and personal preferences.',
+      'farmer.quotations.index' => 'Review your cost quotations and open quotation details or breakdowns.',
+      'farmer.quotations.request' => 'Create a cost quotation by choosing your crop, area, season, and farming inputs.',
+      'farmer.quotations.archive' => 'View archived cost quotations that are no longer in your active list.',
+      'farmer.products.browse' => 'Browse farm supplies from available stores and open product details.',
+      'farmer.recommendations.index' => 'Find products recommended for your selected crop and farming needs.',
+      'farmer.top-quoted.index' => 'See the products most often included in farmer cost quotations.',
+      'store.settings.index' => 'Manage store account, appearance, saved settings, and profile preferences.',
+      'store.storefront.index' => 'Manage product listings, inventory visibility, and store products.',
+      'store.products.create' => 'Add a new product with pricing, stock, crop types, and application rules.',
+      'store.products.import' => 'Import products from a CSV or spreadsheet and review the uploaded rows.',
+      'store.formulas.index' => 'Review application rules that connect products to crops, seasons, rates, and stages.',
+      'store.formulas.create' => 'Create an application rule for a product, crop type, season, and usage rate.',
+      'admin.operations.catalog' => 'Browse the product catalog and review farm inputs available to the association.',
+      'admin.settings.general' => 'Review general association settings and administrative information.',
+  ];
+  $aqAddSearchPage = function (string $label, string $routeName, string $aliases = '', string $description = '') use (&$aqSearchPages, $aqSearchDescriptions) {
       if (\Illuminate\Support\Facades\Route::has($routeName)) {
           $aqSearchPages[] = [
               'label' => $label,
               'url' => route($routeName),
               'aliases' => $aliases,
+              'heading' => $label,
+              'description' => $description !== '' ? $description : ($aqSearchDescriptions[$routeName] ?? ''),
           ];
       }
   };
@@ -2295,6 +2318,14 @@
       ] as [$label, $route, $aliases]) {
           $aqAddSearchPage($label, $route, $aliases);
       }
+      foreach ([
+          ['General Settings', 'admin.settings.general', 'association profile general information'],
+          ['Appearance Settings', 'admin.settings.interface', 'theme colors sidebar interface display'],
+          ['Season Settings', 'admin.settings.seasons', 'planting season wet dry configuration'],
+          ['Weather Log', 'admin.settings.weather', 'weather typhoon flood drought field conditions'],
+      ] as [$label, $route, $aliases]) {
+          $aqAddSearchPage($label, $route, $aliases);
+      }
   } elseif ($aqSearchRole === 'farmer') {
       foreach ([
           ['Dashboard', 'farmer.dashboard', 'home overview'],
@@ -2316,6 +2347,13 @@
       ] as [$label, $route, $aliases]) {
           $aqAddSearchPage($label, $route, $aliases);
       }
+      foreach ([
+          ['Request Cost Quotation', 'farmer.quotations.request', 'create quotation crop area season products inputs'],
+          ['Quotation Archive', 'farmer.quotations.archive', 'archived old quotations history'],
+          ['Saved Items', 'farmer.settings.index', 'saved products bookmarks supplies'],
+      ] as [$label, $route, $aliases]) {
+          $aqAddSearchPage($label, $route, $aliases);
+      }
   } elseif ($aqSearchRole === 'store_owner') {
       foreach ([
           ['Dashboard', 'store.dashboard', 'home overview'],
@@ -2326,6 +2364,14 @@
           ['AI Assistant', 'store.ai-chat.index', 'ai chat assistant'],
           ['Settings', 'store.settings.index', 'settings account theme color appearance dark light ui sidebar profile'],
           ['Activity History', 'store.activity.index', 'activity timeline'],
+      ] as [$label, $route, $aliases]) {
+          $aqAddSearchPage($label, $route, $aliases);
+      }
+      foreach ([
+          ['Create Product', 'store.products.create', 'add product price stock crop types application rules'],
+          ['Import Products', 'store.products.import', 'upload csv excel spreadsheet products'],
+          ['Application Rules', 'store.formulas.index', 'product crop type season rate stage formula'],
+          ['Create Application Rule', 'store.formulas.create', 'add product rule crop season usage rate'],
       ] as [$label, $route, $aliases]) {
           $aqAddSearchPage($label, $route, $aliases);
       }
@@ -2388,7 +2434,7 @@
       height: 40px;
       border: 0;
       background: transparent;
-      color: #fff;
+      color: var(--sb-fg);
       cursor: pointer;
       padding: 0;
       border-radius: 8px;
@@ -2397,7 +2443,7 @@
       justify-content: center;
       z-index: 195;
     }
-    .aq-mobile-search-toggle:hover { background: rgba(255,255,255,0.12); }
+    .aq-mobile-search-toggle:hover { background: var(--sb-hover-bg); }
     .aq-mobile-search-open .aq-mobile-header-brand { display: none; }
     .aq-global-search-host {
       position: fixed;
@@ -2434,7 +2480,7 @@
       height: 40px;
       border: 0;
       background: transparent;
-      color: #fff;
+      color: var(--sb-fg);
       cursor: pointer;
       padding: 0;
       border-radius: 8px;
@@ -2443,7 +2489,7 @@
       justify-content: center;
       z-index: 195;
     }
-    .aq-mobile-search-toggle:hover { background: rgba(255,255,255,0.12); }
+    .aq-mobile-search-toggle:hover { background: var(--sb-hover-bg); }
     .aq-mobile-search-open .aq-mobile-header-brand { display: none; }
   }
   .aq-global-search-wrap {
@@ -2497,9 +2543,13 @@
   }
   .aq-global-search-results.aq-show { display: block; }
   .aq-global-search-results a {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
     padding: 11px 14px; text-decoration: none; color: #26352b;
     border-bottom: 1px solid #edf1ee; font-size: 13px;
+  }
+  .aq-global-search-result-label { font-weight: 700; }
+  .aq-global-search-result-snippet {
+    color: #68756c; font-size: 12px; line-height: 1.4; font-weight: 400;
   }
   .aq-global-search-results a:last-child { border-bottom: 0; }
   .aq-global-search-results a:hover { background: #f3f6f3; }
@@ -2538,6 +2588,7 @@
     color: #d6f5e3;
     border-bottom-color: #334155;
   }
+  [data-theme="dark"] .aq-global-search-result-snippet { color: #9fb3a6; }
   [data-theme="dark"] .aq-global-search-results a:hover,
   [data-theme="dark"] .aq-global-search-more:hover { background: #1f2937; }
   [data-theme="dark"] .aq-global-search-empty { color: #9fb3a6; }
@@ -2606,17 +2657,43 @@ document.addEventListener('DOMContentLoaded', function () {
     return prev[b.length];
   }
 
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, function (character) {
+      return {'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'}[character];
+    });
+  }
+
+  function snippet(item, query) {
+    var text = String(item.description || item.aliases || '').replace(/\s+/g, ' ').trim();
+    if (!text) return '';
+    var lowerText = text.toLowerCase();
+    var terms = tokens(query);
+    var matchAt = -1;
+    for (var i = 0; i < terms.length; i++) {
+      matchAt = lowerText.indexOf(terms[i]);
+      if (matchAt >= 0) break;
+    }
+    if (matchAt < 0) return text.length > 110 ? text.slice(0, 107) + '...' : text;
+    var start = Math.max(0, matchAt - 42);
+    var end = Math.min(text.length, matchAt + 68);
+    return (start > 0 ? '... ' : '') + text.slice(start, end).trim() + (end < text.length ? ' ...' : '');
+  }
+
   function score(item, query) {
     var label = normalize(item.label || '');
     var aliases = normalize(item.aliases || '');
+    var heading = normalize(item.heading || '');
+    var description = normalize(item.description || '');
     var q = normalize(query);
     var qTokens = tokens(q);
-    var words = tokens(label + ' ' + aliases);
+    var words = tokens(label + ' ' + aliases + ' ' + heading + ' ' + description);
 
     if (!q) return 0;
     if (q === label) return 1000;
     if (label.indexOf(q) >= 0) return 920;
     if (aliases.indexOf(q) >= 0) return 900;
+    if (heading.indexOf(q) >= 0) return 880;
+    if (description.indexOf(q) >= 0) return 820;
 
     var total = 0;
     for (var i = 0; i < qTokens.length; i++) {
@@ -2625,6 +2702,8 @@ document.addEventListener('DOMContentLoaded', function () {
       else if (token.length >= 4 && words.some(function (word) { return levenshtein(word, token) <= 2; })) total += 70;
       else if (aliases.indexOf(token) >= 0) total += 40;
       else if (label.indexOf(token) >= 0) total += 35;
+      else if (heading.indexOf(token) >= 0) total += 30;
+      else if (description.indexOf(token) >= 0) total += 25;
     }
 
     if (q.length >= 3 && label.indexOf(q) < 0 && qTokens.length === 1) total += Math.max(0, 20 - levenshtein(label, q));
@@ -2669,7 +2748,9 @@ document.addEventListener('DOMContentLoaded', function () {
     visible.forEach(function (item) {
       var anchor = document.createElement('a');
       anchor.href = item.url;
-      anchor.innerHTML = '<span>' + item.label.replace(/</g, '&lt;') + '</span>';
+      var detail = snippet(item, query);
+      anchor.innerHTML = '<span class="aq-global-search-result-label">' + escapeHtml(item.label) + '</span>' +
+        (detail ? '<span class="aq-global-search-result-snippet">' + escapeHtml(detail) + '</span>' : '');
       anchor.addEventListener('click', function () {
         results.classList.remove('aq-show');
         results.classList.remove('aq-expanded');

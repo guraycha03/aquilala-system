@@ -55,7 +55,24 @@ class NotificationFeed
 
         // A role with no scope gets an empty set rather than every activity
         // row in the table.
-        return $scope === null ? $query->whereRaw('1 = 0') : $query->{$scope}();
+        if ($scope === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $query = $query->{$scope}();
+
+        if ($user->role === 'farmer') {
+            $query->when(! $user->notify_planting_updates, fn ($q) => $q->whereNotIn('type', [
+                ActivityLog::TYPE_CROP_CONFIRMED,
+                ActivityLog::TYPE_CROP_REJECTED,
+            ]));
+            $query->when(! $user->notify_association_events, fn ($q) => $q->whereNotIn('type', [
+                ActivityLog::TYPE_EVENT_CREATED,
+                ActivityLog::TYPE_EVENT_UPDATED,
+            ]));
+        }
+
+        return $query;
     }
 
     /**

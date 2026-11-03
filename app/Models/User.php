@@ -72,6 +72,8 @@ class User extends Authenticatable
         'profile_photo',
         'activation_completed_at',
         'must_change_password',
+        'notify_planting_updates',
+        'notify_association_events',
     ];
 
     /**
@@ -95,6 +97,8 @@ class User extends Authenticatable
             'approved_at' => 'datetime',
             'password' => 'hashed',
             'must_change_password' => 'boolean',
+            'notify_planting_updates' => 'boolean',
+            'notify_association_events' => 'boolean',
         ];
     }
 
