@@ -38,6 +38,24 @@
     .stores-kpi .kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; }
     .stores-kpi .kpi-value { font-size: 24px; font-weight: 800; color: #143d23; margin-top: 6px; line-height: 1; }
     .stores-kpi .kpi-sub { font-size: 11.5px; color: #64748b; margin-top: 6px; }
+    .stores-kpi-button {
+      width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer;
+      appearance: none; -webkit-appearance: none;
+    }
+    .stores-kpi-button:hover { border-color: #b7d2bb; }
+    .category-modal {
+      display: none; position: fixed; z-index: 1000; top: 50%; left: 50%;
+      width: min(360px, calc(100vw - 32px)); max-height: min(420px, calc(100vh - 48px));
+      transform: translate(-50%, -50%); overflow: auto; padding: 20px;
+      background: #ffffff; border: 1px solid #dfe8df; border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(20, 61, 35, 0.18);
+    }
+    .category-modal.is-open { display: block; }
+    .category-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .category-modal-head h2 { margin: 0; color: #1e2922; font-size: 16px; }
+    .category-modal-close { border: 0; background: transparent; color: #64748b; cursor: pointer; font-size: 22px; line-height: 1; padding: 2px 6px; }
+    .category-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+    .category-list li { padding: 9px 10px; border: 1px solid #edf1ed; border-radius: 7px; color: #475569; font-size: 13px; }
 
     .users-panel {
       background: rgba(255,255,255,0.86); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
@@ -105,11 +123,32 @@
           <div class="kpi-value">{{ $totals['products'] }}</div>
           <div class="kpi-sub">Across all store catalogs</div>
         </div>
+        <button type="button" class="stores-kpi stores-kpi-button" data-category-open aria-haspopup="dialog" aria-controls="categoryModal">
+          <div class="kpi-label">Product Categories</div>
+          <div class="kpi-value">{{ $totals['categories'] }}</div>
+          <div class="kpi-sub">Click to view categories</div>
+        </button>
         <div class="stores-kpi">
           <div class="kpi-label">Inactive Stores</div>
           <div class="kpi-value">{{ $totals['inactive'] }}</div>
           <div class="kpi-sub">Disabled store accounts</div>
         </div>
+      </div>
+
+      <div id="categoryModal" class="category-modal" role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle" aria-hidden="true">
+        <div class="category-modal-head">
+          <h2 id="categoryModalTitle">Product Categories</h2>
+          <button type="button" class="category-modal-close" data-category-close aria-label="Close categories">&times;</button>
+        </div>
+        @if($categories->isNotEmpty())
+          <ul class="category-list">
+            @foreach($categories as $category)
+              <li>{{ $category }}</li>
+            @endforeach
+          </ul>
+        @else
+          <p style="margin:0;color:#64748b;font-size:13px;">No product categories yet.</p>
+        @endif
       </div>
 
       <x-table-toolbar
@@ -233,4 +272,30 @@
 
     </div>
   </div>
+  <script>
+    (function () {
+      function initCategoryModal() {
+      var modal = document.getElementById('categoryModal');
+      var open = document.querySelector('[data-category-open]');
+      var close = document.querySelector('[data-category-close]');
+      if (!modal || !open || !close || modal.dataset.bound === 'true') return;
+      modal.dataset.bound = 'true';
+      function setOpen(value) {
+        modal.classList.toggle('is-open', value);
+        modal.setAttribute('aria-hidden', value ? 'false' : 'true');
+        if (value) close.focus();
+      }
+      open.addEventListener('click', function () { setOpen(true); });
+      close.addEventListener('click', function () { setOpen(false); open.focus(); });
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+          setOpen(false);
+          open.focus();
+        }
+      });
+      }
+      document.addEventListener('DOMContentLoaded', initCategoryModal);
+      document.addEventListener('turbo:load', initCategoryModal);
+    })();
+  </script>
 @endsection

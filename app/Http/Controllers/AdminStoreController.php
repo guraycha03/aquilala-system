@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\Onboarding\DuplicateAccountException;
 use App\Exceptions\Onboarding\MailDeliveryException;
 use App\Models\StoreDocument;
+use App\Models\Product;
 use App\Models\User;
 use App\Services\UserInvitationService;
 use Illuminate\Http\RedirectResponse;
@@ -50,7 +51,17 @@ class AdminStoreController extends Controller
             'papers' => (int) $storeOwners->sum('documents_count'),
         ];
 
-        return view('admin.stores.index', compact('storeOwners', 'totals'));
+        $categories = Product::with('category')
+            ->get()
+            ->map(fn (Product $product): string => $product->category?->name ?? (string) $product->category)
+            ->filter(fn (string $category): bool => trim($category) !== '')
+            ->unique()
+            ->sort()
+            ->values();
+
+        $totals['categories'] = $categories->count();
+
+        return view('admin.stores.index', compact('storeOwners', 'totals', 'categories'));
     }
 
     public function create(): View
