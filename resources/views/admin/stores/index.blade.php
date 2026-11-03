@@ -287,6 +287,11 @@
       }
       open.addEventListener('click', function () { setOpen(true); });
       close.addEventListener('click', function () { setOpen(false); open.focus(); });
+      document.addEventListener('click', function (event) {
+        if (modal.classList.contains('is-open') && !modal.contains(event.target) && !open.contains(event.target)) {
+          setOpen(false);
+        }
+      });
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && modal.classList.contains('is-open')) {
           setOpen(false);

@@ -1859,6 +1859,7 @@
       }
 
       function open() {
+        window.dispatchEvent(new CustomEvent('aq-notification-open'));
         modal.hidden = false;
         modal.setAttribute('aria-hidden', 'false');
       }
@@ -1867,6 +1868,8 @@
         modal.hidden = true;
         modal.setAttribute('aria-hidden', 'true');
       }
+      window.aqCloseNotifications = close;
+      window.addEventListener('aq-search-open', close);
 
       function post(url) {
         return fetch(url, {
@@ -2231,6 +2234,7 @@
       if (!isOpen) {
         closeSearch();
       } else {
+        window.dispatchEvent(new CustomEvent('aq-search-open'));
         if (button) button.setAttribute('aria-expanded', 'true');
         var input = document.getElementById('aqGlobalSearch');
         if (input) window.setTimeout(function () { input.focus(); }, 80);
@@ -2253,6 +2257,7 @@
         closeSearch();
       }
     });
+    window.addEventListener('aq-notification-open', closeSearch);
   })();
   </script>
 
@@ -2810,9 +2815,13 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   input.addEventListener('input', function () {
+    window.dispatchEvent(new CustomEvent('aq-search-open'));
     var query = input.value || '';
     if (clear) clear.classList.toggle('aq-show', query.trim() !== '');
     renderResults(query);
+  });
+  input.addEventListener('focus', function () {
+    window.dispatchEvent(new CustomEvent('aq-search-open'));
   });
 
   input.addEventListener('keydown', function (event) {
