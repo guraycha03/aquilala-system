@@ -101,19 +101,9 @@
           <div class="kpi-sub">Distinct store registrations</div>
         </div>
         <div class="stores-kpi">
-          <div class="kpi-label">Store Owner Accounts</div>
-          <div class="kpi-value">{{ $totals['accounts'] }}</div>
-          <div class="kpi-sub">Accounts handling store UIs</div>
-        </div>
-        <div class="stores-kpi">
           <div class="kpi-label">Products Listed</div>
           <div class="kpi-value">{{ $totals['products'] }}</div>
           <div class="kpi-sub">Across all store catalogs</div>
-        </div>
-        <div class="stores-kpi">
-          <div class="kpi-label">Legal Papers on File</div>
-          <div class="kpi-value">{{ $totals['papers'] }}</div>
-          <div class="kpi-sub">Permits and registrations held</div>
         </div>
         <div class="stores-kpi">
           <div class="kpi-label">Inactive Stores</div>

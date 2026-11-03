@@ -137,7 +137,8 @@ class AdminStoreTest extends TestCase
             ->get(route('admin.stores.index'))
             ->assertOk()
             ->assertSee(route('admin.stores.create'), false)
-            ->assertSee('Legal Papers on File');
+            ->assertDontSee('Legal Papers on File')
+            ->assertDontSee('Store Owner Accounts');
 
         // The creation form itself must render, and it is a plain business
         // form — there is no member picker anywhere in this flow.
