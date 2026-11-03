@@ -639,8 +639,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
 
             $productStats = [
                 'total' => $products->count(),
-                'active' => $products->where('status', 'active')->count(),
-                'out' => $products->filter(fn ($p) => $p->status === 'out_of_stock' || (int) $p->stock_quantity <= 0)->count(),
+                'quotations_this_month' => Quotation::where('created_at', '>=', now()->startOfMonth())->count(),
             ];
 
             $productsByCategory = Product::join('categories', 'products.category_id', '=', 'categories.id')
