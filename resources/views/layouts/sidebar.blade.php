@@ -2451,8 +2451,10 @@
     .aq-global-search-host .aq-global-search-wrap { position: relative; width: min(620px, 46vw); }
     .desktop-notif-wrap {
       position: fixed;
-      top: 14px;
+      top: 0;
       right: 24px;
+      height: 60px;
+      align-items: center;
       z-index: 195;
     }
   }
