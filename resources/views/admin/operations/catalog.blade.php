@@ -36,12 +36,6 @@
     .cat-track { flex: 1; max-width: 130px; height: 8px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
     .cat-fill { height: 100%; border-radius: 99px; background: #648268; }
 
-    .cat-table-panel { margin-bottom: 22px; }
-    .cat-table-scroll { overflow-x: auto; }
-    .cat-table-note { font-size: 12px; color: #64748b; margin: 4px 0 0; }
-    .cat-table .num { text-align: right; font-variant-numeric: tabular-nums; }
-    .cat-table .cell-strong { color: #1e2922; font-weight: 600; }
-    .cat-table .cell-muted { color: #64748b; }
     .cat-status {
       display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 6px;
       font-size: 12px; font-weight: 600; text-transform: capitalize;
@@ -99,12 +93,15 @@
         </div>
       </div>
 
-      <div class="cat-panel cat-table-panel">
-        <div class="panel-head">
+      <div class="data-table-container">
+        <div class="table-head">
+          <div>
           <h3>Product Inventory</h3>
-          <p class="cat-table-note">View-only inventory monitoring. Stores manage their own products and stock.</p>
+            <p>View-only inventory monitoring. Stores manage their own products and stock.</p>
+          </div>
         </div>
-        <div class="cat-table-scroll">
+        <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+          <div class="app-scroll">
           <table class="data-table cat-table">
             <thead>
               <tr>
@@ -142,6 +139,7 @@
               @endforelse
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

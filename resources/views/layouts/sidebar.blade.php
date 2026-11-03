@@ -784,6 +784,13 @@
     .data-table tbody tr { transition: background 0.15s ease; }
     .data-table tbody tr:hover { background: #fafbfa; }
     .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+    .data-table .cell-strong { color: #1e2922; font-weight: 600; }
+    .data-table .cell-muted { color: #64748b; }
+    .data-table-container { background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 20px; }
+    .table-head { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .table-head h2, .table-head h3 { font-size: 16px; color: #1e2922; font-weight: 700; margin: 0; }
+    .table-head p { font-size: 13px; color: #64748b; margin: 4px 0 0; }
 
     /* -- Shared pagination controls: used by client toolbars AND the server
           pagination partial, so every table pages the same way (green theme) -- */
