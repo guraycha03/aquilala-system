@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Product Catalog')
+@section('title', 'Catalog Overview')
 
 @section('content')
 
@@ -54,8 +54,8 @@
   <div class="cat-page">
     <div class="cat-content">
       <div class="cat-head">
-        <h1>Product Catalog</h1>
-        <p>Monitor the supply catalog and store inventory.</p>
+        <h1>Catalog Overview</h1>
+        <p>Overview of products, categories, and quotation activity.</p>
       </div>
 
       <div class="cat-kpis kpi-strip">
