@@ -544,6 +544,7 @@
       display: flex; align-items: center; justify-content: center;
       color: #6d7d46; text-decoration: none; cursor: pointer;
       transition: color 0.2s ease, background 0.2s ease;
+      align-self: center;
     }
     .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(109, 125, 70, 0.10); color: #4f6d4e; }
     .desktop-notif svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -1473,7 +1474,7 @@
   @if($notifBellUrl)
   <div class="desktop-notif-wrap">
     <a class="desktop-notif" id="desktopNotifBtn" href="{{ $notifBellUrl }}" aria-label="Notifications" title="Notifications" aria-haspopup="dialog">
-      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <i data-lucide="bell" aria-hidden="true"></i>
       @if($notifUnreadCount > 0)
         <span class="notif-badge" id="desktopNotifBadge">{{ $notifUnreadCount }}</span>
       @endif

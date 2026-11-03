@@ -25,12 +25,12 @@
   .inv-header p { color: #64748b; font-size: 14px; margin: 0; }
   .btn-add {
     display: inline-flex; align-items: center; gap: 8px;
-    background: linear-gradient(135deg, #14532d, #166534);
+    background: #14532d;
     color: #fff; padding: 11px 20px; border-radius: 10px;
     font-size: 14px; font-weight: 600; text-decoration: none;
     box-shadow: 0 4px 14px rgba(20,83,45,0.25); transition: all .2s; border: none; cursor: pointer;
   }
-  .btn-add:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(20,83,45,0.3); }
+  .btn-add:hover { background: #0f4224; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(20,83,45,0.3); }
   .btn-add svg { width: 16px; height: 16px; stroke: currentColor; }
   .inv-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .btn-ghost-inv {

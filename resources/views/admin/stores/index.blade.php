@@ -20,11 +20,11 @@
     .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn-users {
       display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
-      background: #648268; border: 1px solid #58745c;
+      background: #14532d; border: 1px solid #14532d;
       color: #ffffff; padding: 10px 18px; border-radius: 12px; font-size: 13px; font-weight: 700;
       transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(20,61,35,0.08); cursor: pointer;
     }
-    .btn-users:hover { background: #526e56; transform: translateY(-1px); }
+    .btn-users:hover { background: #0f4224; transform: translateY(-1px); }
     .btn-users svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
     .btn-users.ghost { background: #ffffff; border-color: rgba(20,61,35,0.10); box-shadow: none; }
     .btn-users.ghost:hover { background: #f0fdf4; }
