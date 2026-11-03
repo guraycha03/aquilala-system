@@ -43,6 +43,8 @@
     .cat-status-active { background: #edf1e9; color: #3f5a46; }
     .cat-status-inactive { background: #f1f5f9; color: #64748b; }
     .cat-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 20px; color: #94a3b8; font-size: 13px; text-align: center; }
+    .cat-table th, .cat-table td { white-space: nowrap; }
+    .cat-table td:first-child { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
 
     @media (max-width: 480px) {
       .cat-kpis { grid-template-columns: 1fr; }
@@ -93,6 +95,20 @@
         </div>
       </div>
 
+      <x-table-toolbar
+          uid="admin-catalog"
+          work-table="adminCatalogTable"
+          per-page="10"
+          noun="products"
+          search-placeholder="Search product, store, or category…"
+          :sorts="[
+              ['key' => 'name', 'dir' => 1, 'type' => 'str', 'label' => 'Product (A–Z)'],
+              ['key' => 'stock', 'dir' => -1, 'type' => 'num', 'label' => 'Stock (highest)'],
+              ['key' => 'stock', 'dir' => 1, 'type' => 'num', 'label' => 'Stock (lowest)'],
+              ['key' => 'price', 'dir' => -1, 'type' => 'num', 'label' => 'Price (highest)'],
+          ]"
+      />
+
       <div class="data-table-container">
         <div class="table-head">
           <div>
@@ -102,7 +118,7 @@
         </div>
         <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
           <div class="app-scroll">
-          <table class="data-table cat-table">
+          <table id="adminCatalogTable" class="data-table cat-table">
             <thead>
               <tr>
                 <th>Product</th>
@@ -119,16 +135,21 @@
                   $storeName = $product->storeOwner?->store_name
                       ?: trim(($product->storeOwner?->first_name ?? '') . ' ' . ($product->storeOwner?->last_name ?? ''));
                   $stock = (int) ($product->stock_quantity ?? 0);
+                  $categoryName = $product->category?->name ?? $product->category ?? 'Uncategorized';
+                  $statusLabel = str_replace('_', ' ', $product->status ?: 'unknown');
                 @endphp
-                <tr>
+                <tr data-search="{{ strtolower($product->name . ' ' . ($storeName ?: 'Unknown store') . ' ' . $categoryName . ' ' . $statusLabel) }}"
+                    data-name="{{ strtolower($product->name) }}"
+                    data-stock="{{ $stock }}"
+                    data-price="{{ (float) $product->price }}">
                   <td class="cell-strong">{{ $product->name }}</td>
                   <td class="cell-muted">{{ $storeName ?: 'Unknown store' }}</td>
-                  <td class="cell-muted">{{ $product->category?->name ?? $product->category ?? 'Uncategorized' }}</td>
+                  <td class="cell-muted">{{ $categoryName }}</td>
                   <td class="num">₱{{ number_format((float) $product->price, 2) }}</td>
                   <td class="num">{{ number_format($stock) }} {{ $product->stock_unit ?: 'units' }}</td>
                   <td>
                     <span class="cat-status {{ $product->status === 'active' ? 'cat-status-active' : 'cat-status-inactive' }}">
-                      {{ str_replace('_', ' ', $product->status ?: 'unknown') }}
+                      {{ $statusLabel }}
                     </span>
                   </td>
                 </tr>
