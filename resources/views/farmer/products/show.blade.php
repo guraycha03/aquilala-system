@@ -350,6 +350,9 @@
             </div>
             @endif
 
+            <div class="desc-text" style="margin: 16px 0 14px; padding: 12px 14px; background: #f8faf9; border-radius: 10px; line-height: 1.6; color: #475569; font-size: 13px;">
+                {{ $product->description ?: 'No description provided for this product.' }}
+            </div>
             <div class="main-info-list">
                 <div class="info-row">
                     <span class="info-label">Category</span>
@@ -524,15 +527,6 @@
     </div>
     @endif
 
-    <div class="spec-section">
-        <div class="section-title">
-            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            Product Description
-        </div>
-        <p class="desc-text">
-            {{ $product->description ?: 'No description provided for this product.' }}
-        </p>
-    </div>
 </div>
 
 <!-- Recommended Products -->

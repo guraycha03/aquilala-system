@@ -1766,3 +1766,27 @@ html[data-theme="dark"] .nav-links li a.active {
 [data-theme="dark"] table.review th, [data-theme="dark"] table.review td { border-color: #334155 !important }
 [data-theme="dark"] table.review thead th { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important; color: #a8cdb2 !important }
 [data-theme="dark"] tr.yours td { background-color: rgba(15, 23, 42, 0.72) !important; backdrop-filter: blur(14px) !important; -webkit-backdrop-filter: blur(14px) !important }
+
+/* ==========================================================================
+   Farmer/settings and admin/settings surfaces
+   ========================================================================== */
+[data-theme="dark"] .set-page { background: transparent !important; color: #cbd5e1 !important; }
+[data-theme="dark"] .set-panel,
+[data-theme="dark"] .set-card,
+[data-theme="dark"] .set-body,
+[data-theme="dark"] .map-card { background: #131c2e !important; border-color: #2a3a50 !important; color: #cbd5e1 !important; }
+[data-theme="dark"] .set-section-title { color: #d6f5e3 !important; }
+[data-theme="dark"] .set-field label { color: #d6f5e3 !important; }
+[data-theme="dark"] .set-field input,
+[data-theme="dark"] .set-field select,
+[data-theme="dark"] .set-field textarea,
+[data-theme="dark"] .place-search input { background: #0f1728 !important; color: #e2e8f0 !important; border-color: #2a3a50 !important; }
+[data-theme="dark"] .hint { color: #94a3b8 !important; }
+[data-theme="dark"] .map-fallback { background: #1a2335 !important; color: #94a3b8 !important; }
+[data-theme="dark"] .map-tip { background: #1a2335 !important; color: #94a3b8 !important; border-color: #2a3a50 !important; }
+[data-theme="dark"] .locked-input input { background: #1a2335 !important; color: #94a3b8 !important; }
+[data-theme="dark"] .btn-set.ghost { background: #1a2335 !important; color: #cbd5e1 !important; border-color: #2a3a50 !important; }
+[data-theme="dark"] .btn-set { background: #4A7A54 !important; color: #ffffff !important; }
+[data-theme="dark"] .header-row p { color: #94a3b8 !important; }
+[data-theme="dark"] .set-card .info-label { color: #94a3b8 !important; }
+[data-theme="dark"] #orgMap { background: #0f1728 !important; }

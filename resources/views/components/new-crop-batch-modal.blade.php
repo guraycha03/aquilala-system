@@ -23,36 +23,45 @@
 <script src="{{ asset('js/flatpickr.min.js') }}"></script>
 
 <style>
+    /* Full in-page "screen": covers the My Crops page without leaving it. */
     .ncb-overlay {
         position: fixed; top: 0; left: 260px; right: 0; bottom: 0;
-        display: none; align-items: center; justify-content: center;
+        display: none; align-items: stretch; justify-content: stretch;
         padding: 0; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none;
-        background: rgba(255, 255, 255, 0.42);
-        z-index: 500;
+        background: #f8faf9;
+        z-index: 900;
     }
-    .ncb-overlay::-webkit-scrollbar { display: none; width: 0; }
-    .ncb-overlay.active { display: flex; }
     @media (max-width: 768px) { .ncb-overlay { left: 0; } }
+    .ncb-overlay::-webkit-scrollbar { display: none; width: 0; }
+    .ncb-overlay.active { display: block; }
     .ncb-modal {
-        background: #fff; border-radius: 18px; width: 100%; max-width: 520px;
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18), 0 30px 80px rgba(15, 41, 24, 0.32);
-        margin: auto;
-        max-height: calc(100vh - 120px);
-        max-height: calc(100dvh - 120px);
+        background: #f8faf9; border-radius: 0; width: 100%; max-width: none !important;
+        margin: 0; min-height: 100vh;
+        box-shadow: none;
+        max-height: none;
     }
-    @media (min-width: 640px) { .ncb-modal { max-width: 700px; } }
-    @media (min-width: 1024px) { .ncb-modal { max-width: 880px; } }
-    .ncb-header { padding: 20px 24px 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 18px 18px 0 0; }
+    .ncb-header {
+        position: sticky; top: 0; z-index: 10;
+        background: #f8faf9;
+        box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+    }
+    .ncb-header h3 { color: #1e293b; }
+    .ncb-body { max-height: none; background: #f8faf9; }
+    .ncb-footer { position: sticky; bottom: 0; z-index: 10; background: #f8faf9; box-shadow: 0 -1px 0 rgba(0,0,0,0.06); }
+    .ncb-header { padding: 20px 24px 16px; border-bottom: none; display: flex; justify-content: space-between; align-items: center; background: #f8faf9; border-radius: 0; z-index: 9999; }
+    .ncb-overlay { z-index: 9999; }
     .ncb-header h3 { font-size: 18px; font-weight: 800; color: #1e293b; margin: 0; }
     .ncb-close { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; border: none; background: #f1f5f9; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; transition: all 0.15s ease; }
     .ncb-close:hover { background: #e2e8f0; color: #1e293b; }
-    .ncb-body { padding: 20px 24px; background: #fff; overflow-y: auto; max-height: calc(100vh - 260px); max-height: calc(100dvh - 260px); scrollbar-width: none; -ms-overflow-style: none; }
+    .ncb-body { padding: 32px 48px; background: #f8faf9; overflow: visible; max-height: none; scrollbar-width: none; -ms-overflow-style: none; }
+    @media (max-width: 768px) { .ncb-body { padding: 20px 16px; } }
     .ncb-body::-webkit-scrollbar { display: none; width: 0; }
     .ncb-footer { position: relative; z-index: 1; padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 10px; background: #fff; border-radius: 0 0 18px 18px; }
-    .ncb-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #4A7A54; margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9; }
+    .ncb-section-label { font-size: 16px; font-weight: 800; color: #1e293b; margin: 12px 0 18px; padding-bottom: 0; border-bottom: none; text-transform: none; letter-spacing: 0; }
     .ncb-section-label:first-child { margin-top: 0; }
-    .ncb-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
-    .ncb-group { margin-bottom: 12px; position: relative; }
+    .ncb-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 20px; }
+    .ncb-group { margin-bottom: 22px; position: relative; }
+    .ncb-row { margin-bottom: 8px; }
     .ncb-group label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; }
 
     .ncb-group input, .ncb-group textarea {
@@ -235,41 +244,62 @@ span.flatpickr-weekday {
 <div class="ncb-overlay" id="addModal">
     <div class="ncb-modal">
         <div class="ncb-header">
-            <h3>New Crop Batch</h3>
-            <button type="button" class="ncb-close" onclick="closeModal('addModal')">
+            <h3>New Crop Planting</h3>
+            <button type="button" class="ncb-close" onclick="closeModal('addModal')" aria-label="Close">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
-        <form action="{{ route('farmer.crops.store') }}" method="POST">
+        <form id="cropPlantingForm" action="{{ route('farmer.crops.store') }}" method="POST">
             @csrf
             <div class="ncb-body">
-                <div class="ncb-section-label">Crop Information</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 4px 0 40px;">
+                    <div class="ncb-section-label" style="margin: 0;">Crop Information</div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="ncb-btn-cancel" onclick="closeModal('addModal')">Cancel</button>
+                        <button type="submit" class="ncb-btn-submit">Add Planting</button>
+                    </div>
+                </div>
                 <div class="ncb-row">
 
+                    @php
+                        $cropAliasMap = collect(config('crop_library.crops', []))->mapWithKeys(fn ($c) => [strtolower($c['name']) => $c['aliases'] ?? []]);
+                        $cropOptions = collect($allCrops)->map(function ($crop) use ($cropAliasMap) {
+                            $aliases = $cropAliasMap[strtolower($crop->name)] ?? [];
+                            return [
+                                'id' => $crop->id,
+                                'name' => $crop->name,
+                                'search' => strtolower(trim($crop->name . ' ' . implode(' ', $aliases))),
+                            ];
+                        })->values()->all();
+                    @endphp
                     <!-- Crop Type Select -->
-                    <div class="ncb-group" x-data="{ open: false, value: '', label: 'Select a crop' }">
+                    <div class="ncb-group" x-data="{ open:false, value:'', query:'', options:@json($cropOptions), norm(s){return (s||'').toLowerCase().replace(/[^a-z0-9]/g,'');}, matches(search,q){search=this.norm(search); q=this.norm(q); if(!q) return true; if(!search) return false; if(search.includes(q)) return true; var i=0; for(var c of search){ if(c===q[i]) i++; if(i===q.length) return true;} var counts={}; for(var c of search) counts[c]=(counts[c]||0)+1; for(var c of q){ if(!counts[c]) return false; counts[c]--; } return true; } }">
                         <label>Crop Type *</label>
                         <input type="hidden" name="crop_id" :value="value" required>
-                        <div class="ncb-select-trigger" :class="{ 'active': open, 'placeholder': !value }" @click="open = !open" @click.outside="open = false" tabindex="0">
-                            <span x-text="label">Select a crop</span>
-                            <svg class="ncb-select-arrow" :class="{ 'rotate': open }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </div>
-                        <div class="ncb-select-menu" x-show="open" x-cloak style="display: none;">
-                            @foreach($allCrops as $crop)
-                                <div class="ncb-select-option" :class="{ 'selected': value === '{{ $crop->id }}' }"
-                                     @click="value = '{{ $crop->id }}'; label = '{{ $crop->name }}'; open = false; window.pickCrop({{ $crop->id }})">
-                                    {{ $crop->name }}
-                                </div>
-                            @endforeach
+                        <input x-model="query"
+                               @focus="open = true"
+                               @input="open = true; value = '';"
+                               @click.outside="open = false"
+                               type="text"
+                               placeholder="Type a crop name (e.g. pakwan)"
+                               style="width:100%; padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:13px; background:#fff;" />
+                        <div class="ncb-select-menu" x-show="open" x-cloak style="display: none; margin-top: 2px;">
+                            <template x-for="crop in (query.trim() === '' ? options : options.filter(c => matches(c.search, query)))" :key="crop.id">
+                                <div class="ncb-select-option"
+                                     @click="value = crop.id; query = crop.name; open = false; window.pickCrop(crop.id)"
+                                     x-text="crop.name"></div>
+                            </template>
+                            <div class="ncb-select-option" style="color:#94a3b8; cursor:default;"
+                                 x-show="query.trim() !== '' && !options.some(c => matches(c.search, query))">
+                                No matching crop found.
+                            </div>
                         </div>
                     </div>
 
                     <div class="ncb-group">
-                        <label>Batch Name</label>
+                        <label>Planting Name</label>
                         <input type="text" name="batch_name" id="batchName" placeholder="e.g. North Field A" autocomplete="off">
-                        <span class="ncb-note" id="batchNameHint" style="margin-bottom: 0;">Auto-generated from Crop + Field + Planting Date, e.g. <b>TOMATO-FIELD1-160926</b>. You can edit it.</span>
+                        <span class="ncb-note" id="batchNameHint" style="margin-bottom: 0;">Auto-generated. Editable.</span>
                     </div>
                 </div>
 
@@ -285,7 +315,7 @@ span.flatpickr-weekday {
                         </svg>
                     </div>
                     <div class="ncb-select-menu" id="varietyMenu" style="display: none;"></div>
-                    <span class="ncb-note" id="varietyNote">Choose a crop first. <b>{{ \App\Services\CropLibraryService::GENERAL_VARIETY }}</b> is preselected — keep it when you are using local or free-distributed planting material.</span>
+                    <span class="ncb-note" id="varietyNote">Choose a crop first.</span>
                 </div>
 
                 <!-- Crop agronomy info panel (fills once a crop is picked) -->
@@ -318,7 +348,7 @@ span.flatpickr-weekday {
                         @endforelse
                         <div class="ncb-select-option" id="prodNoMatch" style="color: #94a3b8; cursor: default; display: none;">No applicable store products for this crop yet — leave None or pick another crop.</div>
                     </div>
-                    <span class="ncb-note">Optional — picks only show products applicable to the selected crop. Right now the list is filtered as you choose a crop type.</span>
+                    <span class="ncb-note">Optional. Filtered by crop.</span>
                 </div>
 
                 <div class="ncb-section-label">Land & Season</div>
@@ -435,10 +465,6 @@ span.flatpickr-weekday {
                     <textarea name="notes" rows="2" placeholder="Any additional notes about this crop batch..."></textarea>
                 </div>
             </div>
-            <div class="ncb-footer">
-                <button type="button" class="ncb-btn-cancel" onclick="closeModal('addModal')">Cancel</button>
-                <button type="submit" class="ncb-btn-submit">Add Crop Batch</button>
-            </div>
         </form>
     </div>
 </div>
@@ -450,6 +476,9 @@ span.flatpickr-weekday {
                 dateFormat: "Y-m-d",
                 disableMobile: "true"
             });
+        }
+        if (_varietyMenu && _varietyMenu.childElementCount === 0) {
+            fillVarietyOptions(_PICKED_CROP || '');
         }
     });
 

@@ -163,7 +163,7 @@ class FarmerCrop extends Model
     {
         return match ($this->growth_stage) {
             'land_prep' => '#78716c',
-            'seeding' => '#2563eb',
+            'seeding' => '#4A7A54',
             'vegetative' => '#16a34a',
             'reproductive' => '#d97706',
             'ripening' => '#ea580c',

@@ -16,17 +16,17 @@
 
     /* ── Hero Banner ── */
     .hero-band {
-        background: rgb(230, 245, 195);
+        background: rgb(248, 243, 232);
         border-radius: 20px; padding: 28px 32px; color: #143d23; position: relative; overflow: hidden; margin-bottom: 24px;
         box-shadow: 0 4px 16px rgba(20,61,35,0.10);
     }
     .hero-band::before {
         content: ""; position: absolute; top: -80px; right: -40px; width: 220px; height: 220px;
-        border-radius: 50%; background: rgba(94,144,112,0.15);
+        border-radius: 50%; background: rgba(74, 150, 90, 0.24);
     }
     .hero-band::after {
         content: ""; position: absolute; bottom: -70px; left: 20%; width: 180px; height: 180px;
-        border-radius: 50%; background: rgba(59,130,246,0.10);
+        border-radius: 50%; background: rgba(115, 185, 125, 0.22);
     }
     .hero-inner { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; }
     .hero-title { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.01em; color: #14532d; }
@@ -85,7 +85,7 @@
     .crop-name-ic { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .crop-name-ic svg { width: 18px; height: 18px; }
     .crop-name { font-weight: 700; color: #1e293b; font-size: 14px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-    .crop-batch-chip { font-size: 11px; font-weight: 600; color: #4A7A54; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 12px; white-space: nowrap; }
+    .crop-batch-chip { font-size: 11px; font-weight: 600; color: #3f6b3e; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 12px; white-space: nowrap; }
     .crop-sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
     .stage-badge-mini { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
     .stage-badge-mini.confirm-badge { margin-left: 6px; }
@@ -173,7 +173,8 @@
     /* ── Empty State ── */
     .empty-wrap { padding: 32px 0; text-align: center; }
     .empty-card { background: #fff; border: 1px dashed #cbd5e1; border-radius: 20px; padding: 60px 32px; max-width: 520px; margin: 0 auto; box-shadow: 0 8px 32px -8px rgba(0,0,0,0.04); }
-    .empty-icon-wrap { width: 88px; height: 88px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #4A7A54; box-shadow: 0 8px 24px -4px rgba(74,122,84,0.15); }
+    .empty-icon-wrap { width: auto; height: auto; background: none; border-radius: 0; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #6f8f73; box-shadow: none; padding: 0; }
+    .empty-icon-wrap svg, .empty-icon-wrap i { width: 44px; height: 44px; }
     .empty-title { font-size: 18px; font-weight: 800; color: #1e293b; margin: 0 0 6px; }
     .empty-desc { color: #64748b; font-size: 13px; line-height: 1.6; max-width: 360px; margin: 0 auto 24px; }
     .empty-tips { display: flex; justify-content: center; gap: 24px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
@@ -307,7 +308,7 @@
             </div>
         </div>
         <button class="btn-hero" onclick="openAddModal()">
-            Add Crop Batch
+            Add Crop Planting
         </button>
     </div>
 </section>
@@ -315,16 +316,16 @@
 <!-- ── Stats ── -->
 <div class="stats-strip kpi-strip">
     <div class="stat-pill">
-        <div class="stat-icon" style="background: #dcfce7; color: #4A7A54;">
+        <div class="stat-icon" style="background: #e6f0e7; color: #4A7A54;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
         </div>
         <div class="stat-text">
-            <span class="stat-label">Active Batches</span>
+            <span class="stat-label">Active Plantings</span>
             <span class="stat-value">{{ $stats['active_count'] }}</span>
         </div>
     </div>
     <div class="stat-pill">
-        <div class="stat-icon" style="background: #dbeafe; color: #2563eb;">
+        <div class="stat-icon" style="background: #e6f0e7; color: #4A7A54;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
         </div>
         <div class="stat-text">
@@ -333,21 +334,27 @@
         </div>
     </div>
     <div class="stat-pill">
-        <div class="stat-icon" style="background: #fff2dd; color: #d97706;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        <div class="stat-icon" style="background: #e6f0e7; color: #4A7A54;">
+            <i data-lucide="group"></i>
         </div>
         <div class="stat-text">
-            <span class="stat-label">All Batches</span>
+            <span class="stat-label">All Plantings</span>
             <span class="stat-value">{{ $stats['total_count'] }}</span>
         </div>
     </div>
     <div class="stat-pill">
-        <div class="stat-icon" style="background: #fdfdde;">
-            <img src="{{ asset('images/peso-yellow.png') }}" alt="₱" style="width: 22px; height: 22px; object-fit: contain;">
+        <div class="stat-icon" style="background: #e6f0e7; color: #4A7A54;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
+                <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
+                <path d="m2 16 6 6"/>
+                <circle cx="17" cy="4" r="2"/>
+                <path d="M15.6 2.8a2 2 0 1 0 2.8 2.8"/>
+            </svg>
         </div>
         <div class="stat-text">
             <span class="stat-label">Estimated Cost</span>
-            <span class="stat-value">₱{{ number_format($stats['estimated_cost'], 0) }}</span>
+            <span class="stat-value"><span style="font-weight: 500; margin-right: 6px;">₱</span>{{ number_format($stats['estimated_cost'], 0) }}</span>
         </div>
     </div>
 </div>
@@ -436,9 +443,6 @@
             <button class="plot-map-btn" title="Toggle Legend" onclick="togglePlotLegend()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             </button>
-            <button class="plot-map-btn" title="Full View" onclick="openFarmFs()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-            </button>
         </div>
 
         <div class="plot-tooltip" id="plotTooltip"></div>
@@ -508,7 +512,7 @@
 @if($crops->count() > 0)
 <div class="section-head">
     <h2 class="section-title">
-        Crop Batches
+        Crop Plantings
         <span class="batch-count" id="tbCount">{{ $crops->count() }}</span>
     </h2>
 </div>
@@ -519,7 +523,7 @@
     count="tbCount"
     per-page="10"
     noun="crops"
-    search-placeholder="Search crop, batch, category…"
+    search-placeholder="Search crop, planting, category…"
     :filters="[
         ['key' => 'status', 'label' => 'All Statuses', 'options' => [['active', 'Active'], ['harvested', 'Harvested']]],
         ['key' => 'crop', 'label' => 'All Crops', 'options' => $crops->groupBy(fn($c) => $c->crop->name)->keys()->map(fn($n) => [strtolower($n), $n])->values()->all()],
@@ -548,7 +552,7 @@
     <table class="crop-table data-table" id="cropsTable">
         <thead>
             <tr>
-                <th>Crop Batch</th>
+                <th>Crop Planting</th>
                 <th>Stage</th>
                 <th>Land Area</th>
                 <th>Season</th>
@@ -640,12 +644,12 @@
                                 </button>
                             @endif
                         @else
-                            <button class="row-btn disabled" disabled title="Updates are not applicable to completed batches.">
+                            <button class="row-btn disabled" disabled title="Updates are not applicable to completed plantings.">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                                 Update
                             </button>
                         @endif
-                        <button class="row-btn red" title="Remove this crop batch" onclick="event.stopPropagation(); deleteCrop({{ $fc->id }})">
+                        <button class="row-btn red" title="Remove this crop planting" onclick="event.stopPropagation(); deleteCrop({{ $fc->id }})">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             Remove
                         </button>
@@ -661,20 +665,17 @@
 <div class="empty-wrap">
     <div class="empty-card">
         <div class="empty-icon-wrap">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/>
-            </svg>
+            <i data-lucide="grid-2x2-x"></i>
         </div>
-        <h3 class="empty-title">No Crop Batches Yet</h3>
-        <p class="empty-desc">Start by logging your first crop batch to track planting, monitor growth stages, and plan harvests for the season.</p>
+        <h3 class="empty-title">No Crop Plantings Yet</h3>
+        <p class="empty-desc">Start by logging your first crop planting to track growth stages and plan harvests for the season.</p>
         <button class="btn-hero" onclick="openAddModal()" style="margin: 0 auto;">
-            Add First Crop Batch
+            Add First Crop Planting
         </button>
         <div class="empty-tips">
+            <span class="empty-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Add Crop Plantings</span>
             <span class="empty-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Track Growth Stages</span>
-            <span class="empty-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Estimate Costs</span>
-            <span class="empty-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Plan Harvests</span>
-        </div>
+            <span class="empty-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Plan Harvests</span>        </div>
     </div>
 </div>
 @endif
@@ -799,7 +800,7 @@
             @csrf
             @method('PUT')
             <div class="modal-body">
-                <p style="font-size: 13px; color: #64748b; margin: 0 0 16px; line-height: 1.5;">This is used to pre-fill the land area when adding new crop batches. You can still change it per batch.</p>
+                <p style="font-size: 13px; color: #64748b; margin: 0 0 16px; line-height: 1.5;">This is used to pre-fill the land area when adding new crop plantings. You can still change it per planting.</p>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Land Area *</label>
@@ -876,7 +877,7 @@
     window.deleteCrop = function(id) {
         if (!window.AquiNotice) { return; }
         AquiNotice.confirm({
-            message: 'Remove this crop batch? This cannot be undone.',
+            message: 'Remove this crop planting? This cannot be undone.',
             danger: true,
             confirmLabel: 'Remove'
         }).then(function (ok) {

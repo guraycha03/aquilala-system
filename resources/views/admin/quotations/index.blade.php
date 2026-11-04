@@ -76,7 +76,7 @@
   }
   .scroll-btn:hover:not(:disabled) { background: #f1f5f9; color: #143d23; }
   .scroll-btn:disabled { opacity: 0.35; cursor: default; }
-  .scroll-ctl { display: flex; align-items: center; gap: 8px; }
+  .scroll-ctl { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; white-space: nowrap; }
 
   .btn-ghost {
     display: inline-flex; align-items: center; gap: 6px;
@@ -116,35 +116,31 @@
       <div class="stat-value">{{ $metrics['total'] }}</div>
       <div class="stat-label">Total Estimates</div>
     </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#143d23" stroke-width="1.5" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
   </div>
   <div class="stat-card">
     <div>
-      <div class="stat-value">{{ $metrics['computed'] }}</div>
-      <div class="stat-label">Fresh Estimates</div>
+      <div class="stat-value">{{ $metrics['this_week'] }}</div>
+      <div class="stat-label">Estimates This Week</div>
     </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#0284c7" stroke-width="1.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
   </div>
   <div class="stat-card">
     <div>
       <div class="stat-value">{{ $metrics['viewed'] }}</div>
       <div class="stat-label">Viewed by Stores</div>
     </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#7c3aed" stroke-width="1.5" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
   </div>
   <div class="stat-card">
     <div>
       <div class="stat-value">{{ $metrics['expired'] }}</div>
       <div class="stat-label">Expired</div>
     </div>
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="#94a3b8" stroke-width="1.5" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
   </div>
 </div>
 
 <!-- Product & Crop Demand (de-identified — products/crops only) -->
 <div class="data-table-container" style="margin-bottom: 24px;">
-  <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-    <div>
+  <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: nowrap;">
+    <div style="min-width: 0; flex: 1 1 auto;">
       <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Product Demand</h2>
       <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Top {{ count($productDemand) }} most-quoted products across all estimates, with their crop types.</p>
     </div>

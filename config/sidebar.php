@@ -62,9 +62,9 @@ return [
         'matcha' => [
             'name' => 'Pistachio',
             'desc' => 'Soft light green',
-            'chip' => ['bg' => '#f1efe2', 'fg' => '#4c5c30'],
+            'chip' => ['bg' => '#e7e5d8', 'fg' => '#4c5c30'],
             'colors' => [
-                'bg'                => '#f1efe2',
+                'bg'                => '#e7e5d8',
                 'deep'              => '#e3e0cc',
                 'fg'                => '#33421d',
                 'nav'               => '#4c5c30',

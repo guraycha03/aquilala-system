@@ -1251,9 +1251,11 @@ FORMATTING RULES:
         ['quotations' => $allQuotations, 'product' => $allProducts, 'crop' => $cropDemand] = $this->aggregateDemand();
 
         // Global metrics (expired is derived from valid_until, not the stored status)
+        $weekAgo = now()->subDays(7);
         $metrics = [
             'total' => $allQuotations->count(),
             'computed' => $allQuotations->filter(fn ($q) => ! $q->is_expired && $q->status === Quotation::STATUS_COMPUTED)->count(),
+            'this_week' => $allQuotations->filter(fn ($q) => $q->created_at && $q->created_at->greaterThanOrEqualTo($weekAgo))->count(),
             'viewed' => $allQuotations->filter(fn ($q) => ! $q->is_expired && $q->status === Quotation::STATUS_VIEWED)->count(),
             'expired' => $allQuotations->filter(fn ($q) => $q->is_expired)->count(),
             'totalValue' => $allQuotations->sum('estimated_total_cost'),

@@ -17,6 +17,16 @@
     .header-row h1 { font-size: 24px; font-weight: 700; color: #1e293b; letter-spacing: 0.02em; margin: 0 0 4px 0; }
     .header-row p { font-size: 13px; color: #64748b; margin: 0; max-width: 640px; line-height: 1.55; }
     .header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    @media (max-width: 640px) {
+      .header-row { align-items: stretch; }
+      .header-actions { flex-wrap: nowrap; gap: 6px; width: 100%; }
+      .header-actions .btn-users { flex: 1 1 0; min-width: 0; justify-content: center; padding: 8px 3px; font-size: 10px; gap: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; }
+      .header-actions .btn-users svg { width: 11px; height: 11px; flex-shrink: 0; }
+    }
+    @media (max-width: 374px) {
+      .header-actions { gap: 4px; }
+      .header-actions .btn-users svg { display: none; }
+    }
     .btn-users {
       display: inline-flex; align-items: center; gap: 8px; text-decoration: none; cursor: pointer;
       font-family: inherit; letter-spacing: 0.01em; line-height: 1;
