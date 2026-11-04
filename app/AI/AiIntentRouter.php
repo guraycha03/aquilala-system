@@ -133,6 +133,7 @@ class AiIntentRouter
         '/\bwhat(?:[\'’]?s|\s+is|\s+are)\s+(good|the\s+best|better)\s+to\s+(plant|grow|sow|raise)\b/i',
         '/\bwhat(?:[\'’]?s|\s+is|\s+are)\s+good\s+(to\s+plant|to\s+grow|to\s+sow)\b/i',
         '/\bwhat\s+(is|are)\s+(a\s+)?good\s+(crop|fruit|vegetable|plant|seed)s?\s+(to|for)\s+(plant|my|this)\b/i',
+        '/\b(ano|anu)\b[^.?!]{0,40}\b(itanim|tanim|pwede|maaari)\b/i',
     ];
 
     /**
@@ -169,6 +170,11 @@ class AiIntentRouter
         '/\byour\s+(capabilities|features|limits|limitations)\b/i',
         '/\bhelp\s*(me)?\s*(use|out)\b/i',
         '/\bthanks|thank\s+you\b/i',
+        '/\bmay\s+tanong\b/i',
+        '/\bhave\s+(a\s+)?question\b/i',
+        '/\b(are\s+you|is\s+this)\s+(working|available|online|okay|ok|ai|an?\s+ai|an?\s+assistant)\b/i',
+        '/\bai\s+ka\b/i',
+        '/\bikaw\s+ba\b/i',
     ];
 
     /**
@@ -495,7 +501,7 @@ class AiIntentRouter
             return true;
         }
 
-        return preg_match('/\b(recommend|suggest|best|which|what|should\s+i|need|want|appropriate|suitable|right)\b/i', $text) === 1;
+        return preg_match('/\b(recommend(?:ation)?s?|suggest(?:ion)?s?|best|which|what|should\s+i|need|want|appropriate|suitable|right)\b/i', $text) === 1;
     }
 
     /**
@@ -725,7 +731,7 @@ class AiIntentRouter
 
     private function mentionsCultivation(string $text): bool
     {
-        return preg_match('/\b(how\s+(do|to|can)\s+(i|we)?\s*(plant|grow|raise|cultivate|sow|transplant)|planting|when\s+(do|to|should)\s+(i|we)?\s*(plant|sow)|land\s+prep|spacing|seed\s+rate|transplant|harvest\s+time|maturity)\b/i', $text) === 1;
+        return preg_match('/\b(how\s+(do|to|can)\s+(i|we)?\s*(plant|grow|raise|cultivate|sow|transplant)|planting|when\s+(do|to|should)\s+(i|we)?\s*(plant|sow)|land\s+prep|spacing|seed\s+rate|transplant|harvest\s+time|maturity|magtanim|pagtanim|tanim)\b/i', $text) === 1;
     }
 
     private function mentionsFarming(string $text): bool

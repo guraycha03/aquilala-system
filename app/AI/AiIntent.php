@@ -135,10 +135,8 @@ final class AiIntent
             self::CROP_RECOMMENDATION,
             self::SEASONAL_RECOMMENDATION,
             self::FARMING_ADVICE,
-            self::GENERAL_FARMING,
             self::FERTILIZER_ADVICE,
             self::GREETING,
-            self::SYSTEM_HELP,
             self::QUOTATION,
         ], true);
     }

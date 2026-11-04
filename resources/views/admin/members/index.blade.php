@@ -260,7 +260,7 @@
                       @endif
                     </td>
                     <td>
-                      @if($m->user_id !== null)
+                      @if($m->user !== null)
                         <span class="role-badge" style="background:#eef3ef;color:#3f7a4f;" title="{{ $m->user->name }} — {{ $m->user->email }}">
                           {{ $accountLabel }}
                         </span>

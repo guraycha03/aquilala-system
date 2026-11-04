@@ -92,6 +92,9 @@
     cursor: pointer;
   }
 
+  .cf-search-row { display: flex; align-items: flex-end; gap: 8px; flex: 1 1 100%; min-width: 0; }
+  .cf-search-row .cf-grow { margin-bottom: 0; min-width: 0; flex: 1 1 auto; }
+  .cf-search-row .btn-filter { flex: 0 0 auto; align-self: flex-end; }
   .cf-search { position: relative; display: flex; align-items: center; }
   .cf-search > svg {
     position: absolute; left: 11px;
@@ -172,6 +175,8 @@
     .cf-bar { padding: 12px; gap: 8px; }
     .cf-field { flex: 1 1 calc(50% - 4px); }
     .cf-grow, .cf-reset { flex: 1 1 100%; }
+    .cf-search-row { width: 100%; }
+    .cf-search-row .cf-grow { flex: 1 1 auto; }
     .cf-price .cf-input { width: 100%; }
     .cf-price { width: 100%; }
   }
@@ -181,23 +186,23 @@
      data-cf-sync="{{ $syncUrl ? '1' : '0' }}" data-cf-noun="{{ $noun }}"
      data-fc data-fc-open-when="category,season,stock,min,max,sort">
 
-  <div class="cf-field cf-grow">
-    <label for="{{ $cid }}-search">Search</label>
-    <div class="cf-search">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="search" id="{{ $cid }}-search" class="cf-input" data-cf-search-input
-             placeholder="{{ $searchPlaceholder }}" autocomplete="off">
-      <button type="button" class="cf-search-clear" data-cf-search-clear aria-label="Clear search">&times;</button>
+  <div class="cf-search-row">
+    <div class="cf-field cf-grow">
+      <label for="{{ $cid }}-search">Search</label>
+      <div class="cf-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="{{ $cid }}-search" class="cf-input" data-cf-search-input
+               placeholder="{{ $searchPlaceholder }}" autocomplete="off">
+        <button type="button" class="cf-search-clear" data-cf-search-clear aria-label="Clear search">&times;</button>
+      </div>
     </div>
-  </div>
 
-  {{-- One funnel button (shared .btn-filter) hides every filter choice until
-       the user asks for them — same pattern on all list pages. --}}
-  <button type="button" class="btn-filter" data-fc-toggle aria-expanded="false"
-          aria-label="Show filter options" title="Filters &amp; sort">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-    <span class="btn-filter-dot" data-fc-dot hidden></span>
-  </button>
+    <button type="button" class="btn-filter" data-fc-toggle aria-expanded="false"
+            aria-label="Show filter options" title="Filters &amp; sort">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      <span class="btn-filter-dot" data-fc-dot hidden></span>
+    </button>
+  </div>
 
   <div class="filter-panel" data-fc-panel hidden>
 

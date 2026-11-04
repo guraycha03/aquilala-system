@@ -1276,8 +1276,7 @@ class AquilalaAssistant
 
     private function unsupportedAnswer(): string
     {
-        return "I can’t answer that. I focus on Aquilala farming and this system — including product prices, fertilizer advice, crop guidance, cost estimates, page links, and weather updates. I can’t help with that one. "
-            . 'Try asking what products you need for a crop, what a cost estimate came to, or ask me to open a page for you.';
+        return "The AI assistant is temporarily unavailable. Please try again in a moment.";
     }
 
     /**

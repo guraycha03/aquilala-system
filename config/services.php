@@ -79,7 +79,7 @@ return [
     'openrouter' => [
         'key' => env('OPENROUTER_API_KEY'),
         'model' => env('OPENROUTER_MODEL', 'openai/gpt-oss-20b'),
-        'url' => 'https://openrouter.ai/api/v1/chat/completions',
+        'url' => env('OPENROUTER_URL', 'https://openrouter.ai/api/v1/chat/completions'),
     ],
 
     /*
