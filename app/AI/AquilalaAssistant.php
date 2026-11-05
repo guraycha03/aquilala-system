@@ -49,13 +49,14 @@ class AquilalaAssistant
         '/\btrending\b/',
         '/\bin\s+demand\b/',
         '/\bdemand\s+trends?\b/',
-        '/\bmost\s+(?:quoted|demanded|asked\s+for|requested)\b/',
+        '/\bmost\s+(?:quoted|demanded|asked\s+for|requested|sell(?:ing)?)\b/',
         '/\bwhat\s+are\s+farmers\s+(?:asking|quoting|requesting)\b/',
         '/\bre-?stock(?:ing)?\b/',
         '/\bwhat\s+should\s+i\s+(?:stock|order|carry|keep)\b/',
         '/\bquotation\s+trends?\b/',
         '/\bmy\s+(?:quotation|quote|quotations|quotes)\s+trends?\b/',
         '/\bwhat\s+(?:is|are)\s+(?:hot|selling)\b/',
+        '/\b(?:which|what)\s+products?\s+(?:sell|sold)\s+most\b/',
     ];
 
     /**
@@ -126,6 +127,41 @@ class AquilalaAssistant
         $context = AiConversationContext::fromArray($conversationContext);
 
         if ($user?->role === 'store_owner'
+            && preg_match('/\b(low stock|low-stock|reorder|out of stock|list.*low|low.*inventory)\b/i', $message) === 1) {
+            $lowStock = \App\Models\Product::query()
+                ->where('user_id', (int) $user->id)
+                ->where('status', 'active')
+                ->whereRaw('reorder_threshold IS NOT NULL AND stock_quantity < reorder_threshold')
+                ->orderBy('stock_quantity')
+                ->limit(8)
+                ->get();
+
+            if ($lowStock->isEmpty()) {
+                $reply = 'Wala pang **low‑stock item** sa inventory niyo ngayon. Makikita niyo ang buong stock sa [Inventory]( '
+                    . route('store.inventory.index') . ' ).';
+            } else {
+                $lines = ['Mga produkto na **low stock** sa inyong tindahan:'];
+                foreach ($lowStock as $product) {
+                    $lines[] = '- **' . $product->name . '** — stock: ' . (int) $product->stock_quantity
+                        . ', reorder level: ' . (int) $product->reorder_threshold;
+                }
+                $lines[] = '';
+                $lines[] = 'Buksa n' . 'yo lang ang [Inventory](' . route('store.inventory.index') . ') para detalye.';
+                $reply = implode("\n", $lines);
+            }
+
+            return [
+                'reply'       => $reply,
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
+        if ($user?->role === 'store_owner'
             && preg_match('/\b(not a farmer|not farmer|store owner|store-owner)\b/i', $message) === 1) {
             return [
                 'reply'       => 'Noted — I will treat you as a store owner from here. Ask me about your product listings, inventory, quotation demand trends, top products, or prices, and I will help with those.',
@@ -160,7 +196,11 @@ class AquilalaAssistant
             ];
         }
 
-        if (($pageReply = $this->pageLinkReply($message, (string) ($user?->role ?? ''))) !== null) {
+        $isStoreDemandQuestion = $user?->role === 'store_owner'
+            && preg_match('/\b(sell|sold|restock|demand|top products?|trend|most)\b/i', $message) === 1;
+
+        if (! $isStoreDemandQuestion
+            && ($pageReply = $this->pageLinkReply($message, (string) ($user?->role ?? ''))) !== null) {
             return [
                 'reply'       => $pageReply['reply'],
                 'type'        => 'answer',
@@ -286,6 +326,7 @@ class AquilalaAssistant
         $skipModel = AiIntent::isDeterministicOnly($intent)
             || $contextData['quotation'] === null && $intent === AiIntent::QUOTATION
             || $contextData['missing'] !== []
+            || (($user?->role === 'store_owner') && in_array($intent, [AiIntent::GENERAL_FARMING, AiIntent::FARMING_ADVICE], true))
             || ($contextData['products'] === [] && $this->hasNoNarrative($contextData)
                 && ! ($intent === AiIntent::UNSUPPORTED && $this->llm->available())
                 && $intent !== AiIntent::GENERAL_FARMING
@@ -601,7 +642,7 @@ class AquilalaAssistant
             AiIntent::FARMING_ADVICE => $this->farmingAdviceAnswer($contextData, $crop, $missing, $routing),
             AiIntent::GENERAL_FARMING => $this->generalAnswer($contextData, (string) ($user?->role ?? '')),
             AiIntent::SYSTEM_HELP => $this->helpAnswer($contextData),
-            AiIntent::UNSUPPORTED => $this->unsupportedAnswer(),
+            AiIntent::UNSUPPORTED => $this->unsupportedAnswer($contextData['facts']['role'] ?? null),
             AiIntent::CLARIFICATION => $this->clarificationAnswer($missing, $routing),
             default => $this->clarificationAnswer($missing, $routing),
         };
@@ -1316,8 +1357,12 @@ class AquilalaAssistant
         return implode("\n", $lines);
     }
 
-    private function unsupportedAnswer(): string
+    private function unsupportedAnswer(?string $role = null): string
     {
+        if ($role === 'store_owner') {
+            return "Para sa inyong tindahan, masasagot ko sa inventory, produkto, demand trends, top products, at prices. Tanong niyo po tungkol doon.";
+        }
+
         return "Tungkol sa pagsasaka at produkto ng Aquilala ang masasagot ko. Tanong niyo po tungkol sa tanim, presyo, o gastusin sa bukid at tutulungan ko po kayo.";
     }
 
@@ -1413,10 +1458,9 @@ class AquilalaAssistant
             || str_contains($lower, 'show')
             || str_contains($lower, 'list')
             || str_contains($lower, 'tell me')
-            || str_contains($lower, 'inventory')
-            || str_contains($lower, 'product')
-            || str_contains($lower, 'selling')
-            || str_contains($lower, 'sell');
+            || str_contains($lower, 'add')
+            || str_contains($lower, 'create')
+            || str_contains($lower, 'manage');
 
         if (! $hasTrigger) {
             return null;
