@@ -449,7 +449,7 @@
                 chatHistory.push({ role: 'assistant', content: data.reply });
                 const isOfflineReply = data.intent === 'UNSUPPORTED' || /temporarily unavailable|couldn't answer that just now|offline|not available/i.test(String(data.reply || ''));
                 if (isOfflineReply) {
-                    addOfflineMessage(data.reply);
+                    addMessage('assistant', data.reply);
                 } else {
                     addMessage('assistant', data.reply);
                 }

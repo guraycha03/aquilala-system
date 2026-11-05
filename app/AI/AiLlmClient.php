@@ -104,6 +104,7 @@ class AiLlmClient
                         'messages' => $messages,
                         'temperature' => 0.2,
                         'max_tokens' => $maxTokens,
+                        'reasoning_effort' => 'low',
                     ]
                 );
             }

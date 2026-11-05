@@ -128,13 +128,14 @@ final class AiIntent
     {
         return in_array($intent, [
             self::CLARIFICATION,
-            self::UNSUPPORTED,
+            // UNSUPPORTED and FARMING_ADVICE are left callable so the model can
+            // phrase the refusal or the guidance conversationally instead of
+            // handing over a fixed sentence.
             self::CROP_ADVICE,
             self::CROP_DISCOVERY,
             self::CROP_SEARCH,
             self::CROP_RECOMMENDATION,
             self::SEASONAL_RECOMMENDATION,
-            self::FARMING_ADVICE,
             self::FERTILIZER_ADVICE,
             self::GREETING,
             self::QUOTATION,

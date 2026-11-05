@@ -167,13 +167,17 @@ class ProductSearchService
      *
      * @return Collection<int, Product>
      */
-    public function forCropAndSeason(string $crop, string $season, ?User $user = null): Collection
+    public function forCropAndSeason(string $crop, string $season, ?User $user = null, ?float $maxPrice = null): Collection
     {
         $products = $this->formulaQuery($user)
             ->whereRaw('LOWER(decision_formulas.crop_type) = ?', [mb_strtolower(trim($crop))])
             ->where('decision_formulas.season', $season)
             ->distinct()
             ->get();
+
+        if ($maxPrice !== null) {
+            $products = $products->filter(static fn ($product) => (float) $product->price <= $maxPrice)->values();
+        }
 
         return $this->spreadAcrossStores($products, self::MAX_RESULTS);
     }
@@ -187,12 +191,16 @@ class ProductSearchService
      *
      * @return Collection<int, Product>
      */
-    public function forCrop(string $crop, ?User $user = null): Collection
+    public function forCrop(string $crop, ?User $user = null, ?float $maxPrice = null): Collection
     {
         $products = $this->formulaQuery($user)
             ->whereRaw('LOWER(decision_formulas.crop_type) = ?', [mb_strtolower(trim($crop))])
             ->distinct()
             ->get();
+
+        if ($maxPrice !== null) {
+            $products = $products->filter(static fn ($product) => (float) $product->price <= $maxPrice)->values();
+        }
 
         return $this->spreadAcrossStores($products, self::MAX_RESULTS);
     }

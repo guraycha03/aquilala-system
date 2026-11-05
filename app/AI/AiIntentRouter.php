@@ -238,7 +238,24 @@ class AiIntentRouter
             // The month a seasonal question is about, resolved against the
             // application's own Bicol climate calendar.
             'month'          => $this->detectMonthWindow($normalized),
+            'budget'         => $this->detectBudget($text),
         ];
+
+        // A follow-up that only names the crop keeps the earlier product
+        // request alive, including the price limit the farmer already stated.
+        if (($slots['budget'] ?? null) === null
+            && $context->lastIntent === AiIntent::PRODUCT_RECOMMENDATION) {
+            foreach (array_reverse($history) as $turn) {
+                if (($turn['role'] ?? null) !== 'user') {
+                    continue;
+                }
+                $parsed = $this->detectBudget((string) ($turn['content'] ?? ''));
+                if ($parsed !== null) {
+                    $slots['budget'] = $parsed;
+                    break;
+                }
+            }
+        }
 
         // What this message said for itself, before any inheritance. A slot the
         // farmer did not state must not be treated as if they had: an area
@@ -312,6 +329,13 @@ class AiIntentRouter
     {
         $detected = $detected + ['crop' => null, 'season' => null, 'area' => null];
 
+        // A short follow-up that only names the crop keeps the previous product
+        // request alive, so the farmer does not have to repeat the budget.
+        if ($context->lastIntent === AiIntent::PRODUCT_RECOMMENDATION
+            && $this->detectCrop($text) !== null) {
+            return AiIntent::PRODUCT_RECOMMENDATION;
+        }
+
         // Check for empty utterances first - these are not greetings, just
         // the farmer pausing mid-thought or sending an empty message.
         if ($this->isEmptyUtterance($text)) {
@@ -372,6 +396,10 @@ class AiIntentRouter
             return AiIntent::PRODUCT_SEARCH;
         }
 
+        if ($this->mentionsRecommendation($text)) {
+            return AiIntent::PRODUCT_RECOMMENDATION;
+        }
+
         if ($this->mentionsCost($text)) {
             // A price asked for by name is a fact about one catalogue row, not
             // a calculation. Treating it as a cost estimate is what produced
@@ -389,10 +417,6 @@ class AiIntentRouter
             if ($slots['crop'] !== null || $slots['area'] !== null) {
                 return AiIntent::COST_ESTIMATION;
             }
-        }
-
-        if ($this->mentionsRecommendation($text)) {
-            return AiIntent::PRODUCT_RECOMMENDATION;
         }
 
         // A named product is a catalogue lookup before it is a definition.
@@ -461,6 +485,14 @@ class AiIntentRouter
             if (preg_match($pattern, $text) === 1) {
                 return AiIntent::GREETING;
             }
+        }
+
+        if (preg_match('/\b(gulay|vegetable|veggies|mabilis|fast\s*growing|tumubo|quick\s*harvest)\b/iu', $text) === 1) {
+            return AiIntent::GENERAL_FARMING;
+        }
+
+        if (preg_match('/\b(tagalog|language|nakaintende|intindi|understand)\b/iu', $text) === 1) {
+            return AiIntent::GENERAL_FARMING;
         }
 
         return AiIntent::UNSUPPORTED;
@@ -852,6 +884,26 @@ class AiIntentRouter
         return null;
     }
 
+    private function detectBudget(string $text): ?float
+    {
+        $text = mb_strtolower($text);
+        $cue = (bool) preg_match('/\b(under|below|less\s+than|at\s+most|no\s+more\s+than|not\s+(?:cost|spend)\s+more\s+than|within|max(?:imum)?|budget)\b/iu', $text);
+
+        if (preg_match('/(?:under|below|less\s+than|at\s+most|no\s+more\s+than|not\s+(?:cost|spend)\s+more\s+than|within|max(?:imum)?|budget)[^0-9]{0,12}(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/iu', $text, $m) === 1) {
+            return (float) str_replace(',', '', $m[1]);
+        }
+
+        if (preg_match('/(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s*(?:peso|pesos|php|p|₱)/iu', $text, $m) === 1) {
+            return (float) str_replace(',', '', $m[1]);
+        }
+
+        if ($cue && preg_match('/(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/', $text, $m) === 1) {
+            return (float) str_replace(',', '', $m[1]);
+        }
+
+        return null;
+    }
+
     private function detectSoil(string $text): ?string
     {
         return match (true) {
@@ -950,6 +1002,10 @@ class AiIntentRouter
             'saka'  => 'Rice',
             'mais'  => 'Corn',
             'maize' => 'Corn',
+            'talong' => 'Eggplant',
+            'kamatis' => 'Tomato',
+            'pipino' => 'Cucumber',
+            'repolyo' => 'Cabbage',
         ];
 
         foreach ($aliases as $alias => $canonical) {

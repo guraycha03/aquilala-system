@@ -90,6 +90,7 @@ class ProductRowAiFixer
                     ],
                     'temperature' => 0,
                     'max_tokens' => 4000,
+                    'reasoning_effort' => 'low',
                     'response_format' => ['type' => 'json_object'],
                 ]);
         } catch (ConnectionException $e) {

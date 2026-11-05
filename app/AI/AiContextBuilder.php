@@ -110,7 +110,11 @@ class AiContextBuilder
 
             case AiIntent::PRODUCT_RECOMMENDATION:
             case AiIntent::FERTILIZER_ADVICE:
-                [$retrieved, $recommendation, $missing] = $this->retrieveForRecommendation($slots, $user);
+                [$retrieved, $recommendation, $missing] = $this->retrieveForRecommendation($slots, $user, (float) ($slots['budget'] ?? 0) ?: null);
+
+                if (($slots['budget'] ?? null) !== null) {
+                    $facts['budget_limit'] = (float) $slots['budget'];
+                }
                 break;
 
             case AiIntent::COST_ESTIMATION:
@@ -522,10 +526,11 @@ class AiContextBuilder
      * @param  array<string, mixed>  $slots
      * @return array{0: Collection<int, \App\Models\Product>, 1: array<string, mixed>|null, 2: array<int, string>}
      */
-    private function retrieveForRecommendation(array $slots, ?User $user): array
+    private function retrieveForRecommendation(array $slots, ?User $user, ?float $maxPrice = null): array
     {
         $crop = $slots['crop'] ?? null;
         $season = $slots['season'] ?? null;
+        $budget = $slots['budget'] ?? $maxPrice;
 
         if ($crop === null) {
             // No crop named. Refusing here is the whole point — "give me the
@@ -534,8 +539,8 @@ class AiContextBuilder
         }
 
         $products = $season !== null
-            ? $this->products->forCropAndSeason($crop, $season, $user)
-            : $this->products->forCrop($crop, $user);
+            ? $this->products->forCropAndSeason($crop, $season, $user, $budget)
+            : $this->products->forCrop($crop, $user, $budget);
 
         $missing = [];
 

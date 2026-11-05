@@ -258,7 +258,10 @@ class AquilalaAssistant
         $skipModel = AiIntent::isDeterministicOnly($intent)
             || $contextData['quotation'] === null && $intent === AiIntent::QUOTATION
             || $contextData['missing'] !== []
-            || ($contextData['products'] === [] && $this->hasNoNarrative($contextData));
+            || ($contextData['products'] === [] && $this->hasNoNarrative($contextData)
+                && ! ($intent === AiIntent::UNSUPPORTED && $this->llm->available())
+                && $intent !== AiIntent::GENERAL_FARMING
+                && $intent !== AiIntent::FARMING_ADVICE);
 
         $violations = [];
         $source = 'fallback';
@@ -401,6 +404,10 @@ class AquilalaAssistant
             $source = 'ai';
 
             if ($answer !== $fallback && $answer !== '') {
+                if (in_array($intent, [AiIntent::GENERAL_FARMING, AiIntent::FARMING_ADVICE, AiIntent::UNSUPPORTED], true)) {
+                    break;
+                }
+
                 $ai2 = $this->validatorAi->validate(
                     $message,
                     $user?->role ?? 'guest',
@@ -674,7 +681,8 @@ class AquilalaAssistant
                     . "backyard-specific rules — the association's formulas are written for field production, so I "
                     . "will not present them as if they were tuned for a backyard plot. Are you looking for "
                     . '**fruits**, **vegetables**, or **rice or corn**?'
-                : 'Are you after a **fruit crop**, a **vegetable**, or a **rice or corn** planting? '
+                : $this->seasonalCropChoicePrefix($contextData)
+                    . 'Are you after a **fruit crop**, a **vegetable**, or a **rice or corn** planting? '
                     . 'The answer depends on which, and I would rather ask than guess.';
 
             return $answer;
@@ -845,12 +853,12 @@ class AquilalaAssistant
 
         $crops = $contextData['facts']['crops'] ?? [];
 
-        $lines = ['### What Aquilala can tell you about growing things', ''];
+        $lines = ['You are keen to get planting — that is a great place to start.', ''];
 
         if ($crops !== []) {
-            $lines[] = 'Name the crop you are growing and I can give you its Aquilala record, plus the general planting process for it.';
+            $lines[] = 'Tell me which crop you have in mind and I can give you its Aquilala record, plus the general planting process for it.';
             $lines[] = '';
-            $lines[] = 'Crops in the directory: ' . implode(', ', array_slice(array_map(
+            $lines[] = 'Mga tanim na pwede: ' . implode(', ', array_slice(array_map(
                 static fn (array $entry) => (string) $entry['name'],
                 $crops
             ), 0, 15)) . '.';
@@ -859,7 +867,7 @@ class AquilalaAssistant
         }
 
         $lines[] = '';
-        $lines[] = 'Name the crop you are growing and I will give you its Aquilala record and the general planting process for it.';
+        $lines[] = 'What crop are you thinking of?';
 
         return implode("\n", $lines);
     }
@@ -1143,8 +1151,8 @@ class AquilalaAssistant
         $facts = $this->knowledge->factsFor($crop);
 
         if ($facts === null) {
-            return "I don't have an Aquilala reference for **{$crop}**. "
-                . 'I can answer from the approved Bulan, Sorsogon crop catalogue, so tell me which crop you mean.';
+            return "Wala po akong tala para sa **{$crop}** sa Aquilala, ngunit pwede kitang tulungan batay sa "
+                . 'karaniwang kaalaman sa pagsasaka. Sabihin niyo po kung anong tanim talaga ang ibig niyong alamin.';
         }
 
         $lines = ['### ' . $facts['crop'] . ' in Bulan, Sorsogon', ''];
@@ -1276,7 +1284,7 @@ class AquilalaAssistant
 
     private function unsupportedAnswer(): string
     {
-        return "The AI assistant is temporarily unavailable. Please try again in a moment.";
+        return "Tungkol sa pagsasaka at produkto ng Aquilala ang masasagot ko. Tanong niyo po tungkol sa tanim, presyo, o gastusin sa bukid at tutulungan ko po kayo.";
     }
 
     /**
@@ -1590,7 +1598,7 @@ class AquilalaAssistant
         }
 
         return preg_match(
-            '/\b(good\s+(morning|afternoon|evening)|hello|hi|hey|greetings|morning|afternoon|evening|how\s+are\s+you)\b/iu',
+            '/\b(good\s+(morning|afternoon|evening|eve\w*)|hello|hi|hey|greetings|morning|afternoon|evening|eve\w*|how\s+are\s+you|kumusta)\b/iu',
             $normalized
         ) === 1;
     }
@@ -1623,9 +1631,19 @@ class AquilalaAssistant
         $normalized = trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message));
 
         return trim($normalized) !== '' && (
-            preg_match('/\b(how\s+(?:do|can|to)\s+(?:i|we|you)?\s*(?:use|navigate|find|open|get\s+started)|what\s+(?:can|does)\s+(?:this|you|ai)?\s*(?:do|help)|how\s+does\s+(?:this|it)\s+work|use\s+this|this\s+system)\b/iu', $normalized) === 1
+            preg_match('/\b(how\s+(?:do|can|to)\s+(?:i|we|you)?\s*(?:use|navigate|find|open|get\s+started)|what\s+(?:can|does)\s+(?:this|you|ai)?\s*(?:do|help)|how\s+does\s+(?:this|it)\s+work|use\s+this|this\s+system|are\s+you\s+(?:working|there|online|ai)|ai\s+ka\s+ba|is\s+this\s+working)\b/iu', $normalized) === 1
             || trim($normalized) === 'how do i use the this'
         );
+    }
+
+    private function seasonalCropChoicePrefix(array $contextData): string
+    {
+        $label = (string) (($contextData['facts']['season_profile']['label'] ?? null)
+            ?: app(\App\Services\FarmingKnowledgeService::class)->seasonProfile()['label'] ?? '');
+
+        return $label !== ''
+            ? 'This month in Bulan it is **' . $label . '**, which suits several crops. '
+            : '';
     }
 
     private function trustedCropNames(array $contextData): array

@@ -72,6 +72,7 @@ class AiResponseValidatorAi
                     'messages'    => $this->messages($userMessage, $userRole, $ai1Answer, $context),
                     'temperature' => 0.1,
                     'max_tokens'  => 600,
+                    'reasoning_effort' => 'low',
                 ]);
         } catch (ConnectionException $e) {
             Log::warning('AI2 validator could not reach the model provider.', [
