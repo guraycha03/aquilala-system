@@ -1375,7 +1375,14 @@ class AquilalaAssistant
             || str_contains($lower, 'paano')
             || str_contains($lower, 'makikita')
             || str_contains($lower, 'saan')
-            || str_contains($lower, 'punntahan');
+            || str_contains($lower, 'punntahan')
+            || str_contains($lower, 'show')
+            || str_contains($lower, 'list')
+            || str_contains($lower, 'tell me')
+            || str_contains($lower, 'inventory')
+            || str_contains($lower, 'product')
+            || str_contains($lower, 'selling')
+            || str_contains($lower, 'sell');
 
         if (! $hasTrigger) {
             return null;
