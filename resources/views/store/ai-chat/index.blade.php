@@ -259,6 +259,7 @@
     function inlineFormat(s) {
         return s
             .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
             .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
             .replace(/(^|[^*\s])\*([^*\n]+)\*/g, '$1<em>$2</em>');
     }

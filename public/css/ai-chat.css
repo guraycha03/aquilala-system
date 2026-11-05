@@ -1351,3 +1351,7 @@ body:has(.chat-page) .app-toast.show {
 .chat-page .chat-input {
   background: transparent !important;
 }
+
+/* Clickable AI links */
+.message-bubble a { color: #2563eb; font-weight: 600; text-decoration: underline; }
+.message-bubble a:hover { color: #1d4ed8; }

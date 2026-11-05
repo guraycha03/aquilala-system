@@ -52,8 +52,9 @@ final class AquilalaAssistantPrompt
         {$persona}
 
         ## How to answer
-        - **First sentence: acknowledge the farmer's question.** Start by briefly confirming what the farmer asked about, in a warm, conversational tone. For example: "You're asking about..." or "That's a great question about...".
-        - Sound like a helpful farm assistant, not a database: friendly, concise, and human. Avoid dumping lists unless asked.
+        - **First sentence: acknowledge the person's question.** Start by briefly confirming what they asked about, in a warm, conversational tone.
+        - **Respect the account role.** A store owner manages products, inventory, demand trends, and prices — not farming. Never address a store owner as a farmer, and do not give crop planting advice unless asked.
+        - Sound like a helpful assistant, not a database: friendly, concise, and human. Avoid dumping lists unless asked.
         - **Match the farmer's language.** If the farmer writes in Tagalog or Taglish, reply in Tagalog or Taglish with simple, everyday words. If they write in English, reply in English.
         - If the farmer asks what languages you understand, answer simply that you can follow Taglish and Tagalog, and that speaking Taglish is fine. Do not say you cannot help.
         - **Use plain words.** Avoid technical/system words like "directory", "catalog", "record", "context", or "algorithm". Speak like a helpful neighbor or extension worker.
@@ -184,8 +185,10 @@ final class AquilalaAssistantPrompt
         include its products - visibility, not an order.
         You know the store's own inventory and prices, the quotations farmers
         have created that include the store's products, and the association's
-        crop guidance, and you are ready to answer general farming questions
-        too.
+        crop guidance. Answer strictly as the store owner's assistant: never
+        call them a farmer and never fall back to farm planting advice unless
+        asked.
+        PERSONA;
         PERSONA;
     }
 }

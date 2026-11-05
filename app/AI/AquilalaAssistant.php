@@ -125,10 +125,29 @@ class AquilalaAssistant
 
         $context = AiConversationContext::fromArray($conversationContext);
 
+        if ($user?->role === 'store_owner'
+            && preg_match('/\b(not a farmer|not farmer|store owner|store-owner)\b/i', $message) === 1) {
+            return [
+                'reply'       => 'Noted — I will treat you as a store owner from here. Ask me about your product listings, inventory, quotation demand trends, top products, or prices, and I will help with those.',
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
         if (preg_match('/^(?:ok(?:ay)?|alright|got\s+it|sure|fine|great|cool|thanks|thank\s+you|yes|no)[!?.\s]*$/iu', trim($message)) === 1) {
-            $reply = preg_match('/^(?:thanks|thank\s+you)$/iu', trim($message)) === 1
-                ? 'You are welcome. I am here whenever you need help with Aquilala farming.'
-                : 'Understood. I will keep that in mind — ask me anything about your crop, product, or cost estimate whenever you are ready.';
+            if (($user?->role ?? null) === 'store_owner') {
+                $reply = preg_match('/^(?:thanks|thank\s+you)$/iu', trim($message)) === 1
+                    ? 'You are welcome. I am here to help with your store and Aquilala products.'
+                    : 'Understood. I will keep that in mind — ask me anything about your store, products, inventory, trends, or prices whenever you are ready.';
+            } else {
+                $reply = preg_match('/^(?:thanks|thank\s+you)$/iu', trim($message)) === 1
+                    ? 'You are welcome. I am here whenever you need help with Aquilala farming.'
+                    : 'Understood. I will keep that in mind — ask me anything about your crop, product, or cost estimate whenever you are ready.';
+            }
 
             return [
                 'reply'       => $reply,
@@ -200,13 +219,22 @@ class AquilalaAssistant
                 }
             }
 
-            $reply = "I'm Aquilala's assistant for your farm. I can help with product prices, fertilizer and crop advice, cost estimates, and planting guidance.\n\n"
-                . "Ask me directly, for example:\n"
-                . '- "Do you have urea products?"\n'
-                . '- "What fertilizers for corn?"\n'
-                . '- "How much would 2 hectares of corn cost?"\n'
-                . '- "How do I plant corn?"\n'
-                . '- "Where can I find My Cost Quotations?"\n';
+            if ($user?->role === 'store_owner') {
+                $reply = "I'm the Aquilala assistant for store owners. I can help with your product listings, inventory, quotation demand trends, top products, and prices.\n\n"
+                    . "Ask me directly, for example:\n"
+                    . '- "Show my store inventory"\n'
+                    . '- "Which products sell most?"\n'
+                    . '- "How do I add a new product?"\n'
+                    . '- "Where can I find Input Formulas?"\n';
+            } else {
+                $reply = "I'm Aquilala's assistant for your farm. I can help with product prices, fertilizer and crop advice, cost estimates, and planting guidance.\n\n"
+                    . "Ask me directly, for example:\n"
+                    . '- "Do you have urea products?"\n'
+                    . '- "What fertilizers for corn?"\n'
+                    . '- "How much would 2 hectares of corn cost?"\n'
+                    . '- "How do I plant corn?"\n'
+                    . '- "Where can I find My Cost Quotations?"\n';
+            }
 
             if ($links !== []) {
                 $reply .= "\nSome pages you may need:\n" . implode("\n", $links);
@@ -571,7 +599,7 @@ class AquilalaAssistant
             AiIntent::CROP_RECOMMENDATION => $this->cropChoiceAnswer($contextData, $routing),
             AiIntent::SEASONAL_RECOMMENDATION => $this->seasonalAnswer($contextData, $routing),
             AiIntent::FARMING_ADVICE => $this->farmingAdviceAnswer($contextData, $crop, $missing, $routing),
-            AiIntent::GENERAL_FARMING => $this->generalAnswer($contextData),
+            AiIntent::GENERAL_FARMING => $this->generalAnswer($contextData, (string) ($user?->role ?? '')),
             AiIntent::SYSTEM_HELP => $this->helpAnswer($contextData),
             AiIntent::UNSUPPORTED => $this->unsupportedAnswer(),
             AiIntent::CLARIFICATION => $this->clarificationAnswer($missing, $routing),
@@ -1240,12 +1268,18 @@ class AquilalaAssistant
     /**
      * @param  array<string, mixed>  $contextData
      */
-    private function generalAnswer(array $contextData): string
+    private function generalAnswer(array $contextData, string $role = ''): string
     {
         $facts = $contextData['facts'] ?? [];
         $season = $facts['current_season'] ?? [];
 
         $lines = [];
+
+        if ($role === 'store_owner') {
+            $lines[] = 'Ask me about your store inventory, top products, quotation demand trends, product listings, or pricing, '
+                . 'and I will help you with those.';
+            return implode("\n", $lines);
+        }
 
         if (! empty($season['label'])) {
             $lines[] = 'It is **' . $season['label'] . '**' . ($season['typical_weather'] ? ' — ' . $season['typical_weather'] : '') . '.';
@@ -1442,7 +1476,9 @@ class AquilalaAssistant
                 continue;
             }
 
-            $links[] = '- [' . $label . '](' . $url . ') — ' . ($descriptions[$label] ?? 'Open this page directly.');
+            // Only the clickable link text is shown; the URL stays hidden
+            // behind it so the message stays short and easy to tap.
+            $links[] = '- **[' . $label . '](' . $url . ')**';
         }
 
         if ($links === []) {
