@@ -192,7 +192,7 @@
     </div>
     <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
       <a href="{{ route('farmer.quotations.archive') }}" class="archive-link" title="Expired or closed estimates">
-        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+        <i data-lucide="clipboard-clock" style="width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;"></i>
         <span>Expired Quotations @if($archivedCount > 0)({{ $archivedCount }})@endif</span>
       </a>
       <a href="{{ route('farmer.quotations.request') }}" class="cta-primary">

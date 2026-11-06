@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Archived Estimates')
+@section('title', 'Expired Quotations')
 
 @section('content')
 <style>
@@ -76,7 +76,7 @@
 <div class="archive-page">
   <div class="archive-head">
     <div>
-      <h1>Archived estimates</h1>
+      <h1>Expired quotations</h1>
       <p>
         These estimates have passed their validity window, so their prices are no longer current. They are
         kept as your record &mdash; open one to see what it came to.
@@ -145,7 +145,7 @@
         <div class="archive-empty-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
         </div>
-        <h3>Nothing archived yet</h3>
+        <h3>Nothing expired yet</h3>
         <p>When an estimate's validity window closes, it is kept here instead of on your working page.</p>
       </div>
     @endif
