@@ -44,8 +44,30 @@ catalog/decision formulas) should be presented as fact.
 - Major crops observed in the area include rice, copra/coconut, and abaca (source: Wikipedia economy section).
 - Aquilala association crops are governed by `config/crop_library.php` and `SeasonHelper` — the only crop reference the assistant uses.
 
-## Notes for AI behavior
+## Field conditions for the cost quotation form (Bulan, Sorsogon)
 
-- Prefer crops suited to hot, humid tropical lowlands (rice, corn, eggplant, tomatoes, okra, leafy greens in season, coconut, abaca).
+Soils in Bulan, Sorsogon and the Bicol region vary from lowland clay loam in
+paddy areas to sandy coastal/riverine pockets and organic/peaty spots in swales.
+Weather risks follow the two-season Bicol calendar encoded in
+`app/Helpers/SeasonHelper.php` (wet: June-January/Habagat-Amihan; dry: February-May).
+
+Weather-risk handling follows `CostQuotationEngine::getWeatherContextLabel()` and
+is limited to keys the engine actually understands (`normal`, `low_rain`,
+`typhoon`, `el_nino`). Season-based filtering on the form prevents contradictions:
+the UI only offers storm/waterlogging-related choices in the wet season and
+drought/heat-related choices in the dry season.
+
+References (real, location-relevant):
+- DA-BPI production guides (soil/crop recommendations by region): https://buplant.da.gov.ph/production-guide/
+- DA Bicol Region field office (Sorsogon programs): https://bicol.da.gov.ph/
+- PAGASA climate advisories (PAGASA Bicol): https://www.pagasa.dost.gov.ph/
+- Bicol moonsoon climate: CALD/CALA — https://en.wikipedia.org/wiki/Bulan,_Sorsogon#Climate
+
+Soil-type adjustments in the engine:
+- Sandy  -> +15% fertilizer (nutrient leaching; agronomic baseline)
+- Peat / Organic -> adds agricultural lime for pH balance
+- Clay loam / other -> no adjustment (standard water retention)
+
+## Notes for AI behavior
 - Flag temperate crops (strawberry, cabbage as a cool-season crop, etc.) as not ideal in open fields in Bulan unless grown in cool/elevated areas or controlled environments.
 - Always confirm the farmer's crop variety/intent before giving planting steps or seasonal picks.

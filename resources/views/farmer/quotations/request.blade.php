@@ -530,28 +530,28 @@
             <svg class="qsel-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="q-select-menu" role="listbox" aria-labelledby="riskLabel">
-            <div class="q-select-item" data-value="normal" role="option">
+            <div class="q-select-item" data-value="normal" data-seasons="wet,dry" role="option">
               <div class="qsel-opt">
                 <div class="qsel-t">Normal season</div>
                 <div class="qsel-s">No extreme weather expected — nothing extra added</div>
               </div>
               <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <div class="q-select-item" data-value="low_rain" role="option">
+            <div class="q-select-item" data-value="low_rain" data-seasons="wet,dry" role="option">
               <div class="qsel-opt">
                 <div class="qsel-t">Low rainfall</div>
                 <div class="qsel-s">Drier than usual — plan for scarce water</div>
               </div>
               <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <div class="q-select-item" data-value="typhoon" role="option">
+            <div class="q-select-item" data-value="typhoon" data-seasons="wet" role="option">
               <div class="qsel-opt">
                 <div class="qsel-t">Typhoon risk</div>
                 <div class="qsel-s">Adds extra fungicide + an 8% price buffer</div>
               </div>
               <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <div class="q-select-item" data-value="el_nino" role="option">
+            <div class="q-select-item" data-value="el_nino" data-seasons="dry" role="option">
               <div class="qsel-opt">
                 <div class="qsel-t">El Niño drought</div>
                 <div class="qsel-s">Adds irrigation fuel/water fees + a 10% buffer</div>
@@ -788,9 +788,38 @@
       card.style.opacity = radio.disabled ? '0.45' : '1';
       card.style.pointerEvents = radio.disabled ? 'none' : 'auto';
     });
+
+    refreshWeatherRiskOptions();
   }
 
-  const cropSearchInput = document.getElementById('crop-search');
+  function refreshWeatherRiskOptions() {
+  const weatherSelect = document.querySelector('.q-select[data-field="weather_context"]');
+  if (!weatherSelect) return;
+  const hidden = weatherSelect.querySelector('input[type="hidden"]');
+  const btn = weatherSelect.querySelector('.q-select-btn .qsel-title');
+  const seasonInput = document.querySelector('input[name="season"]:checked');
+  const season = seasonInput ? seasonInput.value : 'wet';
+  const items = Array.from(weatherSelect.querySelectorAll('.q-select-item'));
+  let selectedAllowed = false;
+  items.forEach(function (item) {
+    const seasons = (item.dataset.seasons || 'wet,dry').split(',').map(s => s.trim());
+    const allowed = seasons.indexOf(season) !== -1;
+    item.style.display = allowed ? '' : 'none';
+    if (allowed && hidden && hidden.value === item.dataset.value) selectedAllowed = true;
+  });
+  if (!selectedAllowed && hidden) {
+    hidden.value = 'normal';
+    const normalItem = items.find(i => i.dataset.value === 'normal');
+    if (normalItem && btn) {
+      const title = normalItem.querySelector('.qsel-t');
+      if (title) btn.textContent = title.textContent.trim();
+    }
+    items.forEach(i => i.classList.remove('is-active'));
+    if (normalItem) normalItem.classList.add('is-active');
+  }
+}
+
+const cropSearchInput = document.getElementById('crop-search');
   const cropHiddenInput = document.getElementById('crop_type');
   const cropDropdown = document.getElementById('crop-dropdown');
   const cropItems = Array.from(cropDropdown.querySelectorAll('.crop-dropdown-item'));
@@ -860,6 +889,8 @@
   if (cropHiddenInput && cropHiddenInput.value) {
     applySeasonForCrop(cropHiddenInput.value);
   }
+  // Apply weather-risk visibility for the current season right away.
+  refreshWeatherRiskOptions();
 
   // --- Custom select dropdowns (soil type, weather risk) ---
   document.querySelectorAll('.q-select').forEach(function (sel) {
@@ -1109,6 +1140,7 @@
 
   cropInput.addEventListener('change', fetchProducts);
   seasonInputs.forEach(r => r.addEventListener('change', fetchProducts));
+  seasonInputs.forEach(r => r.addEventListener('change', refreshWeatherRiskOptions));
 
   // Season cards: mirror the radio state onto the card styling so the
   // highlight follows the click without a round-trip.
