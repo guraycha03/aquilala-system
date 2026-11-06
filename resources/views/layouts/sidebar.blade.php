@@ -539,17 +539,16 @@
     .desktop-notif-wrap.hidden { transform: translateY(-80px); }
     .desktop-notif {
       width: 32px; height: 32px; border-radius: 8px;
-      background: #143d23; border: 1px solid rgba(255, 255, 255, 0.18);
-      box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+      background: transparent; border: none; box-shadow: none;
       display: flex; align-items: center; justify-content: center;
-      color: #ffffff; text-decoration: none; cursor: pointer;
+      color: #6d7d46; text-decoration: none; cursor: pointer;
       transition: color 0.2s ease, background 0.2s ease, transform 0.15s ease;
       align-self: center;
     }
-    .desktop-notif:hover { transform: none; box-shadow: 0 3px 10px rgba(0,0,0,0.24); background: #1a4d30; color: #ffffff; }
+    .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(109, 125, 70, 0.10); color: #4f6d4e; }
     .desktop-notif svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .desktop-notif { position: relative; }
-    [data-theme="dark"] .desktop-notif { background: #1f2937; border-color: #334155; color: #d6f5e3; }
+    [data-theme="dark"] .desktop-notif { background: transparent; border: none; color: #d6f5e3; }
     .notif-badge {
       position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px;
       border-radius: 999px; background: #dc2626; color: #ffffff;
@@ -673,7 +672,7 @@
   .sidebar-overlay { display: none; position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.4); z-index: 95; }
   .sidebar-overlay.open { display: block; }
 
-  .desktop-notif { background: #143d23; border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: 0 1px 4px rgba(0,0,0,0.18); color: #ffffff; }
+  .desktop-notif { background: transparent; border: none; box-shadow: none; color: var(--sb-fg); }
   .desktop-notif { border-radius: 8px; }
   .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(255, 255, 255, 0.12); }
   .desktop-notif-wrap { position: fixed !important; top: 16px; right: 16px; z-index: 200; display: flex; align-items: center; gap: 10px; }

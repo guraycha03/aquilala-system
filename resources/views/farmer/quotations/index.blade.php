@@ -222,24 +222,20 @@
 <div class="stats-grid kpi-strip">
   <div class="stat-card">
     <div class="stat-icon">
-      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4" y="2.5" width="16" height="19" rx="2"/>
+        <path d="M8 6h8M8 10h2M14 10h2M8 14h2M14 14h2M8 18h8"/>
+      </svg>
     </div>
     <div class="stat-label">Total Quotations</div>
     <div class="stat-value">{{ $totalQuotes }}</div>
   </div>
   <div class="stat-card">
     <div class="stat-icon">
-      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-    </div>
-    <div class="stat-label">Ready to View</div>
-    <div class="stat-value">{{ $computedCount }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon">
-      <x-peso-icon />
+      <i data-lucide="philippine-peso" style="width:20px;height:20px;stroke-width:2;"></i>
     </div>
     <div class="stat-label">Total Estimated Value</div>
-    <div class="stat-value">₱{{ number_format($totalValue, 0) }}</div>
+    <div class="stat-value">&#8369;{{ number_format($totalValue, 0) }}</div>
   </div>
 </div>
 
