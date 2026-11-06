@@ -195,12 +195,10 @@
         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         New Cost Quotation
       </a>
-      @if($archivedCount > 0)
-        <a href="{{ route('farmer.quotations.archive') }}" class="archive-link" title="Expired or closed estimates">
-          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
-          <span>Expired ({{ $archivedCount }})</span>
-        </a>
-      @endif
+      <a href="{{ route('farmer.quotations.archive') }}" class="archive-link" title="Expired or closed estimates">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+        <span>Expired Quotations @if($archivedCount > 0)({{ $archivedCount }})@endif</span>
+      </a>
     </div>
   </div>
 </div>
