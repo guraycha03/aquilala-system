@@ -5,6 +5,9 @@
 @section('content')
 <style>
   .archive-page { max-width: 980px; }
+  .archive-crumb { color: #4A7A54; text-decoration: none; font-weight: 600; text-underline-offset: 4px; transition: color 0.15s ease, text-decoration 0.15s ease; }
+  .archive-crumb:hover { color: #143d23; text-decoration: underline; text-underline-offset: 4px; }
+  .archive-crumb:active, .archive-crumb:focus { color: #166534; text-decoration: underline; text-underline-offset: 4px; outline: none; }
 
   .archive-head {
     display: flex; align-items: flex-start; justify-content: space-between;
@@ -74,11 +77,11 @@
 </style>
 
 <div class="archive-page">
-  <nav aria-label="Breadcrumb" class="archive-breadcrumb" style="margin-bottom:12px;">
-    <a href="{{ url('/') }}" style="color:#5c6d61;text-decoration:none;">Home</a>
-    <span style="color:#94a3b8;margin:0 6px;">/</span>
-    <a href="{{ route('farmer.quotations.index') }}" style="color:#5c6d61;text-decoration:none;">My Cost Quotations</a>
-    <span style="color:#94a3b8;margin:0 6px;">/</span>
+  <nav aria-label="Breadcrumb" class="archive-breadcrumb" style="margin-top:-24px;margin-bottom:12px;">
+    <a href="{{ url('/') }}" class="archive-crumb">Home</a>
+    <span style="color:#94a3b8;margin:0 6px;">&gt;</span>
+    <a href="{{ route('farmer.quotations.index') }}" class="archive-crumb">My Cost Quotations</a>
+    <span style="color:#94a3b8;margin:0 6px;">&gt;</span>
     <span style="color:#1a2b1e;font-weight:700;">Expired Quotations</span>
   </nav>
   <div class="archive-head">
