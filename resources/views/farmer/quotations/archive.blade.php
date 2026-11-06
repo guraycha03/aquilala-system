@@ -70,6 +70,12 @@
   [data-theme="dark"] .archive-expired { background: #1f2937; border-color: #334155; color: #9fb3a6; }
   [data-theme="dark"] .archive-empty-icon { background: #16301f; color: #6ee7a0; }
 
+  /* Keep top spacing consistent across screen sizes (the app shell adds
+     more top padding on mobile; compensate on this page only). */
+  @media (max-width: 900px) {
+    .archive-breadcrumb { margin-top: -20px !important; }
+  }
+
   @media (max-width: 640px) {
     .archive-head { flex-direction: column-reverse; }
     .archive-table { min-width: 620px; }
