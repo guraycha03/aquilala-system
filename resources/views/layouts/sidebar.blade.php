@@ -336,7 +336,7 @@
 
     /* Layout Framework */
     .sidebar { width: 260px; background: #143d23; color: #ffffff; display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; box-shadow: none; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .main-content { margin-left: 260px; flex: 1; padding: 64px 32px 32px; min-width: 0; }
+    .main-content { margin-left: 260px; flex: 1; padding: 48px 32px 32px; min-width: 0; }
 
     /* Shared overlay horizontal scrollbar (green draggable pill) */
     .app-scroll { overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 52px; }
