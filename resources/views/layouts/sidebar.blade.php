@@ -667,7 +667,7 @@
     @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
-  .main-content { margin-left: 0; padding: 64px 16px 24px 16px; }
+  .main-content { margin-left: 0; padding: 80px 16px 24px 16px; }
   .mobile-header { display: flex; }
   .sidebar-overlay { display: none; position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.4); z-index: 95; }
   .sidebar-overlay.open { display: block; }
