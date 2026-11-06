@@ -675,7 +675,8 @@
   .desktop-notif { background: transparent; border: none; box-shadow: none; color: var(--sb-fg); }
   .desktop-notif { border-radius: 8px; }
   .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(255, 255, 255, 0.12); }
-  .desktop-notif-wrap { position: fixed !important; top: 20px; right: 16px; }
+  .desktop-notif-wrap { position: fixed !important; top: 50%; right: 112px; transform: translateY(-50%); }
+  .desktop-notif-wrap.hidden { transform: translateY(-120%); }
 
   /* On a phone the panel sits under the bell, across the width of the
      screen, where the thumb already is. */
