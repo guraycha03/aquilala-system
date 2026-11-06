@@ -4,14 +4,45 @@
 
 @section('content')
 <style>
-  .archive-page { max-width: 980px; }
-  .archive-crumb { color: #4A7A54; text-decoration: none; font-weight: 600; text-underline-offset: 4px; transition: color 0.15s ease, text-decoration 0.15s ease; }
+  /* 
+    Establish a consistent page root. 
+    Explicit padding-top guarantees identical top spacing across all screen sizes.
+  */
+  .archive-page { 
+    max-width: 980px; 
+    margin: 0 auto;
+    padding-top: 0;
+    box-sizing: border-box;
+  }
+
+  /* Keep top spacing consistent and compact across screen sizes. */
+  .archive-breadcrumb {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 12px;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .archive-crumb { 
+    color: #4A7A54; 
+    text-decoration: none; 
+    font-weight: 600; 
+    text-underline-offset: 4px; 
+    transition: color 0.15s ease, text-decoration 0.15s ease; 
+  }
   .archive-crumb:hover { color: #143d23; text-decoration: underline; text-underline-offset: 4px; }
   .archive-crumb:active, .archive-crumb:focus { color: #166534; text-decoration: underline; text-underline-offset: 4px; outline: none; }
 
   .archive-head {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 16px; flex-wrap: wrap; margin-bottom: 18px;
+    display: flex; 
+    align-items: flex-start; 
+    justify-content: space-between;
+    gap: 16px; 
+    flex-wrap: wrap; 
+    margin-bottom: 18px;
   }
   .archive-head h1 { font-size: 22px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.01em; }
   .archive-head p { font-size: 13px; color: #647263; margin: 0; line-height: 1.5; max-width: 520px; }
@@ -70,10 +101,8 @@
   [data-theme="dark"] .archive-expired { background: #1f2937; border-color: #334155; color: #9fb3a6; }
   [data-theme="dark"] .archive-empty-icon { background: #16301f; color: #6ee7a0; }
 
-  /* Keep top spacing consistent across screen sizes (the app shell adds
-     more top padding on mobile; compensate on this page only). */
-  @media (max-width: 900px) {
-    .archive-breadcrumb { margin-top: -20px !important; }
+  @media (min-width: 901px) {
+    .archive-breadcrumb { margin-top: -24px !important; }
   }
 
   @media (max-width: 640px) {
@@ -83,13 +112,14 @@
 </style>
 
 <div class="archive-page">
-  <nav aria-label="Breadcrumb" class="archive-breadcrumb" style="margin-bottom:8px;font-size:12px;">
+  <nav aria-label="Breadcrumb" class="archive-breadcrumb">
     <a href="{{ url('/') }}" class="archive-crumb">Home</a>
     <span style="color:#94a3b8;margin:0 6px;">&gt;</span>
     <a href="{{ route('farmer.quotations.index') }}" class="archive-crumb">My Cost Quotations</a>
     <span style="color:#94a3b8;margin:0 6px;">&gt;</span>
     <span style="color:#1a2b1e;font-weight:700;">Expired Quotations</span>
   </nav>
+
   <div class="archive-head">
     <div>
       <h1>Expired quotations</h1>

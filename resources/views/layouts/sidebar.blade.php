@@ -531,7 +531,7 @@
     .main-content > :first-child h1:first-child { margin-bottom: 18px !important; }
     .page-header { margin-bottom: 36px !important; }
 
-    .mobile-header { display: none; background: #143d23; color: white; padding: 14px 16px; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 90; }
+    .mobile-header { display: none; background: #143d23; color: white; height: 64px; padding: 12px 16px; box-sizing: border-box; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 90; }
     .burger-btn { background: none; border: none; color: var(--sb-fg); font-size: 24px; cursor: pointer; padding: 0; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; }
     .burger-btn:active { background: rgba(255, 255, 255, 0.08); }
 
@@ -667,7 +667,7 @@
     @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
-  .main-content { margin-left: 0; padding: 88px 16px 24px 16px; }
+  .main-content { margin-left: 0; padding: 64px 16px 24px 16px; }
   .mobile-header { display: flex; }
   .sidebar-overlay { display: none; position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.4); z-index: 95; }
   .sidebar-overlay.open { display: block; }
