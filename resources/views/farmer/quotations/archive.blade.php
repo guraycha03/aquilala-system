@@ -74,6 +74,13 @@
 </style>
 
 <div class="archive-page">
+  <nav aria-label="Breadcrumb" class="archive-breadcrumb" style="margin-bottom:12px;">
+    <a href="{{ url('/') }}" style="color:#5c6d61;text-decoration:none;">Home</a>
+    <span style="color:#94a3b8;margin:0 6px;">/</span>
+    <a href="{{ route('farmer.quotations.index') }}" style="color:#5c6d61;text-decoration:none;">My Cost Quotations</a>
+    <span style="color:#94a3b8;margin:0 6px;">/</span>
+    <span style="color:#1a2b1e;font-weight:700;">Expired Quotations</span>
+  </nav>
   <div class="archive-head">
     <div>
       <h1>Expired quotations</h1>
@@ -85,10 +92,6 @@
         @endif
       </p>
     </div>
-    <a href="{{ route('farmer.quotations.index') }}" class="archive-back">
-      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-      Back to my estimates
-    </a>
   </div>
 
   <div class="archive-card">
