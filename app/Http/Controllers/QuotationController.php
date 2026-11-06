@@ -472,9 +472,24 @@ PROMPT;
     {
         // One list of the crops the system offers, written once in the
         // Sorsogon crop library.
-        $allCrops = app(CropLibraryService::class)->offeredNames();
+        $library = app(CropLibraryService::class);
+        $allCrops = $library->offeredNames();
 
-        return view('farmer.quotations.request', ['cropTypes' => $allCrops]);
+        // Season compatibility per crop, taken directly from the crop
+        // library's own `seasons` field (wet/dry). Nothing is invented.
+        $cropSeasons = [];
+        foreach ($allCrops as $cropName) {
+            $entry = $library->forName($cropName);
+            $cropSeasons[$cropName] = array_values(array_intersect(
+                ['wet', 'dry'],
+                (array) ($entry['seasons'] ?? [])
+            ));
+        }
+
+        return view('farmer.quotations.request', [
+            'cropTypes'   => $allCrops,
+            'cropSeasons' => $cropSeasons,
+        ]);
     }
 
     /**

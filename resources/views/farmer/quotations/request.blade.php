@@ -365,6 +365,8 @@
   }
 </style>
 
+<script type="application/json" id="cropSeasons">{!! json_encode($cropSeasons ?? [], JSON_UNESCAPED_UNICODE) !!}</script>
+
 <x-breadcrumb :items="[
   ['label' => 'My Cost Quotations', 'url' => route('farmer.quotations.index')],
   ['label' => 'Generate Quotation'],
@@ -736,6 +738,58 @@
 <script>
 (function () {
   // --- Searchable Crop Selector ---
+  const cropSeasons = JSON.parse((document.getElementById('cropSeasons') || {}).textContent || '{}');
+
+  function syncSeasonCards() {
+    document.querySelectorAll('.season-card').forEach(function (card) {
+      const radio = card.querySelector('input[name="season"]');
+      card.classList.toggle('is-selected', !!radio && radio.checked);
+    });
+  }
+
+  function applySeasonForCrop(cropName) {
+    const wetRadio = document.querySelector('input[name="season"][value="wet"]');
+    const dryRadio = document.querySelector('input[name="season"][value="dry"]');
+    if (!wetRadio || !dryRadio) return;
+
+    const allowed = Object.prototype.hasOwnProperty.call(cropSeasons, cropName)
+      ? cropSeasons[cropName]
+      : ['wet', 'dry'];
+
+    wetRadio.disabled = !allowed.includes('wet');
+    dryRadio.disabled = !allowed.includes('dry');
+
+    if (allowed.length === 1) {
+      if (allowed[0] === 'wet') {
+        wetRadio.checked = true;
+      } else {
+        dryRadio.checked = true;
+      }
+    } else {
+      if (wetRadio.checked && wetRadio.disabled) {
+        dryRadio.checked = true;
+      }
+      if (dryRadio.checked && dryRadio.disabled) {
+        wetRadio.checked = true;
+      }
+      if (!wetRadio.checked && !dryRadio.checked) {
+        if (wetRadio.disabled === false && dryRadio.disabled === false) {
+          wetRadio.checked = true;
+        }
+      }
+    }
+
+    syncSeasonCards();
+
+    // Dim and block the season(s) this crop is not grown in.
+    document.querySelectorAll('.season-card').forEach(function (card) {
+      const radio = card.querySelector('input[name="season"]');
+      if (!radio) return;
+      card.style.opacity = radio.disabled ? '0.45' : '1';
+      card.style.pointerEvents = radio.disabled ? 'none' : 'auto';
+    });
+  }
+
   const cropSearchInput = document.getElementById('crop-search');
   const cropHiddenInput = document.getElementById('crop_type');
   const cropDropdown = document.getElementById('crop-dropdown');
@@ -775,6 +829,7 @@
     cropItems.forEach(item => {
       item.classList.toggle('active', item.dataset.value === value);
     });
+    applySeasonForCrop(value);
     cropHiddenInput.dispatchEvent(new Event('change'));
   }
 
@@ -799,6 +854,12 @@
       cropDropdown.classList.remove('open');
     }
   });
+
+  // Apply the season lock for the crop that is already selected from
+  // old input (validation failure) or restored state.
+  if (cropHiddenInput && cropHiddenInput.value) {
+    applySeasonForCrop(cropHiddenInput.value);
+  }
 
   // --- Custom select dropdowns (soil type, weather risk) ---
   document.querySelectorAll('.q-select').forEach(function (sel) {
