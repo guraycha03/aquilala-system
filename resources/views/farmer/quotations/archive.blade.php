@@ -77,7 +77,7 @@
 </style>
 
 <div class="archive-page">
-  <nav aria-label="Breadcrumb" class="archive-breadcrumb" style="margin-top:-24px;margin-bottom:12px;">
+  <nav aria-label="Breadcrumb" class="archive-breadcrumb" style="margin-bottom:8px;font-size:12px;">
     <a href="{{ url('/') }}" class="archive-crumb">Home</a>
     <span style="color:#94a3b8;margin:0 6px;">&gt;</span>
     <a href="{{ route('farmer.quotations.index') }}" class="archive-crumb">My Cost Quotations</a>
