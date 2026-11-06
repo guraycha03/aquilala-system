@@ -535,7 +535,7 @@
     .burger-btn { background: none; border: none; color: var(--sb-fg); font-size: 24px; cursor: pointer; padding: 0; line-height: 1; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; }
     .burger-btn:active { background: rgba(255, 255, 255, 0.08); }
 
-    .desktop-notif-wrap { position: fixed !important; top: 26px; right: 20px; z-index: 200; transition: transform 0.3s ease; display: flex; align-items: flex-start; gap: 10px; }
+    .desktop-notif-wrap { position: fixed !important; top: 20px; right: 20px; z-index: 200; transition: transform 0.3s ease; display: flex; align-items: center; gap: 10px; }
     .desktop-notif-wrap.hidden { transform: translateY(-80px); }
     .desktop-notif {
       width: 32px; height: 32px; border-radius: 8px;
@@ -675,7 +675,7 @@
   .desktop-notif { background: transparent; border: none; box-shadow: none; color: var(--sb-fg); }
   .desktop-notif { border-radius: 8px; }
   .desktop-notif:hover { transform: none; box-shadow: none; background: rgba(255, 255, 255, 0.12); }
-  .desktop-notif-wrap { position: fixed !important; top: 11px; right: 16px; }
+  .desktop-notif-wrap { position: fixed !important; top: 20px; right: 16px; }
 
   /* On a phone the panel sits under the bell, across the width of the
      screen, where the thumb already is. */
@@ -2452,9 +2452,9 @@
     .aq-global-search-host .aq-global-search-wrap { position: relative; width: min(620px, 46vw); }
     .desktop-notif-wrap {
       position: fixed;
-      top: 0;
+      top: 20px;
       right: 24px;
-      height: 60px;
+      height: 40px;
       align-items: center;
       z-index: 195;
     }
