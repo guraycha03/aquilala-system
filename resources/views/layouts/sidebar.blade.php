@@ -369,7 +369,7 @@
     /* Brand Section */
     .brand-section { padding: 15px 20px 14px 20px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.95); letter-spacing: -0.01em; line-height: 1.35; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; }
     .brand-title { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; display: block; margin-bottom: 1px; color: #ffffff; line-height: 1.05; }
-    .brand-accent { color: var(--sb-accent, #C8F36A); text-shadow: 0 0 14px color-mix(in srgb, var(--sb-accent, #C8F36A) 18%, transparent); }
+    .brand-accent { color: var(--sb-brand-accent, var(--sb-accent, #C8F36A)); text-shadow: 0 0 14px color-mix(in srgb, var(--sb-brand-accent, var(--sb-accent, #C8F36A)) 30%, transparent); }
 
     /* Weather Widget Icon (real condition icons from public/images/weather) */
     .season-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; }
@@ -889,6 +889,7 @@
       --sb-hover-bg:{{ $stC['hover_bg'] }}; --sb-hover-strong:{{ $stC['hover_strong'] }};
       --sb-active-bg:{{ $stC['active_bg'] }}; --sb-active-fg:{{ $stC['active_fg'] }};
       --sb-accent:{{ $stC['accent'] }};
+      --sb-brand-accent:{{ $stC['brand_accent'] ?? $stC['accent'] }};
       --sb-avatar-bg:{{ $stC['avatar_bg'] }}; --sb-avatar-fg:{{ $stC['avatar_fg'] }};
       --sb-border:{{ $stC['border'] }}; --sb-border-soft:{{ $stC['border_soft'] }};
       --sb-card-bg-a:{{ $stC['card_a'] }}; --sb-card-bg-b:{{ $stC['card_b'] }};
@@ -911,7 +912,7 @@
     .sidebar-footer { background: var(--sb-deep); color: var(--sb-fg); border-top-color: var(--sb-border); }
     .brand-section { color: var(--sb-fg); border-bottom-color: var(--sb-border); }
     .brand-title { color: var(--sb-fg); }
-    .brand-accent { color: var(--sb-accent); text-shadow: 0 0 14px color-mix(in srgb, var(--sb-accent) 18%, transparent); }
+    .brand-accent { color: var(--sb-brand-accent, var(--sb-accent)); text-shadow: 0 0 14px color-mix(in srgb, var(--sb-brand-accent, var(--sb-accent)) 30%, transparent); }
     .menu-group-title { color: var(--sb-muted); }
     .nav-links li a { color: var(--sb-nav); }
     .nav-links li a svg { stroke: var(--sb-nav); }

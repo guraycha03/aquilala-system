@@ -107,7 +107,7 @@ class HarvestReportLinkTest extends TestCase
         $response->assertDontSee('RICE-OTHER');
     }
 
-    public function test_the_create_form_shows_an_empty_state_when_no_batch_is_ready(): void
+    public function test_the_create_form_is_available_even_when_no_batch_is_ready(): void
     {
         $this->makeBatch('RICE-PENDING', [
             'confirmation_status' => FarmerCrop::CONFIRMATION_PENDING,
@@ -117,8 +117,50 @@ class HarvestReportLinkTest extends TestCase
         $response = $this->actingAs($this->farmer)->get(route('farmer.harvests.create'));
 
         $response->assertOk();
-        $response->assertSee('No crop batches ready to report');
+        // The form itself must be there — filing by hand stays open — while
+        // the not-yet-confirmed planting stays out of the batch list.
+        $response->assertSee('name="crop_batch_id"', false);
+        $response->assertSee('<option value=""', false);
+        $response->assertSee('None', false);
+        $response->assertSee('name="actual_yield_metric_tons"', false);
         $response->assertDontSee('RICE-PENDING');
+        $response->assertDontSee('No crop batches ready to report');
+    }
+
+    public function test_the_create_form_is_available_to_a_farmer_with_no_plantings_at_all(): void
+    {
+        $response = $this->actingAs($this->farmer)->get(route('farmer.harvests.create'));
+
+        $response->assertOk();
+        $response->assertSee('No crop plantings on file yet');
+        $response->assertSee('name="crop_batch_id"', false);
+        $response->assertSee('name="crop_type"', false);
+    }
+
+    public function test_a_report_can_be_filed_without_a_crop_batch(): void
+    {
+        $this->actingAs($this->farmer)
+            ->post(route('farmer.harvests.store'), [
+                'crop_batch_id' => '',
+                'crop_type' => 'Corn',
+                'season' => 'dry',
+                'land_area' => 2.5,
+                'actual_yield_metric_tons' => 4.2,
+                'actual_total_expenses' => 15000,
+                'harvest_date' => now()->subDays(45)->toDateString(),
+            ])
+            ->assertSessionHas('success');
+
+        $report = HarvestReport::sole();
+        $this->assertSame('Corn', $report->crop_type);
+        $this->assertSame('dry', $report->season);
+        $this->assertSame(2.5, (float) $report->land_area);
+        $this->assertSame(4.2, (float) $report->actual_yield_metric_tons);
+        $this->assertSame(now()->subDays(45)->toDateString(), $report->harvest_date->toDateString());
+        $this->assertNull($report->variety);
+
+        // Nothing was planted, so nothing may be marked harvested.
+        $this->assertSame(0, FarmerCrop::count());
     }
 
     public function test_filing_a_report_links_the_batch_and_harvests_it(): void

@@ -13,54 +13,37 @@
   @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 520px) { .stats-grid { grid-template-columns: 1fr; } }
 
+  /* Plain white cards — the same shape as the My Crops stat pills: one
+     neutral card, one soft sage icon chip, no per-card colour coding. */
   .stat-card {
-    position: relative;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
     border-radius: 14px;
-    padding: 20px 22px;
-    overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    transition: box-shadow 0.2s ease;
   }
-  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-  .stat-card::after {
-    content: '';
-    position: absolute; top: 0; right: 0; width: 80px; height: 80px;
-    border-radius: 50%; opacity: 0.07;
-    transform: translate(20px, -20px);
-  }
-  .stat-card.green  { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #bbf7d0; }
-  .stat-card.green::after { background: #4A7A54; }
-  .stat-card.blue   { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; }
-  .stat-card.blue::after  { background: #2563eb; }
-  .stat-card.amber  { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde68a; }
-  .stat-card.amber::after { background: #d97706; }
-  .stat-card.violet { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border: 1px solid #ddd6fe; }
-  .stat-card.violet::after { background: #7c3aed; }
+  .stat-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
 
   .stat-icon {
-    width: 40px; height: 40px; border-radius: 10px;
+    width: 42px; height: 42px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    margin-bottom: 12px;
+    flex-shrink: 0;
+    background: #e6f0e7; color: #4A7A54;
   }
-  .stat-card.green .stat-icon  { background: rgba(74,122,84,0.12); color: #4A7A54; }
-  .stat-card.blue .stat-icon   { background: rgba(37,99,235,0.12); color: #2563eb; }
-  .stat-card.amber .stat-icon  { background: rgba(217,119,6,0.12); color: #d97706; }
-  .stat-card.violet .stat-icon { background: rgba(124,58,237,0.12); color: #7c3aed; }
+  .stat-icon svg { width: 20px; height: 20px; }
+
+  .stat-text { display: flex; flex-direction: column; min-width: 0; }
 
   .stat-card .stat-label {
-    font-size: 12px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.05em; margin-bottom: 4px;
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: #94a3b8;
   }
-  .stat-card.green .stat-label  { color: #15803d; }
-  .stat-card.blue .stat-label   { color: #1d4ed8; }
-  .stat-card.amber .stat-label  { color: #b45309; }
-  .stat-card.violet .stat-label { color: #6d28d9; }
-
-  .stat-card .stat-value { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
-  .stat-card .stat-sub   { font-size: 12px; color: #64748b; margin-top: 3px; font-weight: 500; }
-  .stat-card.green .stat-value  { color: #166534; }
-  .stat-card.blue .stat-value   { color: #1e40af; }
-  .stat-card.amber .stat-value  { color: #92400e; }
-  .stat-card.violet .stat-value { color: #5b21b6; }
+  .stat-card .stat-value { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; color: #1e293b; margin-top: 2px; }
+  .stat-card .stat-sub   { font-size: 11.5px; color: #94a3b8; margin-top: 2px; font-weight: 500; }
 
   /* Table card */
   .table-card {
@@ -154,7 +137,7 @@
 
 <!-- Stats -->
 <div class="stats-grid kpi-strip">
-  <div class="stat-card blue">
+  <div class="stat-card">
     <div class="stat-icon">
       <!-- Document / Report Icon -->
       <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -165,12 +148,14 @@
         <line x1="10" y1="9" x2="8" y2="9" />
       </svg>
     </div>
-    <div class="stat-label">Harvest Reports</div>
-    <div class="stat-value">{{ $stats['reports'] }}</div>
-    <div class="stat-sub">Recorded harvests</div>
+    <div class="stat-text">
+      <div class="stat-label">Harvest Reports</div>
+      <div class="stat-value">{{ $stats['reports'] }}</div>
+      <div class="stat-sub">Recorded harvests</div>
+    </div>
   </div>
 
-  <div class="stat-card green">
+  <div class="stat-card">
     <div class="stat-icon">
       <!-- Plant / Sprout Icon -->
       <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -180,22 +165,29 @@
         <path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5" />
       </svg>
     </div>
-    <div class="stat-label">Total Yield</div>
-    <div class="stat-value">{{ $stats['yield'] }}</div>
-    <div class="stat-sub">Combined harvest output</div>
-  </div>
-
-  <div class="stat-card violet">
-    <div class="stat-icon">
-      <!-- Peso Currency / Expense Icon -->
-      <x-peso-icon />
+    <div class="stat-text">
+      <div class="stat-label">Total Yield</div>
+      <div class="stat-value">{{ $stats['yield'] }}</div>
+      <div class="stat-sub">Combined harvest output</div>
     </div>
-    <div class="stat-label">Total Expenses</div>
-    <div class="stat-value">₱{{ number_format($stats['expenses'], 0) }}</div>
-    <div class="stat-sub">Farming input &amp; labor costs</div>
   </div>
 
-  <div class="stat-card amber">
+  <div class="stat-card">
+    <div class="stat-icon">
+      <!-- Lucide "philippine-peso" — the official peso glyph (inlined via
+           data-lucide, like the other lucide marks in the app). -->
+      <i data-lucide="philippine-peso" aria-hidden="true"></i>
+    </div>
+    <div class="stat-text">
+      <div class="stat-label">Total Expenses</div>
+      {{-- Peso sign kept at 500 so it reads lighter than the figure — the
+           same treatment as the My Crops "Estimated Cost" card. --}}
+      <div class="stat-value"><span style="font-weight: 500; margin-right: 6px;">₱</span>{{ number_format($stats['expenses'], 0) }}</div>
+      <div class="stat-sub">Farming input &amp; labor costs</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
     <div class="stat-icon">
       <!-- Map / Grid Area Icon -->
       <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -204,9 +196,11 @@
         <path d="M9 21V9" />
       </svg>
     </div>
-    <div class="stat-label">Total Area</div>
-    <div class="stat-value">{{ number_format($stats['area'], 2) }} ha</div>
-    <div class="stat-sub">Land area farmed</div>
+    <div class="stat-text">
+      <div class="stat-label">Total Area</div>
+      <div class="stat-value">{{ number_format($stats['area'], 2) }} ha</div>
+      <div class="stat-sub">Land area farmed</div>
+    </div>
   </div>
 </div>
 

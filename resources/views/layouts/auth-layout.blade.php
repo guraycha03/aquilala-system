@@ -250,8 +250,11 @@
             letter-spacing: -0.02em;
             color: #143d23;
         }
+        /* "lala" — a vivid brand green instead of the old muted sage
+           (#8FB89A), which read as grey next to the dark "Aqui". Bright
+           enough to notice, dark enough to stay AA-legible on white. */
         .form-brand-name span {
-            color: #8FB89A;
+            color: #16a34a;
         }
         .form-brand-sub {
             font-size: 11px;
@@ -305,7 +308,13 @@
             line-height: 1.2;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
-        .visual-pane h2 span { color: #8FB89A; }
+        /* "lala" over the photo cover on wide screens: bright lime with a
+           glow so it never disappears into the green-tinted image overlay
+           (the old #8FB89A blended straight into it). */
+        .visual-pane h2 span {
+            color: #b9f44a;
+            text-shadow: 0 0 16px rgba(185, 244, 74, 0.55), 0 2px 6px rgba(0, 0, 0, 0.45);
+        }
         .visual-pane p {
             color: #e2ebe5;
             font-size: 15px;

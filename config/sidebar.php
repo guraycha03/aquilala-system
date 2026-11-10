@@ -17,6 +17,8 @@
 | Inside each 'colors' block every value maps 1:1 to the CSS variables used
 | by the sidebar (--sb-bg, --sb-accent, ...).  'menu_ico_dark' chooses which
 | store-icon PNG to show when hovering a nav link; set true on light themes.
+| 'brand_accent' is the one exception: it feeds --sb-brand-accent, used only
+| by the "lala" wordmark, so the brand can be brighter than the UI accents.
 |
 */
 
@@ -40,6 +42,10 @@ return [
                 'active_bg'         => '#f3f6f4',
                 'active_fg'         => '#143d23',
                 'accent'            => '#8FB89A',
+                // Brand mark only: the "lala" in the sidebar/mobile "Aquilala".
+                // Kept separate from 'accent' so the wordmark can be a vivid,
+                // noticeable green while UI accents stay soft.
+                'brand_accent'      => '#b9f44a',
                 'avatar_bg'         => '#1b4d2e',
                 'avatar_fg'         => '#c8e6c9',
                 'border'            => 'rgba(255,255,255,0.08)',
@@ -75,6 +81,7 @@ return [
                 'active_bg'         => '#f3f6f4',
                 'active_fg'         => '#5f7c2e',
                 'accent'            => '#5f7c2e',
+                'brand_accent'      => '#3a9426',
                 'avatar_bg'         => 'rgba(51, 66, 29, 0.12)',
 
                
@@ -112,6 +119,7 @@ return [
                 'active_bg'         => '#e8e0d4',
                 'active_fg'         => '#3a352d',
                 'accent'            => '#d5c2a1',
+                'brand_accent'      => '#9fe870',
                 'avatar_bg'         => 'rgba(255,255,255,0.16)',
                 'avatar_fg'         => '#f5efe4',
                 'border'            => 'rgba(255,255,255,0.16)',

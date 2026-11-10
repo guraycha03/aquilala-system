@@ -5,8 +5,26 @@
 @section('content')
 @php
   $activeTab = request()->hasAny(['q', 'status']) ? 'manage' : 'overview';
+
+  // Muted status palette. The bright stock green / amber / red these cards
+  // and charts used before is swapped for desaturated, matte tones so the
+  // page reads calm — while low stock and out of stock keep their own hue,
+  // because those two are the ones that have to catch the eye.
+  $invPalette = [
+      'healthy' => '#5E8268',
+      'low'     => '#B0813A',
+      'out'     => '#B0524C',
+  ];
 @endphp
 <style>
+  /* One source of truth for the status colours, shared by the metric cards,
+     the Stock Health donut, the Stock Levels bars and the table's bar. */
+  :root {
+    --inv-healthy: {{ $invPalette['healthy'] }};
+    --inv-low: {{ $invPalette['low'] }};
+    --inv-out: {{ $invPalette['out'] }};
+  }
+
   .inv-header {
     display: flex;
     justify-content: space-between;
@@ -53,7 +71,6 @@
     padding: 10px 14px; border-radius: 9px; font-size: 13px; font-weight: 700;
     color: #64748b; transition: all .2s ease;
   }
-  .inv-tab svg { width: 15px; height: 15px; stroke: currentColor; }
   .inv-tab:hover { color: #334155; }
   .inv-tab.active { background: #fff; color: #143d23; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .tab-pane { display: none; }
@@ -84,7 +101,38 @@
   /* Dashboard body */
   .health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; align-items: stretch; }
   @media (max-width: 1024px) { .health-grid { grid-template-columns: 1fr; } }
-  .bar-chart { position: relative; height: 250px; width: 100%; }
+  .bar-chart { position: relative; width: 100%; }
+  .bar-plot { position: relative; }
+  /* The panel keeps its height; the plot itself scrolls through the full
+     product list so long inventories stay readable. */
+  .bar-scroll {
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    padding-right: 70px;
+  }
+  .bar-scroll::-webkit-scrollbar { width: 9px; }
+  .bar-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 9px; }
+  .bar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9px; border: 2px solid #f1f5f9; }
+  .bar-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  .bar-scroll { scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9; }
+  /* The value scale (0, 10, 20 …) sits OUTSIDE the scroller, pinned to the
+     bottom of the card, so it stays put while the rows scroll past it. */
+  .bar-axis {
+    position: relative;
+    height: 26px;
+    margin-top: 1px;
+    padding-right: 70px;
+    border-top: 1px solid #eef2f4;
+    font-size: 11px;
+    color: #94a3b8;
+  }
+  .bar-axis span {
+    position: absolute; top: 4px;
+    transform: translateX(-50%);
+    white-space: nowrap; line-height: 1;
+  }
 
   .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
   .panel-head {
@@ -144,7 +192,7 @@
   .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
   .badge-ok { background: #edf1e9; color: #648268; }
   .badge-low { background: #edf1e9; color: #648268; }
-  .badge-out { background: #fef2f2; color: #dc2626; }
+  .badge-out { background: #f7efee; color: var(--inv-out); }
   .badge-disc { background: #edf1e9; color: #648268; }
 
   .row-actions { display: flex; gap: 6px; align-items: center; }
@@ -263,11 +311,9 @@
 
 <div class="inv-tabs" role="tablist">
   <button type="button" class="inv-tab{{ $activeTab === 'overview' ? ' active' : '' }}" data-tab="overview" role="tab" aria-selected="{{ $activeTab === 'overview' ? 'true' : 'false' }}">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14v4"/><path d="M11 10v8"/><path d="M15 6v12"/><path d="M19 9v9"/></svg>
     Inventory Overview
   </button>
   <button type="button" class="inv-tab{{ $activeTab === 'manage' ? ' active' : '' }}" data-tab="manage" role="tab" aria-selected="{{ $activeTab === 'manage' ? 'true' : 'false' }}">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
     Manage Inventory
   </button>
 </div>
@@ -277,8 +323,8 @@
 <div class="metrics-grid kpi-strip">
   <div class="metric-card">
     <div class="metric-top">
-      <div class="metric-icon" style="background:#e0f2fe;">
-        <svg viewBox="0 0 24 24" stroke="#0369a1"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      <div class="metric-icon" style="background:#f1f5f9;">
+        <svg viewBox="0 0 24 24" stroke="#64748b"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
       </div>
       <div>
         <div class="metric-label">Monitored Items</div>
@@ -286,15 +332,15 @@
       </div>
     </div>
     <div class="metric-foot">
-      <span style="width:8px;height:8px;border-radius:50%;background:#4A7A54;display:inline-block;"></span>
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--inv-healthy);display:inline-block;"></span>
       {{ $healthyCount }} healthy
     </div>
   </div>
 
   <div class="metric-card">
     <div class="metric-top">
-      <div class="metric-icon" style="background:#fffbeb;">
-        <svg viewBox="0 0 24 24" stroke="#d97706"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div class="metric-icon" style="background:#f6f1e6;">
+        <svg viewBox="0 0 24 24" stroke="{{ $invPalette['low'] }}"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </div>
       <div>
         <div class="metric-label">Low Stock Flags</div>
@@ -306,8 +352,8 @@
 
   <div class="metric-card">
     <div class="metric-top">
-      <div class="metric-icon" style="background:#fef2f2;">
-        <svg viewBox="0 0 24 24" stroke="#dc2626"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      <div class="metric-icon" style="background:#f7efee;">
+        <svg viewBox="0 0 24 24" stroke="{{ $invPalette['out'] }}"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
       </div>
       <div>
         <div class="metric-label">Out of Stock</div>
@@ -319,8 +365,8 @@
 
   <div class="metric-card">
     <div class="metric-top">
-      <div class="metric-icon" style="background:#f3e8ff;">
-        <svg viewBox="0 0 24 24" stroke="#7c3aed" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      <div class="metric-icon" style="background:#f1f5f9;">
+        <svg viewBox="0 0 24 24" stroke="#64748b" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
       </div>
       <div>
         <div class="metric-label">Total Units in Stock</div>
@@ -351,17 +397,17 @@
       </div>
       <div class="health-legend" id="healthLegend">
         <div class="legend-item">
-          <span class="legend-dot" style="background:#4A7A54;"></span>
+          <span class="legend-dot" style="background:var(--inv-healthy);"></span>
           <span class="lname">Healthy Stock</span>
           <span class="lnum" id="legendHealthy">{{ $healthyCount }}</span>
         </div>
         <div class="legend-item">
-          <span class="legend-dot" style="background:#f59e0b;"></span>
+          <span class="legend-dot" style="background:var(--inv-low);"></span>
           <span class="lname">Low Stock</span>
           <span class="lnum" id="legendLow">{{ $lowStockCount }}</span>
         </div>
         <div class="legend-item">
-          <span class="legend-dot" style="background:#dc2626;"></span>
+          <span class="legend-dot" style="background:var(--inv-out);"></span>
           <span class="lname">Out of Stock</span>
           <span class="lnum" id="legendOut">{{ $outOfStockCount }}</span>
         </div>
@@ -371,33 +417,41 @@
 
   <!-- Horizontal bar: top stock vs minimum limits by product -->
   @php
-    $chartProducts = $allProducts->sortByDesc(fn ($p) => (int) ($p->stock_quantity ?? 0))->take(5)->values();
+    // Every product, not just the top few — the plot area scrolls so the
+    // card keeps its size while the full list stays reachable.
+    $chartProducts = $allProducts->sortByDesc(fn ($p) => (int) ($p->stock_quantity ?? 0))->values();
     $barLabels = $chartProducts->pluck('name')->map(fn ($n) => \Illuminate\Support\Str::limit($n, 22))->toArray();
     $barFullLabels = $chartProducts->pluck('name')->toArray();
     $barQtys = $chartProducts->map(fn ($p) => (int) ($p->stock_quantity ?? 0))->toArray();
     $barThresholds = $chartProducts->map(fn ($p) => (int) ($p->reorder_threshold ?? 0))->toArray();
-    $barColors = $chartProducts->map(function ($p) {
+    $barColors = $chartProducts->map(function ($p) use ($invPalette) {
         $qty = (int) ($p->stock_quantity ?? 0);
         $thresh = (int) ($p->reorder_threshold ?? 0);
-        if ($qty <= 0 || $p->status === 'out_of_stock') return '#dc2626';
-        if ($qty <= $thresh) return '#f59e0b';
-        return '#4A7A54';
+        if ($qty <= 0 || $p->status === 'out_of_stock') return $invPalette['out'];
+        if ($qty <= $thresh) return $invPalette['low'];
+        return $invPalette['healthy'];
     })->toArray();
   @endphp
   <div class="panel">
     <div class="panel-head">
       <div>
         <h2>Stock Levels by Product</h2>
-        <div class="sub">Top products by current stock vs their minimum limits</div>
+        <div class="sub">All products by current stock vs their minimum limits</div>
       </div>
     </div>
-    <div class="chart-wrap" style="padding: 18px 18px 6px; align-items: stretch;">
-      <div class="bar-chart">
-        <canvas id="stockLevelChart"></canvas>
+    <div class="chart-wrap" style="padding: 18px 14px 28px; align-items: stretch;">
+      {{-- Card stays put; only the bars and product names scroll. --}}
+      <div class="bar-plot">
+        <div class="bar-scroll">
+          <div class="bar-chart" id="barChartInner">
+            <canvas id="stockLevelChart"></canvas>
+          </div>
+        </div>
+        <div class="bar-axis" id="barAxis" aria-hidden="true"></div>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:#64748b;">
-        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#4A7A54;display:inline-block;"></span> In stock</span>
-        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#f59e0b;display:inline-block;"></span> Minimum limit</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:var(--inv-healthy);display:inline-block;"></span> In stock</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#DCC79B;border:1px solid var(--inv-low);box-sizing:border-box;display:inline-block;"></span> Minimum limit</span>
       </div>
     </div>
     <div class="panel-foot">
@@ -462,7 +516,7 @@
           }
           if ($isDisc) { $badge = 'badge-disc'; $text = 'Discontinued'; $dataStatus = 'out'; }
           $pct = $thresh > 0 ? min(100, round(($qty / max($thresh * 2, 1)) * 100)) : 100;
-          $barColor = $qty <= 0 ? '#dc2626' : ($qty <= $thresh ? '#f59e0b' : '#4A7A54');
+          $barColor = $qty <= 0 ? $invPalette['out'] : ($qty <= $thresh ? $invPalette['low'] : $invPalette['healthy']);
           $stockBarStyle = 'width:' . $pct . '%;background:' . $barColor . ';';
         @endphp
         <tr data-name="{{ strtolower($product->name) }} {{ strtolower($product->sku) }}" data-status="{{ $dataStatus }}"
@@ -574,8 +628,90 @@
   const barQtys = @json($barQtys);
   const barThresholds = @json($barThresholds);
   const barColors = @json($barColors);
+  // Same muted palette the cards and legends use, so the charts can never
+  // drift back to the bright stock colours.
+  const invPalette = @json($invPalette);
 
   let inventoryCharts = [];
+
+  // Show product name above each bar (left-aligned) and stock number at the
+  // right end of every bar, so both are visible without hovering — critical
+  // on mobile where hover doesn't exist. Names stay off the bar so the bar
+  // level stays visible. Y-axis labels are hidden to avoid truncated names.
+  Chart.register({
+    id: 'invBarLabels',
+    afterDatasetsDraw(chart) {
+      const ctx = chart.ctx;
+      const labels = chart.data.labels || [];
+      chart.data.datasets.forEach((dataset, datasetIndex) => {
+        if (datasetIndex !== 0) return; // only label the "In stock" bars
+        const meta = chart.getDatasetMeta(datasetIndex);
+        if (meta.hidden || !dataset.data) return;
+        meta.data.forEach((element, i) => {
+          const value = dataset.data[i];
+          if (value === null || value === undefined) return;
+          const name = String(labels[i] || '');
+          ctx.save();
+          ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+          ctx.textBaseline = 'middle';
+
+          // Stock number at the right end of the bar (dark gray).
+          ctx.fillStyle = '#334155';
+          ctx.textAlign = 'left';
+          ctx.fillText(String(value), element.x + 6, element.y);
+
+          // Product name above the bar, left-aligned with the bar start.
+          // Dark slate color, no outline — it sits outside the bar so it's
+          // always legible against the page background.
+          if (name) {
+            const textX = element.x - element.width + 5;
+            const textY = element.y - element.height / 2 - 8;
+            ctx.fillStyle = '#475569';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(name, textX, textY);
+          }
+          ctx.restore();
+        });
+      });
+    }
+  });
+
+  // ---- Detached x scale for Stock Levels by Product ----
+  // The canvas scrolls with the rows, so the 0/10/20 scale is painted into
+  // #barAxis, which sits below .bar-scroll and never moves: the numbers stay
+  // visible at the bottom of the card no matter where you scroll.
+  function paintBarAxis() {
+    const axisEl = document.getElementById('barAxis');
+    const canvas = document.getElementById('stockLevelChart');
+    if (!axisEl || !canvas || typeof Chart === 'undefined' || !Chart.getChart) return;
+
+    const chart = Chart.getChart(canvas);
+    const scaleX = chart && chart.scales ? chart.scales.x : null;
+    const ticks = scaleX ? (scaleX.ticks || []) : [];
+    const cRect = canvas.getBoundingClientRect();
+
+    if (!scaleX || !ticks.length || !cRect.width) { axisEl.innerHTML = ''; return; }
+
+    const off = axisEl.getBoundingClientRect().left - cRect.left;
+    let html = '';
+
+    for (let i = 0; i < ticks.length; i++) {
+      const t = ticks[i];
+      let label = (t && t.label !== undefined && t.label !== null)
+        ? t.label
+        : (t && t.value !== undefined ? scaleX.getLabelForValue(t.value) : t);
+
+      if (typeof label === 'number') label = String(Math.round(label * 100) / 100);
+      label = String(label).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      if (!label) continue;
+
+      const x = scaleX.getPixelForTick(i) + off;
+      html += '<span style="left:' + x.toFixed(1) + 'px">' + label + '</span>';
+    }
+
+    axisEl.innerHTML = html;
+  }
 
   function renderCharts() {
     inventoryCharts.forEach(function (c) { c.destroy(); });
@@ -590,7 +726,7 @@
           labels: ['Healthy', 'Low Stock', 'Out of Stock'],
           datasets: [{
             data: [healthy, low, out],
-            backgroundColor: ['#4A7A54', '#f59e0b', '#dc2626'],
+            backgroundColor: [invPalette.healthy, invPalette.low, invPalette.out],
             borderWidth: 3,
             borderColor: '#ffffff',
             hoverOffset: 6
@@ -619,28 +755,39 @@
     const levelNode = document.getElementById('stockLevelChart');
     if (levelNode && barLabels.length > 0) {
       if (window.aqDestroyChart) aqDestroyChart(levelNode);
+
+      // One fixed row per product: the plot grows with the list while
+      // .bar-scroll caps the panel height and scrolls instead. No room is
+      // reserved for tick labels — they live outside the scroller (see
+      // paintBarAxis()).
+      const barRowH = 60, barAxisH = 0;
+      const barInner = document.getElementById('barChartInner');
+      if (barInner) barInner.style.height = (barLabels.length * barRowH + barAxisH) + 'px';
+
       inventoryCharts.push(new Chart(levelNode.getContext('2d'), {
         type: 'bar',
         data: {
           labels: barLabels,
+          // Clustered: both datasets share the category, so each product gets
+          // an "In stock" bar sitting right next to its "Minimum limit" bar.
           datasets: [
             {
               label: 'In stock',
               data: barQtys,
               backgroundColor: barColors,
-              borderRadius: 5,
-              barThickness: 14,
-              stack: 'stock'
+              borderRadius: 4,
+              categoryPercentage: 0.7,
+              barPercentage: 0.9
             },
             {
               label: 'Minimum limit',
               data: barThresholds,
-              backgroundColor: '#f8fafc',
-              borderColor: '#f59e0b',
-              borderWidth: 2,
-              borderRadius: 5,
-              barThickness: 6,
-              stack: 'limit'
+              backgroundColor: '#DCC79B',
+              borderColor: invPalette.low,
+              borderWidth: 1,
+              borderRadius: 4,
+              categoryPercentage: 0.7,
+              barPercentage: 0.9
             }
           ]
         },
@@ -648,6 +795,9 @@
           indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: false,
+          layout: {
+            padding: { top: 24, bottom: 12, left: 8, right: 60 }
+          },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -665,24 +815,43 @@
           scales: {
             x: {
               grid: { color: '#f1f5f9' },
-              ticks: { color: '#94a3b8', precision: 0 },
-              beginAtZero: true
+              // The scale numbers are drawn by paintBarAxis() into #barAxis,
+              // below the scroller, so the canvas only draws the gridlines.
+              ticks: {
+                color: '#94a3b8',
+                precision: 0,
+                display: false,
+                callback: function () { return ''; }
+              },
+              beginAtZero: true,
+              afterFit: function (scale) { scale.height = 0; }
             },
             y: {
               grid: { display: false },
-              afterFit: function (scale) {
-                const maxLen = Math.max.apply(null, barLabels.map(function (l) { return String(l).length; }));
-                scale.width = Math.max(scale.width, maxLen * 6.5 + 12);
-              },
-              ticks: { align: 'start', autoSkip: false, color: '#475569', font: { weight: 600 } }
+              ticks: { display: false } // names are drawn inside bars instead
             }
           }
         }
       }));
     }
+
+    paintBarAxis();
   }
 
   renderCharts();
+
+  // Keep the detached scale aligned when the plot resizes (window resize,
+  // tab switches, scrollbar appearing).
+  (function () {
+    const canvas = document.getElementById('stockLevelChart');
+    if (!canvas || typeof ResizeObserver === 'undefined') return;
+    let frame = 0;
+    const ro = new ResizeObserver(function () {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(paintBarAxis);
+    });
+    ro.observe(canvas);
+  })();
 
   // ---- Overview / Manage tabs ----
   function switchInvTab(name) {

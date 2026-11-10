@@ -44,9 +44,16 @@ class HarvestReportController extends Controller
     /**
      * Farmer-facing harvest report submission form (dashboard sub-page).
      *
-     * The form starts from a crop batch: only admin-confirmed batches that
-     * have not been reported yet are offered, and picking one auto-fills the
-     * crop, season and land area. Yield, expenses and the date stay manual.
+     * Two ways to file, and the page offers both:
+     *
+     *  - Start from a crop batch — only admin-confirmed batches that have not
+     *    been reported yet are offered, and picking one auto-fills the crop,
+     *    season and land area.
+     *  - File it by hand — with the batch left on "None", for a past harvest
+     *    or for a farmer with no planting on file at all. Harvest reporting is
+     *    deliberately not gated behind having planted something first.
+     *
+     * Either way, yield, expenses and the date stay manual.
      */
     public function farmerCreate()
     {
@@ -485,16 +492,28 @@ class HarvestReportController extends Controller
     /**
      * Record a new harvest report (farmer only).
      *
-     * Reports now start from a crop batch. The batch dictates crop type,
-     * season and land area (never trust those from the client), and the
-     * report links back to it so the Estimate vs Actual comparison can pair
-     * the planting estimate with the reported yield. The batch is also
-     * marked harvested, mirroring what the My Crops flow does.
+     * A report may or may not hang off a crop batch — both are first-class:
+     *
+     *  - With a batch: the batch dictates crop type, season and land area
+     *    (never trust those from the client), the report links back to it so
+     *    the Estimate vs Actual comparison can pair the planting estimate with
+     *    the reported yield, and the batch is marked harvested, mirroring what
+     *    the My Crops flow does.
+     *  - Without a batch: a standalone record for a past harvest, or for a
+     *    farmer who has never planted through the system. The figures filed
+     *    here are taken as given, exactly like an imported record, and no
+     *    planting is touched.
      */
     public function store(Request $request)
     {
+        // Blank select means "no planting linked" — normalise it before the
+        // rules run so an empty value never trips the exists rule.
+        if (! $request->filled('crop_batch_id')) {
+            $request->merge(['crop_batch_id' => null]);
+        }
+
         $validated = $request->validate([
-            'crop_batch_id' => ['required', 'exists:farmer_crops,id'],
+            'crop_batch_id' => ['nullable', 'integer', 'exists:farmer_crops,id'],
             'crop_type' => ['required', 'string', 'max:100'],
             'season' => ['required', 'in:wet,dry'],
             'land_area' => ['required', 'numeric', 'min:0.01', 'max:999.99'],
@@ -503,32 +522,37 @@ class HarvestReportController extends Controller
             'harvest_date' => ['required', 'date', 'before_or_equal:today'],
         ]);
 
-        $batch = FarmerCrop::with('crop')->find($validated['crop_batch_id']);
+        $batchId = (int) ($validated['crop_batch_id'] ?? 0);
+        unset($validated['crop_batch_id']);
 
-        if ($batch->user_id !== Auth::id()) {
-            abort(403);
+        $batch = $batchId > 0 ? FarmerCrop::with('crop')->find($batchId) : null;
+
+        if ($batch) {
+            if ($batch->user_id !== Auth::id()) {
+                abort(403);
+            }
+
+            if (! $batch->isConfirmed()) {
+                return back()->withErrors([
+                    'crop_batch_id' => 'This crop batch has not been confirmed by an admin yet.',
+                ])->withInput();
+            }
+
+            if ($batch->harvest_report_id) {
+                return back()->withErrors([
+                    'crop_batch_id' => 'This crop batch already has a harvest report.',
+                ])->withInput();
+            }
+
+            // The batch is the source of truth for these fields — including the
+            // seed variety, so a manually filed report carries the same
+            // registry-backed label an imported one does.
+            $validated['crop_type'] = $batch->crop?->name ?? $validated['crop_type'];
+            $validated['season'] = $batch->season ?? $validated['season'];
+            $validated['land_area'] = (float) $batch->land_area;
+            $validated['variety'] = $batch->variety;
+            $validated['variety_key'] = $batch->variety_key;
         }
-
-        if (! $batch->isConfirmed()) {
-            return back()->withErrors([
-                'crop_batch_id' => 'This crop batch has not been confirmed by an admin yet.',
-            ])->withInput();
-        }
-
-        if ($batch->harvest_report_id) {
-            return back()->withErrors([
-                'crop_batch_id' => 'This crop batch already has a harvest report.',
-            ])->withInput();
-        }
-
-        // The batch is the source of truth for these fields — including the
-        // seed variety, so a manually filed report carries the same
-        // registry-backed label an imported one does.
-        $validated['crop_type'] = $batch->crop?->name ?? $validated['crop_type'];
-        $validated['season'] = $batch->season ?? $validated['season'];
-        $validated['land_area'] = (float) $batch->land_area;
-        $validated['variety'] = $batch->variety;
-        $validated['variety_key'] = $batch->variety_key;
 
         $validated['user_id'] = Auth::id();
         $validated['quotation_id'] = null;
@@ -537,15 +561,17 @@ class HarvestReportController extends Controller
 
         ActivityLogger::harvestReportCreated($report);
 
-        // Close the loop on the batch: link it, mark it harvested and record
-        // the actual yield (same MT convention syncHarvestReport uses).
-        $batch->update([
-            'harvest_report_id' => $report->id,
-            'growth_stage' => 'harvested',
-            'actual_harvest_date' => $report->harvest_date,
-            'actual_yield' => $batch->actual_yield ?? (float) $report->actual_yield_metric_tons,
-        ]);
-        ActivityLogger::cropHarvested($batch);
+        if ($batch) {
+            // Close the loop on the batch: link it, mark it harvested and record
+            // the actual yield (same MT convention syncHarvestReport uses).
+            $batch->update([
+                'harvest_report_id' => $report->id,
+                'growth_stage' => 'harvested',
+                'actual_harvest_date' => $report->harvest_date,
+                'actual_yield' => $batch->actual_yield ?? (float) $report->actual_yield_metric_tons,
+            ]);
+            ActivityLogger::cropHarvested($batch);
+        }
 
         return back()->with('success', sprintf(
             'Harvest report recorded for %s — %s recorded on %s.',
