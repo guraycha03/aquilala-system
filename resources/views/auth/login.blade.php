@@ -151,7 +151,7 @@
                     +639
                 </span>
                 <input type="tel" id="login-phone-local" inputmode="numeric" autocomplete="tel-national"
-                       maxlength="9" placeholder="171234567" aria-required="true"
+                       maxlength="9" placeholder="000000000" aria-required="true"
                        value="{{ old('phone') ? substr(preg_replace('/\D/', '', old('phone')), -9) : '' }}" />
             </div>
             <div id="login-phone-local-feedback" style="font-size: 12px; margin-top: 4px; min-height: 18px; transition: color 0.2s;"></div>
@@ -374,4 +374,3 @@
     });
 </script>
 @endsection
-

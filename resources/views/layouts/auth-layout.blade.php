@@ -210,9 +210,9 @@
 
         /* Responsive Wrapper Container */
         .auth-container {
-            width: 100%;
+            width: calc(100% - 32px);
             max-width: 540px;
-            margin: 24px;
+            margin: 16px auto;
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
@@ -226,6 +226,7 @@
         /* Left Hand Form Panel */
         .form-pane {
             padding: 32px;
+            min-width: 0;
         }
 
         /* Top Brand Header Component */
