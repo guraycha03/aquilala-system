@@ -80,19 +80,35 @@ class InventoryController extends Controller
 
         // Metrics
         $totalItems = $allProducts->count();
-        $lowStockItems = $allProducts->filter(function ($p) {
-            return ($p->stock_quantity ?? 0) <= $p->reorder_threshold;
-        });
+
+        // Stock-health buckets, decided in this order so a product can only
+        // ever land in ONE of them. The bar chart beside the donut already
+        // worked this way (it returns early on quantity <= 0), and `stats()`
+        // plus the status filters above already exclude zero from low stock —
+        // but this block did not.
+        //
+        // An empty shelf satisfies `quantity <= reorder_threshold`, so a single
+        // zero-quantity product was counted as BOTH out of stock and low stock,
+        // then subtracted twice from healthyCount. Store 86's 18 products
+        // rendered as "1 out, 1 low, 16 healthy" when the truth is
+        // "1 out, 0 low, 17 healthy" — which is why the filters correctly
+        // returned nothing for low stock while the donut claimed one.
+        $isOutOfStock = fn ($p) => ($p->stock_quantity ?? 0) <= 0
+            || $p->status === 'out_of_stock';
+
+        $outOfStockItems = $allProducts->filter($isOutOfStock);
+        $lowStockItems = $allProducts->filter(
+            fn ($p) => ! $isOutOfStock($p) && ($p->stock_quantity ?? 0) <= $p->reorder_threshold
+        );
+        $outOfStockCount = $outOfStockItems->count();
         $lowStockCount = $lowStockItems->count();
-        $outOfStockCount = $allProducts->filter(function ($p) {
-            return ($p->stock_quantity ?? 0) <= 0 || $p->status === 'out_of_stock';
-        })->count();
+
         $totalStockValue = $allProducts->sum(function ($p) {
             return ($p->stock_quantity ?? 0) * $p->price;
         });
         $totalUnits = $allProducts->sum(fn ($p) => (int) ($p->stock_quantity ?? 0));
 
-        // Stock health breakdown
+        // Stock health breakdown — exact now that the buckets are disjoint.
         $healthyCount = $totalItems - $lowStockCount - $outOfStockCount;
 
         // Archived (trashed) products this store can restore — powers the Archive button badge.
@@ -149,8 +165,16 @@ class InventoryController extends Controller
         $userId = Auth::id();
         $products = Product::where('user_id', $userId)->get();
 
-        $lowStock = $products->filter(fn($p) => ($p->stock_quantity ?? 0) <= $p->reorder_threshold && ($p->stock_quantity ?? 0) > 0)->count();
-        $outOfStock = $products->filter(fn($p) => ($p->stock_quantity ?? 0) <= 0 || $p->status === 'out_of_stock')->count();
+        // Same exclusive buckets as index(): out-of-stock decided first, so a
+        // zero-quantity product can never be counted here as low stock too and
+        // push healthy negative.
+        $isOutOfStock = fn ($p) => ($p->stock_quantity ?? 0) <= 0
+            || $p->status === 'out_of_stock';
+
+        $outOfStock = $products->filter($isOutOfStock)->count();
+        $lowStock = $products->filter(
+            fn ($p) => ! $isOutOfStock($p) && ($p->stock_quantity ?? 0) <= $p->reorder_threshold
+        )->count();
         $healthy = $products->count() - $lowStock - $outOfStock;
 
         return response()->json([

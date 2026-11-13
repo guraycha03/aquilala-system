@@ -527,6 +527,82 @@
     </div>
     @endif
 
+    {{-- Application rules: the rows the store sets on Product → Application
+         Rules. The quotation engine reads these exact rows (grouped by
+         product_id, summed via effectiveRate()), so the numbers below are the
+         ones a quotation will quote. Shown empty rather than hidden when no
+         rule exists yet — every field here is optional, since rules are added
+         after the product is created. --}}
+    <div class="spec-section">
+        <div class="section-title">
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Application Rules
+            @if($isStoreOwner)
+                <a href="{{ route('store.products.edit', ['product' => $product, 'tab' => 'rules']) }}"
+                   style="margin-left:auto;font-size:12px;font-weight:600;color:#14532d;text-transform:none;letter-spacing:0;text-decoration:underline;">
+                    Edit rules
+                </a>
+            @endif
+        </div>
+        <div class="spec-grid">
+            @forelse($formulas as $formula)
+                <div class="info-row">
+                    <span class="info-label">Crop &amp; Season</span>
+                    <span class="info-value">{{ $formula->crop_type }} · {{ ucfirst($formula->season) }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Application Stage</span>
+                    <span class="info-value">{{ $formula->stageLabel() }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Rate per Hectare</span>
+                    <span class="info-value">
+                        {{ rtrim(rtrim(number_format($formula->effectiveRate(), 2), '0'), '.') }} {{ $formula->unit }}
+                        @if($formula->rateNeedsClamp())
+                            <span style="color:#b45309;font-weight:500;font-size:12px;">
+                                (configured {{ rtrim(rtrim(number_format((float) $formula->rate_per_hectare, 2), '0'), '.') }})
+                            </span>
+                        @endif
+                    </span>
+                </div>
+                @if($formula->min_rate_per_hectare !== null || $formula->max_rate_per_hectare !== null)
+                <div class="info-row">
+                    <span class="info-label">Safety Bounds</span>
+                    <span class="info-value">
+                        {{ $formula->min_rate_per_hectare !== null ? rtrim(rtrim(number_format((float) $formula->min_rate_per_hectare, 2), '0'), '.') : '—' }}
+                        –
+                        {{ $formula->max_rate_per_hectare !== null ? rtrim(rtrim(number_format((float) $formula->max_rate_per_hectare, 2), '0'), '.') : '—' }}
+                        {{ $formula->unit }}
+                    </span>
+                </div>
+                @endif
+                @if($formula->notes)
+                <div class="info-row">
+                    <span class="info-label">Notes</span>
+                    <span class="info-value" style="font-size:12.5px;font-weight:500;">{{ $formula->notes }}</span>
+                </div>
+                @endif
+            @empty
+                <div class="info-row">
+                    <span class="info-label">Crop &amp; Season</span>
+                    <span class="info-value">N/A</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Application Stage</span>
+                    <span class="info-value">N/A</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Rate per Hectare</span>
+                    <span class="info-value">N/A</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Safety Bounds</span>
+                    <span class="info-value">N/A</span>
+                </div>
+            @endforelse
+        </div>
+    </div>
+
 </div>
 
 <!-- Recommended Products -->

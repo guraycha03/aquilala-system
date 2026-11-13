@@ -807,7 +807,19 @@ class ProductController extends Controller
             ->take(4)
             ->get();
 
-        return view('farmer.products.show', compact('product', 'relatedProducts'));
+        // Application rules — the SAME decision_formulas rows the quotation
+        // engine reads. CostQuotationEngine groups them by product_id and sums
+        // effectiveRate(); QuotationController::formulaTotalsFor() does the
+        // same for the result page; the ?tab=rules editor writes them. Reading
+        // them here keeps all three on one source of truth instead of this
+        // page showing nothing while the quotation quotes from them.
+        $formulas = $product->decisionFormulas()
+            ->orderBy('crop_type')
+            ->orderBy('season')
+            ->orderBy('stage')
+            ->get();
+
+        return view('farmer.products.show', compact('product', 'relatedProducts', 'formulas'));
     }
 
     /**
