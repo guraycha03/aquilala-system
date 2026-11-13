@@ -65,13 +65,16 @@ class AiResponseValidatorAi
                 'Content-Type'  => 'application/json',
             ])
                 ->withoutVerifying()
-                ->connectTimeout(5)
+                ->connectTimeout(15)
                 ->timeout(30)
                 ->post(self::ENDPOINT, [
                     'model'       => self::MODEL,
                     'messages'    => $this->messages($userMessage, $userRole, $ai1Answer, $context),
                     'temperature' => 0.1,
-                    'max_tokens'  => 600,
+                    // Room for the reasoning pass as well as the verdict —
+                    // a tight budget returns empty content and the verdict
+                    // is silently dropped.
+                    'max_tokens'  => 1600,
                     'reasoning_effort' => 'low',
                 ]);
         } catch (ConnectionException $e) {
@@ -154,8 +157,11 @@ Verdict rules:
   inaccuracy, or a slightly off topic). Replace it with suggested_answer.
 - "reject" — the answer does not answer the question, dumps unrelated data, or
   is about something the system does not cover. Replace it with
-  suggested_answer, which should be a one-sentence explanation of what the
-  assistant can and cannot help with here.
+  suggested_answer: a short, direct, friendly answer to the user's question,
+  written from the verified context. Only when the question is genuinely
+  outside the system's scope, write one sentence saying what you can help
+  with instead — never a lecture about limitations, and never a bare
+  "I cannot answer that".
 
 Never include markdown, code fences, or prose outside the JSON object.
 PROMPT

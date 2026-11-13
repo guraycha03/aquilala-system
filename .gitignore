@@ -36,3 +36,7 @@ aquilala_key*
 
 # Database dumps — contain password hashes and personal data
 /database/backups/
+
+# Local-only material — never push to GitHub, never deploy
+/Manuscript/
+/demo-data/

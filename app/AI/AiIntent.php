@@ -128,9 +128,14 @@ final class AiIntent
     {
         return in_array($intent, [
             self::CLARIFICATION,
-            // UNSUPPORTED and FARMING_ADVICE are left callable so the model can
-            // phrase the refusal or the guidance conversationally instead of
-            // handing over a fixed sentence.
+            // The refusal and the how-to answer are Laravel's own wording.
+            // Both used to be left callable so the model could phrase them
+            // conversationally; that cost a network call per turn, and the
+            // model's version of a refusal was the "I can't answer that"
+            // sentence users complained about. The fixed answers below are
+            // role-aware and still friendly.
+            self::UNSUPPORTED,
+            self::FARMING_ADVICE,
             self::CROP_ADVICE,
             self::CROP_DISCOVERY,
             self::CROP_SEARCH,

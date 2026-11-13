@@ -535,7 +535,7 @@ class AiAssistantGroundingTest extends TestCase
         Http::assertNotSent(fn ($request) => str_contains($request->url(), 'api.groq.com'));
     }
 
-    public function test_a_failed_provider_falls_back_to_the_deterministic_answer(): void
+    public function test_a_failed_provider_returns_the_unavailable_message_instead_of_the_fallback_answer(): void
     {
         Config::set('services.groq.key', 'test-key');
 
@@ -547,8 +547,11 @@ class AiAssistantGroundingTest extends TestCase
 
         $response->assertOk();
 
-        $this->assertStringContainsString('1,450.00', $response->json('reply'));
-        $this->assertCount(2, $response->json('suggestions'));
+        // When nobody could answer, the farmer gets one clear message to try
+        // again — never a deterministic guess dressed up as the model's answer.
+        $this->assertSame('unavailable', $response->json('source'));
+        $this->assertStringContainsString('temporarily unavailable', $response->json('reply'));
+        $this->assertStringNotContainsString('1,450.00', $response->json('reply'));
     }
 
     // ────────────────────────────────────────────────────────────

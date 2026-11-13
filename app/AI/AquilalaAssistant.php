@@ -126,39 +126,19 @@ class AquilalaAssistant
 
         $context = AiConversationContext::fromArray($conversationContext);
 
-        if ($user?->role === 'store_owner'
-            && preg_match('/\b(low stock|low-stock|reorder|out of stock|list.*low|low.*inventory)\b/i', $message) === 1) {
-            $lowStock = \App\Models\Product::query()
-                ->where('user_id', (int) $user->id)
-                ->where('status', 'active')
-                ->whereRaw('reorder_threshold IS NOT NULL AND stock_quantity < reorder_threshold')
-                ->orderBy('stock_quantity')
-                ->limit(8)
-                ->get();
+        // How to do something in the account comes first: this page exists to
+        // guide users through tasks, and "paano maglagay ng product" needs
+        // steps, not a link list or a stock summary.
+        if (($howTo = $this->howToAnswer($message, (string) ($user?->role ?? ''), $context)) !== null) {
+            return $howTo;
+        }
 
-            if ($lowStock->isEmpty()) {
-                $reply = 'Wala pang **low‑stock item** sa inventory niyo ngayon. Makikita niyo ang buong stock sa [Inventory]( '
-                    . route('store.inventory.index') . ' ).';
-            } else {
-                $lines = ['Mga produkto na **low stock** sa inyong tindahan:'];
-                foreach ($lowStock as $product) {
-                    $lines[] = '- **' . $product->name . '** — stock: ' . (int) $product->stock_quantity
-                        . ', reorder level: ' . (int) $product->reorder_threshold;
-                }
-                $lines[] = '';
-                $lines[] = 'Buksa n' . 'yo lang ang [Inventory](' . route('store.inventory.index') . ') para detalye.';
-                $reply = implode("\n", $lines);
-            }
-
-            return [
-                'reply'       => $reply,
-                'type'        => 'answer',
-                'suggestions' => [],
-                'context'     => $context->toArray(),
-                'intent'      => AiIntent::SYSTEM_HELP,
-                'source'      => 'conversation',
-                'violations'  => [],
-            ];
+        // Stock and inventory questions in any phrasing a store owner uses.
+        // The answer is read with InventoryController's own predicates, so
+        // the chat and the inventory page can never disagree about what is
+        // low or what is out of stock.
+        if ($user?->role === 'store_owner' && $this->isStockQuestion($message)) {
+            return $this->storeStockAnswer($user, $context, $message);
         }
 
         if ($user?->role === 'store_owner'
@@ -243,7 +223,6 @@ class AquilalaAssistant
         }
 
         if ($this->assistantIsSystemHelp($message)) {
-            $pages = $this->pageLinkReply('where can I find a page', (string) ($user?->role ?? ''))['reply'] ?? null;
             $pages = $this->assistantPageCatalog($user?->role ?? '');
             $links = [];
 
@@ -311,7 +290,7 @@ class AquilalaAssistant
         }
 
         $contextData = $this->contextBuilder->build($message, $routing, $user, $context);
-        $fallback = $this->deterministicAnswer($intent, $contextData, $routing);
+        $fallback = $this->deterministicAnswer($intent, $contextData, $routing, $user, $message);
 
         // A turn the database cannot answer is answered by Laravel. Two
         // situations, and both are refusals rather than turns:
@@ -359,12 +338,316 @@ class AquilalaAssistant
             'reply'      => $reply,
             'type'       => $this->responseType($intent, $contextData),
             // Product cards, built from database rows. The frontend renders
-            // these; it is never asked to parse them out of prose.
-            'suggestions' => $contextData['products'],
+            // these; it is never asked to parse them out of prose. A turn
+            // whose only owed reply is the bare farm-area question shows no
+            // cards — a price list above "what is your farm area?" reads as
+            // an answer to a question nobody asked. When the crop's products
+            // are still browsable (for example the season is the open slot)
+            // the cards stay, because that is exactly what the farmer asked
+            // to see.
+            'suggestions' => array_values(array_unique($contextData['missing'])) === ['area']
+                ? []
+                : $contextData['products'],
             'context'    => $nextContext->toArray(),
             'intent'     => $intent,
             'source'     => $source,
             'violations' => $violations,
+        ];
+    }
+
+    // ────────────────────────────────────────────────────────────
+    //  Task guidance and stock answers (deterministic shortcuts)
+    // ────────────────────────────────────────────────────────────
+
+    /**
+     * Walk the user through a task in their own account, in the order the
+     * screen does it.
+     *
+     * The page catalog says WHERE a page is; this says HOW to do the thing.
+     * Scoped by role, so a store owner gets store tasks, a farmer gets farm
+     * tasks, and an admin gets oversight tasks — never another role's.
+     *
+     * @return array{reply: string, type: string, suggestions: array<int, mixed>, context: array<string, mixed>, intent: string, source: string, violations: array<int, string>}|null
+     */
+    private function howToAnswer(string $message, string $role, AiConversationContext $context): ?array
+    {
+        // Only messages that actually ask how to do something reach the task
+        // table — a plain inventory or product question must not be answered
+        // with steps nobody asked for.
+        $asksHow = preg_match('/\b(?:how|paano|pano|guide|me\s+to|steps?|gawin|gamitin)\b/iu', $message) === 1
+            || preg_match('/\b(?:add|create|update|edit|submit|make|set|import|restore|register|invite|insert)\b/iu', $message) === 1;
+
+        if (! $asksHow) {
+            return null;
+        }
+
+        $task = $this->howToTask($message, $role);
+
+        if ($task === null || ! \Illuminate\Support\Facades\Route::has($task['route'])) {
+            return null;
+        }
+
+        $lines = ['**' . $task['label'] . '** — ' . ($this->wantsTagalog($message) ? 'ganito po:' : 'here is how:'), ''];
+
+        foreach ($task['steps'] as $index => $step) {
+            $lines[] = ($index + 1) . '. ' . $step;
+        }
+
+        $lines[] = '';
+        $lines[] = 'Open the [' . $task['label'] . '](' . route($task['route']) . ') page to start.';
+
+        return [
+            'reply'       => implode("\n", $lines),
+            'type'        => 'answer',
+            'suggestions' => [],
+            'context'     => $context->toArray(),
+            'intent'      => AiIntent::SYSTEM_HELP,
+            'source'      => 'conversation',
+            'violations'  => [],
+        ];
+    }
+
+    /**
+     * The task table: one entry per role-owned task the assistant can teach.
+     *
+     * Each `match` is deliberately narrow — it must name the task's own
+     * object (product, stock, harvest, quotation, member, store), so
+     * "how do I plant corn?" never lands on a task that has nothing to do
+     * with planting.
+     *
+     * @return array{id: string, match: string, label: string, route: string, steps: array<int, string>}|null
+     */
+    private function howToTask(string $message, string $role): ?array
+    {
+        $tasks = [];
+
+        if ($role === 'store_owner') {
+            $tasks = [
+                [
+                    'id'    => 'add_product',
+                    'match' => '/\b(?:add|create|insert|new|import|ilagay|maglagay|lagay|mag[\s\-]?add|gumawa)\b[^.?!]{0,60}\b(?:product|item|produkto|listahan)\b'
+                        . '|\b(?:product|item|produkto)\b[^.?!]{0,40}\b(?:add|create|new|insert|gawin)\b/iu',
+                    'label' => 'Product Listings',
+                    'route' => 'store.storefront.index',
+                    'steps' => [
+                        'Open **Product Listings** and press **Add Product**.',
+                        'Choose **Create manually** for a single item, or **Import from file** (CSV/XLSX) for many at once.',
+                        'Fill in the name, category, brand, price, and package.',
+                        'Set the starting **stock quantity** and **reorder level** — the reorder level is what decides when the product appears as low stock.',
+                        'Save. The product shows up in your storefront and inventory right away.',
+                    ],
+                ],
+                [
+                    'id'    => 'update_stock',
+                    'match' => '/\b(?:update|change|edit|adjust|restore|set|bawas|babawasan|dagdag|dagdagan|mag[\s\-]?update|paano|pano)\b[^.?!]{0,50}\b(?:stock|stocks|quantity|reorder|inventory)\b'
+                        . '|\b(?:stock|stocks)\b[^.?!]{0,30}\b(?:update|change|edit|how|paano|pano)\b/iu',
+                    'label' => 'Inventory',
+                    'route' => 'store.inventory.index',
+                    'steps' => [
+                        'Open **Inventory** and find the product — the search box is at the top.',
+                        'Press **Update Stock** on that product\'s row.',
+                        'Enter the new **stock quantity** and the **reorder level**, then save.',
+                        'The low-stock and out-of-stock counts update immediately.',
+                    ],
+                ],
+            ];
+        } elseif ($role === 'farmer') {
+            $tasks = [
+                [
+                    'id'    => 'harvest_report',
+                    'match' => '/\b(?:how|paano|pano|submit|record|add|create|new|gumawa|gawa|ilagay|maglagay|mag[\s\-]?submit)\b[^.?!]{0,60}\b(?:harvest\s+report|report\s+harvest|harvest)\b/iu',
+                    'label' => 'Submit Harvest Report',
+                    'route' => 'farmer.harvests.create',
+                    'steps' => [
+                        'Open **Submit Harvest Report**.',
+                        'Pick the crop and the season (Wet or Dry) the harvest belongs to.',
+                        'Enter the land area, harvest date, planned output, actual yield, and actual expenses.',
+                        'Save — the report feeds your Estimate vs Actual and crop performance charts.',
+                    ],
+                ],
+                [
+                    'id'    => 'quotation',
+                    'match' => '/\b(?:how|paano|pano|create|make|new|gumawa|gawa|mag[\s\-]?gawa|start)\b[^.?!]{0,60}\b(?:quotation|quote|quotations|estimat)\b'
+                        . '|\b(?:quotation|quote|estimat)\b[^.?!]{0,40}\b(?:create|make|new|gumawa|paano|pano|how)\b/iu',
+                    'label' => 'My Cost Quotations',
+                    'route' => 'farmer.quotations.request',
+                    'steps' => [
+                        'Open **My Cost Quotations** and start a new request.',
+                        'Choose the store, then add the products you need.',
+                        'Pick the season (Wet or Dry) and the **Valid Until** date — usually 3 to 7 days, so the prices stay current.',
+                        'Save. You can reopen it any time for the itemized breakdown.',
+                    ],
+                ],
+                [
+                    'id'    => 'buy_supplies',
+                    'match' => '/\b(?:how|paano|pano|where)\b[^.?!]{0,50}\b(?:buy|order|purchase|inquire|umorder|bumili)\b'
+                        . '|\b(?:buy|order|purchase)\b[^.?!]{0,40}\bsupplies\b/iu',
+                    'label' => 'Browse Supplies',
+                    'route' => 'farmer.products.browse',
+                    'steps' => [
+                        'Open **Browse Supplies** and search for the product you need.',
+                        'Tap the product to see its price, stock, and the store that carries it.',
+                        'Send your inquiry from that page — the store sees it and replies with the current price.',
+                    ],
+                ],
+            ];
+        } elseif ($role === 'admin') {
+            $tasks = [
+                [
+                    'id'    => 'add_member',
+                    'match' => '/\b(?:how|paano|pano|add|create|new|magdagdag|invite|register)\b[^.?!]{0,60}\b(?:member|farmer|user|account)\b/iu',
+                    'label' => 'Members',
+                    'route' => 'admin.members.index',
+                    'steps' => [
+                        'Open **Members** and press **Add Member**.',
+                        'Fill in the member details and save — new farmer accounts need your approval before they can log in.',
+                        'Bringing a list? Use **Import Members** to upload many at once.',
+                    ],
+                ],
+                [
+                    'id'    => 'add_store',
+                    'match' => '/\b(?:how|paano|pano|add|create|new|magdagdag)\b[^.?!]{0,60}\b(?:store|shop|seller)\b/iu',
+                    'label' => 'Stores',
+                    'route' => 'admin.stores.index',
+                    'steps' => [
+                        'Open **Stores** and press **Add Store**.',
+                        'Fill in the store name, owner account, and details, then save.',
+                        'The store owner can then log in and manage their own products and inventory.',
+                    ],
+                ],
+            ];
+        }
+
+        foreach ($tasks as $task) {
+            if (preg_match($task['match'], $message) === 1) {
+                return $task;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Stock and inventory questions in any phrasing: "low stock", "low in
+     * stock", "almost out of stock", "reorder", "show my inventory", "maubos".
+     */
+    private function isStockQuestion(string $message): bool
+    {
+        return preg_match(
+            '/\b(?:low[\s\-]?stock(?:ed)?|stock[s]?\s+(?:is\s+|are\s+)?low|low\s+in\s+stock|reorder(?:ing|point|level)?|'
+                . 'out[\s\-]?of[\s\-]?stock|running\s+out|almost\s+out|nearly\s+out|ma(?:u|g)?ubos|ubos(?:\s+na)?|'
+                . 'kulang\s+sa\s+stock|inventor(?:y|ies)|stock\s+levels?|stock\s+status)\b/iu',
+            $message
+        ) === 1;
+    }
+
+    /**
+     * The store's stock position, read with InventoryController's own rules.
+     *
+     * The page's metric cards count low stock as `quantity <= reorder level`
+     * and out of stock as `quantity <= 0` or status `out_of_stock`. This
+     * answer uses exactly those predicates — the previous query required a
+     * non-null threshold and `status = active`, so it reported "nothing is
+     * low" while the page showed a low-stock item and an out-of-stock one.
+     *
+     * @return array{reply: string, type: string, suggestions: array<int, mixed>, context: array<string, mixed>, intent: string, source: string, violations: array<int, string>}
+     */
+    private function storeStockAnswer(User $user, AiConversationContext $context, string $message): array
+    {
+        $products = \App\Models\Product::query()
+            ->where('user_id', (int) $user->id)
+            ->get();
+
+        // Identical to InventoryController's metric cards.
+        $out = $products->filter(fn ($p) => ($p->stock_quantity ?? 0) <= 0 || $p->status === 'out_of_stock');
+        $low = $products->filter(fn ($p) => ($p->stock_quantity ?? 0) <= $p->reorder_threshold);
+        $lowAlone = $low->reject(fn ($p) => $out->contains('id', $p->id));
+
+        $inventory = '[Inventory](' . route('store.inventory.index') . ')';
+        $tagalog = $this->wantsTagalog($message);
+        $asksOut = preg_match('/\b(?:out[\s\-]?of[\s\-]?stock|running\s+out|almost\s+out|nearly\s+out|ma(?:u|g)?ubos|ubos)\b/iu', $message) === 1;
+
+        if ($products->isEmpty()) {
+            $reply = $tagalog
+                ? 'Wala pa kayong nakalistang produkto. I-add muna ang inyong mga item sa [Product Listings](' . route('store.storefront.index') . ') — doon po ang **Add Product** at **Import from file**.'
+                : 'You have no products listed yet. Add your items on [Product Listings](' . route('store.storefront.index') . ') first — that page has **Add Product** and **Import from file**.';
+        } elseif ($asksOut && $out->isEmpty()) {
+            $reply = $tagalog
+                ? 'Wala pa kayong **out of stock** na produkto ngayon.'
+                : 'You have no **out of stock** products right now.';
+
+            if ($lowAlone->isNotEmpty()) {
+                $lines = ['', $tagalog ? 'May ' . $lowAlone->count() . ' low stock item pa:' : 'You do have ' . $lowAlone->count() . ' low stock item(s):'];
+
+                foreach ($lowAlone as $p) {
+                    $lines[] = '- **' . $p->name . '** — stock: ' . (int) ($p->stock_quantity ?? 0)
+                        . ', reorder level: ' . (int) ($p->reorder_threshold ?? 0);
+                }
+
+                $reply .= implode("\n", $lines);
+            }
+
+            $reply .= "\n\n" . ($tagalog ? 'Buksan ninyo ang ' : 'Open your ') . $inventory
+                . ($tagalog ? ' para sa detalye.' : ' for details.');
+        } else {
+            $lines = [
+                ($tagalog ? 'Sa inyong inventory: ' : 'In your inventory: ')
+                    . '**' . $products->count() . '** produkto — **' . $low->count() . '** low stock, **'
+                    . $out->count() . '** out of stock.',
+                '',
+            ];
+
+            if ($out->isNotEmpty()) {
+                $lines[] = '**Out of stock (' . $out->count() . '):**';
+
+                foreach ($out as $p) {
+                    $lines[] = '- **' . $p->name . '** — stock: ' . (int) ($p->stock_quantity ?? 0);
+                }
+
+                $lines[] = '';
+            }
+
+            if ($lowAlone->isNotEmpty()) {
+                $lines[] = '**Low stock (' . $lowAlone->count() . '):**';
+
+                foreach ($lowAlone as $p) {
+                    $lines[] = '- **' . $p->name . '** — stock: ' . (int) ($p->stock_quantity ?? 0)
+                        . ', reorder level: ' . (int) ($p->reorder_threshold ?? 0);
+                }
+
+                $lines[] = '';
+            }
+
+            if ($out->isEmpty() && $lowAlone->isEmpty()) {
+                $lines[] = $tagalog
+                    ? 'Wala pang out of stock o low stock na item — maayos pa ang stock ninyo.'
+                    : 'Nothing is out of stock or running low — your stock is in good shape.';
+                $lines[] = '';
+            }
+
+            if ($low->count() > $lowAlone->count()) {
+                // The page's low-stock card also counts zero-stock items, so
+                // say so rather than let the two numbers look like a lie.
+                $lines[] = $tagalog
+                    ? '_Kabilang sa bilang ng low stock sa Inventory page ang mga out of stock na item._'
+                    : '_The Inventory page counts out-of-stock items inside its low-stock number too._';
+                $lines[] = '';
+            }
+
+            $lines[] = ($tagalog ? 'Buksan ninyo ang ' : 'Open your ') . $inventory
+                . ($tagalog ? ' para tingnan ang buong stock at para mag-update.' : ' to see everything and to update stock levels.');
+
+            $reply = implode("\n", $lines);
+        }
+
+        return [
+            'reply'       => $reply,
+            'type'        => 'answer',
+            'suggestions' => [],
+            'context'     => $context->toArray(),
+            'intent'      => AiIntent::SYSTEM_HELP,
+            'source'      => 'conversation',
+            'violations'  => [],
         ];
     }
 
@@ -438,6 +721,13 @@ class AquilalaAssistant
             ]);
 
             if ($completion === null) {
+                // The provider could not be reached in time, or answered with
+                // nothing the pipeline could use. This turn gets one clear
+                // message to try again — never the deterministic fallback
+                // dressed up as the model's answer.
+                $answer = $this->unavailableReply();
+                $source = 'unavailable';
+
                 break;
             }
 
@@ -516,10 +806,23 @@ class AquilalaAssistant
         return [
             'answer'     => $answer,
             'violations' => $violations,
-            'source'     => $source === 'fallback' || $answer === $fallback ? 'fallback' : 'ai',
+            'source'     => $source === 'unavailable'
+                ? 'unavailable'
+                : ($source === 'fallback' || $answer === $fallback ? 'fallback' : 'ai'),
         ];
 
 
+    }
+
+    /**
+     * The one honest answer when nobody could answer: the provider could not
+     * be reached in time, or returned nothing the pipeline could use. The
+     * farmer gets a clear message to try again — never a guess dressed up as
+     * the model's answer, and never the deterministic fallback in its place.
+     */
+    private function unavailableReply(): string
+    {
+        return 'AI is temporarily unavailable right now. Please check your internet connection and try again in a moment.';
     }
 
     /**
@@ -611,7 +914,7 @@ class AquilalaAssistant
      * @param  array<string, mixed>  $contextData
      * @param  array{intent: string, slots: array<string, mixed>, follow_up: bool}  $routing
      */
-    private function deterministicAnswer(string $intent, array $contextData, array $routing): string
+    private function deterministicAnswer(string $intent, array $contextData, array $routing, ?User $user = null, string $message = ''): string
     {
         $crop = $routing['slots']['crop'] ?? null;
         $products = $contextData['products'];
@@ -640,9 +943,9 @@ class AquilalaAssistant
             AiIntent::CROP_RECOMMENDATION => $this->cropChoiceAnswer($contextData, $routing),
             AiIntent::SEASONAL_RECOMMENDATION => $this->seasonalAnswer($contextData, $routing),
             AiIntent::FARMING_ADVICE => $this->farmingAdviceAnswer($contextData, $crop, $missing, $routing),
-            AiIntent::GENERAL_FARMING => $this->generalAnswer($contextData, (string) ($user?->role ?? '')),
+            AiIntent::GENERAL_FARMING => $this->generalAnswer($contextData, (string) ($user?->role ?? $contextData['facts']['role'] ?? '')),
             AiIntent::SYSTEM_HELP => $this->helpAnswer($contextData),
-            AiIntent::UNSUPPORTED => $this->unsupportedAnswer($contextData['facts']['role'] ?? null),
+            AiIntent::UNSUPPORTED => $this->unsupportedAnswer($user?->role ?? ($contextData['facts']['role'] ?? null), $message),
             AiIntent::CLARIFICATION => $this->clarificationAnswer($missing, $routing),
             default => $this->clarificationAnswer($missing, $routing),
         };
@@ -1081,6 +1384,16 @@ class AquilalaAssistant
      */
     private function recommendationAnswer(array $products, ?string $crop, array $missing, array $routing): string
     {
+        // Something required is missing, so there is no recommendation to
+        // give yet. The question is the whole answer here: a product list
+        // with prices sitting above "what is your farm area?" looks like the
+        // system already priced a farm it knows nothing about.
+        $pendingQuestion = $this->clarificationQuestion($missing, $crop, $routing);
+
+        if ($pendingQuestion !== null) {
+            return $pendingQuestion;
+        }
+
         $lines = [];
 
         if ($products !== []) {
@@ -1357,13 +1670,45 @@ class AquilalaAssistant
         return implode("\n", $lines);
     }
 
-    private function unsupportedAnswer(?string $role = null): string
+    /**
+     * The out-of-scope answer. It never reads as a dead end: it names what
+     * this role CAN ask about, including how to use their own account pages,
+     * and it answers in the language the person wrote in.
+     */
+    private function unsupportedAnswer(?string $role = null, string $message = ''): string
     {
-        if ($role === 'store_owner') {
-            return "Para sa inyong tindahan, masasagot ko sa inventory, produkto, demand trends, top products, at prices. Tanong niyo po tungkol doon.";
+        $tagalog = $this->wantsTagalog($message);
+
+        if ($role === 'admin') {
+            return $tagalog
+                ? 'Sa admin account, gabayan ko po kayo sa member management, store at product oversight, harvest records, at reports — kung paano gumawa ng isang task sa inyong account. Tanong niyo po tungkol doon.'
+                : 'I can guide an admin through member management, store and product oversight, harvest records, and reports — including how to do any task in your account. Ask me about those.';
         }
 
-        return "Tungkol sa pagsasaka at produkto ng Aquilala ang masasagot ko. Tanong niyo po tungkol sa tanim, presyo, o gastusin sa bukid at tutulungan ko po kayo.";
+        if ($role === 'store_owner') {
+            return $tagalog
+                ? 'Para sa inyong tindahan, masasagot ko sa inventory, produkto, demand trends, top products, at prices — at kung paano gamitin ang mga pahina ng inyong account. Tanong niyo po tungkol doon.'
+                : 'I can help with your store inventory, products, demand trends, top products, and prices — and with how to use any page in your store account. Ask me about those.';
+        }
+
+        return $tagalog
+            ? 'Tungkol sa pagsasaka at produkto ng Aquilala ang masasagot ko — tanim, presyo, gastusin sa bukid, at kung paano gamitin ang mga pahina ng account ninyo. Tanong niyo po tungkol doon.'
+            : 'I can help with farming, Aquilala products, prices, cost estimates, and with how to use the pages in your account. Ask me about any of those.';
+    }
+
+    /**
+     * Does this message read as Tagalog or Taglish?
+     *
+     * Only the fixed shortcut answers use this — they cannot ask a model to
+     * match the language the way the explanation step does.
+     */
+    private function wantsTagalog(string $message): bool
+    {
+        return preg_match(
+            '/\b(?:pano|paano|ako|ng|mga|ang|wala|ito|yung|gusto|salamat|ninyo|niyo|inyo|tindahan|presyo|tanim|'
+                . 'ubos|maubos|magubos|ilagay|gawin|gamitin|tanungin|sabihin|po|ba)\b/iu',
+            $message
+        ) === 1;
     }
 
     /**
@@ -1401,7 +1746,11 @@ class AquilalaAssistant
         }
 
         if (in_array('area', $missing, true) || ($area === null && $this->wantsArea($routing['intent']))) {
-            return 'I can help work that out for you. What is your farm area in hectares?';
+            // Naming the crop keeps the turn about the farmer's own question
+            // — they asked about rice, so the question about rice.
+            return ($crop !== null && $crop !== '')
+                ? 'I can work out the recommendation for **' . $crop . '**. What is your farm area in hectares?'
+                : 'I can help work that out for you. What is your farm area in hectares?';
         }
 
         if (in_array('season', $missing, true)) {
@@ -1529,8 +1878,12 @@ class AquilalaAssistant
             return null;
         }
 
+        $intro = $this->wantsTagalog($message)
+            ? 'Narito ang mga pahina na tumutugma sa hinahanap ninyo. Buksan angkop sa inyong kailangan:'
+            : 'Here are the page links that match your request. Open the one that fits what you need:';
+
         return [
-            'reply'  => "Here are the page links that match your request. Open the one that fits what you need:\n" . implode("\n", $links),
+            'reply'  => $intro . "\n" . implode("\n", $links),
         ];
     }
 
@@ -1571,6 +1924,21 @@ class AquilalaAssistant
                 'AI Assistant' => 'store.ai-chat.index',
                 'Settings' => 'store.settings.index',
                 'Activity History' => 'store.activity.index',
+            ];
+        } elseif ($role === 'admin') {
+            $pages = [
+                'Dashboard' => 'admin.dashboard',
+                'Members' => 'admin.members.index',
+                'Users' => 'admin.users.index',
+                'Stores' => 'admin.stores.index',
+                'Quotations' => 'admin.quotations.index',
+                'Harvest Records' => 'admin.harvests.index',
+                'AI Harvest Chat' => 'admin.harvests.ai',
+                'Analytics' => 'admin.analytics.index',
+                'Calendar' => 'admin.calendar.index',
+                'Activity History' => 'admin.activity.index',
+                'Settings' => 'admin.settings.index',
+                'AI Assistant' => 'admin.ai-chat.index',
             ];
         }
 
@@ -1622,9 +1990,33 @@ class AquilalaAssistant
             'violations'  => [],
         ];
 
-        if (($user?->role ?? '') !== 'farmer') {
-            return $makeResponse("I can’t answer that. There is no harvest overview available in your account. "
-                . "If you are looking for your own account pages, ask me to show the page links.");
+        $role = $user?->role ?? '';
+
+        if ($role !== 'farmer') {
+            // Not a refusal — this account simply has other pages. Point at
+            // the ones it does have instead of ending the conversation.
+            if ($role === 'store_owner') {
+                return $makeResponse(
+                    'Harvest reports belong to farmer members, so your store account has none. '
+                    . 'For your own store you can check the [Dashboard](' . route('store.dashboard') . ') '
+                    . 'and [Quotation Demand Trends](' . route('store.quotations.index') . '). '
+                    . 'Tell me what you would like to see in your store and I will guide you.'
+                );
+            }
+
+            if ($role === 'admin') {
+                return $makeResponse(
+                    'There is no personal harvest overview in an admin account. '
+                    . 'Open the [Harvest Records](' . route('admin.harvests.index') . ') page for the association-wide data, '
+                    . 'or the [AI Harvest Chat](' . route('admin.harvests.ai') . ') to ask about it in plain language. '
+                    . 'Ask me to show your pages any time.'
+                );
+            }
+
+            return $makeResponse(
+                'There is no harvest overview in this account. '
+                . 'Ask me to show the pages you need and I will point you to them.'
+            );
         }
 
         $year = null;

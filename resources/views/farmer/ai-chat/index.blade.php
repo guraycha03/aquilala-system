@@ -122,8 +122,8 @@
         <div class="ai-offline-banner" id="aiOfflineBanner" style="display:none; align-items:flex-start; gap:8px; padding:0 0 12px; margin:0 0 12px; background:none; border:none; color:#7c2d12; font-size:13.5px; font-weight:600;">
           <i data-lucide="message-square-off" style="width:18px;height:18px;flex-shrink:0;margin-top:2px;"></i>
           <div>
-            <strong style="display:block; margin-bottom:2px;">AI is currently unavailable</strong>
-            <div style="font-weight:400; font-size:13px; line-height:1.5;">Please try again later.</div>
+            <strong style="display:block; margin-bottom:2px;">The AI is temporarily offline</strong>
+            <div style="font-weight:400; font-size:13px; line-height:1.5;">Your account pages still work — please try again in a moment.</div>
           </div>
         </div>
         <div class="chat-messages" id="chatMessages">
@@ -432,21 +432,29 @@
     }
 
     function addOfflineMessage(text) {
+        // One notice per failure — never a stack of orange bubbles — and the
+        // composer stays usable so the user can simply try again. A dead
+        // input box is what makes the assistant look useless.
+        const last = chatMessages.lastElementChild;
+        if (last && last.classList && last.classList.contains('ai-offline-notice')) {
+            const body = last.querySelector('.ai-offline-text');
+            if (body) body.textContent = text;
+            scrollToBottom();
+            return last;
+        }
+
         const row = document.createElement('div');
-        row.className = 'message-row';
+        row.className = 'message-row ai-offline-notice';
         row.innerHTML =
             '<div class="message-bubble" style="background:#fff7ed; border:1px solid #fdba74; color:#7c2d12;">' +
             '<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">' +
             '<i data-lucide="message-square-off" style="width:20px;height:20px;flex-shrink:0;"></i>' +
-            '<strong>AI temporarily unavailable</strong></div>' +
-            '<div style="font-size:13.5px; line-height:1.5;">' + escapeHtml(text) + '</div></div>';
+            '<strong>The AI could not process your message</strong></div>' +
+            '<div class="ai-offline-text" style="font-size:13.5px; line-height:1.5;">' + escapeHtml(text) + '</div></div>';
         chatMessages.appendChild(row);
         if (window.lucide) window.lucide.createIcons();
         var banner = document.getElementById('aiOfflineBanner');
         if (banner) banner.style.display = 'flex';
-        chatInput.disabled = true;
-        sendBtn.disabled = true;
-        sendBtn.style.opacity = '0.5';
         scrollToBottom();
         return row;
     }
@@ -526,15 +534,19 @@
 
             if (resp.ok && data.reply) {
                 chatHistory.push({ role: 'assistant', content: data.reply });
-                const isOfflineReply = data.intent === 'UNSUPPORTED' || /temporarily unavailable|couldn't answer that just now|offline|not available/i.test(String(data.reply || ''));
-                if (isOfflineReply) {
-                    // Keep the chat usable: a refusal or an unavailable answer
-                    // is still a reply the user can respond to. Disabling input
-                    // only makes the assistant look dead.
-                    addMessage('assistant', data.reply);
+
+                // A successful reply clears any offline notice state.
+                var okBanner = document.getElementById('aiOfflineBanner');
+                if (okBanner) okBanner.style.display = 'none';
+
+                // The server flags a provider failure with source "unavailable":
+                // that is a clear message the user can act on, not an answer.
+                if (data.source === 'unavailable') {
+                    addOfflineMessage(data.reply);
                 } else {
                     addMessage('assistant', data.reply);
                 }
+
                 // Product cards are built by the server from database rows, so
                 // the carousel and the prose can never disagree about a price.
                 if (data.suggestions && data.suggestions.length) {
@@ -545,11 +557,11 @@
                 }
                 persistCurrentConversation();
             } else {
-                addOfflineMessage(data.error || 'The AI could not process this request. Please try again in a moment.');
+                addOfflineMessage(data.error || 'The AI failed to process your message. Please try again in a moment.');
             }
         } catch (err) {
             removeLoadingMessage();
-            addOfflineMessage('Could not reach the AI service. Please check your connection and try again.');
+            addOfflineMessage('The AI is currently offline. Please check your connection and try again in a moment.');
         }
 
         enableInput();

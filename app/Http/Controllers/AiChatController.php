@@ -108,17 +108,31 @@ class AiChatController extends Controller
             ], 422);
         }
 
-        $result = $this->assistant->handle(
-            $message,
-            $request->user(),
-            $this->recentHistory($validated['messages']),
-            $request->input('context'),
-        );
+        try {
+            $result = $this->assistant->handle(
+                $message,
+                $request->user(),
+                $this->recentHistory($validated['messages']),
+                $request->input('context'),
+            );
+        } catch (\Throwable $e) {
+            // The chat must never show a stack trace or die silently: one
+            // clean sentence the user can act on, and the detail in the log.
+            \Illuminate\Support\Facades\Log::error('aquilala.ai.assistant.failed', [
+                'user_id' => $request->user()?->id,
+                'error'   => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => 'The AI failed to process your message. Please try again in a moment.',
+            ], 500);
+        }
 
         return response()->json([
             'reply'       => $result['reply'],
             'type'        => $result['type'],
             'intent'      => $result['intent'],
+            'source'      => $result['source'],
             'suggestions' => $result['suggestions'],
             'context'     => $result['context'],
         ]);
