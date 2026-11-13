@@ -357,6 +357,7 @@ body:has(.chat-page) {
 
 /* Keep AI/user bubbles and their contents inside their containers */
 .message-bubble {
+    position: relative;
     overflow-wrap: break-word;
     word-break: break-word;
     min-width: 0;
@@ -1353,5 +1354,26 @@ body:has(.chat-page) .app-toast.show {
 }
 
 /* Clickable AI links */
-.message-bubble a { color: #2563eb; font-weight: 600; text-decoration: underline; }
+.message-bubble a { color: #2563eb; font-weight: 600; text-decoration: underline; text-underline-offset: 0.3em; }
 .message-bubble a:hover { color: #1d4ed8; }
+
+/* Copy button inside message bubbles */
+.copy-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: #fafdfb;
+    color: #344b38;
+    border: 1px solid #e0e5db;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    display: none;
+    z-index: 10;
+    white-space: nowrap;
+}
+.message-bubble:hover .copy-btn,
+.message-bubble.touching .copy-btn {
+    display: inline-block;
+}

@@ -259,7 +259,16 @@
     function inlineFormat(s) {
         return s
             .replace(/`([^`]+)`/g, '<code>$1</code>')
-            .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+            .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, function (match, name, url) {
+                // Convert product links into suggestion cards with placeholder image
+                var cleanName = name.replace(/[&<>'"]/g, function (c) { return {'&': '&','<': '<','>': '>',"'": ''','"': '"'}[c]; });
+                return '<a class="suggestion-card" href="' + url + '" target="_blank" rel="noopener">' +
+                    '<div class="suggestion-card-img"><img src="https://via.placeholder.com/96x96/eef0ea/26302a?text=No+Image" alt="' + escapeHtml(cleanName) + '" loading="lazy"></div>' +
+                    '<div class="suggestion-card-body">' +
+                    '<div class="suggestion-card-name">' + cleanName + '</div>' +
+                    '</div>' +
+                '</a>';
+            })
             .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
             .replace(/(^|[^*\s])\*([^*\n]+)\*/g, '$1<em>$2</em>');
     }
@@ -354,8 +363,9 @@
     function addMessage(role, content) {
         const row = document.createElement('div');
         row.className = 'message-row';
+        row.dataset.text = content;
         row.innerHTML =
-            '<div class="message-bubble"><div>' + renderMarkdown(content) + '</div></div>';
+            '<div class="message-bubble"><div>' + renderMarkdown(content) + '</div><span class="copy-btn">Copy</span></div>';
         chatMessages.appendChild(row);
         scrollToBottom();
         return row;
@@ -383,8 +393,9 @@
 
     function addUserMessage(text) {            const row = document.createElement('div');
     row.className = 'message-row user';
+    row.dataset.text = text;
     row.innerHTML =
-        '<div class="message-bubble" style="background:#edf0e8;border-color:#e1e5da;"><div>' + escapeHtml(text).replace(/\n/g, '<br>') + '</div></div>';
+        '<div class="message-bubble" style="background:#edf0e8;border-color:#e1e5da;"><div>' + escapeHtml(text).replace(/\n/g, '<br>') + '</div><span class="copy-btn">Copy</span></div>';
         chatMessages.appendChild(row);
         scrollToBottom();
         return row;
@@ -448,9 +459,8 @@
 
             if (resp.ok && data.reply) {
                 chatHistory.push({ role: 'assistant', content: data.reply });
-                const isOfflineReply = data.intent === 'UNSUPPORTED' || /temporarily unavailable|couldn't answer that just now|offline|not available/i.test(String(data.reply || ''));
-                if (isOfflineReply) {
-                    addMessage('assistant', data.reply);
+                if (data.source === 'unavailable') {
+                    addOfflineMessage(data.reply);
                 } else {
                     addMessage('assistant', data.reply);
                 }
@@ -880,6 +890,44 @@
         }
         persistCurrentConversation();
     })();
+
+    // Copy button functionality
+    chatMessages.addEventListener('click', function (e) {
+        if (e.target.classList.contains('copy-btn')) {
+            const row = e.target.closest('.message-row');
+            if (row) {
+                const text = row.dataset.text;
+                if (text) {
+                    navigator.clipboard.writeText(text).then(function () {
+                        showToast('Copied to clipboard');
+                    }).catch(function () {
+                        // fallback for older browsers
+                        const textarea = document.createElement('textarea');
+                        textarea.value = text;
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        if (document.execCommand('copy')) {
+                            showToast('Copied to clipboard');
+                        } else {
+                            showToast('Copy failed');
+                        }
+                        document.body.removeChild(textarea);
+                    });
+                }
+            }
+        }
+    });
+
+    // Touch show/hide copy button
+    chatMessages.addEventListener('touchstart', function (e) {
+        const row = e.target.closest('.message-row');
+        if (row) row.classList.add('touching');
+    }, { passive: true });
+
+    chatMessages.addEventListener('touchend', function (e) {
+        const row = e.target.closest('.message-row');
+        if (row) row.classList.remove('touching');
+    });
 
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
