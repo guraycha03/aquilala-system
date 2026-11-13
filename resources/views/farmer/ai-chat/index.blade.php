@@ -3,7 +3,7 @@
 @section('page-styles')
     {{-- One shared skin for every AI chat page: mute warm-sage palette and a
          viewport-locked layout so the composer is always on screen. --}}
-    <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=30" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=32" data-turbo-track="dynamic">
 @endsection
 
 @php
@@ -233,6 +233,24 @@
     let aiContext = null;
     let isSending = false;
 
+    // Cards for the products the current reply names in prose, keyed by
+    // normalised name, so a name in the text can be drawn as a real tile.
+    // Reset on every turn — a stale card must never illustrate a new reply.
+    var productTiles = {};
+    function normaliseName(s) {
+        return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+    function indexProducts(list) {
+        productTiles = {};
+        (list || []).forEach(function (card) {
+            var keys = [card.display_name, card.name];
+            keys.forEach(function (n) {
+                var k = normaliseName(n);
+                if (k) productTiles[k] = card;
+            });
+        });
+    }
+
     // Give the last message just enough space to sit above the floating
     // composer instead of a fixed (often wrong on mobile) bottom padding.
     function fitChatBottomPadding() {
@@ -329,9 +347,39 @@
     function inlineFormat(s) {
         return s
             .replace(/`([^`]+)`/g, '<code>$1</code>')
-            .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            // Every markdown link in a reply is a page link (the routes are
+            // generated server-side). Pages get a plain bold underlined link —
+            // never a product tile, because a page has no product image.
+            .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, function (match, name, url) {
+                return '<a class="page-link" href="' + url + '" target="_blank" rel="noopener">' + name + '</a>';
+            })
+            .replace(/\*\*([^*]+)\*\*/g, function (match, body) {
+                return productTile(body) || '<strong>' + body + '</strong>';
+            })
             .replace(/(^|[^*\s])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+    }
+
+    // A product the reply names in prose becomes a small fixed-size tile with
+    // its real image. Returns null when the bold text is not a known product,
+    // so ordinary emphasis still renders as <strong>.
+    function productTile(body) {
+        var card = productTiles[normaliseName(body)];
+        if (!card) return null;
+
+        var label = escapeHtml(card.display_name || card.name);
+        var meta = [];
+        if (card.price) meta.push('₱' + card.price + (card.price_unit ? ' / ' + card.price_unit : ''));
+        if (card.stock) meta.push(card.stock);
+        if (card.store) meta.push(card.store);
+
+        return '<a class="inline-product" href="' + escapeHtml(card.url) + '"' +
+            ' data-product=\'' + JSON.stringify(card).replace(/&/g, '&amp;').replace(/'/g, '&#39;') + '\'' +
+            ' target="_blank" rel="noopener">' +
+            '<span class="inline-product-img"><img src="' + escapeHtml(card.image) + '" alt="' + label + '" loading="lazy"></span>' +
+            '<span class="inline-product-body">' +
+            '<span class="inline-product-name">' + label + '</span>' +
+            (meta.length ? '<span class="inline-product-meta">' + escapeHtml(meta.join(' · ')) + '</span>' : '') +
+            '</span></a>';
     }
 
     function renderMarkdown(raw) {
@@ -424,8 +472,9 @@
     function addMessage(role, content) {
         const row = document.createElement('div');
         row.className = 'message-row';
+        row.dataset.text = content;
         row.innerHTML =
-            '<div class="message-bubble"><div>' + renderMarkdown(content) + '</div></div>';
+            '<div class="message-bubble"><div>' + renderMarkdown(content) + '</div><span class="copy-btn">Copy</span></div>';
         chatMessages.appendChild(row);
         scrollToBottom();
         return row;
@@ -462,8 +511,9 @@
     function addUserMessage(text) {
         const row = document.createElement('div');
         row.className = 'message-row user';
+        row.dataset.text = text;
         row.innerHTML =
-            '<div class="message-bubble" style="background:#edf0e8;border-color:#e1e5da;"><div>' + escapeHtml(text).replace(/\n/g, '<br>') + '</div></div>';
+            '<div class="message-bubble" style="background:#edf0e8;border-color:#e1e5da;"><div>' + escapeHtml(text).replace(/\n/g, '<br>') + '</div><span class="copy-btn">Copy</span></div>';
         chatMessages.appendChild(row);
         scrollToBottom();
         return row;
@@ -534,6 +584,10 @@
 
             if (resp.ok && data.reply) {
                 chatHistory.push({ role: 'assistant', content: data.reply });
+
+                // Reset the tile index first: the previous turn's products must
+                // never illustrate this reply.
+                indexProducts(data.products);
 
                 // A successful reply clears any offline notice state.
                 var okBanner = document.getElementById('aiOfflineBanner');
@@ -735,6 +789,9 @@
 
     function loadHistoryMessages(messages) {
         chatMessages.innerHTML = '';
+        // Replayed messages carry no product cards, so a name from the live
+        // turn must not be illustrated here.
+        indexProducts(null);
         const awaitCards = [];
         messages.forEach(function (m) {
             if (m.role === 'user') {
@@ -762,6 +819,7 @@
         aiContext = null;
         currentHistoryId = null;
         activeChatHasMessages = false;
+        indexProducts(null);
         chatMessages.innerHTML = '';
         staticRows.forEach(function (row) {
             chatMessages.appendChild(row.cloneNode(true));
@@ -955,6 +1013,67 @@
         if (e.key === 'Escape') {
             historyDropdown.classList.remove('open');
         }
+    });
+
+    /* ---------- Copy button (hover on desktop, tap on touch) ---------- */
+    function copyRowText(row) {
+        const text = row && row.dataset ? row.dataset.text : '';
+        if (!text) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+                showToast('Copied to clipboard');
+            }).catch(function () { legacyCopy(text); });
+        } else {
+            legacyCopy(text);
+        }
+    }
+
+    function legacyCopy(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+        document.body.removeChild(textarea);
+        showToast(ok ? 'Copied to clipboard' : 'Copy failed');
+    }
+
+    chatMessages.addEventListener('click', function (e) {
+        if (e.target.closest && e.target.closest('.copy-btn')) {
+            e.preventDefault();
+            copyRowText(e.target.closest('.message-row'));
+            return;
+        }
+
+        // A product tile inside the prose opens the same product sheet the
+        // carousel uses, instead of navigating away from the chat.
+        var tile = e.target.closest && e.target.closest('.inline-product');
+        if (tile) {
+            e.preventDefault();
+            var raw = tile.getAttribute('data-product');
+            if (raw) {
+                try { openProductModal(JSON.parse(raw), tile.getAttribute('href')); } catch (err) {}
+            }
+        }
+    });
+
+    // Tap a bubble to reveal its copy button (stays open until you tap elsewhere)
+    chatMessages.addEventListener('touchstart', function (e) {
+        const row = e.target.closest ? e.target.closest('.message-row') : null;
+        document.querySelectorAll('.message-row.touching').forEach(function (r) {
+            if (r !== row) r.classList.remove('touching');
+        });
+        if (row) row.classList.add('touching');
+    }, { passive: true });
+
+    document.addEventListener('click', function (e) {
+        if (e.target.closest && e.target.closest('.copy-btn')) return;
+        document.querySelectorAll('.message-row.touching').forEach(function (r) {
+            r.classList.remove('touching');
+        });
     });
 </script>
 @endsection

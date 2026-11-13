@@ -339,6 +339,13 @@ body:has(.chat-page) {
     max-width: 720px;
     width: 100%;
     min-width: 0;
+    position: relative;
+}
+
+/* Reserve room under a bubble for its copy button so revealing it never
+   covers the message that follows. */
+.message-row:has(.copy-btn) {
+    padding-bottom: 32px;
 }
 
 /* User messages: full-width row, avatar at the far right, text just left of it */
@@ -1357,23 +1364,133 @@ body:has(.chat-page) .app-toast.show {
 .message-bubble a { color: #2563eb; font-weight: 600; text-decoration: underline; text-underline-offset: 0.3em; }
 .message-bubble a:hover { color: #1d4ed8; }
 
-/* Copy button inside message bubbles */
+/* Copy button floats BELOW the bubble, right-aligned to it, so it can never
+   sit on top of the message text. Absolutely positioned so showing it does
+   not push the messages below it around. */
 .copy-btn {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: calc(100% + 5px);
+    right: 0;
     background: #fafdfb;
     color: #344b38;
     border: 1px solid #e0e5db;
     border-radius: 8px;
-    padding: 4px 8px;
-    font-size: 12px;
+    padding: 3px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.5;
     cursor: pointer;
     display: none;
-    z-index: 10;
+    z-index: 20;
     white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(44, 53, 48, 0.1);
+}
+.copy-btn:hover {
+    background: #eef3ec;
+    border-color: #cfd8ca;
+}
+.message-row:hover {
+    z-index: 5;
 }
 .message-bubble:hover .copy-btn,
-.message-bubble.touching .copy-btn {
+.message-row.touching .copy-btn,
+.message-row.copy-open .copy-btn {
     display: inline-block;
+}
+
+/* Page links inside a reply: bold + underlined, never a product card. */
+.message-bubble a.page-link {
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 0.3em;
+    text-decoration-thickness: 1.5px;
+}
+
+/* Compact product card for a product named inside the prose. Fixed width so
+   one product never stretches across the whole bubble.
+   Specificity must beat `.message-bubble a`, which paints links blue. */
+.message-bubble a.inline-product,
+.message-bubble a.inline-product:hover {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    width: 250px;
+    max-width: 100%;
+    margin: 4px 0;
+    padding: 6px 9px;
+    background: #ffffff;
+    border: 1px solid var(--aq-line, #e4e8de);
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    vertical-align: middle;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.message-bubble a.inline-product:hover {
+    box-shadow: 0 4px 12px rgba(44, 53, 48, 0.1);
+    transform: translateY(-1px);
+    color: inherit;
+}
+.inline-product-img {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #eef0ea;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.inline-product-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.inline-product-body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.inline-product-name {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--aq-ink, #2c3530);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+.inline-product-meta {
+    font-size: 11.5px;
+    color: #66736a;
+    line-height: 1.35;
+}
+
+/* Small transient "Copied" toast */
+#aiCopyToast {
+    position: fixed;
+    left: 50%;
+    bottom: 32px;
+    transform: translate(-50%, 12px);
+    background: #26302a;
+    color: #fff;
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+    z-index: 9999;
+}
+#aiCopyToast.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
 }

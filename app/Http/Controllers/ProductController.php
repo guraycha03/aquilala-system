@@ -36,6 +36,8 @@ class ProductController extends Controller
         $productCount = $products->count();
         $lowStockProducts = $products->filter(fn ($p) => $p->is_low_stock)->values();
         $lowStockCount = $lowStockProducts->count();
+        $outOfStockProducts = $products->filter(fn ($p) => $p->stock_quantity <= 0 || $p->status === 'out_of_stock')->values();
+        $outOfStockCount = $outOfStockProducts->count();
 
         // ─── Quotation metrics for this store ──────────────────────
         // Quotations that use one of this store's products = demand signals
@@ -57,6 +59,7 @@ class ProductController extends Controller
             'products',
             'productCount',
             'lowStockCount',
+            'outOfStockCount',
             'demandQuotationCount',
             'computedQuotationCount',
             'viewedQuotationCount'

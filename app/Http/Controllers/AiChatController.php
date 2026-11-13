@@ -134,6 +134,9 @@ class AiChatController extends Controller
             'intent'      => $result['intent'],
             'source'      => $result['source'],
             'suggestions' => $result['suggestions'],
+            // Cards for products the reply names in prose, so the chat can
+            // draw a real tile beside each name. Absent on most turns.
+            'products'    => $result['products'] ?? [],
             'context'     => $result['context'],
         ]);
     }

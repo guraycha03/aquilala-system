@@ -3,7 +3,7 @@
 @section('title', 'AI Assistant')
 
 @section('page-styles')
-  <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=16" data-turbo-track="dynamic">
+  <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=18" data-turbo-track="dynamic">
 @endsection
 
 @section('content')
@@ -415,26 +415,32 @@
     if (log) log.scrollTop = log.scrollHeight;
   }
 
-  function appendNode(kind, inner) {
+  function appendNode(kind, inner, plainText) {
     var log = chatLog();
     if (!log) return null;
     var el = document.createElement('div');
     el.className = 'message-row ' + kind;
-    el.innerHTML = '<div class="message-bubble">' + inner + '</div>';
+    var hasCopy = arguments.length > 2;
+    if (hasCopy) el.dataset.text = plainText == null ? '' : String(plainText);
+    el.innerHTML = '<div class="message-bubble">' + inner +
+      (hasCopy ? '<button type="button" class="copy-btn">Copy</button>' : '') + '</div>';
     log.appendChild(el);
     scrollChat();
     return el;
   }
 
   function appendUser(text) {
-    appendNode('user', escapeAiHtml(text));
+    appendNode('user', escapeAiHtml(text), text);
   }
 
   function appendAssistant(html, source) {
+    var tmp = document.createElement('div');
+    tmp.innerHTML = html;
     appendNode('bot',
       '<div class="ai-msg-meta"><span class="ai-msg-name">AI Assistant</span>' +
       (source === 'ai' ? BADGE_AI : (source === 'data' ? BADGE_DATA : (source === 'conversation' ? '' : BADGE_FALLBACK))) + '</div>' +
-      html);
+      html,
+      (tmp.textContent || '').trim());
   }
 
   function appendClarification(options) {
@@ -468,6 +474,70 @@
       '<div class="ai-msg-meta"><span class="ai-msg-name">AI Assistant</span></div>' +
       '<span class="ai-typing" role="status" aria-label="Thinking"><span></span><span></span><span></span></span>');
   }
+
+  /* ---------- Copy button (hover on desktop, tap on touch) ---------- */
+  function showToast(message) {
+    var t = document.getElementById('aiCopyToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'aiCopyToast';
+      t.setAttribute('role', 'status');
+      document.body.appendChild(t);
+    }
+    t.textContent = message;
+    t.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(function () { t.classList.remove('show'); }, 1800);
+  }
+
+  function copyRowText(row) {
+    var text = row && row.dataset ? row.dataset.text : '';
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        showToast('Copied to clipboard');
+      }).catch(function () { legacyCopy(text); });
+    } else {
+      legacyCopy(text);
+    }
+  }
+
+  function legacyCopy(text) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+    document.body.removeChild(textarea);
+    showToast(ok ? 'Copied to clipboard' : 'Copy failed');
+  }
+
+  (function bindCopyHandlers() {
+    var log = chatLog();
+    if (!log) return;
+    log.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('.copy-btn') : null;
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      copyRowText(btn.closest('.message-row'));
+    });
+    log.addEventListener('touchstart', function (e) {
+      var row = e.target.closest ? e.target.closest('.message-row') : null;
+      var rows = log.querySelectorAll('.message-row.touching');
+      for (var i = 0; i < rows.length; i++) rows[i].classList.remove('touching');
+      if (row) row.classList.add('touching');
+    }, { passive: true });
+    log.addEventListener('mousedown', function (e) {
+      var row = e.target.closest ? e.target.closest('.message-row') : null;
+      var rows = log.querySelectorAll('.message-row.copy-open');
+      for (var i = 0; i < rows.length; i++) rows[i].classList.remove('copy-open');
+      if (row && e.target.closest && !e.target.closest('.copy-btn')) row.classList.add('copy-open');
+    });
+  })();
 
   function setBusy(busy) {
     aiLoading = busy;

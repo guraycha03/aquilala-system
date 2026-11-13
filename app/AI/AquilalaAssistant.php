@@ -95,6 +95,7 @@ class AquilalaAssistant
         private readonly AiResponseValidatorAi $validatorAi,
         private readonly AiLlmClient $llm,
         private readonly FarmingKnowledgeService $knowledge,
+        private readonly \App\Services\ProductSearchService $catalog,
     ) {
     }
 
@@ -567,6 +568,10 @@ class AquilalaAssistant
         $tagalog = $this->wantsTagalog($message);
         $asksOut = preg_match('/\b(?:out[\s\-]?of[\s\-]?stock|running\s+out|almost\s+out|nearly\s+out|ma(?:u|g)?ubos|ubos)\b/iu', $message) === 1;
 
+        // The products named in the prose below, as cards, so the chat can
+        // draw a real product tile next to each one instead of a bare name.
+        $namedProducts = $out->concat($lowAlone)->unique('id')->values();
+
         if ($products->isEmpty()) {
             $reply = $tagalog
                 ? 'Wala pa kayong nakalistang produkto. I-add muna ang inyong mga item sa [Product Listings](' . route('store.storefront.index') . ') — doon po ang **Add Product** at **Import from file**.'
@@ -644,6 +649,10 @@ class AquilalaAssistant
             'reply'       => $reply,
             'type'        => 'answer',
             'suggestions' => [],
+            // Cards for the products the prose above names, so the chat can
+            // draw a real tile beside each one. Not `suggestions`: those draw
+            // a separate carousel, which would repeat the same products.
+            'products'    => $this->catalog->cards($namedProducts, $user),
             'context'     => $context->toArray(),
             'intent'      => AiIntent::SYSTEM_HELP,
             'source'      => 'conversation',
