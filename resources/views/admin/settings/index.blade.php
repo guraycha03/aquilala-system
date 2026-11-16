@@ -31,5 +31,7 @@
         @endif
       @endforeach
     </div>
+
+    @include('partials.notifications-settings')
   </div>
 @endsection

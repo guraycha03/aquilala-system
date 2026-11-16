@@ -271,6 +271,21 @@
               <small class="field-error">@error('land_ownership'){{ $message }}@enderror</small>
             </div>
             <div class="invite-field">
+              <label>Total Land Area <span class="req">*</span></label>
+              <input type="number" name="land_area" value="{{ old('land_area') }}" min="0.01" max="999999.99" step="0.01" placeholder="e.g. 2.50">
+              <small class="field-error">@error('land_area'){{ $message }}@enderror</small>
+              <span class="field-note">The farmer's total recorded land. Only administrators can change it.</span>
+            </div>
+            <div class="invite-field">
+              <label>Land Area Unit <span class="req">*</span></label>
+              <select name="land_area_unit">
+                <option value="ha" @selected(old('land_area_unit', 'ha') === 'ha')>Hectares (ha)</option>
+                <option value="sq_m" @selected(old('land_area_unit') === 'sq_m')>Square meters (m²)</option>
+                <option value="sq_ft" @selected(old('land_area_unit') === 'sq_ft')>Square feet (ft²)</option>
+              </select>
+              <small class="field-error">@error('land_area_unit'){{ $message }}@enderror</small>
+            </div>
+            <div class="invite-field">
               <label>Years Farming <span style="color:#94a3b8;font-weight:400;">(optional)</span></label>
               <input type="number" name="years_farming" value="{{ old('years_farming') }}" min="0" max="80" step="1" placeholder="12">
               <small class="field-error">@error('years_farming'){{ $message }}@enderror</small>

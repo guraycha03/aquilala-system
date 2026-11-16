@@ -6,17 +6,17 @@ private keys, API keys, or `.env` values**.
 
 ## Hosting structure
 
-| Item | Value |
-|---|---|
-| Provider | Microsoft Azure Linux VM |
-| VM name | `aquilala` |
-| Public IP | `20.2.221.9` |
-| SSH user | `guraycha03` |
-| Application path | `/var/www/aquilala` |
-| Domain | `aquilala.me` |
-| Repository | `https://github.com/guraycha03/aquilala-system.git` |
-| Production database | MySQL, configured only in the server `.env` |
-| Queue worker | Supervisor program `aquilala-queue` |
+| Item                | Value                                                 |
+| ------------------- | ----------------------------------------------------- |
+| Provider            | Microsoft Azure Linux VM                              |
+| VM name             | `aquilala`                                          |
+| Public IP           | `20.2.221.9`                                        |
+| SSH user            | `guraycha03`                                        |
+| Application path    | `/var/www/aquilala`                                 |
+| Domain              | `aquilala.me`                                       |
+| Repository          | `https://github.com/guraycha03/aquilala-system.git` |
+| Production database | MySQL, configured only in the server `.env`         |
+| Queue worker        | Supervisor program `aquilala-queue`                 |
 
 The deployment target is an Azure **VM**, not Azure App Service. Laravel,
 MySQL, Nginx, PHP, Node/Vite, Supervisor, and Certbot run on the VM.
@@ -111,4 +111,3 @@ full database restore has been approved and the backup has been verified.
 - `deploy/setup-server.sh` — provisions a new server; do not run it on the
   existing production VM during a normal release.
 - `.env.example` — documents configuration names without real values.
-

@@ -171,6 +171,13 @@ class AdminMemberController extends Controller
             'status' => $validated['status'] ?? $member->status,
         ]);
 
+        if ($member->user) {
+            $member->user->forceFill([
+                'default_land_area' => $member->land_area,
+                'default_land_area_unit' => $member->land_area_unit,
+            ])->save();
+        }
+
         ActivityLogger::log(
             ActivityLog::TYPE_MEMBER_UPDATED,
             "Updated {$member->fullName()}'s member record",
@@ -250,6 +257,12 @@ class AdminMemberController extends Controller
             'province' => ['nullable', 'string', 'max:100'],
             'farm_location' => ['nullable', 'string', 'max:500'],
             'land_ownership' => ['nullable', 'string', Rule::in(['Owned', 'Rented', 'Shared', 'Communal'])],
+            'land_area' => $except === null
+                ? ['required', 'numeric', 'min:0.01', 'max:999999.99']
+                : ['nullable', 'numeric', 'min:0.01', 'max:999999.99'],
+            'land_area_unit' => $except === null
+                ? ['required', Rule::in(['ha', 'sq_m', 'sq_ft'])]
+                : ['nullable', Rule::in(['ha', 'sq_m', 'sq_ft'])],
             'years_farming' => ['nullable', 'integer', 'min:0', 'max:80'],
             'assoc_member_no' => ['nullable', 'string', 'max:60', Rule::unique('members', 'assoc_member_no')->ignore($except?->id)],
             'status' => ['nullable', Rule::in([Member::STATUS_ACTIVE, Member::STATUS_INACTIVE])],
@@ -274,6 +287,9 @@ class AdminMemberController extends Controller
             'barangay.in' => 'Choose a barangay of Bulan, Sorsogon from the list.',
             'years_farming.integer' => 'Years farming must be a whole number.',
             'years_farming.min' => 'Years farming cannot be negative.',
+            'land_area.required' => 'Please enter the member\'s total land area.',
+            'land_area.numeric' => 'Land area must be a number.',
+            'land_area.min' => 'Land area must be greater than zero.',
             'birth_date.before' => 'Birth date must be in the past.',
         ];
     }

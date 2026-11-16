@@ -124,8 +124,8 @@
         <label for="season" class="input-label">Season</label>
         <select name="season" id="season" class="input-field" required>
           <option value="">— Select season —</option>
-          <option value="wet" @selected(old('season') === 'wet')>Wet Season (June – January)</option>
-          <option value="dry" @selected(old('season') === 'dry')>Dry Season (February – May)</option>
+          <option value="wet" @selected(old('season') === 'wet')>Wet Season ({{ \App\Helpers\SeasonHelper::rangeLabel('wet') }})</option>
+          <option value="dry" @selected(old('season') === 'dry')>Dry Season ({{ \App\Helpers\SeasonHelper::rangeLabel('dry') }})</option>
         </select>
         <div class="input-hint">Input requirements differ between wet and dry cropping cycles.</div>
       </div>

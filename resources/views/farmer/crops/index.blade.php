@@ -173,7 +173,7 @@
     /* ── Empty State ── */
     .empty-wrap { padding: 32px 0; text-align: center; }
     .empty-card { background: #fff; border: 1px dashed #cbd5e1; border-radius: 20px; padding: 60px 32px; max-width: 520px; margin: 0 auto; box-shadow: 0 8px 32px -8px rgba(0,0,0,0.04); }
-    .empty-icon-wrap { width: auto; height: auto; background: none; border-radius: 0; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: #6f8f73; box-shadow: none; padding: 0; }
+    .empty-icon-wrap { width: auto; height: auto; background: none; border-radius: 0; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #6f8f73; box-shadow: none; padding: 0; }
     .empty-icon-wrap svg, .empty-icon-wrap i { width: 44px; height: 44px; }
     .empty-title { font-size: 18px; font-weight: 800; color: #1e293b; margin: 0 0 6px; }
     .empty-desc { color: #64748b; font-size: 13px; line-height: 1.6; max-width: 360px; margin: 0 auto 24px; }
@@ -294,16 +294,14 @@
             <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <span style="font-size: 12px; color: #40632d;">Your land:</span>
                 @if($user->default_land_area)
-                <button onclick="openLandModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(20,61,35,0.06); border: 1px solid rgba(20,61,35,0.12); border-radius: 8px; color: #14532d; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s ease;">
+                {{-- Read-only on purpose: land size is set and edited by
+                     administrators only (members record), never by the farmer. --}}
+                <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(20,61,35,0.06); border: 1px solid rgba(20,61,35,0.12); border-radius: 8px; color: #14532d; font-size: 13px; font-weight: 700;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
                     {{ $user->default_land_area }} {{ $user->default_land_area_unit === 'ha' ? 'ha' : ($user->default_land_area_unit === 'sq_m' ? 'm²' : 'ft²') }}
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                </button>
+                </span>
                 @else
-                <button onclick="openLandModal()" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(20,61,35,0.04); border: 1px dashed rgba(20,61,35,0.25); border-radius: 8px; color: rgba(20,61,35,0.7); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Set default land area
-                </button>
+                <span style="font-size: 12px; color: rgba(20,61,35,0.7);">Not set yet — your administrator adds it with your member record.</span>
                 @endif
             </div>
         </div>
@@ -368,62 +366,22 @@
     $allocPct = $totalArea > 0 ? min(100, round(($usedArea / $totalArea) * 100)) : 0;
     $unitLabel = match($stats['land_area_unit'] ?? 'ha') { 'sq_m' => 'm²', 'sq_ft' => 'ft²', default => 'ha' };
 
-    $cropColors = [
-        // Grains
-        'Rice' => 'rgb(245, 238, 142)', 'Corn' => '#FFE082', 'Wheat' => '#EFE0C8',
-        'Mung Bean' => '#C8E6C9', 'Soybean' => '#DCE8B9', 'Peanut' => '#E4D5BB',
-        'Cassava' => '#DCC9B8',
-        // Fruits
-        'Banana' => '#FFEE58', 'Mango' => '#FFCC80', 'Papaya' => '#FFB74D',
-        'Pineapple' => '#FFD54F', 'Jackfruit' => '#E6EE9C', 'Watermelon' => '#FFCDD2',
-        'Calamansi' => '#C5E1A5', 'Orange' => '#FFC107', 'Lemon' => '#FFF9C4',
-        // Vegetables
-        'Tomato' => '#FF8A80', 'Eggplant' => '#D1C4E9', 'Okra' => '#9CCC65',
-        'String Bean' => '#A5D6A7', 'Squash' => '#FFB74D', 'Ampalaya' => '#A5D6A7',
-        'Pepper' => '#FF7043', 'Cabbage' => '#C8E6C9', 'Sayote' => '#DCEDC8',
-        'Luffa' => '#BCE08A', 'Cucumber' => '#81C784', 'Lettuce' => '#DCEDC8',
-        'Malunggay' => '#A5D6A7', 'Kangkong' => '#C8E6C9', 'Carrot' => '#FFB74D',
-        'Onion' => '#E8D0DC', 'Garlic' => '#F5F5F5',
-        // Roots & Tubers
-        'Sweet Potato' => '#FFE0B2', 'Taro' => '#E1BEE7', 'Potato' => '#F5E6CA',
-        'Ginger' => '#F0E6C9', 'Turmeric' => '#FFD54F', 'Lemongrass' => '#DCEDC8',
-        // Trees & Perennials
-        'Coconut' => 'rgb(218, 190, 131)', 'Pili' => '#CDB79E', 'Cacao' => '#dda879',
-        'Coffee' => '#A97C50', 'Rubber' => '#E3E7EA', 'Abaca' => '#E2D5BC',
-        'Sugarcane' => '#DCEDC8', 'Tobacco' => '#C5A98E', 'Cotton' => '#FAFAFA',
-        'default' => '#C8E6C9',
-    ];
-
-    $getCropColor = function ($name) use ($cropColors) {
-        $name = trim((string) $name);
-        if ($name === '') return '#C8E6C9';
-        foreach ($cropColors as $key => $hex) {
-            if (strcasecmp($key, $name) === 0) return $hex;
-        }
-        return '#C8E6C9';
-    };
-
-    $plotEntries = [];
+    // Build crop inputs for the partitioner (carries stage + batch for tooltip)
+    $cropInputs = [];
     foreach ($plotActive as $batch) {
-        $cropName = $batch->crop->name ?? 'Crop';
-        $plotEntries[] = [
-            'name' => $cropName,
-            'area' => (float) $batch->land_area,
+        $cropInputs[] = [
+            'id' => 'crop-' . $batch->id,
+            'name' => $batch->crop->name ?? 'Crop',
+            'size' => (float) $batch->land_area,
             'stage' => $batch->growth_stage,
             'batch' => $batch->batch_name ?? '',
-            'color' => $getCropColor($cropName),
-            'stroke' => 'rgba(0, 0, 0, 0.12)',
-        ];
-    }
-    if ($availableArea > 0.01 && $totalArea > 0) {
-        $plotEntries[] = [
-            'name' => 'Unallocated', 'area' => $availableArea,
-            'stage' => 'available', 'batch' => '',
-            'color' => '#F1F5F9', 'stroke' => 'rgba(0, 0, 0, 0.12)',
         ];
     }
 
-    $svgW = 800; $svgH = 260;
+    // Run organic partition
+    $partition = \App\Support\LandPartitioner::partitionOrganicLand($cropInputs, $totalArea, 'organic', 0);
+
+    $svgW = 800; $svgH = 540;
 @endphp
 
 @if($totalArea > 0)
@@ -448,62 +406,117 @@
         <div class="plot-tooltip" id="plotTooltip"></div>
 
         <svg viewBox="0 0 {{ $svgW }} {{ $svgH }}" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; display: block;">
-        @php $currX = 0; @endphp
-        @foreach($plotEntries as $pe)
-            @php
-                $pct = $totalArea > 0 ? ($pe['area'] / $totalArea) : 0;
-                $width = $pct * $svgW;
-                $x1 = $currX;
-                $x2 = $currX + $width;
-                $currX += $width;
+            <defs>
+                <!-- Subtle topographic survey dot grid for canvas backdrop -->
+                <pattern id="survey-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+                    <circle cx="14" cy="14" r="0.8" fill="#C9CEC2" />
+                </pattern>
 
-                $pad = 3;
-                $px1 = $x1 + $pad;
-                $px2 = $x2 - $pad;
-                $py1 = $pad;
-                $py2 = $svgH - $pad;
-                $rectW = max(0, $px2 - $px1);
+                <!-- Free / unplanted soil cross-hatch texture -->
+                <pattern id="free-soil" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(32)">
+                    <rect width="16" height="16" fill="#EBE7DA" />
+                    <line x1="0" y1="0" x2="0" y2="16" stroke="#D9D3C1" stroke-width="1.2" />
+                    <circle cx="8" cy="8" r="0.9" fill="#CEC7B3" />
+                </pattern>
 
-                $fontSizeName = $rectW > 100 ? 13 : ($rectW > 40 ? 10 : 8);
-                $fontSizeArea = $rectW > 100 ? 10 : ($rectW > 40 ? 9 : 7);
-            @endphp
+                <!-- Per-crop directional furrow line patterns -->
+                @foreach($partition['plots'] as $plot)
+                <pattern id="furrow-{{ $plot['id'] }}" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate({{ $plot['furrowAngleDeg'] }})">
+                    <rect width="14" height="14" fill="{{ $plot['palette']['fill'] }}" />
+                    <line x1="0" y1="0" x2="0" y2="14" stroke="rgba(255,255,255,0.14)" stroke-width="1.6" />
+                </pattern>
+                @endforeach
+            </defs>
 
-            @if($rectW > 0)
+            <!-- Backdrop grid -->
+            <rect x="0" y="0" width="{{ $svgW }}" height="{{ $svgH }}" fill="url(#survey-grid)" />
+
+            <!-- Soft outer parcel drop base -->
+            <polygon points="{{ \App\Support\LandPartitioner::polyToPointsAttr($partition['outerPolygon']) }}" fill="#E5E3D8" transform="translate(0, 4)" />
+
+            <!-- Free / Unused Land Space inside the organic parcel -->
+            @if($partition['freePlot'])
             <g class="plot-polygon"
-               data-name="{{ $pe['name'] }}"
-               data-area="{{ $pe['area'] }}"
-               data-stage="{{ $pe['stage'] }}"
-               data-batch="{{ $pe['batch'] }}"
+               data-name="Unallocated"
+               data-area="{{ $partition['freePlot']['size'] }}"
+               data-stage="available"
+               data-batch=""
                data-unit="{{ $unitLabel }}">
-                <rect x="{{ $px1 }}" y="{{ $py1 }}" width="{{ $rectW }}" height="{{ $py2 - $py1 }}"
-                      rx="6" ry="6" fill="{{ $pe['color'] }}" stroke="{{ $pe['stroke'] }}" stroke-width="1"/>
-
-                @if($rectW > 15)
-                <text x="{{ $px1 + ($rectW / 2) }}" y="{{ $svgH / 2 }}"
-                      text-anchor="middle" dominant-baseline="middle"
-                      fill="#2C3E50" font-family="system-ui, -apple-system, sans-serif">
-                    <tspan x="{{ $px1 + ($rectW / 2) }}" dy="-6" font-size="{{ $fontSizeName }}" font-weight="700">
-                        {{ $rectW < 35 ? \Illuminate\Support\Str::limit($pe['name'], 3, '') : $pe['name'] }}
-                    </tspan>
-                    <tspan x="{{ $px1 + ($rectW / 2) }}" dy="16" font-size="{{ $fontSizeArea }}" font-weight="600">
-                        {{ number_format($pe['area'], 1) }}{{ $unitLabel }}
-                    </tspan>
-                </text>
-                @endif
+                <polygon points="{{ \App\Support\LandPartitioner::polyToPointsAttr($partition['freePlot']['polygon']) }}"
+                         fill="url(#free-soil)"
+                         stroke="#8F8A78"
+                         stroke-width="1.5"
+                         stroke-dasharray="6 4"
+                         stroke-linejoin="round" />
             </g>
             @endif
-        @endforeach
+
+            <!-- Planted Organic Crop Polygons -->
+            @foreach($partition['plots'] as $plot)
+            <?php
+                $r = max(5, sqrt($plot['areaPx'] / M_PI));
+                $titleSize = $r >= 65 ? 14 : ($r >= 42 ? 12 : ($r >= 26 ? 10.5 : 9));
+                $subSize = $r >= 65 ? 12 : ($r >= 42 ? 10.5 : 9.5);
+                $maxChars = max(6, (int) floor(($r * 1.65) / ($titleSize * 0.56)));
+                $displayName = strlen($plot['name']) > $maxChars ? substr($plot['name'], 0, $maxChars - 1) . '…' : $plot['name'];
+            ?>
+            <g class="plot-polygon"
+               data-name="{{ $plot['name'] }}"
+               data-area="{{ $plot['size'] }}"
+               data-stage="{{ $plot['stage'] }}"
+               data-batch="{{ $plot['batch'] }}"
+               data-unit="{{ $unitLabel }}"
+               style="opacity: 1; transition: opacity 160ms ease;">
+                <polygon points="{{ \App\Support\LandPartitioner::polyToPointsAttr($plot['polygon']) }}"
+                         fill="url(#furrow-{{ $plot['id'] }})"
+                         stroke="#FAFBF8"
+                         stroke-width="2"
+                         stroke-linejoin="round" />
+
+                @if($plot['areaPx'] > 484)
+                <g transform="translate({{ number_format($plot['labelCenter']['x'], 2) }}, {{ number_format($plot['labelCenter']['y'], 2) }})" style="pointer-events: none;">
+                    <text text-anchor="middle" dy="{{ $r >= 34 ? '-4' : '0' }}" fill="{{ $plot['palette']['text'] }}"
+                          font-size="{{ $titleSize }}" font-weight="700" font-family="DM Sans, system-ui, -apple-system, sans-serif">
+                        {{ $displayName }}
+                    </text>
+                    @if($r >= 30)
+                    <text text-anchor="middle" dy="13" fill="{{ $plot['palette']['subtext'] }}"
+                          font-size="{{ $subSize }}" font-weight="500" font-family="DM Sans, system-ui, -apple-system, sans-serif">
+                        {{ number_format($plot['size'], 1) }}{{ $unitLabel }}
+                    </text>
+                    @endif
+                </g>
+                @else
+                <circle cx="{{ number_format($plot['labelCenter']['x'], 2) }}" cy="{{ number_format($plot['labelCenter']['y'], 2) }}" r="3.5" fill="{{ $plot['palette']['text'] }}" style="pointer-events: none;" />
+                @endif
+            </g>
+            @endforeach
+
+            <!-- Crisp Outer Land Boundary Perimeter -->
+            <polygon points="{{ \App\Support\LandPartitioner::polyToPointsAttr($partition['outerPolygon']) }}" fill="none" stroke="#2C3A31" stroke-width="2.5" stroke-linejoin="round" style="pointer-events: none;" />
+
+            <!-- Survey Corner Nodes on Outer Parcel -->
+            @foreach($partition['outerPolygon'] as $idx => $pt)
+            <circle cx="{{ number_format($pt['x'], 2) }}" cy="{{ number_format($pt['y'], 2) }}" r="3.2" fill="#FAFBF8" stroke="#2C3A31" stroke-width="1.6" style="pointer-events: none;" />
+            @endforeach
         </svg>
     </div>
 
     <div class="land-legend">
-        @foreach($plotEntries as $pe)
+        @foreach($partition['plots'] as $plot)
         <div class="land-legend-pill">
-            <span class="land-legend-dot" style="background: {{ $pe['color'] }}; border: 1px solid rgba(0,0,0,0.08);"></span>
-            <span>{{ $pe['name'] }}{{ $pe['batch'] ? ' — ' . $pe['batch'] : '' }}</span>
-            <span style="color: #94A3B8; font-weight: 400;">({{ number_format($pe['area'], 1) }} {{ $unitLabel }})</span>
+            <span class="land-legend-dot" style="background: {{ $plot['palette']['swatch'] }}; border: 1px solid rgba(0,0,0,0.08);"></span>
+            <span>{{ $plot['name'] }}{{ $plot['batch'] ? ' — ' . $plot['batch'] : '' }}</span>
+            <span style="color: #94A3B8; font-weight: 400;">({{ number_format($plot['size'], 1) }} {{ $unitLabel }})</span>
         </div>
         @endforeach
+        @if($partition['freePlot'])
+        <div class="land-legend-pill">
+            <span class="land-legend-dot" style="background: #F1F5F9; border: 1px dashed rgba(0,0,0,0.12);"></span>
+            <span>Unallocated</span>
+            <span style="color: #94A3B8; font-weight: 400;">({{ number_format($partition['freePlot']['size'], 1) }} {{ $unitLabel }})</span>
+        </div>
+        @endif
     </div>
 </div>
 @endif
@@ -661,21 +674,20 @@
     </table>
 </div>
 @else
-<!-- ── Empty State ── -->
+<!-- ── Empty State (flat, no card) ── -->
 <div class="empty-wrap">
-    <div class="empty-card">
-        <div class="empty-icon-wrap">
-            <i data-lucide="grid-2x2-x"></i>
-        </div>
-        <h3 class="empty-title">No Crop Plantings Yet</h3>
-        <p class="empty-desc">Start by logging your first crop planting to track growth stages and plan harvests for the season.</p>
-        <button class="btn-hero" onclick="openAddModal()" style="margin: 0 auto;">
-            Add First Crop Planting
-        </button>
-        <div class="empty-tips">
-            <span class="empty-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Add Crop Plantings</span>
-            <span class="empty-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Track Growth Stages</span>
-            <span class="empty-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Plan Harvests</span>        </div>
+    <div class="empty-icon-wrap">
+        <i data-lucide="grid-2x2-x"></i>
+    </div>
+    <h3 class="empty-title">No Crop Plantings Yet</h3>
+    <p class="empty-desc">Start by logging your first crop planting to track growth stages and plan harvests for the season.</p>
+    <button class="btn-hero" onclick="openAddModal()" style="margin: 0 auto; display: block;">
+        Add First Crop Planting
+    </button>
+    <div class="empty-tips">
+        <span class="empty-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Add Crop Plantings</span>
+        <span class="empty-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Track Growth Stages</span>
+        <span class="empty-tip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Plan Harvests</span>
     </div>
 </div>
 @endif
@@ -787,43 +799,6 @@
     </div>
 </div>
 
-<!-- ── DEFAULT LAND MODAL ── -->
-<div class="modal-overlay" id="landModal">
-    <div class="modal" style="max-width: 400px;">
-        <div class="modal-header">
-            <h3>Default Land Area</h3>
-            <button class="modal-close" onclick="closeModal('landModal')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-        </div>
-        <form action="{{ route('farmer.crops.default-land') }}" method="POST">
-            @csrf
-            @method('PUT')
-            <div class="modal-body">
-                <p style="font-size: 13px; color: #64748b; margin: 0 0 16px; line-height: 1.5;">This is used to pre-fill the land area when adding new crop plantings. You can still change it per planting.</p>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Land Area *</label>
-                        <input type="number" name="default_land_area" step="0.01" min="0.01" value="{{ $user->default_land_area ?? '' }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Unit *</label>
-                        <select name="default_land_area_unit" required>
-                            <option value="ha" {{ ($user->default_land_area_unit ?? 'ha') === 'ha' ? 'selected' : '' }}>Hectares (ha)</option>
-                            <option value="sq_m" {{ ($user->default_land_area_unit ?? '') === 'sq_m' ? 'selected' : '' }}>Square Meters (m²)</option>
-                            <option value="sq_ft" {{ ($user->default_land_area_unit ?? '') === 'sq_ft' ? 'selected' : '' }}>Square Feet (ft²)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-cancel" onclick="closeModal('landModal')">Cancel</button>
-                <button type="submit" class="btn-submit">Save Default</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <form id="deleteForm" method="POST" style="display:none;">@csrf @method('DELETE')</form>
 
 <script>
@@ -858,7 +833,6 @@
         }, 50);
     };
 
-    window.openLandModal = function() { const m = document.getElementById('landModal'); if (m) window._openOverlay(m); };
     window.closeModal = function(id) {
         const el = document.getElementById(id);
         if (el) {

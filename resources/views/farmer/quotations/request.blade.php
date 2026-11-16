@@ -444,14 +444,14 @@
           <input type="radio" name="season" value="wet" @checked($selSeason === 'wet') style="accent-color: #143d23;" required>
           <div>
             <div class="sc-title">Wet Season</div>
-            <div class="sc-sub">June – January</div>
+            <div class="sc-sub">{{ \App\Helpers\SeasonHelper::rangeLabel('wet') }}</div>
           </div>
         </label>
         <label class="season-card {{ $selSeason === 'dry' ? 'is-selected' : '' }}">
           <input type="radio" name="season" value="dry" @checked($selSeason === 'dry') style="accent-color: #143d23;" required>
           <div>
             <div class="sc-title">Dry Season</div>
-            <div class="sc-sub">February – May</div>
+            <div class="sc-sub">{{ \App\Helpers\SeasonHelper::rangeLabel('dry') }}</div>
           </div>
         </label>
       </div>
@@ -471,13 +471,35 @@
       <label for="land_area" class="input-label">How big is your farm area?</label>
     </div>
     <div class="q-body">
+      @php
+          // The farm size comes from the member record the administrator
+          // created, so every quotation quotes the same farm and the farmer
+          // cannot manipulate it here. The engine works in hectares, so a
+          // size recorded in m² / ft² is converted before it is shown. The
+          // field only stays editable while no size has been recorded yet.
+          $regLand = auth()->user()?->default_land_area;
+          $regUnit = auth()->user()?->default_land_area_unit ?? 'ha';
+          $regHa = $regLand !== null ? (float) $regLand * match ($regUnit) {
+              'sq_m' => 1 / 10000,
+              'sq_ft' => 1 / 10763.910417,
+              default => 1,
+          } : null;
+          $landLocked = $regHa !== null && $regHa >= 0.01;
+      @endphp
       <div class="area-row">
         <input type="number" name="land_area" id="land_area" class="input-field"
                placeholder="e.g., 1.5" step="0.01" min="0.01" max="999.99"
-               value="{{ old('land_area') }}" required>
+               value="{{ old('land_area', $landLocked ? rtrim(rtrim(number_format($regHa, 2, '.', ''), '0'), '.') : '') }}"
+               @readonly($landLocked) required>
         <div class="area-unit">hectares</div>
       </div>
-      <div class="input-hint">The quantity of each input is calculated from this area.</div>
+      <div class="input-hint">
+        @if($landLocked)
+          Taken from your member record &mdash; your administrator sets and updates this size.
+        @else
+          The quantity of each input is calculated from this area.
+        @endif
+      </div>
     </div>
   </div>
 

@@ -268,6 +268,12 @@
                 <span class="k">Land tenure</span>
                 <span class="v">{{ $member->land_ownership ?: '—' }}{{ $member->years_farming !== null ? ' · ' . $member->years_farming . ' yr' : '' }}</span>
               </div>
+              <div class="c-cell">
+                <span class="k">Total land</span>
+                <span class="v">
+                  {{ $member->land_area !== null ? number_format((float) $member->land_area, 2) . ' ' . ($member->land_area_unit === 'sq_m' ? 'm²' : ($member->land_area_unit === 'sq_ft' ? 'ft²' : 'ha')) : '—' }}
+                </span>
+              </div>
             </div>
           </div>
           <a class="c-back" href="{{ route('admin.users.create', ['type' => 'farmer']) }}">← Different member</a>

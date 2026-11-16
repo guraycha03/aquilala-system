@@ -6,7 +6,8 @@
 <style>
   .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, minmax(220px, 280px));
+    justify-content: start;
     gap: 16px;
     margin-bottom: 28px;
   }
@@ -98,11 +99,7 @@
     display: inline-flex; align-items: center; gap: 4px;
   }
 
-  /* The archive: where the closed estimates live, so the working page
-     holds only the ones that can still be planned with. */
-  .archive-link-row {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
-  }
+  /* Header archive button */
   .archive-link {
     display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
     background: #ffffff; border: 1px solid #E0E5DB; color: #344B38;
@@ -111,14 +108,8 @@
   }
   .archive-link:hover { background: #F3F5F0; border-color: #C8D5C5; }
   .archive-link svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .archive-count {
-    font-size: 11px; font-weight: 700; color: #4b5c50; background: #F0F2F1;
-    border-radius: 999px; padding: 2px 8px;
-  }
-  .archive-hint { font-size: 12px; color: #94a3b8; }
   [data-theme="dark"] .archive-link { background: #1f2937; border-color: #334155; color: #d6f5e3; }
   [data-theme="dark"] .archive-link:hover { background: #16301f; border-color: #4ade80; }
-  [data-theme="dark"] .archive-count { background: #263244; color: #a7f3d0; }
 
   /* Primary CTA */
   .cta-primary {
@@ -240,17 +231,6 @@
 </div>
 
 <!-- Quotations List -->
-@if($archivedCount > 0)
-  <div class="archive-link-row">
-    <a href="{{ route('farmer.quotations.archive') }}" class="archive-link">
-      <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
-      <span>Expired / Archived Estimates</span>
-      <span class="archive-count">{{ $archivedCount }}</span>
-    </a>
-    <span class="archive-hint">Estimates whose validity window has closed are kept here, out of the way.</span>
-  </div>
-@endif
-
 @if($quotations->count() > 0)
   <x-table-toolbar
       uid="quotes"

@@ -473,6 +473,8 @@ class AdminUserController extends Controller
                     'civil_status' => $member->civil_status,
                     'farm_location' => $member->farm_location,
                     'land_ownership' => $member->land_ownership,
+                    'default_land_area' => $member->land_area,
+                    'default_land_area_unit' => $member->land_area_unit,
                     'years_farming' => $member->years_farming,
                 ])->save();
 

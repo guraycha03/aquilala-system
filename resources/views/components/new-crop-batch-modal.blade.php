@@ -63,6 +63,7 @@
     .ncb-group { margin-bottom: 22px; position: relative; }
     .ncb-row { margin-bottom: 8px; }
     .ncb-group label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; }
+    .ncb-required { color: #dc2626; font-weight: 800; margin-left: 2px; }
 
     .ncb-group input, .ncb-group textarea {
         width: 100%; padding: 10px 13px; border: 1.5px solid #e2e8f0; border-radius: 10px;
@@ -129,7 +130,6 @@
     .ncb-unit-option .ncb-unit-alias { font-size: 10.5px; color: #94a3b8; font-weight: 600; }
     .ncb-unit-empty { padding: 10px 12px; font-size: 12.5px; color: #94a3b8; font-style: italic; }
 
-    /* ── CUSTOM FLATPICKR DATEPICKER POPUP STYLES ── */
     /* ── CUSTOM FLATPICKR DATEPICKER POPUP STYLES ── */
 .ncb-date-wrapper { position: relative; width: 100%; }
 .ncb-date-icon { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); color: #4A7A54; pointer-events: none; }
@@ -235,9 +235,175 @@ span.flatpickr-weekday {
     }
     .ncb-cost-card .ncb-cost-icon { flex-shrink: 0; color: #0284c7; margin-top: 2px; }
     .ncb-cost-card .ncb-cost-text { flex: 1; min-width: 0; }
-    .ncb-source-link { display: flex; align-items: center; gap: 6px; width: fit-content; max-width: 100%; margin-top: 8px; color: inherit; font-weight: 700; text-decoration: none; border-bottom: 1px dotted currentColor; }
-    .ncb-source-link:hover { text-decoration: underline; }
+    .ncb-source-link { display: inline-flex; align-items: center; gap: 6px; width: fit-content; max-width: 100%; margin-top: 8px; color: inherit; font-weight: 600; text-decoration: none; line-height: 1.5; }
+    .ncb-source-link:hover { opacity: 0.8; }
     .ncb-source-link svg { flex-shrink: 0; }
+
+    /* ── MINIMAL & SPACIOUS CROP GROWTH GUIDE ── */
+    .ncb-growth-card {
+        margin: 8px 0 24px;
+        background: #ffffff;
+        border: 1px solid #dde6df;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(30, 41, 59, 0.03);
+        box-sizing: border-box;
+    }
+    .ncb-growth-header {
+        display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+        padding: 18px 22px;
+        background: #f7faf8;
+        border-bottom: 1px solid #e6eee8;
+    }
+    .ncb-growth-title-wrap { display: flex; align-items: center; gap: 12px; min-width: 0; flex-wrap: wrap; }
+    .ncb-growth-emblem {
+        width: 36px; height: 36px; border-radius: 10px;
+        background: #eef4ef; color: #4A7A54; border: 1px solid #d5e3d8;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .ncb-growth-eyebrow {
+        font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+        color: #5b7b62; line-height: 1.4; margin-bottom: 3px;
+    }
+    .ncb-growth-title {
+        font-size: 15.5px; font-weight: 700; color: #1e293b; line-height: 1.45;
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .ncb-growth-variety-tag {
+        display: inline-flex; align-items: center;
+        padding: 3px 10px; border-radius: 7px;
+        background: #ffffff; border: 1px solid #d6e3d9;
+        font-size: 12px; font-weight: 600; color: #365e3e; line-height: 1.4;
+    }
+    .ncb-growth-hint-pill {
+        font-size: 11.5px; font-weight: 500; color: #64748b;
+        background: #ffffff; border: 1px solid #e2e8f0;
+        padding: 5px 11px; border-radius: 7px; line-height: 1.4;
+    }
+
+    .ncb-growth-body {
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    /* Interactive 3-Stage Stepper (no movement on hover) */
+    .ncb-stepper {
+        position: relative;
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    }
+    .ncb-stepper-track {
+        position: absolute; top: 23px; left: 16%; right: 16%; height: 2px;
+        background: #e2e8f0; border-radius: 2px; z-index: 0; pointer-events: none;
+    }
+    .ncb-stepper-fill {
+        height: 100%; width: 0%; background: #4A7A54;
+        border-radius: 2px; transition: width 0.2s ease;
+    }
+    .ncb-step-btn {
+        position: relative; z-index: 1;
+        appearance: none; -webkit-appearance: none;
+        background: transparent; border: 1px solid transparent; border-radius: 10px;
+        padding: 10px 12px; cursor: pointer;
+        display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px;
+        font-family: inherit; transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .ncb-step-btn:hover { background: #f8faf9; border-color: #e2e8f0; }
+    .ncb-step-btn.is-active { background: #f4f9f5; border-color: #cde0d1; }
+    .ncb-step-dot {
+        width: 26px; height: 26px; border-radius: 8px;
+        background: #ffffff; border: 1.5px solid #cbd5e1; color: #64748b;
+        font-size: 12px; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .ncb-step-btn.is-done .ncb-step-dot {
+        background: #eef5ef; border-color: #9dc0a4; color: #4A7A54;
+    }
+    .ncb-step-btn.is-active .ncb-step-dot {
+        background: #4A7A54; border-color: #4A7A54; color: #ffffff;
+    }
+    .ncb-step-name {
+        font-size: 13px; font-weight: 700; color: #475569; line-height: 1.4;
+    }
+    .ncb-step-btn.is-active .ncb-step-name { color: #1e293b; }
+    .ncb-step-mini {
+        font-size: 11.5px; font-weight: 500; color: #64748b; line-height: 1.45;
+        max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ncb-step-btn.is-active .ncb-step-mini { color: #4A7A54; }
+
+    /* Active Stage Spotlight Box */
+    .ncb-stage-panel {
+        display: none;
+        background: #f9fbf9;
+        border: 1px solid #e5ede7;
+        border-radius: 12px;
+        padding: 18px 20px;
+    }
+    .ncb-stage-panel.is-active { display: block; }
+    .ncb-stage-panel-head {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 13.5px; font-weight: 700; color: #2f5738;
+        line-height: 1.5; margin-bottom: 12px;
+    }
+    .ncb-stage-list {
+        display: grid; gap: 11px;
+    }
+    .ncb-stage-row {
+        display: flex; align-items: flex-start; gap: 10px;
+        font-size: 13.5px; line-height: 1.65; color: #475569;
+    }
+    .ncb-stage-bullet {
+        width: 5px; height: 5px; border-radius: 2px;
+        background: #648f6d; margin-top: 9px; flex-shrink: 0;
+    }
+    .ncb-stage-key { font-weight: 600; color: #1e293b; margin-right: 5px; }
+
+    /* 4-Tile Quick Specs Grid (spacious & static on hover) */
+    .ncb-specs-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+        gap: 12px;
+    }
+    .ncb-spec-tile {
+        text-align: left; font-family: inherit;
+        background: #ffffff; border: 1px solid #e2e8f0; border-radius: 11px;
+        padding: 14px 16px; cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease;
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .ncb-spec-tile:hover { border-color: #b7ceb9; background: #fcfefd; }
+    .ncb-spec-tile.is-highlighted {
+        border-color: #7ca384; background: #f5faf6;
+    }
+    .ncb-spec-label {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+        color: #64748b; line-height: 1.4;
+    }
+    .ncb-spec-tile.is-highlighted .ncb-spec-label { color: #4A7A54; }
+    .ncb-spec-val {
+        font-size: 14px; font-weight: 700; color: #1e293b; line-height: 1.5;
+    }
+    .ncb-spec-sub {
+        font-size: 12px; font-weight: 400; color: #64748b; line-height: 1.5;
+    }
+
+    .ncb-growth-footer {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+        padding: 13px 22px;
+        border-top: 1px solid #edf3ee;
+        background: #fbfdfb;
+        font-size: 12.5px; color: #5b7b62;
+    }
+    .ncb-growth-footer .ncb-source-link { margin-top: 0; }
+    @media (max-width: 640px) {
+        .ncb-growth-header, .ncb-growth-body, .ncb-growth-footer { padding-left: 16px; padding-right: 16px; }
+        .ncb-step-mini { display: none; }
+        .ncb-specs-grid { grid-template-columns: repeat(2, 1fr); }
+    }
 </style>
 
 <!-- ── NEW CROP BATCH MODAL ── -->
@@ -262,37 +428,144 @@ span.flatpickr-weekday {
                 <div class="ncb-row">
 
                     @php
-                        $cropAliasMap = collect(config('crop_library.crops', []))->mapWithKeys(fn ($c) => [strtolower($c['name']) => $c['aliases'] ?? []]);
-                        $cropOptions = collect($allCrops)->map(function ($crop) use ($cropAliasMap) {
-                            $aliases = $cropAliasMap[strtolower($crop->name)] ?? [];
+                        $cropLibrary = collect(config('crop_library.crops', []))
+                            ->keyBy(fn ($c) => strtolower($c['name']));
+                        $cropOptions = collect($allCrops)
+                            ->map(function ($crop) use ($cropLibrary) {
+                            $entry = $cropLibrary->get(strtolower($crop->name));
+                            if (! $entry) {
+                                return null;
+                            }
+
+                            $aliases = array_values(array_filter($entry['aliases'] ?? []));
+                            $searchTerms = array_values(array_filter(array_merge(
+                                $aliases,
+                                array_column($entry['varieties'] ?? [], 'name')
+                            )));
+                            $terms = array_values(array_filter(array_unique(array_merge(
+                                [$entry['name'] ?? $crop->name],
+                                $searchTerms,
+                                [$entry['description'] ?? '', $entry['scientific_name'] ?? '']
+                            ))));
+                            $local = implode(', ', $aliases);
                             return [
                                 'id' => $crop->id,
-                                'name' => $crop->name,
-                                'search' => strtolower(trim($crop->name . ' ' . implode(' ', $aliases))),
+                                'name' => $entry['name'] ?? $crop->name,
+                                'aliases' => $aliases,
+                                'local' => $local,
+                                'terms' => $terms,
                             ];
-                        })->values()->all();
+                        })->filter()->values()->all();
                     @endphp
-                    <!-- Crop Type Select -->
-                    <div class="ncb-group" x-data="{ open:false, value:'', query:'', options:@json($cropOptions), norm(s){return (s||'').toLowerCase().replace(/[^a-z0-9]/g,'');}, matches(search,q){search=this.norm(search); q=this.norm(q); if(!q) return true; if(!search) return false; if(search.includes(q)) return true; var i=0; for(var c of search){ if(c===q[i]) i++; if(i===q.length) return true;} var counts={}; for(var c of search) counts[c]=(counts[c]||0)+1; for(var c of q){ if(!counts[c]) return false; counts[c]--; } return true; } }">
-                        <label>Crop Type *</label>
+                    <!-- Crop Type Select (searchable, alias-aware, and typo tolerant) -->
+                    <script>
+                        window.cropSearchDropdown = function () {
+                            return {
+                                open: false,
+                                value: '',
+                                query: '',
+                                options: @json($cropOptions),
+
+                                norm: function (s) {
+                                    var value = (s || '').toString().toLowerCase();
+                                    if (value.normalize) value = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                    return value.replace(/[^a-z0-9]+/g, ' ').trim();
+                                },
+
+                                lev: function (a, b) {
+                                    if (a.length === 0) return b.length;
+                                    if (b.length === 0) return a.length;
+                                    var matrix = [];
+                                    var i;
+                                    var j;
+                                    for (i = 0; i <= b.length; i++) matrix[i] = [i];
+                                    for (j = 0; j <= a.length; j++) matrix[0][j] = j;
+                                    for (i = 1; i <= b.length; i++) {
+                                        for (j = 1; j <= a.length; j++) {
+                                            matrix[i][j] = b.charAt(i - 1) === a.charAt(j - 1)
+                                                ? matrix[i - 1][j - 1]
+                                                : Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+                                        }
+                                    }
+                                    return matrix[b.length][a.length];
+                                },
+
+                                scoreWord: function (term, word) {
+                                    var t = this.norm(term).replace(/ /g, '');
+                                    var w = this.norm(word).replace(/ /g, '');
+                                    if (!t || !w) return 999;
+                                    if (t === w) return 0;
+                                    if (w.indexOf(t) === 0) return 1;
+                                    if (w.indexOf(t) !== -1) return 2;
+                                    if (t.indexOf(w) === 0) return 3;
+                                    var distance = this.lev(t, w);
+                                    var limit = t.length <= 4 ? 1 : (t.length <= 7 ? 2 : 3);
+                                    return distance <= limit ? 4 + distance : 999;
+                                },
+
+                                scoreMatch: function (terms, query) {
+                                    var words = this.norm(query).split(' ').filter(Boolean);
+                                    if (!words.length) return 0;
+                                    var best = 999;
+                                    (terms || []).forEach(function (term) {
+                                        var termWords = this.norm(term).split(' ').filter(Boolean);
+                                        var score = words.reduce(function (total, word) {
+                                            var wordScore = termWords.reduce(function (lowest, termWord) {
+                                                return Math.min(lowest, this.scoreWord(termWord, word));
+                                            }.bind(this), 999);
+                                            return wordScore === 999 ? 999 : total + wordScore;
+                                        }.bind(this), 0);
+                                        best = Math.min(best, score);
+                                    }.bind(this));
+                                    return best;
+                                },
+
+                                matched: function () {
+                                    var query = this.query.trim();
+                                    var scored = this.options.map(function (crop) {
+                                        return { crop: crop, score: this.scoreMatch(crop.terms, query) };
+                                    }.bind(this));
+                                    return scored
+                                        .filter(function (result) { return result.score < 999; })
+                                        .sort(function (a, b) { return a.score - b.score; });
+                                },
+
+                                showNoMatch: function () {
+                                    return this.query.trim() !== '' && this.matched().length === 0;
+                                }
+                            };
+                        };
+                    </script>
+                    <div class="ncb-group" x-data="cropSearchDropdown()">
+                        <label>Crop Type <span class="ncb-required" aria-hidden="true">*</span></label>
                         <input type="hidden" name="crop_id" :value="value" required>
                         <input x-model="query"
                                @focus="open = true"
                                @input="open = true; value = '';"
                                @click.outside="open = false"
                                type="text"
-                               placeholder="Type a crop name (e.g. pakwan)"
-                               style="width:100%; padding:10px 13px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:13px; background:#fff;" />
-                        <div class="ncb-select-menu" x-show="open" x-cloak style="display: none; margin-top: 2px;">
-                            <template x-for="crop in (query.trim() === '' ? options : options.filter(c => matches(c.search, query)))" :key="crop.id">
+                               placeholder="Type a crop name (e.g. palay, mais, saging, pakwan)"
+                               autocomplete="off"
+                               spellcheck="false"
+                               aria-label="Search crop type"
+                               style="width:100%; padding:12px 14px; border:1.5px solid #e2e8f0; border-radius:10px; font-size:15px; background:#fff;" />
+                        <div class="ncb-select-menu" x-show="open" x-cloak style="display: none; margin-top: 4px;">
+                            <template x-for="match in matched()" :key="match.crop.id">
                                 <div class="ncb-select-option"
-                                     @click="value = crop.id; query = crop.name; open = false; window.pickCrop(crop.id)"
-                                     x-text="crop.name"></div>
+                                     @click="value = match.crop.id; query = match.crop.name; open = false; window.pickCrop(match.crop.id)"
+                                     style="padding: 10px 12px; font-size: 14px;">
+                                    <div style="font-weight: 700; color: #1e293b;" x-text="match.crop.name"></div>
+                                    <span x-show="match.crop.local" style="font-size: 11.5px; color: #64748b; display: block; margin-top: 2px;">Also known as: <span x-text="match.crop.local"></span></span>
+                                </div>
                             </template>
-                            <div class="ncb-select-option" style="color:#94a3b8; cursor:default;"
-                                 x-show="query.trim() !== '' && !options.some(c => matches(c.search, query))">
-                                No matching crop found.
-                            </div>
+                            <template x-if="showNoMatch()">
+                                <div class="ncb-select-option" style="color:#94a3b8; cursor:default; padding: 10px 12px; font-size: 13px;">
+                                    No crop matches "<span x-text="query"></span>". Try a local name (e.g. palay, mais, saging, niyog, talong, kalabasa).
+                                </div>
+                            </template>
+                            <template x-if="query.trim() === ''">
+                                <div class="ncb-select-option" style="color:#94a3b8; cursor:default; padding: 10px 12px; font-size: 13px;">Start typing a crop name…</div>
+                            </template>
                         </div>
                     </div>
 
@@ -305,7 +578,7 @@ span.flatpickr-weekday {
 
                 <!-- Variety step (required; defaults to Local / General variety) -->
                 <div class="ncb-group" id="varietyGroup">
-                    <label>Variety *</label>
+                    <label>Variety <span class="ncb-required" aria-hidden="true">*</span></label>
                     <input type="hidden" name="variety" id="varietyValue" value="{{ \App\Services\CropLibraryService::GENERAL_VARIETY }}" required>
                     <input type="hidden" name="variety_key" id="varietyKeyValue" value="{{ \App\Services\CropLibraryService::GENERAL_VARIETY_KEY }}">
                     <div class="ncb-select-trigger placeholder" id="varietyTrigger" tabindex="0">
@@ -319,9 +592,8 @@ span.flatpickr-weekday {
                 </div>
 
                 <!-- Crop agronomy info panel (fills once a crop is picked) -->
-                <div class="ncb-cost-card" id="cropInfoCard" style="display: none; background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a;">
-                    <img class="ncb-cost-icon" src="{{ asset('images/information.png') }}" alt="info" width="16" height="16">
-                    <span class="ncb-cost-text" id="cropInfoText"></span>
+                <div class="ncb-growth-card" id="cropInfoCard" style="display: none;">
+                    <div id="cropInfoText" class="ncb-growth-inner"></div>
                 </div>
 
                 <!-- Optional Field: Specific Product -->
@@ -366,8 +638,8 @@ span.flatpickr-weekday {
                 @endif
                 <div class="ncb-row">
                     <div class="ncb-group">
-                        <label>Land Area *</label>
-                        <input type="number" name="land_area" id="addLandArea" step="0.01" min="0.01" value="{{ number_format($stats['remaining_land'] ?? 0, 2) }}" required oninput="checkLandCapacity(this.value); window.recalcYield()">
+                        <label>Land Area <span class="ncb-required" aria-hidden="true">*</span></label>
+                        <input type="number" name="land_area" id="addLandArea" step="0.01" min="0.01" value="" placeholder="e.g. 1.00" required oninput="checkLandCapacity(this.value); window.recalcYield()">
                     </div>
 
                     <!-- Area Unit Select -->
@@ -376,7 +648,7 @@ span.flatpickr-weekday {
                         $unitLabels = ['ha' => 'Hectares (ha)', 'sq_m' => 'Square Meters (m²)', 'sq_ft' => 'Square Feet (ft²)'];
                     @endphp
                     <div class="ncb-group" x-data="{ open: false, value: '{{ $defaultUnit }}', label: '{{ $unitLabels[$defaultUnit] ?? 'Hectares (ha)' }}' }">
-                        <label>Area Unit *</label>
+                        <label>Area Unit <span class="ncb-required" aria-hidden="true">*</span></label>
                         <input type="hidden" name="land_area_unit" id="landAreaUnit" :value="value" required>
                         <div class="ncb-select-trigger" :class="{ 'active': open }" @click="open = !open" @click.outside="open = false" tabindex="0">
                             <span x-text="label">{{ $unitLabels[$defaultUnit] ?? 'Hectares (ha)' }}</span>
@@ -393,25 +665,32 @@ span.flatpickr-weekday {
                 </div>
 
                 <div class="ncb-row">
-                    <!-- Season Select -->
-                    <div class="ncb-group" x-data="{ open: false, value: 'wet', label: 'Wet Season (Jun–Jan)' }">
-                        <label>Season *</label>
+                    <!-- Season Select — defaults to the season the calendar
+                         says it is now; window labels come from SeasonHelper
+                         so admin season edits show up here too. -->
+                    @php
+                        $seasonNow = \App\Helpers\SeasonHelper::getCurrentSeason();
+                        $wetLabel = 'Wet Season (' . \App\Helpers\SeasonHelper::rangeLabel('wet', true) . ')';
+                        $dryLabel = 'Dry Season (' . \App\Helpers\SeasonHelper::rangeLabel('dry', true) . ')';
+                    @endphp
+                    <div class="ncb-group" x-data="{ open: false, value: '{{ $seasonNow }}', label: '{{ $seasonNow === 'wet' ? $wetLabel : $dryLabel }}' }">
+                        <label>Season <span class="ncb-required" aria-hidden="true">*</span></label>
                         <input type="hidden" name="season" :value="value" required>
                         <div class="ncb-select-trigger" :class="{ 'active': open }" @click="open = !open" @click.outside="open = false" tabindex="0">
-                            <span x-text="label">Wet Season (Jun–Jan)</span>
+                            <span x-text="label">{{ $seasonNow === 'wet' ? $wetLabel : $dryLabel }}</span>
                             <svg class="ncb-select-arrow" :class="{ 'rotate': open }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                             </svg>
                         </div>
                         <div class="ncb-select-menu" x-show="open" x-cloak style="display: none;">
-                            <div class="ncb-select-option" :class="{ 'selected': value === 'wet' }" @click="value = 'wet'; label = 'Wet Season (Jun–Jan)'; open = false">Wet Season (Jun–Jan)</div>
-                            <div class="ncb-select-option" :class="{ 'selected': value === 'dry' }" @click="value = 'dry'; label = 'Dry Season (Feb–May)'; open = false">Dry Season (Feb–May)</div>
+                            <div class="ncb-select-option" :class="{ 'selected': value === 'wet' }" @click="value = 'wet'; label = '{{ $wetLabel }}'; open = false">{{ $wetLabel }}</div>
+                            <div class="ncb-select-option" :class="{ 'selected': value === 'dry' }" @click="value = 'dry'; label = '{{ $dryLabel }}'; open = false">{{ $dryLabel }}</div>
                         </div>
                     </div>
 
                     <!-- Custom Styled Planting Date -->
                     <div class="ncb-group">
-                        <label>Planting Date *</label>
+                        <label>Planting Date <span class="ncb-required" aria-hidden="true">*</span></label>
                         <div class="ncb-date-wrapper">
                             <input type="text" class="custom-datepicker" id="plantingDate" name="planting_date" value="{{ now()->format('Y-m-d') }}" required placeholder="Select date">
                             <svg class="ncb-date-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -643,32 +922,198 @@ span.flatpickr-weekday {
         return '<a class="ncb-source-link" href="' + _esc(url) + '" target="_blank" rel="noopener noreferrer">' +
             icon + 'Source: ' + _esc(text) + '</a>';
     }
+    var _activeGrowthStage = 0;
+    function _setGrowthStage(idx) {
+        var container = document.getElementById('cropInfoText');
+        if (!container) return;
+        _activeGrowthStage = idx;
+        var steps = container.querySelectorAll('.ncb-step-btn');
+        var panels = container.querySelectorAll('.ncb-stage-panel');
+        var tiles = container.querySelectorAll('.ncb-spec-tile');
+        var fill = container.querySelector('.ncb-stepper-fill');
+        Array.prototype.forEach.call(steps, function (btn, i) {
+            btn.classList.toggle('is-active', i === idx);
+            btn.classList.toggle('is-done', i < idx);
+            btn.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+        });
+        Array.prototype.forEach.call(panels, function (panel, i) {
+            panel.classList.toggle('is-active', i === idx);
+        });
+        Array.prototype.forEach.call(tiles, function (tile) {
+            tile.classList.toggle('is-highlighted', Number(tile.getAttribute('data-jump-stage')) === idx);
+        });
+        if (fill) {
+            fill.style.width = (idx === 0 ? '0%' : (idx === 1 ? '50%' : '100%'));
+        }
+    }
     function showCropInfo(cropId) {
         var card = document.getElementById('cropInfoCard');
         var text = document.getElementById('cropInfoText');
         if (!card || !text) return;
         var info = _CROP_INFO[cropId];
-        if (!info) { card.style.display = 'none'; text.textContent = ''; return; }
-        var parts = [];
+        if (!info) { card.style.display = 'none'; text.innerHTML = ''; return; }
 
-        /* Breed-specific line: the picked variety's own maturity, yield and note. */
         var variety = (String(cropId) === String(_PICKED_CROP)) ? _pickedVariety() : null;
-        if (variety && (variety.maturity_days || variety.yield_kg_ha)) {
-            var bits = [];
-            if (variety.maturity_days) bits.push(variety.maturity_days + ' days from planting to harvest');
-            if (variety.yield_kg_ha) bits.push('about ' + Number(variety.yield_kg_ha).toLocaleString() + ' kg/ha');
-            var line = variety.name + ' (' + info.name + '): ' + bits.join(', ');
-            if (variety.note) line += ' — ' + variety.note;
-            parts.push(line);
+        var defaults = _CROP_DEFAULTS[cropId] || {};
+        var yieldUnit = info.yield_unit || 'kg';
+
+        var maturityVal = (variety && variety.maturity_days)
+            ? (variety.maturity_days + ' days')
+            : (info.days_to_harvest || (defaults.maturity_days ? defaults.maturity_days + ' days' : 'Varies'));
+        var maturitySub = (variety && variety.maturity_days && info.days_to_harvest)
+            ? ('Window: ' + info.days_to_harvest)
+            : '';
+
+        var yieldVal = (variety && variety.yield_kg_ha)
+            ? ('~' + Number(variety.yield_kg_ha).toLocaleString() + ' kg/ha')
+            : (info.yield_per_ha ? ('~' + Number(info.yield_per_ha).toLocaleString() + ' ' + yieldUnit + '/ha') : 'Custom');
+        var yieldSub = (variety && variety.yield_kg_ha && info.yield_per_ha)
+            ? ('Crop avg: ' + Number(info.yield_per_ha).toLocaleString() + ' ' + yieldUnit + '/ha')
+            : '';
+
+        var spacingVal = info.spacing || 'Standard';
+        var plantingVal = info.planting_window || 'Year-round / Local';
+
+        /* Build crisp bullet items per stage */
+        var stage1Items = [];
+        if (info.planting_window) {
+            stage1Items.push({ k: 'Planting period:', v: info.planting_window });
+        }
+        if (variety && variety.note) {
+            stage1Items.push({ k: 'Planting material:', v: variety.note });
+        }
+        if (!stage1Items.length) {
+            stage1Items.push({ k: 'Setup:', v: 'Prepare field beds and follow local seasonal timing for ' + info.name + '.' });
         }
 
-        if (info.days_to_harvest) parts.push('Crop window: ' + info.days_to_harvest);
-        if (info.spacing) parts.push('Spacing: ' + info.spacing);
-        if (info.planting_window) parts.push('Planting: ' + info.planting_window);
-        if (info.yield_per_ha) parts.push('Typical yield: ' + Number(info.yield_per_ha).toLocaleString() + ' ' + (info.yield_unit || 'kg') + '/ha');
-        text.innerHTML = (parts.length ? _esc(parts.join('  ·  ')) : '') +
-            (info.source ? _sourceLinkHtml(info.source, info.source_url) : '');
-        card.style.display = 'flex';
+        var stage2Items = [];
+        if (info.spacing) {
+            stage2Items.push({ k: 'Recommended spacing:', v: 'Allow ' + info.spacing + ' between plants/rows.' });
+        }
+        if (variety) {
+            stage2Items.push({
+                k: 'Selected variety:',
+                v: variety.name + (variety.note ? ' — ' + variety.note : ' (' + info.name + ')')
+            });
+        }
+        if (!stage2Items.length) {
+            stage2Items.push({ k: 'Field care:', v: 'Maintain even moisture, weed control, and healthy spacing for ' + info.name + '.' });
+        }
+
+        var stage3Items = [];
+        if (variety && variety.maturity_days) {
+            stage3Items.push({ k: 'Time to harvest:', v: 'About ' + variety.maturity_days + ' days from planting.' });
+        }
+        if (info.days_to_harvest) {
+            stage3Items.push({ k: 'Harvest window:', v: info.days_to_harvest });
+        }
+        if (variety && variety.yield_kg_ha) {
+            stage3Items.push({ k: variety.name + ' yield:', v: 'Around ' + Number(variety.yield_kg_ha).toLocaleString() + ' kg/ha' });
+        }
+        if (info.yield_per_ha) {
+            stage3Items.push({ k: 'Typical crop yield:', v: 'About ' + Number(info.yield_per_ha).toLocaleString() + ' ' + yieldUnit + '/ha' });
+        }
+        if (!stage3Items.length) {
+            stage3Items.push({ k: 'Harvest:', v: 'Harvest when crop reaches full visual maturity.' });
+        }
+
+        function renderStageRows(items) {
+            return '<div class="ncb-stage-list">' + items.map(function (it) {
+                return '<div class="ncb-stage-row"><span class="ncb-stage-bullet"></span><div><span class="ncb-stage-key">' +
+                    _esc(it.k) + '</span><span>' + _esc(it.v) + '</span></div></div>';
+            }).join('') + '</div>';
+        }
+
+        var sproutIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>';
+        var calIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+        var rulerIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>';
+        var clockIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+        var trendIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>';
+
+        var varietyBadge = variety
+            ? '<span class="ncb-growth-variety-tag">' + _esc(variety.name) + '</span>'
+            : '<span class="ncb-growth-variety-tag">' + _esc(_GENERAL_VARIETY) + '</span>';
+
+        var html = '' +
+            '<div class="ncb-growth-header">' +
+                '<div class="ncb-growth-title-wrap">' +
+                    '<div class="ncb-growth-emblem">' + sproutIcon + '</div>' +
+                    '<div>' +
+                        '<div class="ncb-growth-eyebrow">Crop Growth Guide</div>' +
+                        '<div class="ncb-growth-title">' + _esc(info.name) + ' ' + varietyBadge + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<span class="ncb-growth-hint-pill">Click a stage to explore</span>' +
+            '</div>' +
+            '<div class="ncb-growth-body">' +
+                '<div class="ncb-stepper" role="tablist" aria-label="Crop growth stages">' +
+                    '<div class="ncb-stepper-track"><div class="ncb-stepper-fill"></div></div>' +
+                    '<button type="button" class="ncb-step-btn" data-stage-idx="0" role="tab" aria-selected="true">' +
+                        '<span class="ncb-step-dot">1</span>' +
+                        '<span class="ncb-step-name">Planting</span>' +
+                        '<span class="ncb-step-mini">' + _esc(info.planting_window ? info.planting_window : 'Start stage') + '</span>' +
+                    '</button>' +
+                    '<button type="button" class="ncb-step-btn" data-stage-idx="1" role="tab" aria-selected="false">' +
+                        '<span class="ncb-step-dot">2</span>' +
+                        '<span class="ncb-step-name">Growth &amp; Spacing</span>' +
+                        '<span class="ncb-step-mini">' + _esc(info.spacing ? info.spacing : 'Field setup') + '</span>' +
+                    '</button>' +
+                    '<button type="button" class="ncb-step-btn" data-stage-idx="2" role="tab" aria-selected="false">' +
+                        '<span class="ncb-step-dot">3</span>' +
+                        '<span class="ncb-step-name">Harvest &amp; Yield</span>' +
+                        '<span class="ncb-step-mini">' + _esc(maturityVal) + '</span>' +
+                    '</button>' +
+                '</div>' +
+                '<div class="ncb-stage-panel" data-stage-panel="0">' +
+                    '<div class="ncb-stage-panel-head">' + calIcon + '<span>Stage 1 · Planting &amp; Establishment</span></div>' +
+                    renderStageRows(stage1Items) +
+                '</div>' +
+                '<div class="ncb-stage-panel" data-stage-panel="1">' +
+                    '<div class="ncb-stage-panel-head">' + rulerIcon + '<span>Stage 2 · Spacing &amp; Field Care</span></div>' +
+                    renderStageRows(stage2Items) +
+                '</div>' +
+                '<div class="ncb-stage-panel" data-stage-panel="2">' +
+                    '<div class="ncb-stage-panel-head">' + trendIcon + '<span>Stage 3 · Maturity &amp; Harvest</span></div>' +
+                    renderStageRows(stage3Items) +
+                '</div>' +
+                '<div class="ncb-specs-grid">' +
+                    '<button type="button" class="ncb-spec-tile" data-jump-stage="0">' +
+                        '<span class="ncb-spec-label">' + calIcon + ' Planting Period</span>' +
+                        '<span class="ncb-spec-val">' + _esc(plantingVal) + '</span>' +
+                    '</button>' +
+                    '<button type="button" class="ncb-spec-tile" data-jump-stage="1">' +
+                        '<span class="ncb-spec-label">' + rulerIcon + ' Spacing</span>' +
+                        '<span class="ncb-spec-val">' + _esc(spacingVal) + '</span>' +
+                    '</button>' +
+                    '<button type="button" class="ncb-spec-tile" data-jump-stage="2">' +
+                        '<span class="ncb-spec-label">' + clockIcon + ' Maturity</span>' +
+                        '<span class="ncb-spec-val">' + _esc(maturityVal) + '</span>' +
+                        (maturitySub ? '<span class="ncb-spec-sub">' + _esc(maturitySub) + '</span>' : '') +
+                    '</button>' +
+                    '<button type="button" class="ncb-spec-tile" data-jump-stage="2">' +
+                        '<span class="ncb-spec-label">' + trendIcon + ' Expected Yield</span>' +
+                        '<span class="ncb-spec-val">' + _esc(yieldVal) + '</span>' +
+                        (yieldSub ? '<span class="ncb-spec-sub">' + _esc(yieldSub) + '</span>' : '') +
+                    '</button>' +
+                '</div>' +
+            '</div>' +
+            (info.source ? '<div class="ncb-growth-footer">' + _sourceLinkHtml(info.source, info.source_url) + '</div>' : '');
+
+        text.innerHTML = html;
+
+        Array.prototype.forEach.call(text.querySelectorAll('[data-stage-idx]'), function (btn) {
+            btn.addEventListener('click', function () {
+                _setGrowthStage(Number(btn.getAttribute('data-stage-idx')));
+            });
+        });
+        Array.prototype.forEach.call(text.querySelectorAll('[data-jump-stage]'), function (tile) {
+            tile.addEventListener('click', function () {
+                _setGrowthStage(Number(tile.getAttribute('data-jump-stage')));
+            });
+        });
+
+        _setGrowthStage(_activeGrowthStage);
+        card.style.display = 'block';
     }
 
     /* ── Auto batch name: {CROP}-FIELD{N}-{DDMMYY} (e.g. TOMATO-FIELD1-160926) ── */
@@ -1027,4 +1472,41 @@ span.flatpickr-weekday {
 
     window.recalcCost && window.recalcCost();
     window.recalcHarvest && window.recalcHarvest();
+
+    /* ── Add Crop Planting via AJAX — no full page reload ── */
+    var _addForm = document.getElementById('cropPlantingForm');
+    if (_addForm) {
+        _addForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var btn = _addForm.querySelector('button[type="submit"]');
+            var originalText = btn.innerHTML;
+            btn.innerHTML = 'Adding…';
+            btn.disabled = true;
+
+            var formData = new FormData(_addForm);
+
+            fetch(_addForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(function (response) {
+                // Controller redirects on both success and validation error
+                closeModal('addModal');
+                if (typeof Turbo !== 'undefined') {
+                    Turbo.visit(response.url || '/farmer/crops', { action: 'replace' });
+                } else {
+                    window.location.href = response.url || '/farmer/crops';
+                }
+            })
+            .catch(function (err) {
+                console.error('Add crop error:', err);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        });
+    }
 </script>

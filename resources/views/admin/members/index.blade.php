@@ -216,7 +216,14 @@
                   @php
                     $location = trim(implode(', ', array_filter([$m->barangay, $m->city])));
                     $contact = $m->email ?: ($m->phone ?: '—');
-                    $farming = trim($m->land_ownership . ($m->years_farming !== null ? ' · ' . $m->years_farming . ' yr' . ($m->years_farming == 1 ? '' : 's') : ''), ' ·');
+                    $land = $m->land_area !== null
+                        ? number_format((float) $m->land_area, 2) . ' ' . ($m->land_area_unit === 'sq_m' ? 'm²' : ($m->land_area_unit === 'sq_ft' ? 'ft²' : 'ha'))
+                        : null;
+                    $farming = collect([
+                        $land ? 'Land: ' . $land : null,
+                        $m->land_ownership ?: null,
+                        $m->years_farming !== null ? $m->years_farming . ' yr' . ($m->years_farming == 1 ? '' : 's') : null,
+                    ])->filter()->implode(' · ');
                     $accountLabel = $m->user ? ($m->user->role === 'store_owner' ? 'Store Owner' : 'Farmer') : '';
                     $search = strtolower($m->fullName() . ' ' . ($m->assoc_member_no ?? '') . ' ' . ($m->email ?? '') . ' ' . ($m->phone ?? '') . ' ' . $location . ' ' . $farming);
                   @endphp

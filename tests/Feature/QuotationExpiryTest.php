@@ -190,7 +190,7 @@ class QuotationExpiryTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $this->assertStringContainsString('Archived estimates', $index);
+        $this->assertStringContainsString('Expired Quotations', $index);
         // Only the live one is on the working page.
         $this->assertSame(1, substr_count($index, 'data-search="qt-'));
 
@@ -199,7 +199,7 @@ class QuotationExpiryTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $this->assertStringContainsString('Archived estimates', $archive);
+        $this->assertStringContainsString('Expired quotations', $archive);
         $this->assertSame(1, substr_count($archive, 'class="archive-ref"'));
     }
 
@@ -210,7 +210,7 @@ class QuotationExpiryTest extends TestCase
         $this->actingAs($this->farmer)
             ->get(route('farmer.quotations.archive'))
             ->assertOk()
-            ->assertSee('Nothing archived yet', false);
+            ->assertSee('Nothing expired yet', false);
     }
 
     // ────────────────────────────────────────────────────────────

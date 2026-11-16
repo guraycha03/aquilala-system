@@ -566,6 +566,25 @@ class AiContextBuilder
      */
     private function retrieveForCost(array $slots, ?User $user): array
     {
+        // The member record already carries this farmer's land size — set by
+        // the administrator, not the farmer. A cost question that never named
+        // an area therefore costs the farm they actually own instead of
+        // asking them to retype a number the system already holds.
+        $landNote = null;
+        if (($slots['area'] ?? null) === null && ($user?->default_land_area ?? null)) {
+            $areaHa = (float) $user->default_land_area * match ($user->default_land_area_unit ?? 'ha') {
+                'sq_m'  => 1 / 10000,
+                'sq_ft' => 1 / 10763.910417,
+                default => 1,
+            };
+
+            if ($areaHa >= 0.01) {
+                $slots['area'] = round($areaHa, 2);
+                $landNote = 'I used your registered land size of ' . $slots['area']
+                    . ' ha, which your administrator set. Name a different area and I will recalculate.';
+            }
+        }
+
         $result = $this->recommendations->evaluate([
             'crop'    => $slots['crop'] ?? null,
             'season'  => $slots['season'] ?? null,
@@ -594,10 +613,11 @@ class AiContextBuilder
                 ], $user);
 
                 if ($assumed['status'] === CropRecommendationEngine::STATUS_OK) {
-                    $assumed['assumptions'] = array_merge($assumed['assumptions'] ?? [], [
+                    $assumed['assumptions'] = array_merge($assumed['assumptions'] ?? [], array_values(array_filter([
+                        $landNote,
                         'I used the current ' . $current . ' season, since you did not name one. '
                             . 'Tell me if you are planting in the other season and I will recalculate.',
-                    ]);
+                    ])));
 
                     $products = $this->products->findActiveByIds($assumed['formula_ids'], $user);
 
@@ -612,6 +632,10 @@ class AiContextBuilder
 
         // The engine's own line items, resolved back to live product rows.
         $products = $this->products->findActiveByIds($result['formula_ids'], $user);
+
+        if ($landNote !== null) {
+            $result['assumptions'] = array_merge($result['assumptions'] ?? [], [$landNote]);
+        }
 
         return [$products, $result, [], $result['assumptions']];
     }

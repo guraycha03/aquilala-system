@@ -193,7 +193,7 @@ class HarvestInsightService
                             : 'I know you as the signed-in Aquilala administrator for this session. I can use only what this account makes available in the system; I do not infer or reveal personal identity beyond that.')
                         : ($this->isTaglish($message)
                             ? 'AI assistant lang ako ng Aquilala, hindi ako tunay na tao o agronomist. Maaari akong tumulong sa mga datos ng sistema, konsepto ng pagsasaka, trends, at praktikal na tanong na may kaugnayan sa inyong gawain.'
-                            : 'I am Aquilala’s administrative AI assistant (an AI, not a real person or agronomist). I can discuss Aquilala system records, explain general agricultural concepts, help interpret trends, and think through practical questions that relate to your work.'))
+                            : 'I am Aquilala’s administrative insight assistant (an AI, not a real person or agronomist). I can discuss Aquilala system records, explain general agricultural concepts, help interpret trends, and think through practical questions that relate to your work.'))
                     : $this->greetingReplyFlexible($message),
                 'context' => [],
             ];
@@ -281,7 +281,11 @@ class HarvestInsightService
         }
 
         if (preg_match('/\bweather\b/iu', $message) === 1) {
-            return $this->weatherAnswer($message);
+            $context = $this->context();
+
+            if (($context['coverage']['weather_events_logged'] ?? 0) === 0) {
+                return $this->weatherAnswer($message);
+            }
         }
 
         if ($this->isAcknowledgement($message)) {
@@ -293,6 +297,10 @@ class HarvestInsightService
         }
 
         $context = $this->context();
+
+        if (! isset($context)) {
+            $context = $this->context();
+        }
 
         if ($this->isFarmerActivityQuestion($message)) {
             return $this->farmerActivityAnswer($message);

@@ -30,12 +30,12 @@ class CropsDirectoryIndexTest extends TestCase
         $response->assertOk();
 
         // Every crop in the library is listed.
-        $response->assertSee('43 Crops');
+        $response->assertSee('43 Verified Crops');
         $response->assertSee('Rice');
         $response->assertSee('Sugarcane');
 
         // Agronomy + varieties now render instead of em dashes.
-        $response->assertSee('Varieties grown in Sorsogon');
+        $response->assertSee('Varieties Grown in Sorsogon');
         $response->assertSee('NSIC Rc 18 (Ala)');
         $response->assertSee('Days to Harvest');
 

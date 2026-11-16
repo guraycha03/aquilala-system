@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Helpers\SeasonHelper;
+
 /**
  * Typed accessor for config/crop_library.php — the single source of truth for
  * crops, agronomy and varieties. Every consumer (planting form, Crop
@@ -381,15 +383,15 @@ class CropLibraryService
         ];
     }
 
-    /** "Wet & Dry" / "Wet season (Jun–Jan)" / "Dry season (Feb–May)". */
+    /** "Wet & Dry" / "Wet season (Jun–Nov)" / "Dry season (Dec–May)". */
     public function seasonLabel(array $seasons): string
     {
         $seasons = array_values(array_intersect(['wet', 'dry'], $seasons));
 
         return match (true) {
             count($seasons) === 2 => 'Wet & Dry',
-            $seasons === ['wet'] => 'Wet season (Jun–Jan)',
-            $seasons === ['dry'] => 'Dry season (Feb–May)',
+            $seasons === ['wet'] => 'Wet season (' . SeasonHelper::rangeLabel('wet', true) . ')',
+            $seasons === ['dry'] => 'Dry season (' . SeasonHelper::rangeLabel('dry', true) . ')',
             default => 'Year-round',
         };
     }

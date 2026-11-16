@@ -41,6 +41,8 @@ class Member extends Model
         'province',
         'farm_location',
         'land_ownership',
+        'land_area',
+        'land_area_unit',
         'years_farming',
         'status',
         'notes',
@@ -50,6 +52,7 @@ class Member extends Model
 
     protected $casts = [
         'birth_date' => 'date',
+        'land_area' => 'decimal:2',
         'years_farming' => 'integer',
     ];
 

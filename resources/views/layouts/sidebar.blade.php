@@ -1094,14 +1094,14 @@
     <div class="nav-body">
       <!-- Live Season/Climate Widget -->
 @php 
-  $climate = $globalClimateInfo ?? (class_exists('\App\Helpers\SeasonHelper') ? \App\Helpers\SeasonHelper::getClimateInfo() : ['season' => 'dry', 'label' => 'Dry']); 
-  $isWet = ($climate['season'] ?? 'dry') === 'wet';
-  
-  // Cache read only — never the live API. The sidebar is rendered on every
-  // page, so a blocking OpenWeather call here would add seconds to each
-  // navigation whenever the network or API is slow. When the cache is cold the
-  // widget shows a placeholder and fills itself in from /weather/current.
-  $weather = class_exists('\App\Services\WeatherService') ? \App\Services\WeatherService::cachedWeather() : null;
+    $climate = $globalClimateInfo ?? (class_exists('\App\Helpers\SeasonHelper') ? \App\Helpers\SeasonHelper::getClimateInfo() : ['season' => 'dry', 'label' => 'Dry']); 
+    $isWet = ($climate['season'] ?? 'dry') === 'wet';
+    
+    // Cache read only — never the live API. The sidebar is rendered on every
+    // page, so a blocking OpenWeather call here would add seconds to each
+    // navigation whenever the network or API is slow. When the cache is cold the
+    // widget shows a placeholder and fills itself in from /weather/current.
+    $weather = class_exists('\App\Services\WeatherService') ? \App\Services\WeatherService::cachedWeather() : null;
 
   $weatherIconMap = [
     'sun'             => 'sunny',
@@ -1141,7 +1141,7 @@
         <img src="{{ asset('images/weather/' . $seasonIconFile . '.png') }}" alt="{{ $climate['label'] ?? ($isWet ? 'Wet Season' : 'Dry Season') }}">
         <span class="climate-season-info">
           <span class="climate-season-label">{{ $climate['label'] ?? 'Dry Season' }}</span>
-          <span class="climate-season-sub">{{ $climate['months'] ?? ($isWet ? 'June – January' : 'February – May') }}</span>
+          <span class="climate-season-sub">{{ $climate['months'] ?? \App\Helpers\SeasonHelper::rangeLabel($isWet ? 'wet' : 'dry') }}</span>
         </span>
       </span>
     </div>

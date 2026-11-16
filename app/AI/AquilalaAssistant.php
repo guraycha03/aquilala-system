@@ -730,12 +730,13 @@ class AquilalaAssistant
             ]);
 
             if ($completion === null) {
-                // The provider could not be reached in time, or answered with
-                // nothing the pipeline could use. This turn gets one clear
-                // message to try again — never the deterministic fallback
-                // dressed up as the model's answer.
-                $answer = $this->unavailableReply();
-                $source = 'unavailable';
+                // Without a configured provider, the verified deterministic
+                // answer remains the safest response. A configured provider
+                // that fails still gets the explicit unavailable response.
+                if ($this->llm->available()) {
+                    $answer = $this->unavailableReply();
+                    $source = 'unavailable';
+                }
 
                 break;
             }

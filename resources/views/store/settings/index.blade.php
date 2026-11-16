@@ -83,6 +83,8 @@
         </select>
       </div>
     </div>
+
+    @include('partials.notifications-settings')
   </div>
 
   <script>

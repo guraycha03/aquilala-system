@@ -315,13 +315,6 @@ class FarmerCropController extends Controller
 
         ActivityLogger::cropPlanted($farmerCrop);
 
-        if (! $user->default_land_area) {
-            $user->update([
-                'default_land_area' => $validated['land_area'],
-                'default_land_area_unit' => $validated['land_area_unit'],
-            ]);
-        }
-
         return redirect()->route('farmer.crops.index')
             ->with('success', 'Crop batch submitted! It is now awaiting admin confirmation.');
     }
@@ -385,20 +378,4 @@ class FarmerCropController extends Controller
             ->with('success', 'Crop batch removed.');
     }
 
-    public function updateDefaultLand(Request $request)
-    {
-        $validated = $request->validate([
-            'default_land_area' => 'required|numeric|min:0.01|max:9999',
-            'default_land_area_unit' => 'required|in:ha,sq_m,sq_ft',
-        ]);
-
-        $user = Auth::user();
-        $oldArea = (float) ($user->default_land_area ?? 0);
-        $user->update($validated);
-
-        ActivityLogger::landUpdated($oldArea, $validated['default_land_area'], $validated['default_land_area_unit']);
-
-        return redirect()->route('farmer.crops.index')
-            ->with('success', 'Default land area updated.');
-    }
 }

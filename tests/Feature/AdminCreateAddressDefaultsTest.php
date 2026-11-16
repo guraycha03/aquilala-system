@@ -128,6 +128,8 @@ class AdminCreateAddressDefaultsTest extends TestCase
             'barangay' => 'San Vicente',
             'city' => 'Valencia',
             'province' => 'Bukidnon',
+            'land_area' => '2.5',
+            'land_area_unit' => 'ha',
         ])
             ->assertRedirect(route('admin.members.index'))
             ->assertSessionHas('success');

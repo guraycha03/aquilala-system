@@ -77,6 +77,17 @@ class User extends Authenticatable
     ];
 
     /**
+     * Defaults for the notification preference columns. The migration
+     * declares both as `true`, so a freshly built account is opted in —
+     * without this, an in-memory row reads null and NotificationFeed
+     * treats it as an opt-out.
+     */
+    protected $attributes = [
+        'notify_planting_updates' => true,
+        'notify_association_events' => true,
+    ];
+
+    /**
      * @var list<string>
      */
     protected $hidden = [
@@ -94,6 +105,7 @@ class User extends Authenticatable
             'activation_completed_at' => 'datetime',
             'phone_verified_at' => 'datetime',
             'birth_date' => 'date',
+            'default_land_area' => 'decimal:2',
             'approved_at' => 'datetime',
             'password' => 'hashed',
             'must_change_password' => 'boolean',

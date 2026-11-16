@@ -104,6 +104,11 @@ class AdminMemberImportController extends Controller
         'farmlocation' => 'farm_location',
         'farmaddress' => 'farm_location',
         'landownership' => 'land_ownership',
+        'landarea' => 'land_area',
+        'landsize' => 'land_area',
+        'farmlandarea' => 'land_area',
+        'landunit' => 'land_area_unit',
+        'landareaunit' => 'land_area_unit',
         'yearsfarming' => 'years_farming',
         'assocmemberno' => 'assoc_member_no',
         'assocno' => 'assoc_member_no',
@@ -134,6 +139,8 @@ class AdminMemberImportController extends Controller
         'province',
         'farm_location',
         'land_ownership',
+        'land_area',
+        'land_area_unit',
         'years_farming',
     ];
 
@@ -1054,10 +1061,19 @@ class AdminMemberImportController extends Controller
 
         // Members carry no role: they are the list, not accounts. A stray
         // Role column in an uploaded file is read, then discarded.
-        foreach (['sex', 'civil_status', 'address', 'barangay', 'city', 'province', 'farm_location', 'land_ownership', 'assoc_member_no'] as $field) {
+        foreach (['sex', 'civil_status', 'address', 'barangay', 'city', 'province', 'farm_location', 'land_ownership', 'land_area_unit', 'assoc_member_no'] as $field) {
             $value = $this->clean($raw[$field] ?? '');
             if ($value !== '') {
                 $data[$field] = $value;
+            }
+        }
+
+        $landArea = $this->clean($raw['land_area'] ?? '');
+        if ($landArea !== '') {
+            if (! is_numeric($landArea) || (float) $landArea <= 0) {
+                $issues[] = 'Land area must be a positive number.';
+            } else {
+                $data['land_area'] = $landArea;
             }
         }
 

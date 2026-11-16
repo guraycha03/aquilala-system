@@ -228,7 +228,6 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::post('/crops', [FarmerCropController::class, 'store'])->name('crops.store');
         Route::put('/crops/{farmerCrop}', [FarmerCropController::class, 'update'])->name('crops.update');
         Route::delete('/crops/{farmerCrop}', [FarmerCropController::class, 'destroy'])->name('crops.destroy');
-        Route::put('/crops-default-land', [FarmerCropController::class, 'updateDefaultLand'])->name('crops.default-land');
 
         // Recommendations
         Route::get('/recommendations', [ProductController::class, 'recommendations'])->name('recommendations.index');
@@ -628,6 +627,31 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
             ->name('settings.weather.store');
         Route::delete('/settings/weather/{weatherLog}', [AdminWeatherLogController::class, 'destroy'])
             ->name('settings.weather.destroy');
+        // Season Settings — the admin's climate calendar. Only the wet
+        // window is stored; the dry season is its complement, so the two
+        // can never overlap or leave a gap. SeasonHelper reads these keys,
+        // which is how one save reaches the sidebar card, planting forms,
+        // quotations, recommendations and the AI assistant at once.
+        Route::post('/settings/seasons', function (Request $request) {
+            $data = $request->validate([
+                'wet_start' => ['required', 'integer', 'between:1,12'],
+                'wet_end' => ['required', 'integer', 'between:1,12'],
+                'active_season' => ['required', 'in:auto,wet,dry'],
+                'season_reco' => ['sometimes', 'boolean'],
+            ]);
+
+            SettingsHelper::set(SeasonHelper::SETTING_WET_START, $data['wet_start']);
+            SettingsHelper::set(SeasonHelper::SETTING_WET_END, $data['wet_end']);
+            SettingsHelper::set(SeasonHelper::SETTING_ACTIVE, $data['active_season']);
+            SettingsHelper::set(SeasonHelper::SETTING_RECO, ($data['season_reco'] ?? false) ? '1' : '0');
+
+            return response()->json([
+                'ok' => true,
+                'wet' => SeasonHelper::rangeLabel('wet'),
+                'dry' => SeasonHelper::rangeLabel('dry'),
+                'current' => SeasonHelper::getSeasonLabel(),
+            ]);
+        })->name('settings.seasons.store');
         // ── Crops & Inputs (grouped pages ──────────────────────────
         // The standalone decision-formula matrix page is gone: formulas will
         // be maintained alongside each product's own info instead of in a
@@ -664,7 +688,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
 
             $seasons = collect(['wet' => [
                 'label' => 'Wet Season',
-                'months' => 'June – January',
+                'months' => SeasonHelper::rangeLabel('wet'),
                 'current' => $climate['season'] === 'wet',
                 'icon' => 'cloud-rain',
                 'typical_weather' => $climate['season'] === 'wet' ? $climate['typical_weather'] : 'Strong southwest monsoon (Habagat) with heavy rainfall and typhoons — the main cropping window.',
@@ -674,7 +698,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
                 'quotations' => (int) ($quotationCounts['wet'] ?? 0),
             ], 'dry' => [
                 'label' => 'Dry Season',
-                'months' => 'February – May',
+                'months' => SeasonHelper::rangeLabel('dry'),
                 'current' => $climate['season'] === 'dry',
                 'icon' => 'sun',
                 'typical_weather' => $climate['season'] === 'dry' ? $climate['typical_weather'] : 'High temperatures, very low rainfall. Requires irrigation for crops.',

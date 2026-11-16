@@ -103,6 +103,8 @@
         <select disabled style="padding:8px 10px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#64748b;"><option selected>English</option><option>Tagalog</option></select>
       </div>
     </div>
+
+    @include('partials.notifications-settings')
   </div>
 
   <style>

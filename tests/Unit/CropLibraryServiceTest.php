@@ -170,9 +170,11 @@ class CropLibraryServiceTest extends TestCase
 
     public function test_season_labels_cover_the_common_combinations(): void
     {
+        // Windows come from SeasonHelper (admin-configurable, PAGASA default
+        // wet June–November / dry December–May), not from fixed strings.
         $this->assertSame('Wet & Dry', $this->library->seasonLabel(['wet', 'dry']));
-        $this->assertSame('Wet season (Jun–Jan)', $this->library->seasonLabel(['wet']));
-        $this->assertSame('Dry season (Feb–May)', $this->library->seasonLabel(['dry']));
+        $this->assertSame('Wet season (Jun–Nov)', $this->library->seasonLabel(['wet']));
+        $this->assertSame('Dry season (Dec–May)', $this->library->seasonLabel(['dry']));
         $this->assertSame('Year-round', $this->library->seasonLabel([]));
     }
 }
