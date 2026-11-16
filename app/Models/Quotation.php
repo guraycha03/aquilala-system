@@ -26,6 +26,8 @@ class Quotation extends Model
         'store_user_id',
         'quotation_number',
         'crop_type',
+        'variety',
+        'variety_key',
         'season',
         'soil_type',
         'weather_context',

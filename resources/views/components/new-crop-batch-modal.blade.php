@@ -627,12 +627,15 @@ span.flatpickr-weekday {
                 @if(($stats['land_area'] ?? 0) > 0)
                 <div class="ncb-cap-wrap">
                     <div class="ncb-cap-bar-track">
-                        <div class="ncb-cap-bar-fill ok" id="capBarFill" style="width: {{ $allocPct }}%"></div>
+                        <div class="ncb-cap-bar-fill {{ $allocPct > 90 ? 'over' : ($allocPct > 70 ? 'warn' : 'ok') }}" id="capBarFill" style="width: {{ $allocPct }}%;"></div>
                     </div>
                     <div class="ncb-cap-text">
                         <span>{{ number_format($stats['used_land_area'] ?? 0, 1) }} {{ $unitLabel }} used</span>
                         <span class="ncb-cap-remaining" id="capRemaining">{{ number_format($stats['remaining_land'] ?? 0, 1) }} {{ $unitLabel }} remaining</span>
                     </div>
+                    @if(($stats['land_area_is_default'] ?? false))
+                    <div style="margin-top:6px;font-size:11px;color:#64748b;">Using default 1 ha until admin sets your member land size.</div>
+                    @endif
                 </div>
                 <div class="ncb-cap-warning" id="capWarning"></div>
                 @endif
@@ -643,8 +646,8 @@ span.flatpickr-weekday {
                     </div>
 
                     <!-- Area Unit Select -->
-                    @php 
-                        $defaultUnit = $user->default_land_area_unit ?? 'ha';
+                    @php
+                        $defaultUnit = method_exists($user, 'effectiveLandAreaUnit') ? $user->effectiveLandAreaUnit() : ($user->default_land_area_unit ?? 'ha');
                         $unitLabels = ['ha' => 'Hectares (ha)', 'sq_m' => 'Square Meters (m²)', 'sq_ft' => 'Square Feet (ft²)'];
                     @endphp
                     <div class="ncb-group" x-data="{ open: false, value: '{{ $defaultUnit }}', label: '{{ $unitLabels[$defaultUnit] ?? 'Hectares (ha)' }}' }">

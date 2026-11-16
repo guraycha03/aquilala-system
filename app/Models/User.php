@@ -209,6 +209,43 @@ class User extends Authenticatable
         return implode(' ', array_map(fn ($word) => mb_substr($word, 0, 1).'xxx', $words));
     }
 
+    /**
+     * Effective farm land area for capacity calculations and displays.
+     *
+     * Falls back to 1.00 hectare when no admin-set land size is recorded yet,
+     * so existing planted crops and features remain safe until an administrator
+     * sets the member's actual land area.
+     */
+    public function effectiveLandArea(): float
+    {
+        $area = $this->default_land_area;
+
+        if ($area === null || $area === '' || (float) $area <= 0) {
+            return 1.0;
+        }
+
+        return (float) $area;
+    }
+
+    public function effectiveLandAreaUnit(): string
+    {
+        $area = $this->default_land_area;
+        $unit = $this->default_land_area_unit;
+
+        if ($area === null || $area === '' || (float) $area <= 0) {
+            return 'ha';
+        }
+
+        return in_array($unit, ['ha', 'sq_m', 'sq_ft'], true) ? $unit : 'ha';
+    }
+
+    public function hasAdminSetLandArea(): bool
+    {
+        return $this->default_land_area !== null
+            && $this->default_land_area !== ''
+            && (float) $this->default_land_area > 0;
+    }
+
     public function isPending(): bool
     {
         return $this->status === self::STATUS_PENDING;

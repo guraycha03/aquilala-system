@@ -845,7 +845,7 @@
     <div class="fq-facts">
       <div>
         <span class="fq-fact__label">Crop</span>
-        <span class="fq-fact__value" style="text-transform: capitalize;">{{ $quotation->crop_type }}</span>
+        <span class="fq-fact__value" style="text-transform: capitalize;">{{ $quotation->crop_type }}@if(!empty($quotation->variety)) <span style="font-weight:600;color:#64748b;">({{ $quotation->variety }})</span>@endif</span>
       </div>
       <div>
         <span class="fq-fact__label">Season</span>

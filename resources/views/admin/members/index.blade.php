@@ -204,7 +204,6 @@
                   <th>Member</th>
                   <th>Contact</th>
                   <th>Location</th>
-                  <th>Farming</th>
                   <th>Status</th>
                   <th>Account</th>
                   <th>Added</th>
@@ -216,16 +215,8 @@
                   @php
                     $location = trim(implode(', ', array_filter([$m->barangay, $m->city])));
                     $contact = $m->email ?: ($m->phone ?: '—');
-                    $land = $m->land_area !== null
-                        ? number_format((float) $m->land_area, 2) . ' ' . ($m->land_area_unit === 'sq_m' ? 'm²' : ($m->land_area_unit === 'sq_ft' ? 'ft²' : 'ha'))
-                        : null;
-                    $farming = collect([
-                        $land ? 'Land: ' . $land : null,
-                        $m->land_ownership ?: null,
-                        $m->years_farming !== null ? $m->years_farming . ' yr' . ($m->years_farming == 1 ? '' : 's') : null,
-                    ])->filter()->implode(' · ');
                     $accountLabel = $m->user ? ($m->user->role === 'store_owner' ? 'Store Owner' : 'Farmer') : '';
-                    $search = strtolower($m->fullName() . ' ' . ($m->assoc_member_no ?? '') . ' ' . ($m->email ?? '') . ' ' . ($m->phone ?? '') . ' ' . $location . ' ' . $farming);
+                    $search = strtolower($m->fullName() . ' ' . ($m->assoc_member_no ?? '') . ' ' . ($m->email ?? '') . ' ' . ($m->phone ?? '') . ' ' . $location);
                   @endphp
                   <tr data-id="{{ $m->id }}" data-search="{{ $search }}"
                       data-status="{{ $m->status }}"
@@ -236,22 +227,19 @@
                       <input type="checkbox" class="member-sel" value="{{ $m->id }}" aria-label="Select {{ $m->fullName() }}">
                     </td>
                     <td>
-                      <div class="user-cell">
+                      <a href="{{ route('admin.members.show', $m) }}" class="user-cell" style="text-decoration:none;color:inherit;" title="View member details">
                         <x-user-avatar :user="$m" :size="36" />
                         <div style="min-width:0;">
                           <div class="u-name">{{ $m->fullName() }}</div>
                           <div class="u-mail">{{ $m->assoc_member_no ?: 'No member no.' }}</div>
                         </div>
-                      </div>
+                      </a>
                     </td>
                     <td>
                       <div class="user-contact">{{ $contact }}</div>
                     </td>
                     <td>
                       <div class="user-contact">{{ $location ?: '—' }}</div>
-                    </td>
-                    <td>
-                      <div class="user-contact">{{ $farming ?: '—' }}</div>
                     </td>
                     <td>
                       @if($m->status === \App\Models\Member::STATUS_ACTIVE)

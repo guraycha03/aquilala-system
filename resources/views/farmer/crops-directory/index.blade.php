@@ -42,11 +42,11 @@
         // 'Pili'         => 'pili.png',
         // 'Banana'       => 'banana.png',
         // 'Mango'        => 'mango.png',
-        // 'Papaya'       => 'papaya.png',
+         'Papaya'       => 'papaya.jpg',
         // 'Pineapple'    => 'pineapple.png',
         // 'Jackfruit'    => 'jackfruit.png',
         // 'Calamansi'    => 'calamansi.png',
-        // 'Watermelon'   => 'watermelon.png',
+         'Watermelon'   => 'watermelon.jpg',
         // 'Orange'       => 'orange.png',
         // 'Lemon'        => 'lemon.png',
 

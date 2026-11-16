@@ -366,6 +366,7 @@
 </style>
 
 <script type="application/json" id="cropSeasons">{!! json_encode($cropSeasons ?? [], JSON_UNESCAPED_UNICODE) !!}</script>
+<script type="application/json" id="cropVarietiesData">{!! json_encode($cropVarieties ?? [], JSON_UNESCAPED_UNICODE) !!}</script>
 
 <x-breadcrumb :items="[
   ['label' => 'My Cost Quotations', 'url' => route('farmer.quotations.index')],
@@ -432,10 +433,25 @@
     </div>
   </div>
 
-  <!-- 2. Season -->
+  <!-- 2. Variety -->
   <div class="q-block">
     <div class="q-head">
       <span class="q-num">2</span>
+      <label class="input-label" for="qVariety">Crop variety</label>
+    </div>
+    <div class="q-body">
+      <input type="hidden" name="variety_key" id="qVarietyKey" value="{{ old('variety_key', '') }}">
+      <select name="variety" id="qVariety" class="input-field" style="width:100%;">
+        <option value="">Select a crop first</option>
+      </select>
+      <div class="input-hint">Variety comes from the same crop library as My Crops and is saved with this quotation for consistent recommendations and records.</div>
+    </div>
+  </div>
+
+  <!-- 3. Season -->
+  <div class="q-block">
+    <div class="q-head">
+      <span class="q-num">3</span>
       <label class="input-label">Which season are you planting for?</label>
     </div>
     <div class="q-body">
@@ -467,7 +483,7 @@
   <!-- 3. Land Area -->
   <div class="q-block">
     <div class="q-head">
-      <span class="q-num">3</span>
+      <span class="q-num">4</span>
       <label for="land_area" class="input-label">How big is your farm area?</label>
     </div>
     <div class="q-body">
@@ -506,7 +522,7 @@
   <!-- 4. Field Conditions -->
   <div class="q-block">
     <div class="q-head">
-      <span class="q-num">4</span>
+      <span class="q-num">5</span>
       <label class="input-label">What are your field conditions?</label>
     </div>
     <div class="q-body">
@@ -590,7 +606,7 @@
   <!-- 5. Budget -->
   <div class="q-block">
     <div class="q-head">
-      <span class="q-num">5</span>
+      <span class="q-num">6</span>
       <label for="budget_cap" class="input-label">What&rsquo;s your budget for this planting? <span class="opt-tag">(optional)</span></label>
     </div>
     <div class="q-body">
@@ -615,7 +631,7 @@
   <!-- 6. Products -->
   <div class="q-block q-span">
     <div class="q-head">
-      <span class="q-num">6</span>
+      <span class="q-num">7</span>
       <label class="input-label">Select products <span class="opt-tag">(optional)</span></label>
     </div>
     <div class="q-body">
@@ -654,7 +670,7 @@
   <!-- 7. How long the estimate should hold -->
   <div class="q-block q-span">
     <div class="q-head">
-      <span class="q-num">7</span>
+      <span class="q-num">8</span>
       <label class="input-label" for="valid_days">How long should this estimate hold? <span class="opt-tag">(optional)</span></label>
     </div>
     <div class="q-body">
@@ -673,7 +689,7 @@
   <!-- 8. Notes -->
   <div class="q-block q-span">
     <div class="q-head">
-      <span class="q-num">8</span>
+      <span class="q-num">9</span>
       <label for="notes" class="input-label">Additional notes <span class="opt-tag">(optional)</span></label>
     </div>
     <div class="q-body">
@@ -881,6 +897,7 @@ const cropSearchInput = document.getElementById('crop-search');
       item.classList.toggle('active', item.dataset.value === value);
     });
     applySeasonForCrop(value);
+    if (typeof fillQuotationVarieties === 'function') fillQuotationVarieties(value, '', '');
     cropHiddenInput.dispatchEvent(new Event('change'));
   }
 
@@ -906,10 +923,34 @@ const cropSearchInput = document.getElementById('crop-search');
     }
   });
 
+  // --- Variety (shared crop library, consistent with My Crops/harvests) ---
+  const cropVarietiesMap = JSON.parse(document.getElementById('cropVarietiesData').textContent || '{}');
+  const qVariety = document.getElementById('qVariety');
+  const qVarietyKey = document.getElementById('qVarietyKey');
+  const Q_GENERAL = '{{ \App\Services\CropLibraryService::GENERAL_VARIETY }}';
+  const Q_GENERAL_KEY = '{{ \App\Services\CropLibraryService::GENERAL_VARIETY_KEY }}';
+  function fillQuotationVarieties(cropName, selectedKey, selectedName) {
+    if (!qVariety) return;
+    const opts = cropVarietiesMap[cropName] || [{key: Q_GENERAL_KEY, name: Q_GENERAL}];
+    qVariety.innerHTML = '';
+    opts.forEach(function(o){
+      const opt = document.createElement('option');
+      opt.value = o.name; opt.textContent = o.name; opt.dataset.key = o.key || '';
+      if ((selectedKey && o.key === selectedKey) || (!selectedKey && selectedName && o.name === selectedName) || (!selectedKey && !selectedName && o.key === Q_GENERAL_KEY)) opt.selected = true;
+      qVariety.appendChild(opt);
+    });
+    syncQVarietyKey();
+  }
+  function syncQVarietyKey(){ if(!qVariety||!qVarietyKey) return; const opt=qVariety.options[qVariety.selectedIndex]; qVarietyKey.value=opt?(opt.dataset.key||'') : Q_GENERAL_KEY; }
+  if (qVariety) qVariety.addEventListener('change', syncQVarietyKey);
+
   // Apply the season lock for the crop that is already selected from
   // old input (validation failure) or restored state.
   if (cropHiddenInput && cropHiddenInput.value) {
     applySeasonForCrop(cropHiddenInput.value);
+    fillQuotationVarieties(cropHiddenInput.value, '{{ old("variety_key","") }}', '{{ old("variety","") }}');
+  } else {
+    fillQuotationVarieties('', '', '');
   }
   // Apply weather-risk visibility for the current season right away.
   refreshWeatherRiskOptions();

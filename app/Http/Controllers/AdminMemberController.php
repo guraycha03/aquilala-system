@@ -146,6 +146,16 @@ class AdminMemberController extends Controller
     }
 
     /**
+     * Show all information for a member.
+     */
+    public function show(Member $member)
+    {
+        $member->load(['user:id,name,email,role,status', 'createdBy:id,name']);
+
+        return view('admin.members.show', ['member' => $member]);
+    }
+
+    /**
      * Persist changes to a member's record.
      *
      * Their account (if any) is left alone — this edits the person, not the

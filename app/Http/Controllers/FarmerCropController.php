@@ -26,7 +26,8 @@ class FarmerCropController extends Controller
         $activeCrops = $crops->whereNotIn('growth_stage', ['harvested', 'failed']);
         $totalEstimatedCost = $crops->sum('estimated_cost');
 
-        $totalArea = (float) ($user->default_land_area ?? 0);
+        $totalArea = $user->effectiveLandArea();
+        $landUnit = $user->effectiveLandAreaUnit();
         $usedArea = (float) $activeCrops->sum('land_area');
         $remainingLand = max(0, $totalArea - $usedArea);
 
@@ -34,10 +35,11 @@ class FarmerCropController extends Controller
             'active_count' => $activeCrops->count(),
             'total_count' => $crops->count(),
             'land_area' => $totalArea,
-            'land_area_unit' => $user->default_land_area_unit ?? 'ha',
+            'land_area_unit' => $landUnit,
             'used_land_area' => $usedArea,
             'remaining_land' => $remainingLand,
             'estimated_cost' => $totalEstimatedCost,
+            'land_area_is_default' => ! $user->hasAdminSetLandArea(),
         ];
 
         $allCrops = Crop::where('is_category_placeholder', false)->orderBy('name')->get();
@@ -282,17 +284,16 @@ class FarmerCropController extends Controller
             ?? CropLibraryService::GENERAL_VARIETY_KEY;
 
         $user = Auth::user();
-        $totalArea = (float) ($user->default_land_area ?? 0);
-        if ($totalArea > 0) {
-            $usedArea = (float) FarmerCrop::where('user_id', $user->id)
-                ->whereNotIn('growth_stage', ['harvested', 'failed'])
-                ->sum('land_area');
-            $remaining = $totalArea - $usedArea;
-            if ((float) $validated['land_area'] > $remaining) {
-                return back()->withErrors([
-                    'land_area' => 'Exceeds available land. Only '.number_format($remaining, 2).' '.($user->default_land_area_unit ?? 'ha').' remaining.',
-                ])->withInput();
-            }
+        $totalArea = $user->effectiveLandArea();
+        $landUnit = $user->effectiveLandAreaUnit();
+        $usedArea = (float) FarmerCrop::where('user_id', $user->id)
+            ->whereNotIn('growth_stage', ['harvested', 'failed'])
+            ->sum('land_area');
+        $remaining = $totalArea - $usedArea;
+        if ((float) $validated['land_area'] > $remaining) {
+            return back()->withErrors([
+                'land_area' => 'Exceeds available land. Only '.number_format(max(0, $remaining), 2).' '.$landUnit.' remaining.',
+            ])->withInput();
         }
 
         $validated['user_id'] = Auth::id();

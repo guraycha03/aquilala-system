@@ -447,6 +447,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
             ->name('members.archive');
         Route::get('/members/create', [AdminMemberController::class, 'create'])->name('members.create');
         Route::post('/members', [AdminMemberController::class, 'store'])->name('members.store');
+        Route::get('/members/{member}', [AdminMemberController::class, 'show'])->name('members.show');
         Route::get('/members/{member}/edit', [AdminMemberController::class, 'edit'])
             ->name('members.edit')
             ->middleware('shield');

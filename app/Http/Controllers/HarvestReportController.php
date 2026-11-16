@@ -67,7 +67,13 @@ class HarvestReportController extends Controller
             ->orderByDesc('planting_date')
             ->get();
 
-        return view('farmer.harvests.create', compact('cropTypes', 'batches'));
+        $library = app(\App\Services\CropLibraryService::class);
+        $cropVarieties = [];
+        foreach ($cropTypes as $cropName) {
+            $cropVarieties[$cropName] = $library->varietiesFor($cropName);
+        }
+
+        return view('farmer.harvests.create', compact('cropTypes', 'batches', 'cropVarieties'));
     }
 
     /**
@@ -515,6 +521,8 @@ class HarvestReportController extends Controller
         $validated = $request->validate([
             'crop_batch_id' => ['nullable', 'integer', 'exists:farmer_crops,id'],
             'crop_type' => ['required', 'string', 'max:100'],
+            'variety' => ['nullable', 'string', 'max:100'],
+            'variety_key' => ['nullable', 'string', 'max:60'],
             'season' => ['required', 'in:wet,dry'],
             'land_area' => ['required', 'numeric', 'min:0.01', 'max:999.99'],
             'actual_yield_metric_tons' => ['required', 'numeric', 'min:0', 'max:999999.99'],
@@ -552,6 +560,19 @@ class HarvestReportController extends Controller
             $validated['land_area'] = (float) $batch->land_area;
             $validated['variety'] = $batch->variety;
             $validated['variety_key'] = $batch->variety_key;
+        } else {
+            // Manual/past harvest: resolve variety from the crop library so
+            // stored data stays consistent across planting, quotation, and
+            // harvest flows (shared system data).
+            $library = app(\App\Services\CropLibraryService::class);
+            $cropType = ucwords(strtolower(trim((string) ($validated['crop_type'] ?? ''))));
+            $varietyOpt = $library->varietyByKey($cropType, $validated['variety_key'] ?? null);
+            if (! $varietyOpt) {
+                $varietyOpt = $library->varietiesFor($cropType)[0] ?? null;
+            }
+            $validated['crop_type'] = $cropType !== '' ? $cropType : ($validated['crop_type'] ?? '');
+            $validated['variety'] = $varietyOpt['name'] ?? ($validated['variety'] ?? \App\Services\CropLibraryService::GENERAL_VARIETY);
+            $validated['variety_key'] = $varietyOpt['key'] ?? ($validated['variety_key'] ?? \App\Services\CropLibraryService::GENERAL_VARIETY_KEY);
         }
 
         $validated['user_id'] = Auth::id();

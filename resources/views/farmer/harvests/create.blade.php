@@ -519,6 +519,8 @@
                        data-crop="{{ $batch->crop?->name }}"
                        data-season="{{ $batch->season }}"
                        data-area="{{ $batch->land_area }}"
+                       data-variety="{{ $batch->variety ?? '' }}"
+                       data-variety-key="{{ $batch->variety_key ?? '' }}"
                        role="option">
                     <div class="qsel-opt">
                       <div class="qsel-t">{{ $batch->crop?->name ?? 'Unknown crop' }} &mdash; {{ $batch->batch_name ?? 'Batch #' . $batch->id }}</div>
@@ -552,6 +554,15 @@
                      aria-expanded="false">
               <div class="q-select-menu" role="listbox" id="cropTypeMenu"></div>
             </div>
+          </div>
+
+          <div class="form-field" id="hrvVarietyField" style="display:none;">
+            <label for="harvestVariety">Variety</label>
+            <input type="hidden" name="variety_key" id="harvestVarietyKey" value="{{ old('variety_key', '') }}">
+            <select name="variety" id="harvestVariety" class="input-field" style="width:100%;">
+              <option value="">Select variety</option>
+            </select>
+            <p class="input-hint" id="harvestVarietyHint">Choose the crop first. Uses the same crop library as My Crops.</p>
           </div>
 
           <div class="form-field">
@@ -758,6 +769,11 @@
         }).join('');
       }
 
+      function onHarvestCropPicked(name) {
+        if (batchInput && batchInput.value) return; // batch owns fields/variety
+        setHarvestManual(true, name || (cropField?cropField.value:''), '', '');
+      }
+
       function openCropMenu() {
         if (!cropWrap || !cropQuery) return;
         document.querySelectorAll('.q-select.open').forEach(function (o) {
@@ -783,6 +799,7 @@
         cropField.value = name;
         cropQuery.value = name;
         closeCropMenu();
+        onHarvestCropPicked(name);
       }
 
       if (cropQuery && cropMenu) {
@@ -797,6 +814,7 @@
             return c.name.toLowerCase() === typed.toLowerCase();
           });
           cropField.value = exact ? exact.name : '';
+          if (exact) { onHarvestCropPicked(exact.name); } else if (!typed) { onHarvestCropPicked(''); }
           openCropMenu();
         });
         cropQuery.addEventListener('keydown', function (e) {
@@ -885,6 +903,36 @@
       });
 
       // ── Choosing a planting → auto-fill Crop, Season & Land Area ─────────
+      var _HRV_VARIETIES = @json($cropVarieties ?? []);
+      var _HRV_GENERAL = @json(\App\Services\CropLibraryService::GENERAL_VARIETY);
+      var _HRV_GENERAL_KEY = @json(\App\Services\CropLibraryService::GENERAL_VARIETY_KEY);
+      var hrvVarietyField = document.getElementById('hrvVarietyField');
+      var hrvVarietySel = document.getElementById('harvestVariety');
+      var hrvVarietyKey = document.getElementById('harvestVarietyKey');
+      var hrvVarietyHint = document.getElementById('harvestVarietyHint');
+
+      function fillHarvestVarieties(cropName, selectedKey, selectedName) {
+        if (!hrvVarietySel) return;
+        var opts = _HRV_VARIETIES[cropName] || [{key: _HRV_GENERAL_KEY, name: _HRV_GENERAL}];
+        hrvVarietySel.innerHTML = '';
+        opts.forEach(function (o) {
+          var opt = document.createElement('option');
+          opt.value = o.name; opt.textContent = o.name; opt.setAttribute('data-key', o.key || '');
+          if ((selectedKey && o.key === selectedKey) || (!selectedKey && selectedName && o.name === selectedName) || (!selectedKey && !selectedName && o.key === _HRV_GENERAL_KEY)) opt.selected = true;
+          hrvVarietySel.appendChild(opt);
+        });
+        syncHarvestVarietyKey();
+      }
+      function syncHarvestVarietyKey(){ if(!hrvVarietySel||!hrvVarietyKey)return; var opt=hrvVarietySel.options[hrvVarietySel.selectedIndex]; hrvVarietyKey.value=opt?(opt.getAttribute('data-key')||''):_HRV_GENERAL_KEY; }
+      if (hrvVarietySel) hrvVarietySel.addEventListener('change', syncHarvestVarietyKey);
+      function setHarvestManual(isManual, cropName, vKey, vName){
+        [cropField,seasonField,landField].forEach(function(f){ if(!f) return; f.readOnly=!isManual; var wrap=f.closest('.q-select'); if(wrap){ wrap.classList.toggle('is-readonly',!isManual); var b=wrap.querySelector('.q-select-btn'); if(b) b.tabIndex=isManual?0:-1; }});
+        if(cropQuery){ cropQuery.readOnly=!isManual; cropQuery.tabIndex=isManual?0:-1; if(cropWrap) cropWrap.classList.toggle('is-readonly',!isManual); }
+        if(hrvVarietyField) hrvVarietyField.style.display='';
+        if(hrvVarietySel) hrvVarietySel.disabled=!isManual;
+        fillHarvestVarieties(cropName||'', vKey||'', vName||'');
+        if(hrvVarietyHint) hrvVarietyHint.textContent=isManual ? (cropName?'Variety for this harvest (from crop library).':'Choose the crop first. Uses the same crop library as My Crops.') : 'Variety comes from the selected planting batch.';
+      }
       var batchWrap   = document.getElementById('batchSelectWrap');
       var batchInput  = document.getElementById('cropBatchInput');
       var seasonWrap  = document.getElementById('seasonSelectWrap');
@@ -894,18 +942,22 @@
       function applyBatch() {
         if (!batchWrap || !batchInput) return;
         var val = batchInput.value;
-        if (!val) return;
+        if (!val) {
+          setHarvestManual(true, cropField ? cropField.value : '', hrvVarietyKey ? hrvVarietyKey.value : '', hrvVarietySel ? hrvVarietySel.value : '');
+          return;
+        }
 
         var activeItem = batchWrap.querySelector('.q-select-item[data-value="' + CSS.escape(val) + '"]');
         if (!activeItem) return;
 
-        var crop = activeItem.getAttribute('data-crop');
+        var crop = activeItem.getAttribute('data-crop') || '';
         if (crop) {
           var exists = _CROP_OPTIONS.some(function (c) { return c.name === crop; });
           if (!exists) {
             _CROP_OPTIONS.unshift({ name: crop, local: '', terms: [crop] });
           }
-          selectCropName(crop);
+          if (cropField) cropField.value = crop;
+          if (cropQuery) cropQuery.value = crop;
         }
 
         var season = activeItem.getAttribute('data-season');
@@ -918,12 +970,16 @@
         if (area && landField) {
           landField.value = area;
         }
+
+        var bVar = activeItem.getAttribute('data-variety') || '';
+        var bVk = activeItem.getAttribute('data-variety-key') || '';
+        setHarvestManual(false, crop, bVk, bVar);
       }
 
       if (batchInput) {
         batchInput.addEventListener('change', applyBatch);
-        if (batchInput.value) applyBatch();
       }
+      applyBatch();
 
       Array.prototype.slice.call(document.querySelectorAll('[data-batch-id]')).forEach(function (btn) {
         btn.addEventListener('click', function () {

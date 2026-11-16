@@ -569,10 +569,12 @@ class AiContextBuilder
         // The member record already carries this farmer's land size — set by
         // the administrator, not the farmer. A cost question that never named
         // an area therefore costs the farm they actually own instead of
-        // asking them to retype a number the system already holds.
+        // asking them to retype a number the system already holds. A safe
+        // 1 ha default is used when no admin-set size exists yet so existing
+        // planted crops/features keep working until the member record is set.
         $landNote = null;
-        if (($slots['area'] ?? null) === null && ($user?->default_land_area ?? null)) {
-            $areaHa = (float) $user->default_land_area * match ($user->default_land_area_unit ?? 'ha') {
+        if (($slots['area'] ?? null) === null && $user) {
+            $areaHa = $user->effectiveLandArea() * match ($user->effectiveLandAreaUnit()) {
                 'sq_m'  => 1 / 10000,
                 'sq_ft' => 1 / 10763.910417,
                 default => 1,

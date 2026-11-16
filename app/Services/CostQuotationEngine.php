@@ -469,6 +469,8 @@ class CostQuotationEngine
                 'user_id'              => $farmer->id,
                 'quotation_number'     => $summary['quotation_number'],
                 'crop_type'            => $input['crop_type'],
+                'variety'              => $input['variety'] ?? null,
+                'variety_key'          => $input['variety_key'] ?? null,
                 'season'               => $input['season'],
                 'soil_type'            => $input['soil_type'] ?? 'clay_loam',
                 'weather_context'      => $input['weather_context'] ?? 'normal',

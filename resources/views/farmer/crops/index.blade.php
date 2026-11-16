@@ -293,15 +293,12 @@
             <p class="hero-sub">Track planting cycles, monitor <strong>growth stages</strong>, and plan your harvests across seasons.</p>
             <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 <span style="font-size: 12px; color: #40632d;">Your land:</span>
-                @if($user->default_land_area)
-                {{-- Read-only on purpose: land size is set and edited by
-                     administrators only (members record), never by the farmer. --}}
                 <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(20,61,35,0.06); border: 1px solid rgba(20,61,35,0.12); border-radius: 8px; color: #14532d; font-size: 13px; font-weight: 700;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                    {{ $user->default_land_area }} {{ $user->default_land_area_unit === 'ha' ? 'ha' : ($user->default_land_area_unit === 'sq_m' ? 'm²' : 'ft²') }}
+                    {{ number_format($stats['land_area'], 2) }} {{ $stats['land_area_unit'] === 'ha' ? 'ha' : ($stats['land_area_unit'] === 'sq_m' ? 'm²' : 'ft²') }}
                 </span>
-                @else
-                <span style="font-size: 12px; color: rgba(20,61,35,0.7);">Not set yet — your administrator adds it with your member record.</span>
+                @if(($stats['land_area_is_default'] ?? false))
+                <span style="font-size: 12px; color: rgba(20,61,35,0.7);">Default 1 ha until your administrator sets your member land size.</span>
                 @endif
             </div>
         </div>
@@ -359,7 +356,7 @@
 
 {{-- ── Farm Plot Visualization ── --}}
 @php
-    $totalArea = (float) ($user->default_land_area ?? 0);
+    $totalArea = (float) ($stats['land_area'] ?? 1.0);
     $plotActive = $crops->filter(fn($c) => !in_array($c->growth_stage, ['harvested', 'failed']));
     $usedArea = (float) $plotActive->sum('land_area');
     $availableArea = max(0, $totalArea - $usedArea);
@@ -384,12 +381,11 @@
     $svgW = 800; $svgH = 540;
 @endphp
 
-@if($totalArea > 0)
 <div class="land-plot-card">
     <div class="land-plot-head">
         <div>
             <h3 class="land-plot-title">Field Overview</h3>
-            <p class="land-plot-sub">{{ number_format($usedArea, 1) }} {{ $unitLabel }} planted of {{ number_format($totalArea, 1) }} {{ $unitLabel }} total</p>
+            <p class="land-plot-sub">{{ number_format($usedArea, 1) }} {{ $unitLabel }} planted of {{ number_format($totalArea, 1) }} {{ $unitLabel }} total@if(($stats['land_area_is_default'] ?? false)) · default land size until admin sets member record@endif</p>
         </div>
         <div style="background: #F1F5F9; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #1E293B;">
             {{ $allocPct }}% Allocated
@@ -519,7 +515,6 @@
         @endif
     </div>
 </div>
-@endif
 
 <!-- ── Filter Bar ── -->
 @if($crops->count() > 0)

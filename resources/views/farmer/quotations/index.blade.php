@@ -287,7 +287,7 @@
                 <span style="font-weight: 700; color: #143d23; font-family: 'SF Mono', ui-monospace, monospace; font-size: 13px; letter-spacing: 0.02em;">{{ $quote->quotation_number }}</span>
               </td>
               <td>
-                <div style="text-transform: capitalize; font-weight: 500;">{{ $quote->crop_type }}</div>
+                <div style="text-transform: capitalize; font-weight: 500;">{{ $quote->crop_type }}@if(!empty($quote->variety)) <span style="font-weight:500;color:#64748b;text-transform:none;">· {{ $quote->variety }}</span>@endif</div>
                 <div style="font-size: 12px; color: #94a3b8; text-transform: capitalize;">{{ $quote->season }} season</div>
               </td>
               <td><span style="font-weight: 600;">{{ number_format($quote->land_area, 2) }}</span> <span style="color: #94a3b8; font-size: 12px;">ha</span></td>

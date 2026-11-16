@@ -478,17 +478,20 @@ PROMPT;
         // Season compatibility per crop, taken directly from the crop
         // library's own `seasons` field (wet/dry). Nothing is invented.
         $cropSeasons = [];
+        $cropVarieties = [];
         foreach ($allCrops as $cropName) {
             $entry = $library->forName($cropName);
             $cropSeasons[$cropName] = array_values(array_intersect(
                 ['wet', 'dry'],
                 (array) ($entry['seasons'] ?? [])
             ));
+            $cropVarieties[$cropName] = $library->varietiesFor($cropName);
         }
 
         return view('farmer.quotations.request', [
-            'cropTypes'   => $allCrops,
-            'cropSeasons' => $cropSeasons,
+            'cropTypes'     => $allCrops,
+            'cropSeasons'   => $cropSeasons,
+            'cropVarieties' => $cropVarieties,
         ]);
     }
 
@@ -542,6 +545,8 @@ PROMPT;
     {
         $validated = $request->validate([
             'crop_type' => ['required', 'string', 'max:255'],
+            'variety' => ['nullable', 'string', 'max:100'],
+            'variety_key' => ['nullable', 'string', 'max:60'],
             'season' => ['required', 'in:wet,dry'],
             'land_area' => ['required', 'numeric', 'min:0.01', 'max:999.99'],
             'soil_type' => ['nullable', 'in:clay_loam,sandy,peat'],
@@ -554,6 +559,18 @@ PROMPT;
         ]);
 
         $cropType = ucwords(strtolower(trim($validated['crop_type'])));
+
+        // Resolve variety from the crop library so stored data stays
+        // consistent across planting, quotation, and harvest flows.
+        $library = app(CropLibraryService::class);
+        $varietyKey = $validated['variety_key'] ?? null;
+        $varietyOpt = $library->varietyByKey($cropType, $varietyKey);
+        if (! $varietyOpt) {
+            $varietyOpt = $library->varietiesFor($cropType)[0] ?? null;
+        }
+        $validated['crop_type'] = $cropType;
+        $validated['variety'] = $varietyOpt['name'] ?? ($validated['variety'] ?? CropLibraryService::GENERAL_VARIETY);
+        $validated['variety_key'] = $varietyOpt['key'] ?? ($varietyKey ?? CropLibraryService::GENERAL_VARIETY_KEY);
 
         // Parse selected product IDs
         $selectedProductIds = [];
