@@ -7,6 +7,7 @@ use App\Models\DecisionFormula;
 use App\Models\FarmerCrop;
 use App\Models\Product;
 use App\Models\Quotation;
+use App\Models\StoreAiSummary;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\CostQuotationEngine;
@@ -933,15 +934,11 @@ PROMPT;
         $fallback = $this->shapeStoreOverview($this->buildStoreSmartFallback($context));
 
         $apiKey = config('services.groq.key');
-        if (! $apiKey) {
-            return response()->json([
-                'overview' => $fallback,
-                'source' => 'fallback',
-                'metrics' => $context,
-            ]);
-        }
+        $overview = $fallback;
+        $source = 'fallback';
 
-        $system = 'You are a friendly business adviser for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Farmers create their own cost quotations; stores simply see the ones that include their products - for information only, no action required and no approval involved. Write a COMPLETE report for the store owner using ONLY the JSON telemetry provided. Report total_signals, this_week and last_week EXACTLY as given - this_week/last_week are the last 7 and previous 7 days respectively, distinct from total_signals. Never invent numbers.
+        if ($apiKey) {
+            $system = 'You are a friendly business adviser for store owners in the Aquilala Irrigators Association (Bulan, Sorsogon, Philippines). Farmers create their own cost quotations; stores simply see the ones that include their products - for information only, no action required and no approval involved. Write a COMPLETE report for the store owner using ONLY the JSON telemetry provided. Report total_signals, this_week and last_week EXACTLY as given - this_week/last_week are the last 7 and previous 7 days respectively, distinct from total_signals. Never invent numbers.
 
 PLAIN LANGUAGE: the reader is an ordinary store owner, not a business analyst. Use short, everyday words. Never use jargon such as "demand signals", "telemetry", "intelligence", "momentum" or "week-over-week" - say "farmer quotations", "this week", "compared with last week" instead. Farmers CREATE quotations on their own; never imply the farmer asked the store for anything or that the store must respond.
 
@@ -965,45 +962,74 @@ FORMATTING RULES:
 4. At the very end of your reply, on its own line, add product keywords for the recommendations EXACTLY in this format (2-4 short generic keywords, comma-separated):
 [SUGGEST:urea, complete fertilizer, 14-14-14]';
 
-        try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer '.$apiKey,
-                'Content-Type' => 'application/json',
-            ])->withoutVerifying()->connectTimeout(5)->timeout(30)->post('https://api.groq.com/openai/v1/chat/completions', [
-                'model' => 'openai/gpt-oss-20b',
-                'messages' => [
-                    ['role' => 'system', 'content' => $system],
-                    ['role' => 'user', 'content' => json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)],
-                ],
-                'temperature' => 0.4,
-                'max_tokens' => 8192,
-                'reasoning_effort' => 'low',
-            ]);
-
-            $overview = $response->failed()
-                ? ''
-                : trim((string) $response->json('choices.0.message.content', ''));
-
-            if ($overview === '') {
-                return response()->json([
-                    'overview' => $fallback,
-                    'source' => 'fallback',
-                    'metrics' => $context,
+            try {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer '.$apiKey,
+                    'Content-Type' => 'application/json',
+                ])->withoutVerifying()->connectTimeout(5)->timeout(30)->post('https://api.groq.com/openai/v1/chat/completions', [
+                    'model' => 'openai/gpt-oss-20b',
+                    'messages' => [
+                        ['role' => 'system', 'content' => $system],
+                        ['role' => 'user', 'content' => json_encode($context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)],
+                    ],
+                    'temperature' => 0.4,
+                    'max_tokens' => 8192,
+                    'reasoning_effort' => 'low',
                 ]);
-            }
 
-            return response()->json([
-                'overview' => $this->shapeStoreOverview($overview),
-                'source' => 'ai',
-                'metrics' => $context,
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'overview' => $fallback,
-                'source' => 'fallback',
-                'metrics' => $context,
-            ]);
+                $generated = $response->failed()
+                    ? ''
+                    : trim((string) $response->json('choices.0.message.content', ''));
+
+                if ($generated !== '') {
+                    $overview = $this->shapeStoreOverview($generated);
+                    $source = 'ai';
+                }
+            } catch (\Throwable $e) {
+                // Keep deterministic fallback so the store always gets a saved report.
+            }
         }
+
+        $summary = StoreAiSummary::create([
+            'user_id' => $storeUserId,
+            'overview' => $overview,
+            'metrics' => $context,
+            'source' => $source,
+        ]);
+
+        return response()->json([
+            'id' => $summary->id,
+            'created_at' => $summary->created_at?->toIso8601String(),
+            'created_at_label' => $summary->created_at?->format('M d, Y g:i A'),
+            'overview' => $summary->overview,
+            'source' => $summary->source,
+            'metrics' => $summary->metrics ?? $context,
+        ]);
+    }
+
+    /**
+     * Return saved Smart Store summaries for the authenticated store owner.
+     */
+    public function storeAiSummaries(Request $request)
+    {
+        abort_unless($request->user()?->role === 'store_owner', 403);
+
+        $summaries = StoreAiSummary::query()
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->take(30)
+            ->get()
+            ->map(fn (StoreAiSummary $summary) => [
+                'id' => $summary->id,
+                'created_at' => $summary->created_at?->toIso8601String(),
+                'created_at_label' => $summary->created_at?->format('M d, Y g:i A'),
+                'overview' => $summary->overview,
+                'source' => $summary->source,
+                'metrics' => $summary->metrics ?? [],
+            ])
+            ->values();
+
+        return response()->json(['summaries' => $summaries]);
     }
 
     /**

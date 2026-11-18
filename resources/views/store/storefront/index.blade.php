@@ -634,6 +634,13 @@
     initCustomSelect('catFilterTrigger', 'catFilterMenu', 'cat');
     initCustomSelect('seasonFilterTrigger', 'seasonFilterMenu', 'season');
     initCustomSelect('stockFilterTrigger', 'stockFilterMenu', 'stock');
+
+    // Close "Add Product" options menu when clicking outside it.
+    document.addEventListener('click', function (e) {
+        document.querySelectorAll('details.add-product-menu[open]').forEach(function (menu) {
+            if (!menu.contains(e.target)) menu.removeAttribute('open');
+        });
+    });
 </script>
 
 @endsection

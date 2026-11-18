@@ -45,9 +45,21 @@
     color: #fff; padding: 11px 20px; border-radius: 10px;
     font-size: 14px; font-weight: 600; text-decoration: none;
     box-shadow: 0 4px 14px rgba(20,83,45,0.25); transition: all .2s; border: none; cursor: pointer;
+    list-style: none;
   }
   .btn-add:hover { background: #0f4224; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(20,83,45,0.3); }
   .btn-add svg, .btn-add .lucide { width: 16px; height: 16px; stroke: currentColor; }
+  .add-product-menu { position: relative; display: inline-block; }
+  .add-product-menu > summary::-webkit-details-marker { display: none; }
+  .add-product-menu > summary::marker { content: ""; }
+  .add-product-menu > .add-product-dropdown {
+    position: absolute; top: calc(100% + 8px); right: 0; min-width: 230px;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(15,23,42,0.12); padding: 8px; z-index: 20;
+  }
+  .menu-link { display: block; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: #1e2922; font-weight: 600; font-size: 14px; }
+  .menu-link:hover { background: #f3f6f3; }
+  .menu-sub { padding-left: 24px; }
   .inv-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .btn-ghost-inv {
     display: inline-flex; align-items: center; gap: 8px;
@@ -296,14 +308,25 @@
         <span style="background:#fee2e2;color:#b91c1c;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;">{{ $archivedCount }}</span>
       @endif
     </a>
-    <a href="{{ route('store.products.import') }}" class="btn-ghost-inv">
-      <i data-lucide="upload" aria-hidden="true"></i>
-      Import
-    </a>
-    <a href="{{ route('store.products.create') }}" class="btn-add">
-      <i data-lucide="plus" aria-hidden="true"></i>
-      Add Product
-    </a>
+    <details class="add-product-menu">
+      <summary class="btn-add">
+        <i data-lucide="plus" aria-hidden="true"></i>
+        Add Product
+      </summary>
+      <div class="add-product-dropdown">
+        <a href="{{ route('store.products.create') }}" class="menu-link">Create manually</a>
+        <a href="{{ route('store.products.import') }}" class="menu-link">Import from file</a>
+        <div style="margin: 6px 4px 4px; padding: 8px 10px; background: #f3f6f3; border-radius: 8px; font-size: 12px; color: #4b5c50; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="file-down" aria-hidden="true" style="width:14px;height:14px;"></i>
+          Download Template
+        </div>
+        <div style="display: flex; gap: 8px; padding: 4px 8px 8px;">
+          <a href="{{ route('store.products.import.template', 'csv') }}" class="menu-link menu-sub" data-aqui-confirm="Download the CSV product template?" data-aqui-tone="template" data-aqui-title="Download template" data-aqui-confirm-label="Download" style="flex: 1; text-align: center; padding-left: 10px;">CSV</a>
+          <span aria-hidden="true" style="width:1px; background:#dbe5de; border-radius:1px;"></span>
+          <a href="{{ route('store.products.import.template', 'xlsx') }}" class="menu-link menu-sub" data-aqui-confirm="Download the Excel (XLSX) product template?" data-aqui-tone="template" data-aqui-title="Download template" data-aqui-confirm-label="Download" style="flex: 1; text-align: center; padding-left: 10px;">XLSX</a>
+        </div>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -818,6 +841,13 @@
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchInvView(card.getAttribute('data-inv-view')); }
     });
   });
+  // Close "Add Product" options menu when clicking outside it.
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('details.add-product-menu[open]').forEach(function (menu) {
+      if (!menu.contains(e.target)) menu.removeAttribute('open');
+    });
+  });
+
   // Inline onclick attributes (switchInvTab / openEdit / closeEdit) resolve
   // against window, so export them from this init closure.
   window.switchInvTab = switchInvTab;

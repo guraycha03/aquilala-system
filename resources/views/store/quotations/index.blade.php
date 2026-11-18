@@ -224,6 +224,67 @@
     .empty-state { padding: 40px 16px; }
     .ai-floating { bottom: 16px; right: 16px; left: 16px; justify-content: center; }
   }
+
+
+  /* AI Summary in-page subpage */
+  .ai-card-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: auto; }
+  .ai-btn-secondary {
+    background: #ffffff; color: #2f4a3a; border-color: #d7e3dc; min-width: 0;
+  }
+  .ai-btn-secondary:hover:not(:disabled) { background: #f4f8f5; border-color: #bfd0c6; }
+  .ai-summary-page[hidden], #storeQuotationMainPage[hidden] { display: none !important; }
+  .ai-summary-page { animation: fadeUpInvLike .24s ease; }
+  @keyframes fadeUpInvLike { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .ai-summary-topbar {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .ai-summary-topbar-left { display: flex; align-items: flex-start; gap: 14px; }
+  .ai-summary-back {
+    display: inline-flex; align-items: center; gap: 8px; border: 1px solid #d8e3db; background: #fff; color: #2f4a3a;
+    border-radius: 10px; padding: 9px 12px; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .ai-summary-back:hover { background: #f4f8f5; border-color: #bfd0c6; }
+  .ai-summary-title { margin: 0 0 3px 0; font-size: 22px; font-weight: 800; color: #1a2b1e; letter-spacing: -0.02em; }
+  .ai-summary-sub { margin: 0; color: #5c6d61; font-size: 13px; line-height: 1.45; }
+  .ai-summary-layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 18px; align-items: start; }
+  .ai-summary-history, .ai-summary-content { overflow: hidden; }
+  .ai-summary-history-head, .ai-summary-content-head { padding: 18px 20px; border-bottom: 1px solid #f0f2f1; background: #fafdfb; }
+  .ai-summary-history-head h3 { margin: 0 0 4px 0; font-size: 15px; color: #1a2b1e; }
+  .ai-summary-history-head p { margin: 0; font-size: 12px; color: #879a8c; line-height: 1.4; }
+  .ai-summary-history-list { padding: 12px; display: flex; flex-direction: column; gap: 10px; max-height: 70vh; overflow: auto; }
+  .ai-summary-history-empty { padding: 18px 14px; color: #879a8c; font-size: 13px; line-height: 1.5; background: #f7faf8; border: 1px dashed #dce6df; border-radius: 12px; }
+  .ai-history-item {
+    width: 100%; text-align: left; border: 1px solid #e3ebe6; background: #fff; border-radius: 12px; padding: 12px 13px;
+    cursor: pointer; display: flex; flex-direction: column; gap: 4px; transition: all .15s ease;
+  }
+  .ai-history-item:hover { border-color: #bfd0c6; background: #f8fbf9; }
+  .ai-history-item.is-active { border-color: #9bc6aa; background: #f1f8f3; box-shadow: 0 0 0 2px rgba(155,198,170,0.18); }
+  .ai-history-date { font-size: 12.5px; font-weight: 700; color: #1a2b1e; }
+  .ai-history-source { font-size: 11px; font-weight: 700; color: #4f7a5c; text-transform: uppercase; letter-spacing: .04em; }
+  .ai-history-preview { font-size: 12px; color: #6b7c6e; line-height: 1.45; }
+  .ai-summary-content-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .ai-summary-meta { font-size: 13px; color: #4b5c50; }
+  .ai-summary-meta strong { color: #1a2b1e; }
+  .ai-summary-status { margin-top: 4px; font-size: 12px; color: #648268; min-height: 18px; }
+  .ai-summary-status.is-error { color: #b04a42; }
+  .ai-summary-inline-loading { display: inline-flex; align-items: center; gap: 8px; color: #4f7a5c; font-size: 12.5px; font-weight: 600; }
+  .ai-summary-inline-loading[hidden] { display: none !important; }
+  .ai-summary-inline-loading .ai-spin { border-color: rgba(74,122,84,0.25); border-top-color: #166534; }
+  .ai-summary-body { padding: 20px 22px 24px; }
+  .ai-summary-placeholder {
+    min-height: 260px; border: 1px dashed #d7e3dc; border-radius: 16px; background: #f8fbf9; color: #607269;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 28px;
+  }
+  .ai-summary-placeholder-icon {
+    width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(145deg, #dcfce7 0%, #e0f2fe 100%); color: #15803d; margin-bottom: 12px;
+  }
+  .ai-summary-placeholder h3 { margin: 0 0 6px 0; font-size: 16px; color: #1a2b1e; }
+  .ai-summary-placeholder p { margin: 0; max-width: 520px; font-size: 13px; line-height: 1.55; }
+  @media (max-width: 980px) { .ai-summary-layout { grid-template-columns: 1fr; } .ai-summary-history-list { max-height: 260px; } }
+  @media (max-width: 640px) { .ai-summary-topbar-left { flex-direction: column; gap: 10px; } .ai-summary-title { font-size: 20px; } .ai-card-actions .ai-btn { width: 100%; } }
+
 </style>
 
 {{-- The AI card and the window it opens: one shared set of rules, so the
@@ -290,22 +351,31 @@
 
   <div class="ai-kpi-card">
     <div class="kpi-top">
-      <div class="kpi-icon-chip">
-        {{-- Lucide "square-sparkles" (1.48.0), inlined verbatim. The bundled
-             lucide.min.js is 1.47.0 — one release short — so <i data-lucide>
-             would leave an empty tag; the glyph is copied here instead. --}}
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 15H7"/><path d="M15.41 2.49a.6.6 0 011.18 0l.63 3.334a1.2 1.2 0 00.956.955l3.334.631a.6.6 0 010 1.18l-3.334.63a1.2 1.2 0 00-.955.956l-.631 3.334a.6.6 0 01-1.18 0l-.63-3.334a1.2 1.2 0 00-.956-.955L10.49 8.59a.6.6 0 010-1.18l3.334-.63a1.2 1.2 0 00.955-.956z"/><path d="M21 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h6"/><path d="M9 13v4"/></svg>
+      <div class="kpi-icon-chip" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2.75l1.45 4.35 4.35 1.45-4.35 1.45L12 14.35 10.55 10l-4.35-1.45 4.35-1.45L12 2.75z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M18.2 13.4l.85 2.55 2.55.85-2.55.85-.85 2.55-.85-2.55-2.55-.85 2.55-.85.85-2.55z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          <path d="M5.3 13.9l.65 1.95 1.95.65-1.95.65-.65 1.95-.65-1.95-1.95-.65 1.95-.65.65-1.95z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+        </svg>
       </div>
+      <span class="ai-badge"><span class="ai-badge-dot" aria-hidden="true"></span>AI Insight</span>
     </div>
     <h3 class="kpi-title">Smart Store Summary</h3>
     <p class="kpi-desc">A short read on what farmers are quoting for.</p>
-    <button type="button" class="ai-btn" id="aiOverviewBtn" onclick="generateAiOverview(this)">
-      <svg class="ai-btn-icon" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
-      <span>Create Summary</span>
-    </button>
+    <div class="ai-card-actions">
+      <button type="button" class="ai-btn" id="aiOverviewBtn" onclick="generateAiOverview(this)">
+        <svg class="ai-btn-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
+        <span>Create Summary</span>
+      </button>
+      <button type="button" class="ai-btn ai-btn-secondary" id="aiHistoryBtn" onclick="openAiSummaryPage(true)">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+        <span>History</span>
+      </button>
+    </div>
   </div>
 </section>
 
+<div id="storeQuotationMainPage">
 {{-- Two views of the same page: the demand read on the left, the full
      table on the right. Tabs keep them one click apart instead of one
      whole page apart. --}}
@@ -317,7 +387,7 @@
   <button type="button" class="tab-btn" role="tab" id="tabQuotes" data-tab="quotes" aria-controls="panelQuotes" aria-selected="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
     All Farmer Quotations
-    <span class="tab-count">{{ $totalQuotations }}</span>
+    <span class="tab-count">{{ $quotations->count() }}</span>
   </button>
 </div>
 
@@ -392,7 +462,7 @@
       <h2 style="font-size: 16px; color: #1a2b1e; font-weight: 700; margin: 0;">All Farmer Quotations</h2>
       <p style="font-size: 13px; color: #879a8c; margin: 2px 0 0 0;">Every quotation that includes your products</p>
     </div>
-    <span style="font-size: 13px; color: #879a8c; font-weight: 600; background: #f0f2f1; padding: 4px 12px; border-radius: 8px;">{{ $totalQuotations }} total</span>
+    <span style="font-size: 13px; color: #879a8c; font-weight: 600; background: #f0f2f1; padding: 4px 12px; border-radius: 8px;">{{ $quotations->count() }} total</span>
   </div>
   <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
     <div class="app-scroll">
@@ -481,23 +551,61 @@
 </div>
 </div>
 
-<div class="ai-floating" id="aiFloatingLoading" hidden>
-  <span class="ai-spin"></span>
-  <span>Preparing your store summary&hellip;</span>
+</div>
+<div id="aiSummaryPage" class="ai-summary-page" hidden aria-hidden="true">
+  <div class="ai-summary-topbar">
+    <div class="ai-summary-topbar-left">
+      <button type="button" class="ai-summary-back" onclick="closeAiSummaryPage()">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        <span>Close</span>
+      </button>
+      <div>
+        <h2 class="ai-summary-title">Smart Store Summary</h2>
+        <p class="ai-summary-sub">A short read on what farmers are quoting for.</p>
+      </div>
+    </div>
+    <div class="ai-summary-topbar-right">
+      <button type="button" class="ai-btn" id="aiGeneratePageBtn" onclick="generateAiOverview(this)">
+        <svg class="ai-btn-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
+        <span>Create New Summary</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="ai-summary-layout">
+    <aside class="ai-summary-history panel">
+      <div class="ai-summary-history-head">
+        <h3>Summary History</h3>
+        <p>Saved summaries (no AI tokens used when reopened)</p>
+      </div>
+      <div id="aiSummaryHistoryList" class="ai-summary-history-list">
+        <div class="ai-summary-history-empty">Loading saved summaries…</div>
+      </div>
+    </aside>
+
+    <section class="ai-summary-content panel">
+      <div class="ai-summary-content-head">
+        <div>
+          <div id="aiSummaryMeta" class="ai-summary-meta">Select a saved summary or create a new one.</div>
+          <div id="aiSummaryStatus" class="ai-summary-status" aria-live="polite"></div>
+        </div>
+        <div id="aiSummaryInlineLoading" class="ai-summary-inline-loading" hidden>
+          <span class="ai-spin"></span><span>Generating and saving summary…</span>
+        </div>
+      </div>
+      <div id="aiSummaryBody" class="ai-summary-body">
+        <div class="ai-summary-placeholder">
+          <div class="ai-summary-placeholder-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>
+          </div>
+          <h3>No summary open</h3>
+          <p>Open a saved summary from history, or create a new one. New summaries are generated once by AI, then saved by the system for reuse.</p>
+        </div>
+      </div>
+    </section>
+  </div>
 </div>
 
-<div class="app-modal" id="aiModal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" aria-hidden="true">
-  <div class="app-modal-head">
-    <div>
-      <h3 id="aiModalTitle">Smart Store Summary</h3>
-      <p>A short read on what farmers are quoting for</p>
-    </div>
-    <button type="button" class="app-modal-close" id="aiModalClose" aria-label="Close summary" title="Close">
-      <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <div class="app-modal-body" id="aiModalBody"></div>
-</div>
 
 <script>
   function escapeAiHtml(s) {
@@ -573,18 +681,19 @@
     return html;
   }
   var lastAiOverview = '';
+  var aiSummaries = [];
+  var aiActiveSummaryId = null;
+  var aiHistoryLoaded = false;
+  var aiHistoryLoading = false;
+
   function openAiChat() {
     try {
-      // The placeholder for the product cards is a page concern, not part
-      // of the report — it must never reach the chat as text.
       var seed = String(lastAiOverview || '').replace(/\[\[PRODUCT_CARDS\]\]/g, '').replace(/\n{3,}/g, '\n\n');
       sessionStorage.setItem('aiSeedOverview', seed);
     } catch (e) {}
     window.location.href = '{{ route('store.ai-chat.index') }}';
   }
 
-  // One card per quoted product, drawn straight from the metrics so the
-  // numbers are the store's own and not the model's paraphrase.
   function buildProductCards(metrics) {
     if (!metrics) return '';
     var products = metrics.top_products || [];
@@ -592,7 +701,6 @@
     if (!products.length && !crops.length) return '';
 
     var html = '<h4>Your Most Quoted Products</h4>';
-
     if (products.length) {
       html += '<div class="ai-product-cards">';
       products.forEach(function (p) {
@@ -610,7 +718,6 @@
       });
       html += '</div>';
     }
-
     if (crops.length) {
       html += '<div class="ai-crop-row"><span class="ai-crop-label">Top crops</span>';
       crops.slice(0, 4).forEach(function (c) {
@@ -619,89 +726,154 @@
       });
       html += '</div>';
     }
-
     return html;
   }
-  function openAiModal(data) {
-    if (data && typeof data === 'object' && data.error) {
-      document.getElementById('aiModalBody').innerHTML =
-        '<div class="app-modal-error">' +
-          '<div class="app-modal-error-icon"><i data-lucide="circle-alert"></i></div>' +
-          '<div class="app-modal-error-title">We couldn\'t build your summary</div>' +
-          '<div class="app-modal-error-text">' + escapeAiHtml(data.error) + '</div>' +
-        '</div>';
-      // The icon is injected after Lucide has already swept the page.
-      if (typeof renderLucideIcons === 'function') renderLucideIcons();
-      var modal = document.getElementById('aiModal');
-      modal.classList.add('open');
-      modal.setAttribute('aria-hidden', 'false');
-      lockPageScroll(true);
-      return;
-    }
-    lastAiOverview = String(data.overview || '');
-    var body = renderAiMarkdown(lastAiOverview);
-    var cards = buildProductCards(data.metrics);
+
+  function renderSummaryBody(data) {
+    var overview = String((data && data.overview) || '');
+    var body = renderAiMarkdown(overview);
+    var cards = buildProductCards((data && data.metrics) || {});
     if (body.indexOf('[[PRODUCT_CARDS]]') !== -1) {
-      // The placeholder always goes: with products it becomes the cards,
-      // without them it simply leaves no gap behind.
       body = body.replace(/<p>\s*\[\[PRODUCT_CARDS\]\]\s*<\/p>/, function () { return cards; });
       body = body.replace(/\[\[PRODUCT_CARDS\]\]/g, function () { return cards; });
     } else if (cards) {
       body += cards;
     }
-    var html = '<div class="ai-narrative">' +
+    return '<div class="ai-narrative">' +
       '<div class="ai-narrative-head">' +
       '<svg viewBox="0 0 24 24" width="14" height="14" stroke="#166534" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>' +
-      '<h4>Your Store Summary</h4></div><div class="ai-narrative-body">' + body + '</div></div>' +
+      '<h4>Saved Store Summary</h4></div><div class="ai-narrative-body">' + body + '</div></div>' +
       '<div class="app-modal-foot">' +
       '<button type="button" class="ai-chat-link" onclick="openAiChat()">' +
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
       '<span>Open in AI Chat</span></button></div>';
-    document.getElementById('aiModalBody').innerHTML = html;
-    var modal = document.getElementById('aiModal');
-    modal.classList.add('open');
-    modal.setAttribute('aria-hidden', 'false');
-    lockPageScroll(true);
   }
-  // A modal that sits on top of the page must not let the page scroll
-  // underneath it — the wheel would move content the reader cannot see.
-  function lockPageScroll(lock) {
-    var body = document.body;
-    if (lock) {
-      body.dataset.scrollLocked = '1';
-      body.style.overflow = 'hidden';
-    } else if (body.dataset.scrollLocked) {
-      delete body.dataset.scrollLocked;
-      body.style.overflow = '';
+
+  function setAiSummaryStatus(message, isError) {
+    var el = document.getElementById('aiSummaryStatus');
+    if (!el) return;
+    el.textContent = message || '';
+    el.className = 'ai-summary-status' + (isError ? ' is-error' : '');
+  }
+
+  function setAiLoadingState(loading) {
+    var floatEl = document.getElementById('aiFloatingLoading');
+    var inline = document.getElementById('aiSummaryInlineLoading');
+    if (floatEl) floatEl.hidden = !loading;
+    if (inline) inline.hidden = !loading;
+  }
+
+  function setAiBtnState(btn, busy, idleLabel) {
+    if (!btn) return;
+    var label = btn.querySelector('span');
+    btn.disabled = !!busy;
+    btn.classList.toggle('is-loading', !!busy);
+    if (label) {
+      if (busy) label.textContent = 'Generating…';
+      else label.textContent = idleLabel || (btn.id === 'aiOverviewBtn' ? 'Create Summary' : 'Create New Summary');
     }
   }
-  function closeAiModal() {
-    var modal = document.getElementById('aiModal');
-    modal.classList.remove('open');
-    modal.setAttribute('aria-hidden', 'true');
-    lockPageScroll(false);
+
+  function renderHistoryList() {
+    var list = document.getElementById('aiSummaryHistoryList');
+    if (!list) return;
+    if (!aiSummaries.length) {
+      list.innerHTML = '<div class="ai-summary-history-empty">No saved summaries yet. Create one to start building history.</div>';
+      return;
+    }
+    list.innerHTML = aiSummaries.map(function (item) {
+      var active = String(item.id) === String(aiActiveSummaryId) ? ' is-active' : '';
+      var source = item.source === 'ai' ? 'AI-generated' : 'System fallback';
+      var preview = String(item.overview || '').replace(/\[\[PRODUCT_CARDS\]\]/g, '').replace(/[#>*`_\-\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (preview.length > 90) preview = preview.slice(0, 87) + '...';
+      return '<button type="button" class="ai-history-item' + active + '" onclick="openSavedSummary(' + item.id + ')">' +
+        '<span class="ai-history-date">' + escapeAiHtml(item.created_at_label || item.created_at || '') + '</span>' +
+        '<span class="ai-history-source">' + escapeAiHtml(source) + '</span>' +
+        '<span class="ai-history-preview">' + escapeAiHtml(preview || 'Saved summary') + '</span>' +
+      '</button>';
+    }).join('');
   }
-  function showAiLoading() {
-    var el = document.getElementById('aiFloatingLoading');
-    el.hidden = false;
+
+  function showSummary(data, fromHistory) {
+    lastAiOverview = String((data && data.overview) || '');
+    aiActiveSummaryId = data && data.id ? data.id : null;
+    var meta = document.getElementById('aiSummaryMeta');
+    var body = document.getElementById('aiSummaryBody');
+    if (meta) {
+      var label = data && (data.created_at_label || data.created_at) ? (data.created_at_label || data.created_at) : 'Just now';
+      var source = data && data.source === 'ai' ? 'AI-generated and saved' : 'System-generated fallback, saved';
+      meta.innerHTML = '<strong>' + escapeAiHtml(label) + '</strong><span> · ' + escapeAiHtml(source) + (fromHistory ? ' · opened from history' : ' · newly saved') + '</span>';
+    }
+    if (body) body.innerHTML = renderSummaryBody(data || {});
+    setAiSummaryStatus(fromHistory ? 'Showing saved summary (no AI tokens used).' : 'Summary generated and saved by the system.', false);
+    renderHistoryList();
+    if (typeof renderLucideIcons === 'function') renderLucideIcons();
   }
-  function hideAiLoading() {
-    document.getElementById('aiFloatingLoading').hidden = true;
+
+  function openAiSummaryPage(loadHistory) {
+    var page = document.getElementById('aiSummaryPage');
+    var main = document.getElementById('storeQuotationMainPage');
+    if (main) main.hidden = true;
+    if (page) {
+      page.hidden = false;
+      page.setAttribute('aria-hidden', 'false');
+    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    if (loadHistory) loadAiSummaryHistory();
   }
-  function setAiBtnState(btn, busy, done) {
-    var label = btn.querySelector('span');
-    btn.disabled = busy;
-    // The sparkle turns while the summary is being written, so the button
-    // reads as working even though it can't be pressed again.
-    btn.classList.toggle('is-loading', busy);
-    // Short labels on purpose: the button sits in a card with room for
-    // about one word and a half, so a long one spills out of it. A failed
-    // run keeps "Create Summary" — nothing was created to do again.
-    label.textContent = busy ? 'Generating\u2026' : (done ? 'Create Again' : 'Create Summary');
+
+  function closeAiSummaryPage() {
+    var page = document.getElementById('aiSummaryPage');
+    var main = document.getElementById('storeQuotationMainPage');
+    if (page) {
+      page.hidden = true;
+      page.setAttribute('aria-hidden', 'true');
+    }
+    if (main) main.hidden = false;
+    setAiSummaryStatus('', false);
   }
+
+  function openSavedSummary(id) {
+    var item = aiSummaries.find(function (s) { return String(s.id) === String(id); });
+    if (!item) return;
+    openAiSummaryPage(false);
+    showSummary(item, true);
+  }
+
+  function loadAiSummaryHistory(selectLatest) {
+    if (aiHistoryLoading) return;
+    aiHistoryLoading = true;
+    if (!aiHistoryLoaded) {
+      var list = document.getElementById('aiSummaryHistoryList');
+      if (list) list.innerHTML = '<div class="ai-summary-history-empty">Loading saved summaries…</div>';
+    }
+    fetch('{{ route('store.quotations.ai-summaries') }}', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+    .then(function (res) {
+      aiHistoryLoading = false;
+      if (!res.ok || !res.data) throw new Error('load failed');
+      aiSummaries = Array.isArray(res.data.summaries) ? res.data.summaries : [];
+      aiHistoryLoaded = true;
+      renderHistoryList();
+      if (selectLatest && aiSummaries.length && !aiActiveSummaryId) showSummary(aiSummaries[0], true);
+    })
+    .catch(function () {
+      aiHistoryLoading = false;
+      var list = document.getElementById('aiSummaryHistoryList');
+      if (list) list.innerHTML = '<div class="ai-summary-history-empty">Could not load saved summaries right now.</div>';
+    });
+  }
+
   function generateAiOverview(btn) {
-    setAiBtnState(btn, true);
-    showAiLoading();
+    openAiSummaryPage(false);
+    if (!aiHistoryLoaded && !aiHistoryLoading) loadAiSummaryHistory();
+    setAiBtnState(document.getElementById('aiOverviewBtn'), true, 'Create Summary');
+    setAiBtnState(document.getElementById('aiGeneratePageBtn'), true, 'Create New Summary');
+    setAiLoadingState(true);
+    setAiSummaryStatus('Generating summary with AI and saving it…', false);
 
     fetch('{{ route('store.quotations.ai-overview') }}', {
       method: 'POST',
@@ -714,29 +886,28 @@
     })
     .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
     .then(function (res) {
-      hideAiLoading();
+      setAiLoadingState(false);
+      setAiBtnState(document.getElementById('aiOverviewBtn'), false, 'Create Summary');
+      setAiBtnState(document.getElementById('aiGeneratePageBtn'), false, 'Create New Summary');
       if (res.ok && res.data && res.data.overview) {
-        setAiBtnState(btn, false, true);
-        openAiModal(res.data);
+        var item = res.data;
+        aiSummaries = [item].concat(aiSummaries.filter(function (s) { return String(s.id) !== String(item.id); }));
+        showSummary(item, false);
       } else if (res.data && res.data.error) {
-        setAiBtnState(btn, false, false);
-        openAiModal({ error: res.data.error });
+        setAiSummaryStatus(res.data.error, true);
       } else {
-        setAiBtnState(btn, false, false);
-        openAiModal({ error: 'The AI service could not generate an overview right now. Please try again.' });
+        setAiSummaryStatus('The AI service could not generate a summary right now. Please try again.', true);
       }
     })
     .catch(function () {
-      hideAiLoading();
-      setAiBtnState(btn, false, false);
-      openAiModal({ error: 'Connection failed. Please try again.' });
+      setAiLoadingState(false);
+      setAiBtnState(document.getElementById('aiOverviewBtn'), false, 'Create Summary');
+      setAiBtnState(document.getElementById('aiGeneratePageBtn'), false, 'Create New Summary');
+      setAiSummaryStatus('Connection failed. Please try again.', true);
     });
   }
-  document.getElementById('aiModalClose').addEventListener('click', closeAiModal);
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeAiModal();
-  });
 
+  // Tabs — the demand read and the full table are one click apart.
   // Tabs — the demand read and the full table are one click apart.
   (function () {
     var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab-btn'));

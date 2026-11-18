@@ -9,99 +9,108 @@
     for, and how it draws the answer.
 --}}
 <style>
-  /* ── The card ────────────────────────────────────────────────
-     The same shape as the KPI cards around it: a sparkle tile, a
-     title, one line of description, and the button that does the
-     work. Flat white, sage tile, no glow. */
+  /* ── The card ─────────────────────────────────────────────────
+     A premium, obviously-AI surface: soft gradient, crisp sparkles,
+     and a clear "AI" label. Kept in the app's green palette. */
   .ai-kpi-card {
+    position: relative;
     display: flex;
     flex-direction: column;
-    border-radius: 16px;
-    border: 1px solid #E0E5DB;
-    background: #fff;
+    border-radius: 18px;
+    border: 1px solid #cfe4d6;
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(186, 230, 253, 0.28) 0%, rgba(186, 230, 253, 0) 55%),
+      linear-gradient(145deg, #ffffff 0%, #f3fbf6 48%, #eef7f2 100%);
     padding: 20px;
     box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 10px 28px rgba(22,101,52,0.08);
+    overflow: hidden;
   }
-  .ai-kpi-card .kpi-desc { margin-bottom: 14px; }
-  .ai-kpi-card .kpi-title { margin-top: 20px; }
-  .ai-kpi-card .ai-btn { align-self: flex-start; }
-  [data-theme="dark"] .ai-kpi-card { background: #111827; border-color: #334155 !important; }
+  .ai-kpi-card .kpi-desc { margin: 6px 0 16px; font-size: 13px; line-height: 1.45; color: #4b6354; }
+  .ai-kpi-card .kpi-title { margin: 0; font-size: 17px; font-weight: 700; color: #163a28; letter-spacing: -0.01em; }
+  .ai-kpi-card .ai-btn { align-self: flex-start; margin-top: auto; }
+  [data-theme="dark"] .ai-kpi-card {
+    background:
+      radial-gradient(120% 90% at 100% 0%, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0) 55%),
+      linear-gradient(145deg, #0f172a 0%, #0f1f17 55%, #0b1a14 100%);
+    border-color: #2f4a3b !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.25), 0 14px 34px rgba(0,0,0,0.28);
+  }
 
-  /* The AI card sits outside `.kpi-card`, so the chip's --chip-bg /
-     --chip-color never reach it — the tile lost its sage fill and the
-     sparkle fell back to the inherited text colour. Give it a green tint
-     of its own; dark mode keeps the shared chip skin. */
   [data-theme="light"] .ai-kpi-card .kpi-icon-chip {
-    --chip-bg: #E8F0E6;
-    --chip-color: #4E7D57;
-    --chip-glow: 78, 125, 87;
+    --chip-bg: linear-gradient(145deg, #dcfce7 0%, #d1fae5 45%, #e0f2fe 100%);
+    --chip-color: #15803d;
   }
   [data-theme="dark"] .ai-kpi-card .kpi-icon-chip {
-    --chip-glow: 110, 231, 160;
+    --chip-bg: linear-gradient(145deg, #14532d 0%, #134e4a 100%);
+    --chip-color: #6ee7b7;
   }
 
-  /* The sparkle tile: one flat green background with a crisp edge that
-     brightens on a slow loop. No glow, no blur, no second layer — an
-     overlay gradient on a 40px tile just reads as a smudge. */
-  .ai-kpi-card .kpi-icon-chip {
-    position: relative;
-    animation: aiChipEdge 3.6s ease-in-out infinite;
-  }
-  .ai-kpi-card .kpi-icon-chip svg {
-    position: relative;
-    z-index: 1;
-    animation: aiChipTwinkle 3.6s ease-in-out infinite;
-  }
-  @keyframes aiChipEdge {
-    0%, 100% { box-shadow: inset 0 0 0 1px rgba(var(--chip-glow), 0.22); }
-    50%      { box-shadow: inset 0 0 0 1px rgba(var(--chip-glow), 0.62); }
-  }
-  @keyframes aiChipTwinkle {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%      { opacity: 0.86; transform: scale(1.06); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .ai-kpi-card .kpi-icon-chip,
-    .ai-kpi-card .kpi-icon-chip svg { animation: none; }
-    .ai-btn.is-loading .ai-btn-icon { animation: none; }
-  }
-
-  /* The tile's own rules. They live here as well as in the KPI card
-     component: a page that shows the AI card without any other KPI
-     card still needs the tile to look right. */
   .ai-kpi-card .kpi-top {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 12px;
+    margin-bottom: 14px;
   }
   .ai-kpi-card .kpi-icon-chip {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     background: var(--chip-bg, #EDF1E9);
     color: var(--chip-color, #648268);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55), 0 6px 14px rgba(22,101,52,0.12);
+    position: relative;
   }
-  .ai-kpi-card .kpi-icon-chip svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .ai-kpi-card .kpi-title {
-    margin: 4px 0 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #344B38;
+  .ai-kpi-card .kpi-icon-chip svg {
+    position: relative;
+    z-index: 1;
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    shape-rendering: geometricPrecision;
   }
-  .ai-kpi-card .kpi-desc {
-    margin: 4px 0 0;
-    font-size: 12px;
-    line-height: 1.35;
-    color: #647263;
+  .ai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #166534;
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(34,197,94,0.25);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;
+    backdrop-filter: blur(4px);
   }
-  [data-theme="dark"] .ai-kpi-card .kpi-icon-chip { background: #16301f; color: #6ee7a0; }
-  [data-theme="dark"] .ai-kpi-card .kpi-title { color: #d6f5e3; }
+  .ai-badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #34d399, #38bdf8);
+    box-shadow: 0 0 0 3px rgba(52,211,153,0.18);
+  }
+  [data-theme="dark"] .ai-kpi-card .kpi-title { color: #e6fff3; }
   [data-theme="dark"] .ai-kpi-card .kpi-desc { color: #9fb3a6; }
+  [data-theme="dark"] .ai-kpi-card .kpi-icon-chip { box-shadow: inset 0 0 0 1px rgba(110,231,183,0.18), 0 8px 18px rgba(0,0,0,0.25); }
+  [data-theme="dark"] .ai-badge {
+    color: #bbf7d0;
+    background: rgba(15,23,42,0.55);
+    border-color: rgba(110,231,183,0.22);
+    box-shadow: none;
+  }
 
   /* Matte, low-saturation sage — the old forest green was the one
      loud thing on the page. Flat fill, no glow, white text at 5.7:1. */

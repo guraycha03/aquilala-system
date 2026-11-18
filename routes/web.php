@@ -346,8 +346,9 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
         Route::post('/inventory/{product}/update-stock', [InventoryController::class, 'updateStock'])->name('inventory.update');
         Route::get('/quotations', [QuotationController::class, 'storeIndex'])->name('quotations.index');
-        Route::get('/quotations/{quotation}', [QuotationController::class, 'storeShow'])->name('quotations.show');
+        Route::get('/quotations/ai-summaries', [QuotationController::class, 'storeAiSummaries'])->name('quotations.ai-summaries');
         Route::post('/quotations/ai-overview', [QuotationController::class, 'storeAiOverview'])->name('quotations.ai-overview');
+        Route::get('/quotations/{quotation}', [QuotationController::class, 'storeShow'])->name('quotations.show');
         Route::get('/storefront', [ProductController::class, 'storefront'])->name('storefront.index');
 
         // Activity history
