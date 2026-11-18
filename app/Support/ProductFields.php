@@ -246,6 +246,55 @@ class ProductFields
             'required' => false,
             'example' => '2028-01-15',
         ],
+        // Application Rules (DecisionFormula) - one row per crop/season/stage
+        'rule_crop_type' => [
+            'label' => 'Rule Crop Type',
+            'group' => 'Application Rules',
+            'required' => false,
+            'example' => 'Rice',
+        ],
+        'rule_season' => [
+            'label' => 'Rule Season',
+            'group' => 'Application Rules',
+            'required' => false,
+            'example' => 'wet',
+        ],
+        'rule_stage' => [
+            'label' => 'Rule Stage',
+            'group' => 'Application Rules',
+            'required' => false,
+            'example' => 'basal',
+        ],
+        'rule_rate_per_hectare' => [
+            'label' => 'Rule Rate per Hectare',
+            'group' => 'Application Rules',
+            'required' => false,
+            'example' => '45',
+        ],
+        'rule_min_rate_per_hectare' => [
+            'label' => 'Rule Min Rate per Hectare',
+            'group' => 'Application Rules',
+            'required' => false,
+            'example' => '30',
+        ],
+        'rule_max_rate_per_hectare' => [
+            'label' => 'Rule Max Rate per Hectare',
+            'group' => 'Application Rules',
+            'required' => false,
+            'example' => '60',
+        ],
+        'rule_unit' => [
+            'label' => 'Rule Unit',
+            'group' => 'Application Rules',
+            'required' => false,
+            'example' => 'kg/ha',
+        ],
+        'rule_notes' => [
+            'label' => 'Rule Notes',
+            'group' => 'Application Rules',
+            'required' => false,
+            'example' => 'Apply to moist soil within 3 days of transplanting',
+        ],
     ];
 
     /**
@@ -288,6 +337,14 @@ class ProductFields
         'batch_number' => ['batchnumber', 'batch', 'batchno', 'batchcode'],
         'manufacturing_date' => ['manufacturingdate', 'mfgdate', 'mfg', 'productiondate', 'manufacturedate'],
         'expiration_date' => ['expirationdate', 'expirydate', 'expdate', 'expiry', 'exp', 'bestbefore'],
+        'rule_crop_type' => ['rulecroptype', 'rulecrop', 'applicationcrop', 'formulacrop', 'crop'],
+        'rule_season' => ['ruleseason', 'ruletiming', 'formulaseason', 'season'],
+        'rule_stage' => ['rulestage', 'ruletype', 'formulastage', 'applicationstage', 'stage'],
+        'rule_rate_per_hectare' => ['rulerateperhectare', 'rulerate', 'formularate', 'applicationrate', 'rateperhectare', 'rateperha'],
+        'rule_min_rate_per_hectare' => ['ruleminrateperhectare', 'ruleminrate', 'formulaminrate', 'minapplicationrate', 'minrateperhectare'],
+        'rule_max_rate_per_hectare' => ['rulemaxrateperhectare', 'rulemaxrate', 'formulamaxrate', 'maxapplicationrate', 'maxrateperhectare'],
+        'rule_unit' => ['ruleunit', 'formulaunit', 'applicationrateunit', 'rateunit', 'perhectareunit'],
+        'rule_notes' => ['rulenotes', 'formulanotes', 'applicationnotes', 'rulerecommendation', 'recommendation'],
     ];
 
     /**
@@ -319,6 +376,7 @@ class ProductFields
         return match ($group) {
             'Fertilizer Analysis' => 'fert',
             'Registration & Batch' => 'reg',
+            'Application Rules' => 'rules',
             default => 'core',
         };
     }
@@ -334,6 +392,7 @@ class ProductFields
             'core' => 'Core columns (name, SKU, category, size, price, stock)',
             'fert' => 'Fertilizer analysis',
             'reg' => 'Registration & batch',
+            'rules' => 'Application rules',
         ];
     }
 
@@ -431,6 +490,16 @@ class ProductFields
             'batch_number' => ['nullable', 'string', 'max:255'],
             'manufacturing_date' => ['nullable', 'date'],
             'expiration_date' => ['nullable', 'date', 'after_or_equal:manufacturing_date'],
+
+            // Application Rules (DecisionFormula)
+            'rule_crop_type' => ['nullable', 'string', 'max:100'],
+            'rule_season' => ['nullable', Rule::in(self::SEASONS)],
+            'rule_stage' => ['nullable', 'string', 'max:50'],
+            'rule_rate_per_hectare' => ['nullable', 'numeric', 'min:0'],
+            'rule_min_rate_per_hectare' => ['nullable', 'numeric', 'min:0'],
+            'rule_max_rate_per_hectare' => ['nullable', 'numeric', 'min:0'],
+            'rule_unit' => ['nullable', 'string', 'max:50'],
+            'rule_notes' => ['nullable', 'string', 'max:500'],
         ];
 
         if ($imageSlots !== null) {
@@ -516,6 +585,14 @@ class ProductFields
             'reorder_threshold' => 'reorder threshold',
             'recommended_season' => 'recommended season',
             'product_type' => 'product type',
+            'rule_crop_type' => 'rule crop type',
+            'rule_season' => 'rule season',
+            'rule_stage' => 'rule stage',
+            'rule_rate_per_hectare' => 'rule rate per hectare',
+            'rule_min_rate_per_hectare' => 'rule min rate per hectare',
+            'rule_max_rate_per_hectare' => 'rule max rate per hectare',
+            'rule_unit' => 'rule unit',
+            'rule_notes' => 'rule notes',
         ];
 
         return $map;

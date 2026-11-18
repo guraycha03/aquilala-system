@@ -429,7 +429,15 @@
         </div>
     </div>
 
-    @if($product->fertilizerDetail)
+    {{-- Category-specific specification sections --}}
+    @php
+        $topCategory = $product->top_category_group;
+        $hasFormulas = $formulas->count() > 0;
+        $fd = $product->fertilizerDetail;
+    @endphp
+
+    {{-- FERTILIZER: Composition + Application Rules (merged) --}}
+    @if($topCategory === 'Fertilizer')
     <div class="spec-section">
         <div class="section-title">
             <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
@@ -437,22 +445,22 @@
         </div>
 
         <div class="fertilizer-npk">
-            @if($product->fertilizerDetail->nitrogen_percentage !== null)
+            @if($fd && $fd->nitrogen_percentage !== null)
             <div class="npk-pill npk-n">
                 <div style="font-size: 11px; font-weight: 500; text-transform: uppercase;">N</div>
-                {{ $product->fertilizerDetail->nitrogen_percentage }}%
+                {{ $fd->nitrogen_percentage }}%
             </div>
             @endif
-            @if($product->fertilizerDetail->phosphorus_percentage !== null)
+            @if($fd && $fd->phosphorus_percentage !== null)
             <div class="npk-pill npk-p">
                 <div style="font-size: 11px; font-weight: 500; text-transform: uppercase;">P</div>
-                {{ $product->fertilizerDetail->phosphorus_percentage }}%
+                {{ $fd->phosphorus_percentage }}%
             </div>
             @endif
-            @if($product->fertilizerDetail->potassium_percentage !== null)
+            @if($fd && $fd->potassium_percentage !== null)
             <div class="npk-pill npk-k">
                 <div style="font-size: 11px; font-weight: 500; text-transform: uppercase;">K</div>
-                {{ $product->fertilizerDetail->potassium_percentage }}%
+                {{ $fd->potassium_percentage }}%
             </div>
             @endif
         </div>
@@ -460,8 +468,159 @@
         <div class="spec-grid">
             <div class="info-row">
                 <span class="info-label">Form Type</span>
-                <span class="info-value">{{ $product->fertilizerDetail->form_type ?? 'N/A' }}</span>
+                <span class="info-value">{{ $fd->form_type ?? 'N/A' }}</span>
             </div>
+            @if($fd && $fd->application_rate_min)
+            <div class="info-row">
+                <span class="info-label">Application Rate (General)</span>
+                <span class="info-value">
+                    {{ $fd->application_rate_min }}@if($fd->application_rate_max) – {{ $fd->application_rate_max }}@endif
+                    {{ $fd->application_rate_unit ?? '' }}
+                </span>
+            </div>
+            @endif
+            <div class="info-row">
+                <span class="info-label">Application Method</span>
+                <span class="info-value">{{ $fd->application_method ?? 'N/A' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Timing</span>
+                <span class="info-value">{{ $fd->application_timing ?? 'N/A' }}</span>
+            </div>
+        </div>
+
+        {{-- Application Rules (DecisionFormula) - crop/season/stage specific --}}
+        <div class="spec-divider" style="margin: 20px 0 16px;"></div>
+        <div class="section-title" style="margin-bottom: 12px;">
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Application Rules (per Crop, Season & Stage)
+            @if($isStoreOwner)
+                <a href="{{ route('store.products.edit', ['product' => $product, 'tab' => 'rules']) }}"
+                   style="margin-left:auto;font-size:12px;font-weight:600;color:#14532d;text-transform:none;letter-spacing:0;text-decoration:underline;">
+                    Edit rules
+                </a>
+            @endif
+        </div>
+        <div class="spec-grid">
+            @forelse($formulas as $formula)
+                <div class="info-row">
+                    <span class="info-label">Crop & Season</span>
+                    <span class="info-value">{{ $formula->crop_type }} · {{ ucfirst($formula->season) }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Application Stage</span>
+                    <span class="info-value">{{ $formula->stageLabel() }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Rate per Hectare</span>
+                    <span class="info-value">
+                        {{ rtrim(rtrim(number_format($formula->effectiveRate(), 2), '0'), '.') }} {{ $formula->unit }}
+                        @if($formula->rateNeedsClamp())
+                            <span style="color:#b45309;font-weight:500;font-size:12px;">
+                                (configured {{ rtrim(rtrim(number_format((float) $formula->rate_per_hectare, 2), '0'), '.') }})
+                            </span>
+                        @endif
+                    </span>
+                </div>
+                @if($formula->min_rate_per_hectare !== null || $formula->max_rate_per_hectare !== null)
+                <div class="info-row">
+                    <span class="info-label">Safety Bounds</span>
+                    <span class="info-value">
+                        {{ $formula->min_rate_per_hectare !== null ? rtrim(rtrim(number_format((float) $formula->min_rate_per_hectare, 2), '0'), '.') : '—' }}
+                        –
+                        {{ $formula->max_rate_per_hectare !== null ? rtrim(rtrim(number_format((float) $formula->max_rate_per_hectare, 2), '0'), '.') : '—' }}
+                        {{ $formula->unit }}
+                    </span>
+                </div>
+                @endif
+                @if($formula->notes)
+                <div class="info-row">
+                    <span class="info-label">Notes</span>
+                    <span class="info-value" style="font-size:12.5px;font-weight:500;">{{ $formula->notes }}</span>
+                </div>
+                @endif
+            @empty
+                <div class="info-row">
+                    <span class="info-label">Crop & Season</span>
+                    <span class="info-value">N/A</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Application Stage</span>
+                    <span class="info-value">N/A</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Rate per Hectare</span>
+                    <span class="info-value">N/A</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Safety Bounds</span>
+                    <span class="info-value">N/A</span>
+                </div>
+            @endforelse
+        </div>
+    </div>
+    @endif
+
+    {{-- SEEDS: Seed-specific specifications --}}
+    @if($topCategory === 'Seeds and Planting Materials' || $topCategory === 'Seeds')
+    <div class="spec-section">
+        <div class="section-title">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Seed Specifications
+        </div>
+        <div class="spec-grid">
+            <div class="info-row">
+                <span class="info-label">Seed Type</span>
+                <span class="info-value">{{ $product->category_display_name }}</span>
+            </div>
+            @if($product->package_size)
+            <div class="info-row">
+                <span class="info-label">Package Size</span>
+                <span class="info-value">{{ $product->package_size }} {{ $product->package_unit ?? 'kg' }}</span>
+            </div>
+            @endif
+            @if($product->fertilizerDetail && $product->fertilizerDetail->application_rate_min)
+            <div class="info-row">
+                <span class="info-label">Planting Rate</span>
+                <span class="info-value">
+                    {{ $product->fertilizerDetail->application_rate_min }}@if($product->fertilizerDetail->application_rate_max) – {{ $product->fertilizerDetail->application_rate_max }}@endif
+                    {{ $product->fertilizerDetail->application_rate_unit ?? 'kg/ha' }}
+                </span>
+            </div>
+            @endif
+            @if($hasFormulas)
+            <div class="info-row">
+                <span class="info-label">Planting Rules (per Crop/Season)</span>
+                <span class="info-value">
+                    @foreach($formulas as $formula)
+                        {{ $formula->crop_type }} · {{ ucfirst($formula->season) }} · {{ $formula->stageLabel() }}: {{ rtrim(rtrim(number_format($formula->effectiveRate(), 2), '0'), '.') }} {{ $formula->unit }}<br>
+                    @endforeach
+                </span>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
+    {{-- CROP PROTECTION: Pesticide/Fungicide/Herbicide specs --}}
+    @if($topCategory === 'Crop Protection')
+    <div class="spec-section">
+        <div class="section-title">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Crop Protection Details
+        </div>
+        <div class="spec-grid">
+            <div class="info-row">
+                <span class="info-label">Protection Type</span>
+                <span class="info-value">{{ $product->category_display_name }}</span>
+            </div>
+            @if($product->fertilizerDetail)
+            @if($product->fertilizerDetail->form_type)
+            <div class="info-row">
+                <span class="info-label">Formulation Type</span>
+                <span class="info-value">{{ $product->fertilizerDetail->form_type }}</span>
+            </div>
+            @endif
             @if($product->fertilizerDetail->application_rate_min)
             <div class="info-row">
                 <span class="info-label">Application Rate</span>
@@ -471,14 +630,160 @@
                 </span>
             </div>
             @endif
+            @if($product->fertilizerDetail->application_method)
             <div class="info-row">
                 <span class="info-label">Application Method</span>
-                <span class="info-value">{{ $product->fertilizerDetail->application_method ?? 'N/A' }}</span>
+                <span class="info-value">{{ $product->fertilizerDetail->application_method }}</span>
             </div>
+            @endif
+            @if($product->fertilizerDetail->application_timing)
+            <div class="info-row">
+                <span class="info-label">Timing / PHI</span>
+                <span class="info-value">{{ $product->fertilizerDetail->application_timing }}</span>
+            </div>
+            @endif
+            @endif
+            @if($hasFormulas)
+            <div class="info-row">
+                <span class="info-label">Application Rules (per Crop/Season)</span>
+                <span class="info-value">
+                    @foreach($formulas as $formula)
+                        {{ $formula->crop_type }} · {{ ucfirst($formula->season) }} · {{ $formula->stageLabel() }}: {{ rtrim(rtrim(number_format($formula->effectiveRate(), 2), '0'), '.') }} {{ $formula->unit }}<br>
+                    @endforeach
+                </span>
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
+    {{-- GENERIC: Fallback for other categories --}}
+    @if(!in_array($topCategory, ['Fertilizer', 'Seeds and Planting Materials', 'Seeds', 'Crop Protection']))
+    <div class="spec-section">
+        <div class="section-title">
+            <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Product Details
+        </div>
+        <div class="spec-grid">
+            @if($product->fertilizerDetail)
+            <div class="fertilizer-npk">
+                @if($product->fertilizerDetail->nitrogen_percentage !== null)
+                <div class="npk-pill npk-n">
+                    <div style="font-size: 11px; font-weight: 500; text-transform: uppercase;">N</div>
+                    {{ $product->fertilizerDetail->nitrogen_percentage }}%
+                </div>
+                @endif
+                @if($product->fertilizerDetail->phosphorus_percentage !== null)
+                <div class="npk-pill npk-p">
+                    <div style="font-size: 11px; font-weight: 500; text-transform: uppercase;">P</div>
+                    {{ $product->fertilizerDetail->phosphorus_percentage }}%
+                </div>
+                @endif
+                @if($product->fertilizerDetail->potassium_percentage !== null)
+                <div class="npk-pill npk-k">
+                    <div style="font-size: 11px; font-weight: 500; text-transform: uppercase;">K</div>
+                    {{ $product->fertilizerDetail->potassium_percentage }}%
+                </div>
+                @endif
+            </div>
+            @if($product->fertilizerDetail->form_type)
+            <div class="info-row">
+                <span class="info-label">Form Type</span>
+                <span class="info-value">{{ $product->fertilizerDetail->form_type }}</span>
+            </div>
+            @endif
+            @if($product->fertilizerDetail->application_rate_min)
+            <div class="info-row">
+                <span class="info-label">Application Rate</span>
+                <span class="info-value">
+                    {{ $product->fertilizerDetail->application_rate_min }}@if($product->fertilizerDetail->application_rate_max) – {{ $product->fertilizerDetail->application_rate_max }}@endif
+                    {{ $product->fertilizerDetail->application_rate_unit ?? '' }}
+                </span>
+            </div>
+            @endif
+            @if($product->fertilizerDetail->application_method)
+            <div class="info-row">
+                <span class="info-label">Application Method</span>
+                <span class="info-value">{{ $product->fertilizerDetail->application_method }}</span>
+            </div>
+            @endif
+            @if($product->fertilizerDetail->application_timing)
             <div class="info-row">
                 <span class="info-label">Timing</span>
-                <span class="info-value">{{ $product->fertilizerDetail->application_timing ?? 'N/A' }}</span>
+                <span class="info-value">{{ $product->fertilizerDetail->application_timing }}</span>
             </div>
+            @endif
+            @endif
+            @if($hasFormulas)
+            <div class="spec-divider" style="margin: 16px 0 12px;"></div>
+            <div class="section-title" style="margin-bottom: 12px;">
+                <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Application Rules
+                @if($isStoreOwner)
+                    <a href="{{ route('store.products.edit', ['product' => $product, 'tab' => 'rules']) }}"
+                       style="margin-left:auto;font-size:12px;font-weight:600;color:#14532d;text-transform:none;letter-spacing:0;text-decoration:underline;">
+                        Edit rules
+                    </a>
+                @endif
+            </div>
+            <div class="spec-grid">
+                @forelse($formulas as $formula)
+                    <div class="info-row">
+                        <span class="info-label">Crop & Season</span>
+                        <span class="info-value">{{ $formula->crop_type }} · {{ ucfirst($formula->season) }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Application Stage</span>
+                        <span class="info-value">{{ $formula->stageLabel() }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Rate per Hectare</span>
+                        <span class="info-value">
+                            {{ rtrim(rtrim(number_format($formula->effectiveRate(), 2), '0'), '.') }} {{ $formula->unit }}
+                            @if($formula->rateNeedsClamp())
+                                <span style="color:#b45309;font-weight:500;font-size:12px;">
+                                    (configured {{ rtrim(rtrim(number_format((float) $formula->rate_per_hectare, 2), '0'), '.') }})
+                                </span>
+                            @endif
+                        </span>
+                    </div>
+                    @if($formula->min_rate_per_hectare !== null || $formula->max_rate_per_hectare !== null)
+                    <div class="info-row">
+                        <span class="info-label">Safety Bounds</span>
+                        <span class="info-value">
+                            {{ $formula->min_rate_per_hectare !== null ? rtrim(rtrim(number_format((float) $formula->min_rate_per_hectare, 2), '0'), '.') : '—' }}
+                            –
+                            {{ $formula->max_rate_per_hectare !== null ? rtrim(rtrim(number_format((float) $formula->max_rate_per_hectare, 2), '0'), '.') : '—' }}
+                            {{ $formula->unit }}
+                        </span>
+                    </div>
+                    @endif
+                    @if($formula->notes)
+                    <div class="info-row">
+                        <span class="info-label">Notes</span>
+                        <span class="info-value" style="font-size:12.5px;font-weight:500;">{{ $formula->notes }}</span>
+                    </div>
+                    @endif
+                @empty
+                    <div class="info-row">
+                        <span class="info-label">Crop & Season</span>
+                        <span class="info-value">N/A</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Application Stage</span>
+                        <span class="info-value">N/A</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Rate per Hectare</span>
+                        <span class="info-value">N/A</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Safety Bounds</span>
+                        <span class="info-value">N/A</span>
+                    </div>
+                @endforelse
+            </div>
+            @endif
         </div>
     </div>
     @endif
@@ -526,82 +831,6 @@
         </div>
     </div>
     @endif
-
-    {{-- Application rules: the rows the store sets on Product → Application
-         Rules. The quotation engine reads these exact rows (grouped by
-         product_id, summed via effectiveRate()), so the numbers below are the
-         ones a quotation will quote. Shown empty rather than hidden when no
-         rule exists yet — every field here is optional, since rules are added
-         after the product is created. --}}
-    <div class="spec-section">
-        <div class="section-title">
-            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            Application Rules
-            @if($isStoreOwner)
-                <a href="{{ route('store.products.edit', ['product' => $product, 'tab' => 'rules']) }}"
-                   style="margin-left:auto;font-size:12px;font-weight:600;color:#14532d;text-transform:none;letter-spacing:0;text-decoration:underline;">
-                    Edit rules
-                </a>
-            @endif
-        </div>
-        <div class="spec-grid">
-            @forelse($formulas as $formula)
-                <div class="info-row">
-                    <span class="info-label">Crop &amp; Season</span>
-                    <span class="info-value">{{ $formula->crop_type }} · {{ ucfirst($formula->season) }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Application Stage</span>
-                    <span class="info-value">{{ $formula->stageLabel() }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Rate per Hectare</span>
-                    <span class="info-value">
-                        {{ rtrim(rtrim(number_format($formula->effectiveRate(), 2), '0'), '.') }} {{ $formula->unit }}
-                        @if($formula->rateNeedsClamp())
-                            <span style="color:#b45309;font-weight:500;font-size:12px;">
-                                (configured {{ rtrim(rtrim(number_format((float) $formula->rate_per_hectare, 2), '0'), '.') }})
-                            </span>
-                        @endif
-                    </span>
-                </div>
-                @if($formula->min_rate_per_hectare !== null || $formula->max_rate_per_hectare !== null)
-                <div class="info-row">
-                    <span class="info-label">Safety Bounds</span>
-                    <span class="info-value">
-                        {{ $formula->min_rate_per_hectare !== null ? rtrim(rtrim(number_format((float) $formula->min_rate_per_hectare, 2), '0'), '.') : '—' }}
-                        –
-                        {{ $formula->max_rate_per_hectare !== null ? rtrim(rtrim(number_format((float) $formula->max_rate_per_hectare, 2), '0'), '.') : '—' }}
-                        {{ $formula->unit }}
-                    </span>
-                </div>
-                @endif
-                @if($formula->notes)
-                <div class="info-row">
-                    <span class="info-label">Notes</span>
-                    <span class="info-value" style="font-size:12.5px;font-weight:500;">{{ $formula->notes }}</span>
-                </div>
-                @endif
-            @empty
-                <div class="info-row">
-                    <span class="info-label">Crop &amp; Season</span>
-                    <span class="info-value">N/A</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Application Stage</span>
-                    <span class="info-value">N/A</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Rate per Hectare</span>
-                    <span class="info-value">N/A</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Safety Bounds</span>
-                    <span class="info-value">N/A</span>
-                </div>
-            @endforelse
-        </div>
-    </div>
 
 </div>
 

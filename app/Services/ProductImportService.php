@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\DecisionFormula;
 use App\Models\Product;
 use App\Support\ImportFormats;
 use App\Support\ProductFields;
@@ -271,6 +272,39 @@ class ProductImportService
             $errors['expiration_date'] = 'The expiration date cannot be before the manufacturing date.';
         }
 
+        // -- Application Rules (DecisionFormula) ----------------------------
+        $ruleFields = [
+            'rule_crop_type',
+            'rule_season',
+            'rule_stage',
+            'rule_rate_per_hectare',
+            'rule_min_rate_per_hectare',
+            'rule_max_rate_per_hectare',
+            'rule_unit',
+            'rule_notes',
+        ];
+
+        foreach ($ruleFields as $field) {
+            $value = $this->cellToString($raw[$field] ?? '');
+            if ($value !== '') {
+                if (in_array($field, ['rule_rate_per_hectare', 'rule_min_rate_per_hectare', 'rule_max_rate_per_hectare'], true)) {
+                    $data[$field] = $this->toNumber($value, $field, $errors);
+                } else {
+                    $data[$field] = $value;
+                }
+            }
+        }
+
+        // Validate rule season if provided
+        if (isset($data['rule_season']) && ! in_array($data['rule_season'], ProductFields::SEASONS, true)) {
+            $errors['rule_season'] = 'Rule season must be one of: wet, dry, both.';
+        }
+
+        // Validate rule stage if provided
+        if (isset($data['rule_stage']) && ! array_key_exists($data['rule_stage'], DecisionFormula::STAGES)) {
+            $errors['rule_stage'] = 'Rule stage must be one of: ' . implode(', ', array_keys(DecisionFormula::STAGES)) . '.';
+        }
+
         // -- Images are never part of a file import ------------------------------
         foreach (ProductFields::IGNORED_IMAGE_HEADERS as $imageHeader) {
             if (! $this->isBlank($raw[$imageHeader] ?? null)) {
@@ -401,6 +435,7 @@ class ProductImportService
 
                     $this->createFertilizerDetail($product, $data);
                     $this->createRegistration($product, $data);
+                    $this->createDecisionFormulas($product, $data);
 
                     $imported++;
                 } catch (QueryException $e) {
@@ -468,6 +503,50 @@ class ProductImportService
         }
 
         $product->registration()->create($attributes);
+    }
+
+    private function createDecisionFormulas(Product $product, array $data): void
+    {
+        // Check if any rule fields are present
+        $ruleFields = [
+            'rule_crop_type',
+            'rule_season',
+            'rule_stage',
+            'rule_rate_per_hectare',
+            'rule_min_rate_per_hectare',
+            'rule_max_rate_per_hectare',
+            'rule_unit',
+            'rule_notes',
+        ];
+
+        $hasRuleData = false;
+        foreach ($ruleFields as $field) {
+            if (! $this->isBlank($data[$field] ?? null)) {
+                $hasRuleData = true;
+                break;
+            }
+        }
+
+        if (! $hasRuleData) {
+            return;
+        }
+
+        // Build the formula data
+        $formulaData = [
+            'crop_type'            => $data['rule_crop_type'] ?? null,
+            'season'               => $data['rule_season'] ?? null,
+            'stage'                => $data['rule_stage'] ?? 'standard',
+            'rate_per_hectare'     => $data['rule_rate_per_hectare'] ?? null,
+            'min_rate_per_hectare' => $data['rule_min_rate_per_hectare'] ?? null,
+            'max_rate_per_hectare' => $data['rule_max_rate_per_hectare'] ?? null,
+            'unit'                 => $data['rule_unit'] ?? $product->package_unit ?? $product->stock_unit,
+            'notes'                => $data['rule_notes'] ?? null,
+        ];
+
+        // Only create if we have at least crop_type and rate
+        if (! $this->isBlank($formulaData['crop_type']) && $formulaData['rate_per_hectare'] !== null) {
+            $product->applications()->create($formulaData);
+        }
     }
 
     /**

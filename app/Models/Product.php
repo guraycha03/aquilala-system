@@ -331,6 +331,32 @@ class Product extends Model
         return is_string($legacy) && trim($legacy) !== '' ? $legacy : 'Uncategorized';
     }
 
+    /**
+     * Get the top-level category group (e.g., "Fertilizer", "Seeds and Planting Materials",
+     * "Crop Protection") for display logic.
+     */
+    public function getTopCategoryGroupAttribute(): ?string
+    {
+        if ($this->relationLoaded('category') && $this->relations['category'] instanceof Category) {
+            $category = $this->relations['category'];
+            if ($category->parent) {
+                return $category->parent->name;
+            }
+            return $category->name;
+        }
+
+        // Fallback: load relation if not loaded
+        $category = $this->category;
+        if ($category) {
+            if ($category->parent) {
+                return $category->parent->name;
+            }
+            return $category->name;
+        }
+
+        return null;
+    }
+
     public function getStockStatusAttribute(): string
     {
         if ($this->status === 'discontinued') {
