@@ -38,37 +38,38 @@
         var style = document.createElement('style');
         style.id = STYLE_ID;
         style.textContent = [
-            /* Calm sage for both warning states — the strip reads as a
-               notice, not an alarm; the words tell "no internet" from
-               "server unreachable". Dark mode gets its own deeper sage so
-               the strip still stands apart from the dark page behind it. */
-            '#' + BAR_ID + ' {',
-            '  position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: auto !important; z-index: 2147483647 !important;',
-            '  contain: layout style paint; isolation: isolate;',
-            '  box-sizing: border-box; width: 100vw; height: 34px; min-height: 34px; margin: 0 !important;',
-            '  display: none; align-items: center; justify-content: center; gap: 9px;',
-            '  padding: 7px 14px; text-align: center; flex-wrap: wrap;',
-            '  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;',
-            '  font-size: 12.5px; font-weight: 600; line-height: 1.4; letter-spacing: 0.01em;',
-            '  color: #052e16; background: rgba(236, 253, 243, 0.88);',
-            '  border-bottom: 1px solid rgba(22, 101, 52, 0.18);',
-            '  box-shadow: 0 4px 16px rgba(0,0,0,0.12);',
-            '  pointer-events: none;',
-            '}',
-            '#' + BAR_ID + '.aq-net-show { display: flex; }',
-            '#' + BAR_ID + '.aq-net-back { background: #14532d; color: #ffffff; }',
-            '[data-theme="dark"] #' + BAR_ID + ':not(.aq-net-back) { background: rgba(5, 46, 22, 0.88); color: #d1fae5; border-bottom-color: rgba(167, 243, 208, 0.18); }',
-            '.aq-net-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor;',
-            '  flex: 0 0 8px; animation: aq-net-pulse 1.4s ease-in-out infinite; }',
-            '#' + BAR_ID + '.aq-net-back .aq-net-dot { animation: none; }',
-            '.aq-net-hint { font-weight: 500; opacity: 0.85; }',
-            '@keyframes aq-net-pulse {',
-            '  0%, 100% { opacity: 0.3; transform: scale(0.75); }',
-            '  50%      { opacity: 1;   transform: scale(1.2);  }',
-            '}',
-
-            '@media (prefers-reduced-motion: reduce) { .aq-net-dot { animation: none !important; } }',
-            '@media (max-width: 520px) { .aq-net-hint { display: none; } }'
+        /* A thin fixed bar at the very top of the viewport. It must be a
+           direct child of <body> (appended last) and sized/positioned
+           explicitly so nothing in the page flow can push it down or
+           leave a gap above it. */
+        '#' + BAR_ID + ' {',
+        '  position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: auto !important; z-index: 2147483647 !important;',
+        '  contain: layout style paint; isolation: isolate;',
+        '  box-sizing: border-box; width: 100%; max-width: 100%; height: 34px; min-height: 34px; margin: 0 !important; flex: 0 0 auto;',
+        '  display: none; align-items: center; justify-content: center; gap: 9px;',
+        '  padding: 7px 14px; text-align: center; flex-wrap: nowrap;',
+        '  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;',
+        '  font-size: 12.5px; font-weight: 600; line-height: 1.4; letter-spacing: 0.01em;',
+        '  color: #052e16; background: rgba(236, 253, 243, 0.96);',
+        '  border-bottom: 1px solid rgba(22, 101, 52, 0.18);',
+        '  box-shadow: 0 4px 16px rgba(0,0,0,0.12);',
+        '  pointer-events: none;',
+        '}',
+        '#' + BAR_ID + '.aq-net-show { display: flex; }',
+        '#' + BAR_ID + '.aq-net-back { background: #14532d; color: #ffffff; }',
+        '[data-theme="dark"] #' + BAR_ID + ':not(.aq-net-back) { background: rgba(5, 46, 22, 0.96); color: #d1fae5; border-bottom-color: rgba(167, 243, 208, 0.18); }',
+        '.aq-net-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor;',
+        '  flex: 0 0 8px; animation: aq-net-pulse 1.4s ease-in-out infinite; }',
+        '#' + BAR_ID + '.aq-net-back .aq-net-dot { animation: none; }',
+        '.aq-net-text { flex: 0 1 auto; white-space: nowrap; }',
+        '.aq-net-hint { font-weight: 500; opacity: 0.85; white-space: nowrap; }',
+        '@keyframes aq-net-pulse {',
+        '  0%, 100% { opacity: 0.3; transform: scale(0.75); }',
+        '  50%      { opacity: 1;   transform: scale(1.2);  }',
+        '}',
+        '',
+        '@media (prefers-reduced-motion: reduce) { .aq-net-dot { animation: none !important; } }',
+        '@media (max-width: 520px) { .aq-net-hint { display: none; } #' + BAR_ID + ' { font-size: 12px; gap: 7px; } }'
         ].join('\n');
 
         (document.head || document.documentElement).appendChild(style);
@@ -77,7 +78,15 @@
     function ensureBar() {
         var bar = document.getElementById(BAR_ID);
 
-        if (bar) return bar;
+        // If a previous render or Turbo snapshot left the bar somewhere in
+        // the document flow, move it to the end of <body> so this fixed
+        // overlay never affects layout or gets pushed by other nodes.
+        if (bar) {
+            if (document.body && bar.parentElement !== document.body) {
+                document.body.appendChild(bar);
+            }
+            return bar;
+        }
 
         bar = document.createElement('div');
         bar.id = BAR_ID;
@@ -105,22 +114,28 @@
         var text = bar.querySelector('.aq-net-text');
         var hint = bar.querySelector('.aq-net-hint');
 
-        bar.classList.toggle('aq-net-show', mode !== 'ok');
+        var visible = mode === 'down' || mode === 'offline' || mode === 'back';
+        bar.classList.toggle('aq-net-show', visible);
         bar.classList.toggle('aq-net-unreachable', mode === 'down');
         bar.classList.toggle('aq-net-back', mode === 'back');
-        bar.setAttribute('aria-hidden', mode === 'ok' ? 'true' : 'false');
-        document.body.classList.remove('aq-netbar-on');
+        bar.setAttribute('aria-hidden', visible ? 'false' : 'true');
+
+        document.body.classList.toggle('aq-netbar-visible', mode === 'down' || mode === 'offline');
 
         if (mode === 'offline') {
             text.textContent = 'No internet connection';
-            hint.textContent = 'Reconnecting as soon as you are back — everything already open is still here.';
+            hint.textContent = 'Reconnecting as soon as you are back â€” everything already open is still here.';
         } else if (mode === 'down') {
-            text.textContent = 'Connection lost — reconnecting…';
+            text.textContent = 'Connection lost â€” reconnectingâ€¦';
             hint.textContent = 'Attempt ' + attempts;
         } else if (mode === 'back') {
             text.textContent = 'Back online';
             hint.textContent = '';
+        } else {
+            text.textContent = '';
+            hint.textContent = '';
         }
+    }
     }
 
     function setMode(next) {

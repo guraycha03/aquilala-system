@@ -17,18 +17,18 @@ namespace App\Support;
 final class LandPartitioner
 {
 
-    // ── Organic partitioner color palettes (ported from Agriculture prototype) ──
+    // ── Organic partitioner color palettes (lighter green shades per crop plot) ──
     private const PALETTES = [
-        ['fill' => '#3B6E4C', 'stroke' => '#244A31', 'text' => '#F7FAF7', 'subtext' => '#DCEADF', 'swatch' => '#3B6E4C'],
-        ['fill' => '#C6923A', 'stroke' => '#8B621D', 'text' => '#1E1608', 'subtext' => '#3F3014', 'swatch' => '#C6923A'],
-        ['fill' => '#7FA06B', 'stroke' => '#4E6B3D', 'text' => '#142212', 'subtext' => '#2B4227', 'swatch' => '#7FA06B'],
-        ['fill' => '#B55D3C', 'stroke' => '#7D3920', 'text' => '#FFF9F6', 'subtext' => '#F6DDD3', 'swatch' => '#B55D3C'],
-        ['fill' => '#4C7A7B', 'stroke' => '#2D4E4F', 'text' => '#F4FAFA', 'subtext' => '#D3E6E6', 'swatch' => '#4C7A7B'],
-        ['fill' => '#9C8D47', 'stroke' => '#675C27', 'text' => '#1C1A0B', 'subtext' => '#383317', 'swatch' => '#9C8D47'],
-        ['fill' => '#5E8C6A', 'stroke' => '#3A5E44', 'text' => '#F6FBF7', 'subtext' => '#D8EBE0', 'swatch' => '#5E8C6A'],
-        ['fill' => '#8C6A52', 'stroke' => '#5C4230', 'text' => '#FBF7F4', 'subtext' => '#E6D8CE', 'swatch' => '#8C6A52'],
-        ['fill' => '#6B8F4E', 'stroke' => '#44602D', 'text' => '#F7FBF3', 'subtext' => '#DDEBD1', 'swatch' => '#6B8F4E'],
-        ['fill' => '#A87C4F', 'stroke' => '#71502E', 'text' => '#FFFBF6', 'subtext' => '#EFE0CE', 'swatch' => '#A87C4F'],
+        ['fill' => '#DCFCE7', 'stroke' => '#4ADE80', 'text' => '#14532D', 'subtext' => '#166534', 'swatch' => '#86EFAC'],
+        ['fill' => '#D1FAE5', 'stroke' => '#34D399', 'text' => '#064E3B', 'subtext' => '#065F46', 'swatch' => '#6EE7B7'],
+        ['fill' => '#ECFDF5', 'stroke' => '#6EE7B7', 'text' => '#064E3B', 'subtext' => '#047857', 'swatch' => '#A7F3D0'],
+        ['fill' => '#E8F5E9', 'stroke' => '#66BB6A', 'text' => '#1B5E20', 'subtext' => '#2E7D32', 'swatch' => '#A5D6A7'],
+        ['fill' => '#F0FDF4', 'stroke' => '#4ADE80', 'text' => '#14532D', 'subtext' => '#15803D', 'swatch' => '#BBF7D0'],
+        ['fill' => '#D8F3DC', 'stroke' => '#52B788', 'text' => '#1B4332', 'subtext' => '#2D6A4F', 'swatch' => '#95D5B2'],
+        ['fill' => '#E9F5DB', 'stroke' => '#74C69D', 'text' => '#1B4332', 'subtext' => '#40916C', 'swatch' => '#B7E4C7'],
+        ['fill' => '#F1F8E9', 'stroke' => '#9CCC65', 'text' => '#33691E', 'subtext' => '#558B2F', 'swatch' => '#C5E1A5'],
+        ['fill' => '#E6F4EA', 'stroke' => '#81C784', 'text' => '#1B5E20', 'subtext' => '#388E3C', 'swatch' => '#B9E4C9'],
+        ['fill' => '#DFF5E1', 'stroke' => '#57CC99', 'text' => '#1B4332', 'subtext' => '#2D6A4F', 'swatch' => '#A9DFBF'],
     ];
 
     // ── Polygon math (ported from organicPartition.ts) ──

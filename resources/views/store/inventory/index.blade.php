@@ -6,14 +6,12 @@
 @php
   $activeTab = request()->hasAny(['q', 'status']) ? 'manage' : 'overview';
 
-  // Muted status palette. The bright stock green / amber / red these cards
-  // and charts used before is swapped for desaturated, matte tones so the
-  // page reads calm — while low stock and out of stock keep their own hue,
-  // because those two are the ones that have to catch the eye.
+  // Clearer status palette. Kept distinct by hue so healthy, low stock and
+  // out of stock remain easy to read at a glance in cards, charts and bars.
   $invPalette = [
-      'healthy' => '#5E8268',
-      'low'     => '#B0813A',
-      'out'     => '#B0524C',
+      'healthy' => '#4D9360',
+      'low'     => '#D08A1E',
+      'out'     => '#D14942',
   ];
 @endphp
 <style>
@@ -49,7 +47,7 @@
     box-shadow: 0 4px 14px rgba(20,83,45,0.25); transition: all .2s; border: none; cursor: pointer;
   }
   .btn-add:hover { background: #0f4224; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(20,83,45,0.3); }
-  .btn-add svg { width: 16px; height: 16px; stroke: currentColor; }
+  .btn-add svg, .btn-add .lucide { width: 16px; height: 16px; stroke: currentColor; }
   .inv-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .btn-ghost-inv {
     display: inline-flex; align-items: center; gap: 8px;
@@ -58,7 +56,7 @@
     border: 1px solid #e2e8f0; transition: all .2s; cursor: pointer;
   }
   .btn-ghost-inv:hover { background: #f8fafc; border-color: #cbd5e1; transform: translateY(-1px); }
-  .btn-ghost-inv svg { width: 16px; height: 16px; stroke: currentColor; }
+  .btn-ghost-inv svg, .btn-ghost-inv .lucide { width: 16px; height: 16px; stroke: currentColor; }
 
   /* Tabs */
   .inv-tabs {
@@ -82,21 +80,27 @@
     padding: 14px 18px; margin-bottom: 20px; color: #15803d;
     font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px;
   }
+  .alert-success svg, .alert-success .lucide { width: 18px; height: 18px; flex-shrink: 0; }
 
   /* Metrics */
   .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
   .metric-card {
     background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px;
-    display: flex; flex-direction: column; position: relative; overflow: hidden;
-    transition: all .2s ease;
+    display: flex; flex-direction: column; height: 100%; position: relative; overflow: hidden;
+    transition: box-shadow .2s ease, transform .2s ease;
   }
   .metric-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.05); transform: translateY(-2px); }
-  .metric-top { display: flex; align-items: center; gap: 12px; }
-  .metric-icon { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .metric-icon svg { width: 20px; height: 20px; stroke-width: 2; fill: none; }
-  .metric-label { font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+  .metric-card-clickable { cursor: pointer; user-select: none; }
+  .metric-card.is-active { border-color: #9CC4A3; box-shadow: 0 0 0 2px rgba(156,196,163,0.4), 0 8px 24px rgba(0,0,0,0.04); }
+  .metric-card.is-active .metric-label { color: #4f6a56; }
+  .metric-card-clickable:focus-visible { outline: 2px solid #8FB89A; outline-offset: 2px; }
+  .metric-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .metric-icon { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; order: 2; margin-left: auto; }
+  .metric-icon svg, .metric-icon .lucide { width: 20px; height: 20px; stroke-width: 2; }
+  .metric-top > div:not(.metric-icon) { flex: 1; min-width: 0; order: 1; }
+  .metric-label { font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; line-height: 1.3; min-height: 2.6em; }
   .metric-value { font-size: 26px; font-weight: 800; color: #0f172a; line-height: 1.1; }
-  .metric-foot { margin-top: 12px; font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
+  .metric-foot { margin-top: auto; padding-top: 12px; font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
 
   /* Dashboard body */
   .health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; align-items: stretch; }
@@ -110,29 +114,23 @@
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
-    padding-right: 70px;
+    padding-right: 8px;
   }
   .bar-scroll::-webkit-scrollbar { width: 9px; }
   .bar-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 9px; }
   .bar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9px; border: 2px solid #f1f5f9; }
   .bar-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   .bar-scroll { scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9; }
-  /* The value scale (0, 10, 20 …) sits OUTSIDE the scroller, pinned to the
-     bottom of the card, so it stays put while the rows scroll past it. */
-  .bar-axis {
-    position: relative;
-    height: 26px;
-    margin-top: 1px;
-    padding-right: 70px;
-    border-top: 1px solid #eef2f4;
-    font-size: 11px;
-    color: #94a3b8;
-  }
-  .bar-axis span {
-    position: absolute; top: 4px;
-    transform: translateX(-50%);
-    white-space: nowrap; line-height: 1;
-  }
+  /* Bullet bars (Stock Levels by Product - option 1) */
+  .bullet-list { display: flex; flex-direction: column; gap: 14px; padding: 2px 2px 6px 0; }
+  .bullet-row { display: flex; flex-direction: column; gap: 6px; }
+  .bullet-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .bullet-name { font-size: 12px; font-weight: 600; color: #334155; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bullet-meta { font-size: 11px; color: #64748b; white-space: nowrap; flex-shrink: 0; }
+  .bullet-meta strong { color: #0f172a; font-weight: 700; }
+  .bullet-track { position: relative; height: 14px; background: #e8edf0; border-radius: 999px; overflow: visible; }
+  .bullet-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; min-width: 0; max-width: 100%; }
+  .bullet-marker { position: absolute; top: -3px; bottom: -3px; width: 3px; margin-left: -1.5px; background: #334155; border-radius: 2px; box-shadow: 0 0 0 1px rgba(255,255,255,0.95); }
 
   .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
   .panel-head {
@@ -181,7 +179,7 @@
     display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; border: 1px solid #e2e8f0;
   }
   .prod-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .prod-thumb svg { width: 20px; height: 20px; stroke: #94a3b8; }
+  .prod-thumb svg, .prod-thumb .lucide { width: 20px; height: 20px; stroke: #94a3b8; }
   .prod-name { font-weight: 600; color: #0f172a; line-height: 1.2; }
   .prod-sku { font-size: 12px; color: #94a3b8; font-family: monospace; margin-top: 2px; }
   .cat-pill { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; color: #0f766e; background: #ccfbf1; padding: 2px 7px; border-radius: 5px; letter-spacing: .03em; }
@@ -191,7 +189,7 @@
 
   .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
   .badge-ok { background: #edf1e9; color: #648268; }
-  .badge-low { background: #edf1e9; color: #648268; }
+  .badge-low { background: #FFF1DB; color: var(--inv-low, #D08A1E); }
   .badge-out { background: #f7efee; color: var(--inv-out); }
   .badge-disc { background: #edf1e9; color: #648268; }
 
@@ -202,7 +200,7 @@
     border: 1px solid #cbd5e1; background: #fff; color: #334155; cursor: pointer; text-decoration: none; transition: all .15s;
     white-space: nowrap;
   }
-  .btn-icon svg { width: 14px; height: 14px; stroke: currentColor; }
+  .btn-icon svg, .btn-icon .lucide { width: 14px; height: 14px; stroke: currentColor; }
   .btn-icon:hover { background: #f1f5f9; }
   .btn-icon.primary { background: #3F6B4D; color: #fff; border-color: #3F6B4D; }
   .btn-icon.primary:hover { background: #375F43; }
@@ -251,7 +249,7 @@
     font-size: 13px; font-weight: 600; color: #14532d; background: #f0fdf4; border: 1px solid #bbf7d0; cursor: pointer; transition: all .15s;
   }
   .btn-link-ghost:hover { background: #dcfce7; }
-  .btn-link-ghost svg { width: 14px; height: 14px; stroke: currentColor; }
+  .btn-link-ghost svg, .btn-link-ghost .lucide { width: 14px; height: 14px; stroke: currentColor; }
 
   /* Floating full-breakdown modal (no overlay) */
   .info-modal {
@@ -271,6 +269,13 @@
   .info-modal-body { overflow-y: auto; padding: 6px 0; }
   .info-modal-body table th { position: sticky; top: 0; z-index: 1; }
 
+  /* Overview lower content: switchable by metric card */
+  .inv-view-panel { display: none; }
+  .inv-view-panel.is-active { display: block; animation: fadeUpInv .24s ease; }
+  .inv-view-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .inv-view-head h2 { font-size: 18px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0; }
+  .inv-view-head p { color: #64748b; font-size: 13px; margin: 0; }
+
   @media (max-width: 640px) {
     .metrics-grid { grid-template-columns: repeat(2, 1fr); }
     .inv-header h1 { font-size: 20px; }
@@ -285,18 +290,18 @@
   </div>
   <div class="inv-actions">
     <a href="{{ route('store.products.trash') }}" class="btn-ghost-inv" title="Archived products you can restore later">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1"></rect><path d="M5 8v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"></path></svg>
+      <i data-lucide="archive" aria-hidden="true"></i>
       Archive
       @if(($archivedCount ?? 0) > 0)
         <span style="background:#fee2e2;color:#b91c1c;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;">{{ $archivedCount }}</span>
       @endif
     </a>
     <a href="{{ route('store.products.import') }}" class="btn-ghost-inv">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>
+      <i data-lucide="upload" aria-hidden="true"></i>
       Import
     </a>
     <a href="{{ route('store.products.create') }}" class="btn-add">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <i data-lucide="plus" aria-hidden="true"></i>
       Add Product
     </a>
   </div>
@@ -304,7 +309,7 @@
 
 @if (session('success'))
 <div class="alert-success">
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  <i data-lucide="check-circle" aria-hidden="true"></i>
   {{ session('success') }}
 </div>
 @endif
@@ -319,12 +324,27 @@
 </div>
 
 <div class="tab-pane{{ $activeTab === 'overview' ? ' active' : '' }}" id="tab-overview">
+@php
+  $overviewProducts = ($allProducts ?? collect())->values();
+  $lowProducts = $overviewProducts->filter(function ($p) {
+      $q = (int) ($p->stock_quantity ?? 0);
+      $t = (int) ($p->reorder_threshold ?? 0);
+      $isDisc = ($p->status ?? '') === 'discontinued';
+      return !$isDisc && $q > 0 && $q <= $t;
+  })->sortBy('stock_quantity')->values();
+  $outProducts = $overviewProducts->filter(function ($p) {
+      $q = (int) ($p->stock_quantity ?? 0);
+      return $q <= 0 || ($p->status ?? '') === 'out_of_stock';
+  })->sortBy('name')->values();
+  $unitsProducts = $overviewProducts->sortByDesc(fn ($p) => (int) ($p->stock_quantity ?? 0))->values();
+@endphp
+
 <!-- Metrics -->
-<div class="metrics-grid kpi-strip">
-  <div class="metric-card">
+<div class="metrics-grid kpi-strip" id="invOverviewCards">
+  <div class="metric-card metric-card-clickable is-active" data-inv-view="overview" role="button" tabindex="0" aria-label="Show inventory overview" title="Inventory overview">
     <div class="metric-top">
       <div class="metric-icon" style="background:#f1f5f9;">
-        <svg viewBox="0 0 24 24" stroke="#64748b"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        <i data-lucide="package" aria-hidden="true" style="color:#64748b;"></i>
       </div>
       <div>
         <div class="metric-label">Monitored Items</div>
@@ -337,10 +357,10 @@
     </div>
   </div>
 
-  <div class="metric-card">
+  <div class="metric-card metric-card-clickable" data-inv-view="low" role="button" tabindex="0" aria-label="Show low stock items" title="Low stock items">
     <div class="metric-top">
       <div class="metric-icon" style="background:#f6f1e6;">
-        <svg viewBox="0 0 24 24" stroke="{{ $invPalette['low'] }}"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <i data-lucide="alert-triangle" aria-hidden="true" style="color:{{ $invPalette['low'] }};"></i>
       </div>
       <div>
         <div class="metric-label">Low Stock Flags</div>
@@ -350,10 +370,10 @@
     <div class="metric-foot">Items at or below reorder threshold</div>
   </div>
 
-  <div class="metric-card">
+  <div class="metric-card metric-card-clickable" data-inv-view="out" role="button" tabindex="0" aria-label="Show out of stock items" title="Out of stock items">
     <div class="metric-top">
       <div class="metric-icon" style="background:#f7efee;">
-        <svg viewBox="0 0 24 24" stroke="{{ $invPalette['out'] }}"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <i data-lucide="x-circle" aria-hidden="true" style="color:{{ $invPalette['out'] }};"></i>
       </div>
       <div>
         <div class="metric-label">Out of Stock</div>
@@ -363,10 +383,10 @@
     <div class="metric-foot">Unavailable for purchase</div>
   </div>
 
-  <div class="metric-card">
+  <div class="metric-card metric-card-clickable" data-inv-view="units" role="button" tabindex="0" aria-label="Show total units in stock" title="Total units in stock">
     <div class="metric-top">
       <div class="metric-icon" style="background:#f1f5f9;">
-        <svg viewBox="0 0 24 24" stroke="#64748b" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        <i data-lucide="layers-plus" aria-hidden="true" style="color:#64748b;"></i>
       </div>
       <div>
         <div class="metric-label">Total Units in Stock</div>
@@ -377,7 +397,8 @@
   </div>
 </div>
 
-<!-- Stock health visuals -->
+<div id="invOverviewContent">
+  <div class="inv-view-panel is-active" data-inv-view-panel="overview">
 <div class="health-grid">
   <!-- Donut: health breakdown -->
   <div class="panel">
@@ -415,50 +436,126 @@
     </div>
   </div>
 
-  <!-- Horizontal bar: top stock vs minimum limits by product -->
+  <!-- Stock levels by product (Option 1: bullet bars) -->
   @php
-    // Every product, not just the top few — the plot area scrolls so the
-    // card keeps its size while the full list stays reachable.
     $chartProducts = $allProducts->sortByDesc(fn ($p) => (int) ($p->stock_quantity ?? 0))->values();
-    $barLabels = $chartProducts->pluck('name')->map(fn ($n) => \Illuminate\Support\Str::limit($n, 22))->toArray();
-    $barFullLabels = $chartProducts->pluck('name')->toArray();
-    $barQtys = $chartProducts->map(fn ($p) => (int) ($p->stock_quantity ?? 0))->toArray();
-    $barThresholds = $chartProducts->map(fn ($p) => (int) ($p->reorder_threshold ?? 0))->toArray();
-    $barColors = $chartProducts->map(function ($p) use ($invPalette) {
-        $qty = (int) ($p->stock_quantity ?? 0);
-        $thresh = (int) ($p->reorder_threshold ?? 0);
-        if ($qty <= 0 || $p->status === 'out_of_stock') return $invPalette['out'];
-        if ($qty <= $thresh) return $invPalette['low'];
-        return $invPalette['healthy'];
-    })->toArray();
+    $stockValues = array_merge(
+      $chartProducts->map(fn ($p) => (int) ($p->stock_quantity ?? 0))->all(),
+      $chartProducts->map(fn ($p) => (int) ($p->reorder_threshold ?? 0))->all(),
+      [0]
+    );
+    $stockScaleMax = max(1, (int) max($stockValues));
   @endphp
   <div class="panel">
     <div class="panel-head">
       <div>
         <h2>Stock Levels by Product</h2>
-        <div class="sub">All products by current stock vs their minimum limits</div>
+        <div class="sub">Bullet bars: fill = in stock, marker = minimum limit (scale 0–{{ number_format($stockScaleMax) }})</div>
       </div>
     </div>
-    <div class="chart-wrap" style="padding: 18px 14px 28px; align-items: stretch;">
-      {{-- Card stays put; only the bars and product names scroll. --}}
+    <div class="chart-wrap" style="padding: 18px 14px 20px; align-items: stretch;">
       <div class="bar-plot">
         <div class="bar-scroll">
-          <div class="bar-chart" id="barChartInner">
-            <canvas id="stockLevelChart"></canvas>
+          <div class="bullet-list">
+            @forelse($chartProducts as $p)
+              @php
+                $qty = (int) ($p->stock_quantity ?? 0);
+                $thresh = (int) ($p->reorder_threshold ?? 0);
+                $barColor = $qty <= 0 || $p->status === 'out_of_stock' ? $invPalette['out'] : ($qty <= $thresh ? $invPalette['low'] : $invPalette['healthy']);
+                $trackBg = '#e8edf0';
+                if ($qty <= 0 || $p->status === 'out_of_stock') {
+                    $trackBg = '#FCE9E8';
+                } elseif ($qty <= $thresh) {
+                    $trackBg = '#FFF1DB';
+                }
+                $fillPct = min(100, ($qty / $stockScaleMax) * 100);
+                $markPct = min(100, ($thresh / $stockScaleMax) * 100);
+              @endphp
+              <div class="bullet-row">
+                <div class="bullet-head">
+                  <span class="bullet-name" title="{{ $p->name }}">{{ \Illuminate\Support\Str::limit($p->name, 34) }}</span>
+                  <span class="bullet-meta"><strong>{{ $qty }}</strong> in stock · min {{ $thresh }}</span>
+                </div>
+                <div class="bullet-track" role="img" aria-label="{{ $p->name }}: {{ $qty }} in stock, minimum {{ $thresh }}" style="background: {{ $trackBg }};">
+                  <div class="bullet-fill" style="width: {{ number_format($fillPct, 2, '.', '') }}%; background: {{ $barColor }};"></div>
+                  <div class="bullet-marker" style="left: {{ number_format($markPct, 2, '.', '') }}%;" title="Minimum limit: {{ $thresh }}"></div>
+                </div>
+              </div>
+            @empty
+              <div class="empty-state" style="padding: 24px 12px;"><p>No products to display.</p></div>
+            @endforelse
           </div>
         </div>
-        <div class="bar-axis" id="barAxis" aria-hidden="true"></div>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:#64748b;">
-        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:var(--inv-healthy);display:inline-block;"></span> In stock</span>
-        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#DCC79B;border:1px solid var(--inv-low);box-sizing:border-box;display:inline-block;"></span> Minimum limit</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:14px;height:8px;border-radius:3px;background:var(--inv-healthy);display:inline-block;"></span> In stock (fill)</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:2px;height:12px;border-radius:2px;background:#334155;display:inline-block;"></span> Minimum limit (marker)</span>
       </div>
     </div>
     <div class="panel-foot">
       <button type="button" class="btn-link-ghost" onclick="switchInvTab('manage')">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <i data-lucide="list" aria-hidden="true"></i>
         View all {{ $totalItems }} products
       </button>
+    </div>
+  </div>
+
+</div>
+  </div>
+
+  <div class="inv-view-panel" data-inv-view-panel="low">
+    <div class="panel">
+      <div class="panel-head"><div><h2>Low Stock Items</h2><div class="sub">Items at or below reorder threshold ({{ $lowStockCount }})</div></div></div>
+      @if($lowProducts->count() > 0)
+      <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+        <div class="app-scroll"><table class="data-table"><thead><tr><th>Product</th><th>Category</th><th>In Stock</th><th>Min Limit</th></tr></thead><tbody>
+          @foreach($lowProducts as $p)
+            <tr><td><div class="prod-cell"><div class="prod-thumb">@if($p->mainImage && !empty($p->mainImage->file_path))<img src="{{ $p->mainImage->thumb_url }}" alt="{{ $p->display_name }}" loading="lazy">@else<i data-lucide="image" aria-hidden="true"></i>@endif</div><div><div class="prod-name">{{ $p->display_name }}</div><div class="prod-sku">{{ $p->sku }}</div></div></div></td><td><span class="cat-pill">{{ $p->category_display_name }}</span></td><td><strong>{{ (int)($p->stock_quantity ?? 0) }}</strong> {{ $p->stock_unit ?? 'pieces' }}</td><td>{{ (int)($p->reorder_threshold ?? 0) }} {{ $p->stock_unit ?? 'pieces' }}</td></tr>
+          @endforeach
+        </tbody></table></div><div class="app-scrollbar"><div class="app-scrollbar-track"></div><div class="app-scrollbar-thumb"></div></div>
+      </div>
+      @else
+        <div class="empty-state" style="padding:32px 20px;"><h3>No low stock items</h3><p>All monitored items are above their minimum limits.</p></div>
+      @endif
+    </div>
+  </div>
+
+  <div class="inv-view-panel" data-inv-view-panel="out">
+    <div class="panel">
+      <div class="panel-head"><div><h2>Out of Stock</h2><div class="sub">Unavailable for purchase ({{ $outOfStockCount }})</div></div></div>
+      @if($outProducts->count() > 0)
+      <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+        <div class="app-scroll"><table class="data-table"><thead><tr><th>Product</th><th>Category</th><th>In Stock</th><th>Min Limit</th></tr></thead><tbody>
+          @foreach($outProducts as $p)
+            <tr><td><div class="prod-cell"><div class="prod-thumb">@if($p->mainImage && !empty($p->mainImage->file_path))<img src="{{ $p->mainImage->thumb_url }}" alt="{{ $p->display_name }}" loading="lazy">@else<i data-lucide="image" aria-hidden="true"></i>@endif</div><div><div class="prod-name">{{ $p->display_name }}</div><div class="prod-sku">{{ $p->sku }}</div></div></div></td><td><span class="cat-pill">{{ $p->category_display_name }}</span></td><td><strong>{{ (int)($p->stock_quantity ?? 0) }}</strong> {{ $p->stock_unit ?? 'pieces' }}</td><td>{{ (int)($p->reorder_threshold ?? 0) }} {{ $p->stock_unit ?? 'pieces' }}</td></tr>
+          @endforeach
+        </tbody></table></div><div class="app-scrollbar"><div class="app-scrollbar-track"></div><div class="app-scrollbar-thumb"></div></div>
+      </div>
+      @else
+        <div class="empty-state" style="padding:32px 20px;"><h3>No out-of-stock items</h3><p>All monitored items have available stock.</p></div>
+      @endif
+    </div>
+  </div>
+
+  <div class="inv-view-panel" data-inv-view-panel="units">
+    <div class="panel">
+      <div class="panel-head"><div><h2>Total Units in Stock</h2><div class="sub">Combined stock across all monitored products</div></div></div>
+      <div style="padding:20px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="width:48px;height:48px;border-radius:12px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#64748b;"><i data-lucide="layers-plus" aria-hidden="true" style="width:24px;height:24px;"></i></div>
+        <div><div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.03em;">Total Units</div><div style="font-size:28px;font-weight:800;color:#0f172a;line-height:1.1;">{{ number_format($totalUnits) }}</div><div style="font-size:12px;color:#64748b;margin-top:2px;">Across {{ $totalItems }} monitored {{ \Illuminate\Support\Str::plural('item', $totalItems) }}</div></div>
+      </div>
+      @if($unitsProducts->count() > 0)
+      <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
+        <div class="app-scroll"><table class="data-table"><thead><tr><th>Product</th><th>Category</th><th>In Stock</th><th>Status</th></tr></thead><tbody>
+          @foreach($unitsProducts as $p)
+            @php $q=(int)($p->stock_quantity ?? 0); $t=(int)($p->reorder_threshold ?? 0); if($q<=0||$p->status==='out_of_stock'){ $stLabel='Out of Stock'; $stClass='badge-out'; } elseif($q<=$t){ $stLabel='Low Stock'; $stClass='badge-low'; } else { $stLabel='Healthy'; $stClass='badge-ok'; } @endphp
+            <tr><td><div class="prod-cell"><div class="prod-thumb">@if($p->mainImage && !empty($p->mainImage->file_path))<img src="{{ $p->mainImage->thumb_url }}" alt="{{ $p->display_name }}" loading="lazy">@else<i data-lucide="image" aria-hidden="true"></i>@endif</div><div><div class="prod-name">{{ $p->display_name }}</div><div class="prod-sku">{{ $p->sku }}</div></div></div></td><td><span class="cat-pill">{{ $p->category_display_name }}</span></td><td><strong>{{ $q }}</strong> {{ $p->stock_unit ?? 'pieces' }}</td><td><span class="badge {{ $stClass }}">{{ $stLabel }}</span></td></tr>
+          @endforeach
+        </tbody></table></div><div class="app-scrollbar"><div class="app-scrollbar-track"></div><div class="app-scrollbar-thumb"></div></div>
+      </div>
+      @else
+        <div class="empty-state" style="padding:32px 20px;"><p>No products to display.</p></div>
+      @endif
     </div>
   </div>
 </div>
@@ -530,7 +627,7 @@
                 @if($product->mainImage && !empty($product->mainImage->file_path))
                   <img src="{{ $product->mainImage->thumb_url }}" alt="{{ $product->display_name }}" loading="lazy">
                 @else
-                  <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                  <i data-lucide="image" aria-hidden="true"></i>
                 @endif
               </div>
               <div>
@@ -556,7 +653,7 @@
                 Update Stock
               </button>
               <a href="{{ route('store.products.edit', $product->id) }}" class="btn-icon product-edit" title="Edit product">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <i data-lucide="pencil" aria-hidden="true"></i>
               </a>
             </div>
           </td>
@@ -581,6 +678,7 @@
   </div>
 </div>
 </div>
+
 
 <!-- Update Stock Modal -->
 <div class="modal-overlay" id="adjustModal">
@@ -622,103 +720,16 @@
   const healthy = {{ $healthyCount }};
   const low = {{ $lowStockCount }};
   const out = {{ $outOfStockCount }};
-  const total = {{ $totalItems }};
-  const barLabels = @json($barLabels);
-  const barFullLabels = @json($barFullLabels);
-  const barQtys = @json($barQtys);
-  const barThresholds = @json($barThresholds);
-  const barColors = @json($barColors);
-  // Same muted palette the cards and legends use, so the charts can never
-  // drift back to the bright stock colours.
   const invPalette = @json($invPalette);
 
   let inventoryCharts = [];
-
-  // Show product name above each bar (left-aligned) and stock number at the
-  // right end of every bar, so both are visible without hovering — critical
-  // on mobile where hover doesn't exist. Names stay off the bar so the bar
-  // level stays visible. Y-axis labels are hidden to avoid truncated names.
-  Chart.register({
-    id: 'invBarLabels',
-    afterDatasetsDraw(chart) {
-      const ctx = chart.ctx;
-      const labels = chart.data.labels || [];
-      chart.data.datasets.forEach((dataset, datasetIndex) => {
-        if (datasetIndex !== 0) return; // only label the "In stock" bars
-        const meta = chart.getDatasetMeta(datasetIndex);
-        if (meta.hidden || !dataset.data) return;
-        meta.data.forEach((element, i) => {
-          const value = dataset.data[i];
-          if (value === null || value === undefined) return;
-          const name = String(labels[i] || '');
-          ctx.save();
-          ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
-          ctx.textBaseline = 'middle';
-
-          // Stock number at the right end of the bar (dark gray).
-          ctx.fillStyle = '#334155';
-          ctx.textAlign = 'left';
-          ctx.fillText(String(value), element.x + 6, element.y);
-
-          // Product name above the bar, left-aligned with the bar start.
-          // Dark slate color, no outline — it sits outside the bar so it's
-          // always legible against the page background.
-          if (name) {
-            const textX = element.x - element.width + 5;
-            const textY = element.y - element.height / 2 - 8;
-            ctx.fillStyle = '#475569';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(name, textX, textY);
-          }
-          ctx.restore();
-        });
-      });
-    }
-  });
-
-  // ---- Detached x scale for Stock Levels by Product ----
-  // The canvas scrolls with the rows, so the 0/10/20 scale is painted into
-  // #barAxis, which sits below .bar-scroll and never moves: the numbers stay
-  // visible at the bottom of the card no matter where you scroll.
-  function paintBarAxis() {
-    const axisEl = document.getElementById('barAxis');
-    const canvas = document.getElementById('stockLevelChart');
-    if (!axisEl || !canvas || typeof Chart === 'undefined' || !Chart.getChart) return;
-
-    const chart = Chart.getChart(canvas);
-    const scaleX = chart && chart.scales ? chart.scales.x : null;
-    const ticks = scaleX ? (scaleX.ticks || []) : [];
-    const cRect = canvas.getBoundingClientRect();
-
-    if (!scaleX || !ticks.length || !cRect.width) { axisEl.innerHTML = ''; return; }
-
-    const off = axisEl.getBoundingClientRect().left - cRect.left;
-    let html = '';
-
-    for (let i = 0; i < ticks.length; i++) {
-      const t = ticks[i];
-      let label = (t && t.label !== undefined && t.label !== null)
-        ? t.label
-        : (t && t.value !== undefined ? scaleX.getLabelForValue(t.value) : t);
-
-      if (typeof label === 'number') label = String(Math.round(label * 100) / 100);
-      label = String(label).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      if (!label) continue;
-
-      const x = scaleX.getPixelForTick(i) + off;
-      html += '<span style="left:' + x.toFixed(1) + 'px">' + label + '</span>';
-    }
-
-    axisEl.innerHTML = html;
-  }
 
   function renderCharts() {
     inventoryCharts.forEach(function (c) { c.destroy(); });
     inventoryCharts = [];
 
     const healthNode = document.getElementById('stockHealthChart');
-    if (healthNode) {
+    if (healthNode && typeof Chart !== 'undefined') {
       if (window.aqDestroyChart) aqDestroyChart(healthNode);
       inventoryCharts.push(new Chart(healthNode.getContext('2d'), {
         type: 'doughnut',
@@ -751,107 +762,9 @@
         }
       }));
     }
-
-    const levelNode = document.getElementById('stockLevelChart');
-    if (levelNode && barLabels.length > 0) {
-      if (window.aqDestroyChart) aqDestroyChart(levelNode);
-
-      // One fixed row per product: the plot grows with the list while
-      // .bar-scroll caps the panel height and scrolls instead. No room is
-      // reserved for tick labels — they live outside the scroller (see
-      // paintBarAxis()).
-      const barRowH = 60, barAxisH = 0;
-      const barInner = document.getElementById('barChartInner');
-      if (barInner) barInner.style.height = (barLabels.length * barRowH + barAxisH) + 'px';
-
-      inventoryCharts.push(new Chart(levelNode.getContext('2d'), {
-        type: 'bar',
-        data: {
-          labels: barLabels,
-          // Clustered: both datasets share the category, so each product gets
-          // an "In stock" bar sitting right next to its "Minimum limit" bar.
-          datasets: [
-            {
-              label: 'In stock',
-              data: barQtys,
-              backgroundColor: barColors,
-              borderRadius: 4,
-              categoryPercentage: 0.7,
-              barPercentage: 0.9
-            },
-            {
-              label: 'Minimum limit',
-              data: barThresholds,
-              backgroundColor: '#DCC79B',
-              borderColor: invPalette.low,
-              borderWidth: 1,
-              borderRadius: 4,
-              categoryPercentage: 0.7,
-              barPercentage: 0.9
-            }
-          ]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          layout: {
-            padding: { top: 24, bottom: 12, left: 8, right: 60 }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function (c) {
-                  const full = barFullLabels[c.dataIndex] || this.chart.data.labels[c.dataIndex];
-                  const stock = this.chart.data.datasets[0].data[c.dataIndex];
-                  const lim = this.chart.data.datasets[1].data[c.dataIndex];
-                  if (c.datasetIndex === 1) return 'Minimum limit: ' + lim;
-                  return full + ': In stock ' + stock + ' (min ' + lim + ')';
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { color: '#f1f5f9' },
-              // The scale numbers are drawn by paintBarAxis() into #barAxis,
-              // below the scroller, so the canvas only draws the gridlines.
-              ticks: {
-                color: '#94a3b8',
-                precision: 0,
-                display: false,
-                callback: function () { return ''; }
-              },
-              beginAtZero: true,
-              afterFit: function (scale) { scale.height = 0; }
-            },
-            y: {
-              grid: { display: false },
-              ticks: { display: false } // names are drawn inside bars instead
-            }
-          }
-        }
-      }));
-    }
-
-    paintBarAxis();
   }
 
   renderCharts();
-
-  // Keep the detached scale aligned when the plot resizes (window resize,
-  // tab switches, scrollbar appearing).
-  (function () {
-    const canvas = document.getElementById('stockLevelChart');
-    if (!canvas || typeof ResizeObserver === 'undefined') return;
-    let frame = 0;
-    const ro = new ResizeObserver(function () {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(paintBarAxis);
-    });
-    ro.observe(canvas);
-  })();
 
   // ---- Overview / Manage tabs ----
   function switchInvTab(name) {
@@ -887,11 +800,30 @@
   document.getElementById('adjustModal').addEventListener('click', function (e) {
     if (e.target === this) closeEdit();
   });
+
+  // ---- Overview card view switching (lower content only) ----
+  function switchInvView(name) {
+    document.querySelectorAll('#invOverviewCards [data-inv-view]').forEach(function (card) {
+      card.classList.toggle('is-active', card.getAttribute('data-inv-view') === name);
+    });
+    document.querySelectorAll('[data-inv-view-panel]').forEach(function (panel) {
+      panel.classList.toggle('is-active', panel.getAttribute('data-inv-view-panel') === name);
+    });
+    if (name === 'overview') renderCharts();
+    if (typeof renderLucideIcons === 'function') renderLucideIcons();
+  }
+  document.querySelectorAll('#invOverviewCards [data-inv-view]').forEach(function (card) {
+    card.addEventListener('click', function () { switchInvView(card.getAttribute('data-inv-view')); });
+    card.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchInvView(card.getAttribute('data-inv-view')); }
+    });
+  });
   // Inline onclick attributes (switchInvTab / openEdit / closeEdit) resolve
   // against window, so export them from this init closure.
   window.switchInvTab = switchInvTab;
   window.openEdit = openEdit;
   window.closeEdit = closeEdit;
+  window.switchInvView = switchInvView;
   });
 </script>
 
