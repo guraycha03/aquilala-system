@@ -25,6 +25,7 @@ final class AiConversationContext
         public readonly array $lastProductIds = [],
         public readonly ?string $lastSeason = null,
         public readonly ?float $lastArea = null,
+        public readonly ?string $greetingPrefix = null,
     ) {
     }
 
@@ -82,6 +83,25 @@ final class AiConversationContext
             lastProductIds: $productIds ?? $this->lastProductIds,
             lastSeason: $season ?? $this->lastSeason,
             lastArea: $area ?? $this->lastArea,
+            // The greeting belongs to the turn it was said in. Carrying it
+            // forward would prepend yesterday's "Good morning!" to tonight's
+            // unrelated answer, so it is deliberately dropped here.
+            greetingPrefix: null,
+        );
+    }
+
+    /**
+     * Attach a greeting prefix that should be prepended to the final reply.
+     */
+    public function withGreeting(?string $greetingPrefix): self
+    {
+        return new self(
+            lastIntent: $this->lastIntent,
+            lastCrop: $this->lastCrop,
+            lastProductIds: $this->lastProductIds,
+            lastSeason: $this->lastSeason,
+            lastArea: $this->lastArea,
+            greetingPrefix: $greetingPrefix,
         );
     }
 

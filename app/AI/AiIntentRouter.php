@@ -99,6 +99,14 @@ class AiIntentRouter
     ];
 
     /**
+     * A greeting that may be followed by other text.
+     * Checked FIRST so "Good evening, what's happening today?" gets a greeting response.
+     */
+    private const GREETING_WITH_TEXT_PATTERNS = [
+        '/\b(good\s+(morning|afternoon|evening|day|eve\w*)|hello|hi|hey|greetings|kumusta|magandang\s+(umaga|hapon|gabi))\b/i',
+    ];
+
+    /**
      * Questions about crops themselves: what Aquilala supports, what can be
      * planted, what is in the directory. No product is involved in these, and
      * they used to end in a refusal, because the router had nothing that
@@ -329,6 +337,15 @@ class AiIntentRouter
     {
         $detected = $detected + ['crop' => null, 'season' => null, 'area' => null];
 
+        // Check for greetings FIRST — before any other intent.
+        // A greeting anywhere in the message (even with follow-up text) should
+        // get a greeting response, not be treated as a farming question.
+        foreach (self::GREETING_WITH_TEXT_PATTERNS as $pattern) {
+            if (preg_match($pattern, $text) === 1) {
+                return AiIntent::GREETING;
+            }
+        }
+
         // A short follow-up that only names the crop keeps the previous product
         // request alive, so the farmer does not have to repeat the budget.
         if ($context->lastIntent === AiIntent::PRODUCT_RECOMMENDATION
@@ -475,16 +492,6 @@ class AiIntentRouter
 
         if ($this->mentionsFarming($text)) {
             return AiIntent::GENERAL_FARMING;
-        }
-
-        // A greeting is a greeting, and gets a greeting back. Tested after
-        // everything else because we want to make sure the farmer's actual
-        // question is answered first. A pure greeting with no question content
-        // will fall through to here.
-        foreach (self::GREETING_PATTERNS as $pattern) {
-            if (preg_match($pattern, $text) === 1) {
-                return AiIntent::GREETING;
-            }
         }
 
         if (preg_match('/\b(gulay|vegetable|veggies|mabilis|fast\s*growing|tumubo|quick\s*harvest)\b/iu', $text) === 1) {
@@ -768,7 +775,7 @@ class AiIntentRouter
 
     private function mentionsFarming(string $text): bool
     {
-        return preg_match('/\b(crop|farm|farmer|farming|harvest|pest|disease|soil|irrigat\w*|weed\w*|yield|season|climat\w*|sow\w*|seed\w*|rice|corn|mango|banana|vegetable\w*)\b/i', $text) === 1
+        return preg_match('/\b(crop|crops|farm|farmer|farmers|farming|harvest|pest|disease|soil|irrigat\w*|weed\w*|yield|season|climat\w*|sow\w*|seed\w*|rice|corn|mango|banana|vegetable\w*)\b/i', $text) === 1
             || preg_match('/\b' . $this->cropNamePattern() . '\b/i', $text) === 1;
     }
 

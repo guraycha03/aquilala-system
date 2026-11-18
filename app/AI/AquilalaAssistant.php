@@ -127,6 +127,53 @@ class AquilalaAssistant
 
         $context = AiConversationContext::fromArray($conversationContext);
 
+        // ── Greetings first ─────────────────────────────────────────────
+        //
+        // A courtesy always gets a courtesy back, before any database lookup
+        // or intent routing. When the message opens with a greeting and
+        // carries a real question after it, the greeting is stripped and
+        // prepended to the answer so the user feels heard and still gets
+        // an answer to what they actually asked.
+        $greetingPrefix = $this->extractGreetingPrefix($message);
+        $greetingHandled = false;
+        if ($greetingPrefix !== null) {
+            $stripped = $this->stripLeadingGreeting($message);
+
+            // Nothing but a courtesy left: answer the courtesy. This also
+            // covers a second greeting behind the first ("Hi, good evening!")
+            // so the user gets one greeting, not two stacked.
+            if (trim($stripped) === '' || $this->assistantIsGreetingOnly($stripped)) {
+                return [
+                    'reply'       => $greetingPrefix,
+                    'type'        => 'answer',
+                    'suggestions' => [],
+                    'context'     => $context->toArray(),
+                    'intent'      => AiIntent::GREETING,
+                    'source'      => 'conversation',
+                    'violations'  => [],
+                ];
+            }
+
+            if ($this->assistantIsSystemHelp($stripped)) {
+                return [
+                    'reply'       => $greetingPrefix . "\n\n" . $this->assistantSystemHelpReply($user?->role ?? '', $stripped),
+                    'type'        => 'answer',
+                    'suggestions' => [],
+                    'context'     => $context->toArray(),
+                    'intent'      => AiIntent::GREETING,
+                    'source'      => 'conversation',
+                    'violations'  => [],
+                ];
+            }
+
+            // Remember the greeting; it is prepended to the final reply below.
+            $context = $context->withGreeting($greetingPrefix);
+            // The rest of this turn is about what came after the greeting,
+            // so every later check sees the question, not the courtesy.
+            $message = $stripped;
+            $greetingHandled = true;
+        }
+
         // How to do something in the account comes first: this page exists to
         // guide users through tasks, and "paano maglagay ng product" needs
         // steps, not a link list or a stock summary.
@@ -211,9 +258,19 @@ class AquilalaAssistant
             return $this->harvestOverviewAnswer($message, $user);
         }
 
-        if ($this->assistantIsGreetingFlexible($message)) {
+        // An administrator asking about what farmers have been doing today or
+        // recently gets association-wide activity from the audit log — not
+        // their own (likely empty) harvest reports, and not a refusal.
+        if ($user?->role === 'admin' && $this->isAdminFarmerActivityQuestion($message)) {
+            return $this->adminFarmerActivityAnswer($message);
+        }
+
+        // A greeting that was already peeled off above is answered by the
+        // prefix; this branch only catches a message that is nothing but a
+        // greeting in a shape the extractor does not open with.
+        if (! $greetingHandled && $this->assistantIsGreetingFlexible($message)) {
             return [
-                'reply'       => $this->assistantGreetingReply($message, []),
+                'reply'       => $this->assistantGreetingReply($message, $context->toArray()['facts'] ?? []),
                 'type'        => 'answer',
                 'suggestions' => [],
                 'context'     => $context->toArray(),
@@ -333,10 +390,17 @@ class AquilalaAssistant
             area: $routing['slots']['area'] ?? $context->lastArea,
         );
 
+        // A greeting that opened the turn is prepended to the answer so the
+        // user feels heard before the actual response.
+        $finalReply = $reply;
+        if ($context->greetingPrefix !== null && $context->greetingPrefix !== '') {
+            $finalReply = $context->greetingPrefix . "\n\n" . $reply;
+        }
+
         $this->log($user, $intent, $contextData, $source, $violations);
 
         return [
-            'reply'      => $reply,
+            'reply'      => $finalReply,
             'type'       => $this->responseType($intent, $contextData),
             // Product cards, built from database rows. The frontend renders
             // these; it is never asked to parse them out of prose. A turn
@@ -730,11 +794,12 @@ class AquilalaAssistant
             ]);
 
             if ($completion === null) {
-                // Without a configured provider, the verified deterministic
-                // answer remains the safest response. A configured provider
-                // that fails still gets the explicit unavailable response.
-                if ($this->llm->available()) {
-                    $answer = $this->unavailableReply();
+                // The provider could not be reached, or returned nothing
+                // usable. The deterministic answer is already in $answer
+                // (it started as $fallback). Keep it: the farmer gets a
+                // correct, verified answer even when the model is offline.
+                // Only report 'unavailable' when there is no fallback at all.
+                if ($this->llm->available() && $answer === '' && $fallback === '') {
                     $source = 'unavailable';
                 }
 
@@ -772,37 +837,57 @@ class AquilalaAssistant
             $violations = $validated['violations'];
             $source = 'ai';
 
+            // Run AI2 validator for ALL intents that produce user-facing answers
+            // (not just the previously limited set). This catches:
+            // - Data dumping (harvest reports dumping all years)
+            // - Irrelevant answers (greeting → harvest report)
+            // - Meta-answers (capability lists instead of help)
+            // - Missing conversational awareness
             if ($answer !== $fallback && $answer !== '') {
-                if (in_array($intent, [AiIntent::GENERAL_FARMING, AiIntent::FARMING_ADVICE, AiIntent::UNSUPPORTED], true)) {
+                if (in_array($intent, [
+                    AiIntent::GREETING,
+                    AiIntent::SYSTEM_HELP,
+                    AiIntent::UNSUPPORTED,
+                    AiIntent::GENERAL_FARMING,
+                    AiIntent::FARMING_ADVICE,
+                    AiIntent::CROP_ADVICE,
+                    AiIntent::CROP_DISCOVERY,
+                    AiIntent::CROP_RECOMMENDATION,
+                    AiIntent::SEASONAL_RECOMMENDATION,
+                    AiIntent::PRODUCT_SEARCH,
+                    AiIntent::PRODUCT_RECOMMENDATION,
+                    AiIntent::COST_ESTIMATION,
+                    AiIntent::STORE_DEMAND,
+                ], true)) {
+                    $ai2 = $this->validatorAi->validate(
+                        $message,
+                        $user?->role ?? 'guest',
+                        $answer,
+                        $contextData,
+                    );
+
+                    if ($ai2 === null) {
+                        break;
+                    }
+
+                    if ($ai2['verdict'] === AiResponseValidatorAi::VERDICT_ACCEPT) {
+                        break;
+                    }
+
+                    if ($ai2['verdict'] === AiResponseValidatorAi::VERDICT_REVISE) {
+                        $answer = $ai2['suggested_answer'] !== '' && $ai2['suggested_answer'] !== null
+                            ? $ai2['suggested_answer']
+                            : $fallback;
+                        break;
+                    }
+
+                    $feedback = $ai2['reason'] ?? 'the answer did not address the user\'s question';
+
+                    if ($attempt === 3) {
+                        $answer = $fallback;
+                    }
+                } else {
                     break;
-                }
-
-                $ai2 = $this->validatorAi->validate(
-                    $message,
-                    $user?->role ?? 'guest',
-                    $answer,
-                    $contextData,
-                );
-
-                if ($ai2 === null) {
-                    break;
-                }
-
-                if ($ai2['verdict'] === AiResponseValidatorAi::VERDICT_ACCEPT) {
-                    break;
-                }
-
-                if ($ai2['verdict'] === AiResponseValidatorAi::VERDICT_REVISE) {
-                    $answer = $ai2['suggested_answer'] !== '' && $ai2['suggested_answer'] !== null
-                        ? $ai2['suggested_answer']
-                        : $fallback;
-                    break;
-                }
-
-                $feedback = $ai2['reason'] ?? 'the answer did not address the user\'s question';
-
-                if ($attempt === 3) {
-                    $answer = $fallback;
                 }
             } else {
                 break;
@@ -2030,20 +2115,47 @@ class AquilalaAssistant
         }
 
         $year = null;
+        $periodType = 'all'; // all, year, month, week, today
 
         if (preg_match('/\b(20\d{2})\b/u', $message, $match) === 1) {
             $year = (int) $match[1];
+            $periodType = 'year';
         } elseif (preg_match('/\bthis\s+(?:year|month)\b/iu', $message) === 1) {
             $year = (int) now()->year;
+            $periodType = 'month';
+        } elseif (preg_match('/\b(this\s+week|past\s+week|last\s+week)\b/iu', $message) === 1) {
+            $periodType = 'week';
+        } elseif (preg_match('/\b(today|this\s+day|recent|latest|new|activity)\b/iu', $message) === 1) {
+            $periodType = 'today';
         }
 
         $query = \App\Models\HarvestReport::where('user_id', $user->id);
 
-        if ($year !== null) {
-            $query->whereYear('harvest_date', $year);
-            $period = "in $year";
-        } else {
-            $period = 'so far';
+        $now = now();
+        switch ($periodType) {
+            case 'year':
+                $query->whereYear('harvest_date', $year);
+                $period = "in $year";
+                break;
+            case 'month':
+                $query->whereYear('harvest_date', $now->year)
+                      ->whereMonth('harvest_date', $now->month);
+                $period = "this month (" . $now->format('F Y') . ")";
+                break;
+            case 'week':
+                $query->whereBetween('harvest_date', [
+                    $now->copy()->startOfWeek(),
+                    $now->copy()->endOfWeek()
+                ]);
+                $period = "this week (" . $now->copy()->startOfWeek()->format('M d') . " - " . $now->copy()->endOfWeek()->format('M d, Y') . ")";
+                break;
+            case 'today':
+                $query->whereDate('harvest_date', $now->toDateString());
+                $period = "today (" . $now->format('F d, Y') . ")";
+                break;
+            default:
+                $period = 'so far';
+                break;
         }
 
         $reports = $query->get();
@@ -2061,7 +2173,7 @@ class AquilalaAssistant
         $lines = [
             'Here is your harvest overview ' . $period . ':',
             '',
-            '**' . number_format($reports->count()) . '** reports across **' . count($crops) . '** crop'
+            '**' . number_format($reports->count()) . '** report' . ($reports->count() === 1 ? '' : 's') . ' across **' . count($crops) . '** crop'
                 . (count($crops) === 1 ? '' : 's') . ', covering **' . number_format($totalArea, 2) . ' ha**, '
                 . '**' . number_format($totalYield, 2) . ' MT** total yield'
                 . ($yieldPerHectare !== null ? ' (**' . $yieldPerHectare . ' MT/ha**)' : '') . '.',
@@ -2069,6 +2181,17 @@ class AquilalaAssistant
 
         if ($crops !== []) {
             $lines[] = '**Crops:** ' . implode(', ', $crops) . '.';
+        }
+
+        // Show recent reports for "today" or "week" queries
+        if (in_array($periodType, ['today', 'week'])) {
+            $recent = $reports->sortByDesc('harvest_date')->take(5);
+            $lines[] = '';
+            $lines[] = '**Recent harvests:**';
+            foreach ($recent as $r) {
+                $lines[] = '- ' . $r->crop_type . ' — ' . number_format($r->land_area, 2) . ' ha, ' 
+                    . number_format($r->actual_yield_metric_tons, 2) . ' MT on ' . $r->harvest_date->format('M d, Y');
+            }
         }
 
         $lines[] = '';
@@ -2087,7 +2210,7 @@ class AquilalaAssistant
         }
 
         return preg_match(
-            '/\b(good\s+(morning|afternoon|evening|eve\w*)|hello|hi|hey|greetings|morning|afternoon|evening|eve\w*|how\s+are\s+you|kumusta)\b/iu',
+            '/\b(good\s+(morning|afternoon|evening|day|eve\w*)|hello|hi|hey|greetings|morning|afternoon|evening|eve\w*|how\s+are\s+you|kumusta)\b/iu',
             $normalized
         ) === 1;
     }
@@ -2115,6 +2238,158 @@ class AquilalaAssistant
         return $base;
     }
 
+    /**
+     * True when an administrator asks about recent or today's farmer
+     * activity — planting, crop updates, land changes, harvest records.
+     */
+    private function isAdminFarmerActivityQuestion(string $message): bool
+    {
+        return preg_match(
+            '/\b(?:activity|activities|action|actions|update|updates|submission|submissions|recent|today|this\s+(?:week|month)|what\s+(?:have|are|did|has|have\s+been))\b/iu',
+            $message
+        ) === 1;
+    }
+
+    /**
+     * Answer an administrator's question about recent farmer activity from
+     * the audit log, association-wide (not just this admin's own reports).
+     *
+     * @return array{reply: string, type: string, suggestions: array<int, mixed>, context: array<string, mixed>, intent: string, source: string, violations: array<int, string>}
+     */
+    private function adminFarmerActivityAnswer(string $message): array
+    {
+        $timezone = config('app.timezone');
+        [$start, $end, $label] = $this->activityWindow($message, $timezone);
+
+        $activities = \App\Models\ActivityLog::query()
+            ->with(['actor', 'user'])
+            ->whereIn('type', [
+                \App\Models\ActivityLog::TYPE_CROP_PLANTED,
+                \App\Models\ActivityLog::TYPE_CROP_UPDATED,
+                \App\Models\ActivityLog::TYPE_CROP_HARVESTED,
+                \App\Models\ActivityLog::TYPE_CROP_DELETED,
+                \App\Models\ActivityLog::TYPE_LAND_UPDATED,
+                \App\Models\ActivityLog::TYPE_HARVEST_CREATED,
+                \App\Models\ActivityLog::TYPE_HARVEST_DELETED,
+            ])
+            ->where(function ($query) {
+                $query->whereHas('actor', fn ($actor) => $actor->where('role', 'farmer'))
+                    ->orWhere(function ($legacy) {
+                        $legacy->whereNull('actor_id')
+                            ->whereHas('user', fn ($user) => $user->where('role', 'farmer'));
+                    });
+            })
+            ->where('created_at', '>=', $start)
+            ->where('created_at', '<', $end)
+            ->latest('created_at')
+            ->get();
+
+        $rows = $activities->map(function (\App\Models\ActivityLog $activity): array {
+            $farmer = $activity->actor ?? $activity->user;
+            $farmerName = $farmer
+                ? trim(implode(' ', array_filter([$farmer->first_name, $farmer->last_name])))
+                : '';
+
+            return [
+                'farmer' => $farmer?->name ?: ($farmerName ?: 'A farmer'),
+                'type' => $activity->type,
+                'description' => $activity->description,
+                'recorded_at' => $activity->created_at?->timezone($timezone)->format('g:i A'),
+            ];
+        })->values()->all();
+
+        $rows = array_values(array_unique($rows, SORT_REGULAR));
+        $rows = collect($rows)->unique(fn (array $row) => $row['farmer'] . '|' . $row['description'])->values()->all();
+
+        if ($rows === []) {
+            return [
+                'reply'       => 'I checked the farmer activity records for **' . $label . '**, and no new planting, crop, land, or harvest activity has been recorded yet.',
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => [],
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'data',
+                'violations'  => [],
+            ];
+        }
+
+        $shown = array_slice($rows, 0, 8);
+        $hidden = count($rows) - count($shown);
+
+        $lines = collect($shown)->map(
+            fn (array $row) => '- **' . $row['farmer'] . '**: ' . $row['description']
+                . ($row['recorded_at'] ? ' (' . $row['recorded_at'] . ')' : '')
+        )->implode("\n");
+
+        $reply = 'I found **' . number_format(count($rows)) . '** farmer '
+            . (count($rows) === 1 ? 'activity' : 'activities') . ' recorded in **' . $label . '**:'
+            . "\n" . $lines;
+
+        if ($hidden > 0) {
+            $reply .= "\n…plus " . number_format($hidden) . " more recent entr" . ($hidden === 1 ? 'y' : 'ies') . ".";
+        }
+
+        return [
+            'reply'       => $reply,
+            'type'        => 'answer',
+            'suggestions' => [],
+            'context'     => ['farmer_activity' => ['period' => $label, 'count' => count($rows), 'items' => $rows]],
+            'intent'      => AiIntent::SYSTEM_HELP,
+            'source'      => 'data',
+            'violations'  => [],
+        ];
+    }
+
+    /**
+     * Resolve the time window for an activity question.
+     */
+    private function activityWindow(string $message, string $timezone): array
+    {
+        $now = \Illuminate\Support\Carbon::now($timezone);
+        $lower = mb_strtolower($message);
+
+        if (preg_match('/\byesterday\b/u', $lower) === 1) {
+            $start = $now->copy()->subDay()->startOfDay();
+            $end = $start->copy()->addDay();
+
+            return [$start, $end, 'Yesterday'];
+        }
+
+        if (preg_match('/\btoday\b/u', $lower) === 1) {
+            $start = $now->copy()->startOfDay();
+            $end = $start->copy()->addDay();
+
+            return [$start, $end, 'Today'];
+        }
+
+        if (preg_match('/\bthis\s+week\b/u', $lower) === 1) {
+            $start = $now->copy()->startOfWeek();
+            $end = $start->copy()->addWeek();
+
+            return [$start, $end, 'This Week'];
+        }
+
+        if (preg_match('/\blast\s+week\b/u', $lower) === 1) {
+            $start = $now->copy()->subWeek()->startOfWeek();
+            $end = $start->copy()->addWeek();
+
+            return [$start, $end, 'Last Week'];
+        }
+
+        if (preg_match('/\bthis\s+month\b/u', $lower) === 1 || preg_match('/\bmonth\b/u', $lower) === 1) {
+            $start = $now->copy()->startOfMonth();
+            $end = $start->copy()->addMonth();
+
+            return [$start, $end, $now->format('F Y')];
+        }
+
+        // Default: today.
+        $start = $now->copy()->startOfDay();
+        $end = $start->copy()->addDay();
+
+        return [$start, $end, 'Today'];
+    }
+
     private function assistantIsSystemHelp(string $message): bool
     {
         $normalized = trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message));
@@ -2123,6 +2398,105 @@ class AquilalaAssistant
             preg_match('/\b(how\s+(?:do|can|to)\s+(?:i|we|you)?\s*(?:use|navigate|find|open|get\s+started)|what\s+(?:can|does)\s+(?:this|you|ai)?\s*(?:do|help)|how\s+does\s+(?:this|it)\s+work|use\s+this|this\s+system|are\s+you\s+(?:working|there|online|ai)|ai\s+ka\s+ba|is\s+this\s+working)\b/iu', $normalized) === 1
             || trim($normalized) === 'how do i use the this'
         );
+    }
+
+    /**
+     * Detect a greeting at the start of a message and return a matching
+     * greeting reply. Returns null when the message does not open with a
+     * greeting.
+     */
+    private function extractGreetingPrefix(string $message): ?string
+    {
+        $normalized = mb_strtolower(trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message)));
+        $normalized = trim((string) preg_replace('/\s+/u', ' ', $normalized));
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        // The greeting must OPEN the message. Unlike
+        // assistantIsGreetingFlexible there is no length cap here: "Good
+        // morning! What fertilizers do you have for rice?" is exactly the
+        // turn this exists for, and the remainder is routed as a real
+        // question after the greeting is peeled off.
+        if (! preg_match(
+            '/^(?:magandang\s+(?:umaga|hapon|gabi)|good\s+(?:morning|afternoon|evening|day|eve\w*)|hello|hi|hey|greetings|morning|afternoon|evening|eve\w*|how\s+are\s+you|kumusta)\b/iu',
+            $normalized
+        )) {
+            return null;
+        }
+
+        return $this->assistantGreetingReply($message, []);
+    }
+
+    /**
+     * Strip a leading greeting from a message so the remainder can be routed
+     * as a real question. Returns the message unchanged when it does not
+     * open with a greeting.
+     */
+    private function stripLeadingGreeting(string $message): string
+    {
+        $stripped = preg_replace(
+            '/^(?:magandang\s+(?:umaga|hapon|gabi)|good\s+(?:morning|afternoon|evening|day)|hello|hi|hey|greetings|kumusta|how\s+are\s+you)\b\s*(?:po|ka)?(?:\s+(?:there|everyone|all))?[,!.?\s]*/iu',
+            '',
+            $message
+        );
+
+        return trim($stripped);
+    }
+
+    /**
+     * True when what follows a peeled greeting is only more courtesy —
+     * "good evening!", "kumusta po" — rather than a question that happens
+     * to contain a greeting word ("what does the morning forecast say").
+     * A greeting-only remainder is answered by the greeting itself.
+     */
+    private function assistantIsGreetingOnly(string $message): bool
+    {
+        if (! $this->assistantIsGreetingFlexible($message)) {
+            return false;
+        }
+
+        return preg_match(
+            '/\?|\b(?:what|when|where|why|which|who|how|do|does|did|can|could|will|would|should|is|are|was|were|show|give|list|tell|need|want)\b/iu',
+            $message
+        ) !== 1;
+    }
+
+    /**
+     * A system-help reply built from the role's page catalog, used when a
+     * greeting is followed by a help-style question.
+     */
+    private function assistantSystemHelpReply(string $role, string $message): string
+    {
+        $pages = $this->assistantPageCatalog($role);
+        $links = [];
+
+        foreach ($pages as $label => $routeName) {
+            try {
+                $links[] = '- [' . $label . '](' . route($routeName) . ')';
+            } catch (\Throwable $e) {
+                continue;
+            }
+
+            if (count($links) >= 6) {
+                break;
+            }
+        }
+
+        if ($role === 'store_owner') {
+            $reply = "I'm the Aquilala assistant for store owners. I can help with your product listings, inventory, quotation demand trends, top products, and prices.";
+        } elseif ($role === 'admin') {
+            $reply = "I'm the Aquilala assistant for administrators. I can help with member management, store and product oversight, harvest records, reports, and system pages.";
+        } else {
+            $reply = "I'm Aquilala's assistant for your farm. I can help with product prices, fertilizer and crop advice, cost estimates, and planting guidance.";
+        }
+
+        if ($links !== []) {
+            $reply .= "\nSome pages you may need:\n" . implode("\n", $links);
+        }
+
+        return $reply;
     }
 
     private function seasonalCropChoicePrefix(array $contextData): string
