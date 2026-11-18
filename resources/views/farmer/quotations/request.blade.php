@@ -444,7 +444,6 @@
       <select name="variety" id="qVariety" class="input-field" style="width:100%;">
         <option value="">Select a crop first</option>
       </select>
-      <div class="input-hint">Variety comes from the same crop library as My Crops and is saved with this quotation for consistent recommendations and records.</div>
     </div>
   </div>
 
@@ -488,11 +487,6 @@
     </div>
     <div class="q-body">
       @php
-          // The farm size comes from the member record the administrator
-          // created, so every quotation quotes the same farm and the farmer
-          // cannot manipulate it here. The engine works in hectares, so a
-          // size recorded in m² / ft² is converted before it is shown. The
-          // field only stays editable while no size has been recorded yet.
           $regLand = auth()->user()?->default_land_area;
           $regUnit = auth()->user()?->default_land_area_unit ?? 'ha';
           $regHa = $regLand !== null ? (float) $regLand * match ($regUnit) {
@@ -500,22 +494,17 @@
               'sq_ft' => 1 / 10763.910417,
               default => 1,
           } : null;
-          $landLocked = $regHa !== null && $regHa >= 0.01;
+          $placeholder = $regHa !== null && $regHa >= 0.01
+              ? rtrim(rtrim(number_format($regHa, 2, '.', ''), '0'), '.')
+              : 'e.g., 1.5';
       @endphp
       <div class="area-row">
         <input type="number" name="land_area" id="land_area" class="input-field"
-               placeholder="e.g., 1.5" step="0.01" min="0.01" max="999.99"
-               value="{{ old('land_area', $landLocked ? rtrim(rtrim(number_format($regHa, 2, '.', ''), '0'), '.') : '') }}"
-               @readonly($landLocked) required>
+               placeholder="{{ $placeholder }}" step="0.01" min="0.01" max="999.99"
+               value="{{ old('land_area') }}" required>
         <div class="area-unit">hectares</div>
       </div>
-      <div class="input-hint">
-        @if($landLocked)
-          Taken from your member record &mdash; your administrator sets and updates this size.
-        @else
-          The quantity of each input is calculated from this area.
-        @endif
-      </div>
+      <div class="input-hint">The quantity of each input is calculated from this area.</div>
     </div>
   </div>
 
@@ -621,7 +610,7 @@
         <span class="bt-switch"><span class="bt-knob"></span></span>
         <span>
           <span class="bt-title">Fit suggestions to my budget</span>
-          <span class="bt-sub">On: suggestions and included inputs stay within this budget — up to double it, so a must-have just over the line can still be considered. Off: full recommendations, with the budget used as a guide.</span>
+          <span class="bt-sub">On: suggestions and included inputs stay within this budget — up to double it, so a must-have just over the line can still be considered.<br>Off: full recommendations, with the budget used as a guide.</span>
         </span>
       </label>
       <div class="input-hint">Leave blank for no limit.</div>
@@ -663,7 +652,7 @@
           <div id="budget-meter" class="budget-meter" style="display: none;" aria-live="polite"></div>
         </div>
       </div>
-      <div class="input-hint">Leave empty to auto-include the best input for each job for your crop and season — with &lsquo;Fit suggestions to my budget&rsquo; on, the plan is fitted live inside your budget (up to twice it only when a must-have needs it).</div>
+      <div class="input-hint">Leave empty to auto-include the best input for each job for your crop and season. With "Fit suggestions to my budget" on, the plan fits inside your budget (going up to double only when a must-have item needs it).</div>
     </div>
   </div>
 
@@ -745,7 +734,7 @@
         </div>
         <div>
           <div class="im-step-title">3. Field conditions &amp; budget</div>
-          <div class="im-step-desc">Pick your soil type and the weather risk you expect, so quantities and price buffers match your situation. Set an optional budget — switch on &ldquo;Fit suggestions to my budget&rdquo; to have the plan fitted inside it (up to twice your budget, only when a must-have needs it).</div>
+          <div class="im-step-desc">Pick your soil type and the weather risk you expect, so quantities and price buffers match your situation. Set an optional budget — switch on "Fit suggestions to my budget" to have the plan fit inside it (going up to double only when a must-have item needs it).</div>
         </div>
       </div>
       <div class="im-step">
