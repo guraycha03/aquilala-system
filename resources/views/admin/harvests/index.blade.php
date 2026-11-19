@@ -195,7 +195,7 @@
 </div>
 
 <!-- Analytics cards -->
-<div class="hp-grid">
+<div class="hp-grid" style="grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));">
 
   {{-- ── Harvest Reports (full-association chart with period filter) ── --}}
   <div class="hp-card" style="grid-column:1 / -1;">
@@ -219,7 +219,7 @@
       </div>
     </div>
     <div class="hp-card-body" style="padding:0;">
-      <div class="yield-row">
+      <div class="yield-row" style="padding: 20px 26px 0;">
         <div>
           <div class="yield-big">
             <span class="yield-big-value" id="harvestYieldValue">0</span>
