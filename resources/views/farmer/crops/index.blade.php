@@ -254,7 +254,7 @@
     .plot-tooltip { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0F172A; color: #FFFFFF; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     .land-legend { display: grid; grid-template-rows: repeat(2, auto); grid-auto-flow: column; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #F1F5F9; overflow-x: auto; max-height: 90px; }
     .land-legend-pill { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #F8FAF9; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 12px; font-weight: 600; color: #334155; }
-    .land-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .land-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
     /* ── Farm Plot Fullscreen ── */
     .farm-fullscreen-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999; background: rgba(15,41,24,0.18); align-items: center; justify-content: center; backdrop-filter: blur(4px); }
@@ -489,7 +489,7 @@
             @endforeach
 
             <!-- Crisp Outer Land Boundary Perimeter -->
-            <polygon points="{{ \App\Support\LandPartitioner::polyToPointsAttr($partition['outerPolygon']) }}" fill="none" stroke="#2C3A31" stroke-width="2.5" stroke-linejoin="round" style="pointer-events: none;" />
+            <polygon points="{{ \App\Support\LandPartitioner::polyToPointsAttr($partition['outerPolygon']) }}" fill="none" stroke="#8FA89A" stroke-width="1.5" stroke-linejoin="round" style="pointer-events: none;" />
 
             <!-- Survey Corner Nodes on Outer Parcel -->
             @foreach($partition['outerPolygon'] as $idx => $pt)
