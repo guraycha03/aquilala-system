@@ -16,7 +16,34 @@
   /* Filter bar + table base live in the shared .table-toolbar / .data-table /
      select rules (layouts.sidebar) — this form dresses exactly like every
      other filter bar in the app and auto-applies when a select changes. */
-  .cmp-filters { align-items: center; }
+  .cmp-filters { align-items: center; gap: 10px; flex-wrap: wrap; }
+  .cmp-filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; width: 100%; }
+  .cmp-filters select {
+    padding: 8px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+    color: #1a2b1e;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 160px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .cmp-filters select:focus {
+    outline: none;
+    border-color: #648268;
+    box-shadow: 0 0 0 3px rgba(100, 130, 104, 0.15);
+  }
+  .cmp-filters select option { font-weight: 400; }
+  .btn-clear {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 10px;
+    border: 1px solid #e5e7eb; background: #fff; color: #4b5c50;
+    font-size: 12.5px; font-weight: 600; text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .btn-clear:hover { background: #edf1e9; border-color: #c8d5c5; color: #344b38; }
 
   .cmp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)); gap: 14px; margin-bottom: 18px; }
   .cmp-kpi { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 18px; }
@@ -59,58 +86,50 @@
 </style>
 
 {{-- ── Filters (shared .table-toolbar + .btn-filter collapse — auto-applies on change) ── --}}
-<form class="table-toolbar cmp-filters" method="GET" action="{{ route($cmpRoute) }}"
-      data-fc data-fc-open-when="year,season,crop,farmer,group_by">
-  <button type="button" class="btn-filter" data-fc-toggle aria-expanded="false"
-          aria-label="Show filter options" title="Filters">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-    <span class="btn-filter-dot" data-fc-dot hidden></span>
-  </button>
-  <div class="filter-panel" data-fc-panel hidden>
-  <select name="year" aria-label="Year" onchange="this.form.submit()">
-    <option value="all">All years</option>
-    @foreach($options['years'] as $y)
-      <option value="{{ $y }}" {{ (string) $f['year'] === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
-    @endforeach
-  </select>
-  <select name="season" aria-label="Season" onchange="this.form.submit()">
-    <option value="">All seasons</option>
-    <option value="wet" {{ $f['season'] === 'wet' ? 'selected' : '' }}>Wet</option>
-    <option value="dry" {{ $f['season'] === 'dry' ? 'selected' : '' }}>Dry</option>
-  </select>
-  <select name="crop" aria-label="Crop" onchange="this.form.submit()">
-    <option value="">All crops</option>
-    @foreach($options['crops'] as $c)
-      <option value="{{ $c }}" {{ $f['crop'] === $c ? 'selected' : '' }}>{{ $c }}</option>
-    @endforeach
-  </select>
-  @if($cmpIsAdmin && count($options['farmers']))
-    <select name="farmer" aria-label="Farmer" onchange="this.form.submit()">
-      <option value="">All farmers</option>
-      @foreach($options['farmers'] as $name)
-        <option value="{{ $name }}" {{ $f['farmer'] === $name ? 'selected' : '' }}>{{ $name }}</option>
+<form class="table-toolbar cmp-filters" method="GET" action="{{ route($cmpRoute) }}">
+  <div class="cmp-filter-row">
+    <select name="year" aria-label="Year" onchange="this.form.submit()">
+      <option value="all">All years</option>
+      @foreach($options['years'] as $y)
+        <option value="{{ $y }}" {{ (string) $f['year'] === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
       @endforeach
     </select>
-  @endif
-  <select name="group_by" aria-label="Group chart by" onchange="this.form.submit()">
-    <option value="crop" {{ $group_by === 'crop' ? 'selected' : '' }}>Chart by crop</option>
-    <option value="period" {{ $group_by === 'period' ? 'selected' : '' }}>Chart by year + season</option>
-  </select>
-  @php
-    $hasCmpFilters = in_array($f['year'] ?? '', ['', 'all'], true) === false
-        || ($f['season'] ?? '') !== ''
-        || ($f['crop'] ?? '') !== ''
-        || ($f['farmer'] ?? '') !== '';
-  @endphp
-  @if($hasCmpFilters)
-    <a class="btn-clear" href="{{ route($cmpRoute) }}">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      Clear
-    </a>
-  @endif
+    <select name="season" aria-label="Season" onchange="this.form.submit()">
+      <option value="">All seasons</option>
+      <option value="wet" {{ $f['season'] === 'wet' ? 'selected' : '' }}>Wet</option>
+      <option value="dry" {{ $f['season'] === 'dry' ? 'selected' : '' }}>Dry</option>
+    </select>
+    <select name="crop" aria-label="Crop" onchange="this.form.submit()">
+      <option value="">All crops</option>
+      @foreach($options['crops'] as $c)
+        <option value="{{ $c }}" {{ $f['crop'] === $c ? 'selected' : '' }}>{{ $c }}</option>
+      @endforeach
+    </select>
+    @if($cmpIsAdmin && count($options['farmers']))
+      <select name="farmer" aria-label="Farmer" onchange="this.form.submit()">
+        <option value="">All farmers</option>
+        @foreach($options['farmers'] as $name)
+          <option value="{{ $name }}" {{ $f['farmer'] === $name ? 'selected' : '' }}>{{ $name }}</option>
+        @endforeach
+      </select>
+    @endif
+    <select name="group_by" aria-label="Group chart by" onchange="this.form.submit()">
+      <option value="crop" {{ $group_by === 'crop' ? 'selected' : '' }}>Chart by crop</option>
+      <option value="period" {{ $group_by === 'period' ? 'selected' : '' }}>Chart by year + season</option>
+    </select>
+    @php
+      $hasCmpFilters = in_array($f['year'] ?? '', ['', 'all'], true) === false
+          || ($f['season'] ?? '') !== ''
+          || ($f['crop'] ?? '') !== ''
+          || ($f['farmer'] ?? '') !== '';
+    @endphp
+    @if($hasCmpFilters)
+      <a class="btn-clear" href="{{ route($cmpRoute) }}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Clear
+      </a>
+    @endif
   </div>
-</form>
-
 {{-- ── KPI cards ── --}}
 <div class="cmp-kpis kpi-strip">
   <div class="cmp-kpi">
@@ -156,6 +175,52 @@
         <span><span class="sw" style="background:#648268;"></span>Actual</span>
       </div>
     </div>
+    {{-- ── Filters (inline below chart header) ── --}}
+    <form class="table-toolbar cmp-filters" method="GET" action="{{ route($cmpRoute) }}">
+      <div class="cmp-filter-row">
+        <select name="year" aria-label="Year" onchange="this.form.submit()">
+          <option value="all">All years</option>
+          @foreach($options['years'] as $y)
+            <option value="{{ $y }}" {{ (string) $f['year'] === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
+          @endforeach
+        </select>
+        <select name="season" aria-label="Season" onchange="this.form.submit()">
+          <option value="">All seasons</option>
+          <option value="wet" {{ $f['season'] === 'wet' ? 'selected' : '' }}>Wet</option>
+          <option value="dry" {{ $f['season'] === 'dry' ? 'selected' : '' }}>Dry</option>
+        </select>
+        <select name="crop" aria-label="Crop" onchange="this.form.submit()">
+          <option value="">All crops</option>
+          @foreach($options['crops'] as $c)
+            <option value="{{ $c }}" {{ $f['crop'] === $c ? 'selected' : '' }}>{{ $c }}</option>
+          @endforeach
+        </select>
+        @if($cmpIsAdmin && count($options['farmers']))
+          <select name="farmer" aria-label="Farmer" onchange="this.form.submit()">
+            <option value="">All farmers</option>
+            @foreach($options['farmers'] as $name)
+              <option value="{{ $name }}" {{ $f['farmer'] === $name ? 'selected' : '' }}>{{ $name }}</option>
+            @endforeach
+          </select>
+        @endif
+        <select name="group_by" aria-label="Group chart by" onchange="this.form.submit()">
+          <option value="crop" {{ $group_by === 'crop' ? 'selected' : '' }}>Chart by crop</option>
+          <option value="period" {{ $group_by === 'period' ? 'selected' : '' }}>Chart by year + season</option>
+        </select>
+        @php
+          $hasCmpFilters = in_array($f['year'] ?? '', ['', 'all'], true) === false
+              || ($f['season'] ?? '') !== ''
+              || ($f['crop'] ?? '') !== ''
+              || ($f['farmer'] ?? '') !== '';
+        @endphp
+        @if($hasCmpFilters)
+          <a class="btn-clear" href="{{ route($cmpRoute) }}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Clear
+          </a>
+        @endif
+      </div>
+    </form>
     <div class="cmp-chart">
       @if($kpis['pairs'] > 0)
         <canvas id="cmpChart" aria-label="Grouped bar chart comparing estimated and actual yield in metric tons" role="img"></canvas>

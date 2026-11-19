@@ -755,9 +755,8 @@
         cropMenu.innerHTML = scored.map(function (r) {
           var c = r.crop;
           var active = cropField && cropField.value === c.name ? ' is-active' : '';
-          var sub = c.local ? '<div class="qsel-s">Also known as: ' + escHtml(c.local) + '</div>' : '';
           return '<div class="q-select-item' + active + '" data-crop-name="' + escHtml(c.name) + '" role="option">' +
-            '<div class="qsel-opt"><div class="qsel-t">' + escHtml(c.name) + '</div>' + sub + '</div>' +
+            '<div class="qsel-opt"><div class="qsel-t">' + escHtml(c.name) + '</div></div>' +
             '<svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
           '</div>';
         }).join('');
