@@ -19,16 +19,16 @@ final class LandPartitioner
 
     // ── Organic partitioner color palettes (lighter green shades per crop plot) ──
     private const PALETTES = [
-        ['fill' => '#DCEFE0', 'stroke' => '#8FB59A', 'text' => '#2F4F3A', 'subtext' => '#3F6649', 'swatch' => '#A9D4B4'],
-        ['fill' => '#E3F1E6', 'stroke' => '#9CC0A6', 'text' => '#2E4D39', 'subtext' => '#3E6549', 'swatch' => '#B2D8BC'],
-        ['fill' => '#D8ECDE', 'stroke' => '#86AD91', 'text' => '#2B4836', 'subtext' => '#3B6045', 'swatch' => '#A3CEAE'],
-        ['fill' => '#E0EFE3', 'stroke' => '#93B89E', 'text' => '#2C4A38', 'subtext' => '#3D6348', 'swatch' => '#ABD2B6'],
-        ['fill' => '#DCECE0', 'stroke' => '#8AAE95', 'text' => '#2A4635', 'subtext' => '#3A5E44', 'swatch' => '#A5CCAF'],
-        ['fill' => '#E2F0E5', 'stroke' => '#96BBA1', 'text' => '#2D4C3A', 'subtext' => '#3E654A', 'swatch' => '#ADCFC0'],
-        ['fill' => '#DBEDE1', 'stroke' => '#83A98E', 'text' => '#284333', 'subtext' => '#385B43', 'swatch' => '#9FC7AA'],
-        ['fill' => '#E4F2E7', 'stroke' => '#9DC2A7', 'text' => '#2E4E3B', 'subtext' => '#3F684C', 'swatch' => '#B3D9BD'],
-        ['fill' => '#D9EBDE', 'stroke' => '#7EA389', 'text' => '#274031', 'subtext' => '#375841', 'swatch' => '#9BC4A6'],
-        ['fill' => '#E1EFE4', 'stroke' => '#90B59B', 'text' => '#2B4837', 'subtext' => '#3C6147', 'swatch' => '#A8CFB2'],
+        ['fill' => '#C8DFCE', 'stroke' => '#6F9F80', 'text' => '#243E2F', 'subtext' => '#335A43', 'swatch' => '#8FB89E'],
+        ['fill' => '#CDE2D2', 'stroke' => '#78A588', 'text' => '#254030', 'subtext' => '#345B44', 'swatch' => '#95BEA4'],
+        ['fill' => '#C3DCCB', 'stroke' => '#6A997A', 'text' => '#223B2C', 'subtext' => '#315640', 'swatch' => '#8AB398'],
+        ['fill' => '#C9DECE', 'stroke' => '#729F82', 'text' => '#243D2E', 'subtext' => '#335942', 'swatch' => '#90B7A0'],
+        ['fill' => '#C5DCCC', 'stroke' => '#6C9B7C', 'text' => '#233C2D', 'subtext' => '#325741', 'swatch' => '#8CB49A'],
+        ['fill' => '#CBE0D0', 'stroke' => '#75A385', 'text' => '#264132', 'subtext' => '#355D46', 'swatch' => '#93BA9F'],
+        ['fill' => '#C0D9C7', 'stroke' => '#669676', 'text' => '#21392B', 'subtext' => '#30533E', 'swatch' => '#86AF94'],
+        ['fill' => '#CDE3D2', 'stroke' => '#7AA78A', 'text' => '#274233', 'subtext' => '#375F48', 'swatch' => '#97BEA4'],
+        ['fill' => '#BED7C5', 'stroke' => '#639373', 'text' => '#203729', 'subtext' => '#2E503B', 'swatch' => '#83AC90'],
+        ['fill' => '#C9DFCE', 'stroke' => '#709D80', 'text' => '#243E2F', 'subtext' => '#335A43', 'swatch' => '#8FB89E'],
     ];
 
     // ── Polygon math (ported from organicPartition.ts) ──
