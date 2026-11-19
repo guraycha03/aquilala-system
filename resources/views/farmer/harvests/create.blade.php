@@ -976,7 +976,6 @@
         [cropField,seasonField,landField].forEach(function(f){ if(!f) return; f.readOnly=!isManual; var wrap=f.closest('.q-select'); if(wrap){ wrap.classList.toggle('is-readonly',!isManual); var b=wrap.querySelector('.q-select-btn'); if(b) b.tabIndex=isManual?0:-1; }});
         if(cropQuery){ cropQuery.readOnly=!isManual; cropQuery.tabIndex=isManual?0:-1; if(cropWrap) cropWrap.classList.toggle('is-readonly',!isManual); }
         if(hrvVarietyField) hrvVarietyField.style.display='';
-        if(hrvVarietySel) hrvVarietySel.disabled=!isManual;
         fillHarvestVarieties(cropName||'', vKey||'', vName||'');
         if(hrvVarietyHint) hrvVarietyHint.textContent=isManual ? (cropName?'Variety for this harvest (from crop library).':'Choose the crop first. Uses the same crop library as My Crops.') : 'Variety comes from the selected planting batch.';
       }
@@ -990,7 +989,7 @@
         if (!batchWrap || !batchInput) return;
         var val = batchInput.value;
         if (!val) {
-          setHarvestManual(true, cropField ? cropField.value : '', hrvVarietyKey ? hrvVarietyKey.value : '', hrvVarietySel ? hrvVarietySel.value : '');
+          setHarvestManual(true, cropField ? cropField.value : '', hrvVarietyKey ? hrvVarietyKey.value : '', hrvVarietyHidden ? hrvVarietyHidden.value : '');
           return;
         }
 
@@ -1027,6 +1026,12 @@
         batchInput.addEventListener('change', applyBatch);
       }
       applyBatch();
+
+      // Initialize varieties for any pre-selected crop (from old input or batch)
+      var initialCrop = cropField ? cropField.value : '';
+      if (initialCrop) {
+        fillHarvestVarieties(initialCrop, '{{ old("variety_key", "") }}', '{{ old("variety", "") }}');
+      }
 
       Array.prototype.slice.call(document.querySelectorAll('[data-batch-id]')).forEach(function (btn) {
         btn.addEventListener('click', function () {
