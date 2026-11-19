@@ -42,7 +42,10 @@
     border-color: #648268;
     box-shadow: 0 0 0 3px rgba(100, 130, 104, 0.15);
   }
-  .cmp-filters select option { font-weight: 400; }
+  .cmp-filters select option { font-weight: 400; padding: 8px 12px; background: #fff; color: #1a2b1e; }
+  .cmp-filters select option:hover, .cmp-filters select option:checked, .cmp-filters select option:focus {
+    background: #edf1e9; color: #344b38;
+  }
   .btn-clear {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 8px 14px; border-radius: 10px;
