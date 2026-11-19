@@ -1007,6 +1007,92 @@
     border-radius: 8px;
   }
 
+  /* Full variety reference cards (name + stats + difference + appearance) */
+  .cd-variety-card {
+    width: 100%;
+    background: var(--cd-surface-subtle);
+    border: 1px solid var(--cd-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .cd-variety-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin-bottom: 6px;
+  }
+  .cd-variety-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--cd-text-main);
+  }
+  .cd-variety-meta {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--cd-sage-ink);
+    background: var(--cd-sage-tint);
+    border: 1px solid var(--cd-sage-border);
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .cd-variety-note {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--cd-text-secondary);
+    margin: 0 0 4px;
+  }
+  .cd-variety-looks {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--cd-text-muted);
+    margin: 0;
+  }
+  .cd-variety-looks strong {
+    color: var(--cd-text-secondary);
+    font-weight: 600;
+  }
+
+  /* Sources & References list */
+  .cd-sources-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .cd-source-item {
+    position: relative;
+    padding-left: 16px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--cd-text-secondary);
+  }
+  .cd-source-item::before {
+    content: '◆';
+    position: absolute;
+    left: 0;
+    top: 3px;
+    font-size: 8px;
+    color: var(--cd-sage-ink);
+  }
+  .cd-source-item a {
+    color: var(--cd-sage-ink);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .cd-source-meta {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--cd-text-muted);
+  }
+
   .cd-drawer-footer {
     padding: 14px 24px;
     border-top: 1px solid var(--cd-border);
@@ -1186,6 +1272,14 @@
                 $varietiesStr
             ));
 
+            $sources = [];
+            foreach ($crop['sources'] ?? [] as $source) {
+                $source['href'] = !empty($source['file'])
+                    ? route('crop-references.file', $source['file'])
+                    : ($source['url'] ?? null);
+                $sources[] = $source;
+            }
+
             $cropPayload = [
                 'name'            => $crop['name'],
                 'categoryLabel'   => $label,
@@ -1199,6 +1293,14 @@
                 'water_needs'     => $crop['water_needs'] ?? '—',
                 'spacing'         => $crop['spacing'] ?? '—',
                 'varieties'       => $crop['varieties'] ?? [],
+                'variety_details' => $crop['variety_details'] ?? [],
+                'harvest_note'    => $crop['harvest_note'] ?? null,
+                'yield_label'     => isset($crop['yield_per_ha'])
+                    ? number_format((float) $crop['yield_per_ha']) . ' ' . ($crop['yield_unit'] ?? 'kg') . '/ha'
+                    : null,
+                'source_text'     => $crop['source_text'] ?? null,
+                'source_url'      => $crop['source_url'] ?? null,
+                'sources'         => $sources,
                 'description'     => $crop['description'] ?? 'No agronomic description available.',
             ];
         @endphp
@@ -1312,6 +1414,10 @@
           <div class="cd-spec-label">Water Requirement</div>
           <div id="cdSpecWater" class="cd-spec-value"></div>
         </div>
+        <div class="cd-spec-box">
+          <div class="cd-spec-label">Typical Yield</div>
+          <div id="cdSpecYield" class="cd-spec-value"></div>
+        </div>
         <div class="cd-spec-box full-width">
           <div class="cd-spec-label">Recommended Spacing</div>
           <div id="cdSpecSpacing" class="cd-spec-value"></div>
@@ -1319,9 +1425,19 @@
       </div>
     </div>
 
+    <div id="cdHarvestSection" class="cd-drawer-section">
+      <h3 class="cd-drawer-section-title">When &amp; How to Harvest</h3>
+      <p id="cdDrawerHarvestNote" class="cd-drawer-desc"></p>
+    </div>
+
     <div id="cdVarietiesSection" class="cd-drawer-section">
       <h3 class="cd-drawer-section-title">Varieties Grown in Sorsogon</h3>
       <div id="cdDrawerVarieties" class="cd-varieties-list"></div>
+    </div>
+
+    <div id="cdSourcesSection" class="cd-drawer-section">
+      <h3 class="cd-drawer-section-title">Sources &amp; References</h3>
+      <ul id="cdDrawerSources" class="cd-sources-list"></ul>
     </div>
   </div>
 
@@ -1404,6 +1520,18 @@
         applyFilters();
     }
 
+    function formatMaturity(days) {
+        if (days >= 730) {
+            const years = Math.round(days / 365);
+            return years + (years === 1 ? ' year' : ' years');
+        }
+        return days + ' days';
+    }
+
+    function numberWithCommas(n) {
+        return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
     function openDrawer(card) {
         const idx = visibleCards.indexOf(card);
         if (idx === -1) return;
@@ -1433,12 +1561,65 @@
         document.getElementById('cdSpecSoil').textContent    = data.soil_type;
         document.getElementById('cdSpecWater').textContent   = data.water_needs;
         document.getElementById('cdSpecSpacing').textContent = data.spacing;
+        document.getElementById('cdSpecYield').textContent   = data.yield_label || '—';
+
+        const harvestSection = document.getElementById('cdHarvestSection');
+        const harvestNoteEl  = document.getElementById('cdDrawerHarvestNote');
+        if (data.harvest_note) {
+            harvestNoteEl.textContent = data.harvest_note;
+            harvestSection.style.display = 'block';
+        } else {
+            harvestSection.style.display = 'none';
+        }
 
         const varietiesSection = document.getElementById('cdVarietiesSection');
         const varietiesList    = document.getElementById('cdDrawerVarieties');
         varietiesList.innerHTML = '';
 
-        if (Array.isArray(data.varieties) && data.varieties.length > 0) {
+        if (Array.isArray(data.variety_details) && data.variety_details.length > 0) {
+            data.variety_details.forEach(v => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'cd-variety-card';
+
+                const head = document.createElement('div');
+                head.className = 'cd-variety-head';
+
+                const nameEl = document.createElement('span');
+                nameEl.className = 'cd-variety-name';
+                nameEl.textContent = v.name || '';
+                head.appendChild(nameEl);
+
+                const metaParts = [];
+                if (v.maturity_days) metaParts.push(formatMaturity(v.maturity_days));
+                if (v.yield_kg_ha)   metaParts.push(numberWithCommas(v.yield_kg_ha) + ' kg/ha');
+                if (metaParts.length > 0) {
+                    const metaEl = document.createElement('span');
+                    metaEl.className = 'cd-variety-meta';
+                    metaEl.textContent = metaParts.join(' · ');
+                    head.appendChild(metaEl);
+                }
+                cardEl.appendChild(head);
+
+                if (v.note) {
+                    const noteEl = document.createElement('p');
+                    noteEl.className = 'cd-variety-note';
+                    noteEl.textContent = v.note;
+                    cardEl.appendChild(noteEl);
+                }
+                if (v.appearance) {
+                    const looksEl = document.createElement('p');
+                    looksEl.className = 'cd-variety-looks';
+                    const labelEl = document.createElement('strong');
+                    labelEl.textContent = 'What it looks like: ';
+                    looksEl.appendChild(labelEl);
+                    looksEl.appendChild(document.createTextNode(v.appearance));
+                    cardEl.appendChild(looksEl);
+                }
+
+                varietiesList.appendChild(cardEl);
+            });
+            varietiesSection.style.display = 'block';
+        } else if (Array.isArray(data.varieties) && data.varieties.length > 0) {
             data.varieties.forEach(v => {
                 const chip = document.createElement('span');
                 chip.className = 'cd-variety-chip';
@@ -1448,6 +1629,58 @@
             varietiesSection.style.display = 'block';
         } else {
             varietiesSection.style.display = 'none';
+        }
+
+        const sourcesSection = document.getElementById('cdSourcesSection');
+        const sourcesList    = document.getElementById('cdDrawerSources');
+        sourcesList.innerHTML = '';
+
+        const sources = Array.isArray(data.sources) ? data.sources : [];
+        if (sources.length > 0) {
+            sources.forEach(s => {
+                const li = document.createElement('li');
+                li.className = 'cd-source-item';
+
+                const label = s.label || 'Reference';
+                if (s.href) {
+                    const a = document.createElement('a');
+                    a.href = s.href;
+                    a.target = '_blank';
+                    a.rel = 'noopener';
+                    a.textContent = label;
+                    li.appendChild(a);
+                } else {
+                    li.textContent = label;
+                }
+
+                const metaText = [s.org, s.year].filter(Boolean).join(' · ');
+                if (metaText) {
+                    const meta = document.createElement('span');
+                    meta.className = 'cd-source-meta';
+                    meta.textContent = metaText;
+                    li.appendChild(meta);
+                }
+
+                sourcesList.appendChild(li);
+            });
+            sourcesSection.style.display = 'block';
+        } else if (data.source_text) {
+            const li = document.createElement('li');
+            li.className = 'cd-source-item';
+            if (data.source_url) {
+                const a = document.createElement('a');
+                a.href = data.source_url;
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.textContent = data.source_text;
+                li.appendChild(a);
+            } else {
+                li.textContent = data.source_text;
+            }
+            sourcesList.appendChild(li);
+            sourcesSection.style.display = 'block';
+        } else {
+            sourcesSection.style.display = 'none';
         }
 
         counterEl.textContent = `${currentIndex + 1} of ${visibleCards.length}`;

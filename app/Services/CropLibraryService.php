@@ -318,17 +318,52 @@ class CropLibraryService
         $rows = [];
 
         foreach ($this->all() as $entry) {
-            $varieties = array_column(
-                (array) ($entry['varieties'] ?? []),
-                'name'
-            );
+            $varietyDetails = [];
+            foreach ((array) ($entry['varieties'] ?? []) as $variety) {
+                if (! is_array($variety)) {
+                    $variety = ['name' => (string) $variety];
+                }
+
+                $varietyDetails[] = array_filter([
+                    'name' => $variety['name'] ?? null,
+                    'note' => $variety['note'] ?? null,
+                    'appearance' => $variety['appearance'] ?? null,
+                    'maturity_days' => isset($variety['maturity_days']) ? (int) $variety['maturity_days'] : null,
+                    'yield_kg_ha' => isset($variety['yield_kg_ha']) ? (int) $variety['yield_kg_ha'] : null,
+                ], static fn ($value) => $value !== null && $value !== '');
+            }
+
+            $varieties = array_column($varietyDetails, 'name');
+
+            $varietyText = implode(' ', array_map(
+                static fn (array $variety) => trim(($variety['note'] ?? '') . ' ' . ($variety['appearance'] ?? '')),
+                $varietyDetails
+            ));
+
+            $sources = [];
+            foreach ((array) ($entry['sources'] ?? []) as $source) {
+                if (is_string($source)) {
+                    $sources[] = ['label' => $source];
+
+                    continue;
+                }
+
+                $sources[] = array_filter([
+                    'label' => $source['label'] ?? $source['text'] ?? null,
+                    'url' => $source['url'] ?? null,
+                    'file' => $source['file'] ?? null,
+                    'org' => $source['org'] ?? null,
+                    'year' => $source['year'] ?? null,
+                ], static fn ($value) => $value !== null && $value !== '');
+            }
 
             $searchParts = array_merge(
                 [(string) $entry['name']],
                 (array) ($entry['aliases'] ?? []),
                 [$entry['description'] ?? ''],
                 [$entry['scientific_name'] ?? ''],
-                $varieties
+                $varieties,
+                [$varietyText]
             );
 
             $rows[] = [

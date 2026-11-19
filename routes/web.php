@@ -62,6 +62,26 @@ Route::get('/', function () {
     return view('auth.login');
 })->name('home');
 
+// Official reference documents kept under database/data/proof (NSIC variety
+// registries, agency production guides) — served read-only so the crop
+// drawer's "Sources & References" can link straight to the actual file the
+// citation is based on. Path traversal is blocked by a realpath containment
+// check plus an extension whitelist.
+Route::get('/crop-references/{file}', function (string $file) {
+    $root = realpath(database_path('data/proof'));
+    $path = realpath(database_path('data/proof/' . $file));
+
+    abort_unless(
+        $root !== false
+            && $path !== false
+            && str_starts_with($path, $root . DIRECTORY_SEPARATOR),
+        404
+    );
+    abort_unless(preg_match('/\.(xlsx|xls|csv|pdf)$/i', $path) === 1, 404);
+
+    return response()->download($path, basename($path));
+})->where('file', '.*')->name('crop-references.file');
+
 // Guest-only access. Completing activation and password reset sign the
 // user in / back out respectively, so every step of these flows stays
 // guest-only.
