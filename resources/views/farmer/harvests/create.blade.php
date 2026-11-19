@@ -366,13 +366,7 @@
     </div>
   @endif
 
-  <div class="sync-note">
-    <svg viewBox="0 0 24 24" width="18" height="18" stroke="#4A7A54" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>
-    <div>
-      <b>Two easy ways to report your harvest</b>
-      <p>Choose a planted crop below to fill in your farm details automatically, or use the <strong>Report form</strong> tab to type everything yourself.</p>
-    </div>
-  </div>
+  
 
   @php
       $openForm = $errors->any() || old('crop_batch_id') || ($batches ?? collect())->isEmpty();
