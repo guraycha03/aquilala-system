@@ -30,6 +30,8 @@ class AiResponseValidatorAi
 
     private const ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
 
+    private const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
+
     /**
      * The verdicts AI2 can return.
      */
@@ -37,9 +39,49 @@ class AiResponseValidatorAi
     public const VERDICT_REVISE = 'revise';
     public const VERDICT_REJECT = 'reject';
 
+    /**
+     * The provider follows AI_PROVIDER, exactly like AI1 (AiLlmClient).
+     *
+     * AI2 must judge through the same door the answer came from: a
+     * Groq-pinned validator under a switched provider calls a revoked key,
+     * 403s on every answer, and leaves the quality gate silently off.
+     */
+    private function provider(): string
+    {
+        $provider = trim((string) config('services.ai.provider', 'groq'));
+
+        return $provider !== '' ? $provider : 'groq';
+    }
+
     public function available(): bool
     {
-        return (string) config('services.groq.key', '') !== '';
+        if ($this->provider() === 'openrouter') {
+            return trim((string) config('services.openrouter.key', '')) !== '';
+        }
+
+        return trim((string) config('services.groq.key', '')) !== '';
+    }
+
+    private function endpoint(): string
+    {
+        if ($this->provider() === 'openrouter') {
+            $url = trim((string) config('services.openrouter.url', ''));
+
+            return $url !== '' ? $url : self::OPENROUTER_ENDPOINT;
+        }
+
+        return self::ENDPOINT;
+    }
+
+    private function model(): string
+    {
+        if ($this->provider() === 'openrouter') {
+            $model = trim((string) config('services.openrouter.model', ''));
+
+            return $model !== '' ? $model : self::MODEL;
+        }
+
+        return self::MODEL;
     }
 
     /**
@@ -59,24 +101,41 @@ class AiResponseValidatorAi
             return null;
         }
 
+        $provider = $this->provider();
+        $model = $this->model();
+
+        $headers = ['Content-Type' => 'application/json'];
+
+        if ($provider === 'openrouter') {
+            $headers['Authorization'] = 'Bearer ' . trim((string) config('services.openrouter.key', ''));
+            $headers['HTTP-Referer'] = (string) config('app.url', 'https://aquilala.me');
+            $headers['X-Title'] = 'Aquilala';
+        } else {
+            $headers['Authorization'] = 'Bearer ' . (string) config('services.groq.key', '');
+        }
+
+        $payload = [
+            'model'       => $model,
+            'messages'    => $this->messages($userMessage, $userRole, $ai1Answer, $context),
+            'temperature' => 0.1,
+            // Room for the reasoning pass as well as the verdict —
+            // a tight budget returns empty content and the verdict
+            // is silently dropped.
+            'max_tokens'  => 1600,
+        ];
+
+        // Only reasoning models accept this. Sending it to a plain chat
+        // model is how a provider switch turns into a 400.
+        if (str_contains($model, 'gpt-oss')) {
+            $payload['reasoning_effort'] = 'low';
+        }
+
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . config('services.groq.key'),
-                'Content-Type'  => 'application/json',
-            ])
+            $response = Http::withHeaders($headers)
                 ->withoutVerifying()
                 ->connectTimeout(15)
                 ->timeout(30)
-                ->post(self::ENDPOINT, [
-                    'model'       => self::MODEL,
-                    'messages'    => $this->messages($userMessage, $userRole, $ai1Answer, $context),
-                    'temperature' => 0.1,
-                    // Room for the reasoning pass as well as the verdict —
-                    // a tight budget returns empty content and the verdict
-                    // is silently dropped.
-                    'max_tokens'  => 1600,
-                    'reasoning_effort' => 'low',
-                ]);
+                ->post($this->endpoint(), $payload);
         } catch (ConnectionException $e) {
             Log::warning('AI2 validator could not reach the model provider.', [
                 'error' => $e->getMessage(),
@@ -90,7 +149,11 @@ class AiResponseValidatorAi
         }
 
         if ($response->failed()) {
-            Log::warning('AI2 validator model call rejected.', ['status' => $response->status()]);
+            Log::warning('AI2 validator model call rejected.', [
+                'status' => $response->status(),
+                'provider' => $provider,
+                'model' => $model,
+            ]);
 
             return null;
         }

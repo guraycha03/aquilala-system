@@ -179,6 +179,59 @@ class AiTwoValidatorTest extends TestCase
         $this->assertNull($result);
     }
 
+    // ── AI2 follows the provider switch ───────────────────────────────
+
+    public function test_ai2_calls_the_provider_the_answer_came_from(): void
+    {
+        Config::set('services.ai.provider', 'openrouter');
+        Config::set('services.openrouter.key', 'or-test-key');
+        Config::set('services.openrouter.model', 'openai/gpt-oss-20b');
+
+        Http::fake([
+            'openrouter.ai/*' => Http::response([
+                'choices' => [['message' => ['content' => json_encode([
+                    'verdict' => 'accept',
+                    'reason' => 'On topic and proportional.',
+                    'suggested_answer' => null,
+                ])]]],
+            ]),
+        ]);
+
+        $result = app(AiResponseValidatorAi::class)->validate(
+            'good evening',
+            'farmer',
+            'Good evening!',
+        );
+
+        $this->assertNotNull($result);
+        $this->assertSame('accept', $result['verdict']);
+
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), 'openrouter.ai')
+                && $request->hasHeader('Authorization', 'Bearer or-test-key');
+        });
+    }
+
+    public function test_ai2_is_unavailable_when_the_switched_provider_has_no_key(): void
+    {
+        // The provider was switched but no key followed it. AI2 must report
+        // "could not verify" instead of falling back to the revoked key of
+        // the previous provider.
+        Config::set('services.ai.provider', 'openrouter');
+        Config::set('services.openrouter.key', null);
+
+        Http::fake();
+
+        $result = app(AiResponseValidatorAi::class)->validate(
+            'good evening',
+            'farmer',
+            'Good evening!',
+        );
+
+        $this->assertNull($result);
+        Http::assertNothingSent();
+    }
+
     // ── Role-based context is included in the validation ─────────────
 
     public function test_ai2_receives_the_user_role(): void
