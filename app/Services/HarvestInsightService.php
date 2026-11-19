@@ -126,6 +126,10 @@ class HarvestInsightService
             'varieties'          => $this->varieties($reports),
             'weather_events'     => $weather,
             'climatology_reference' => $this->climatology($coverage['seasons']),
+            'harvestGraphYear'   => $this->harvestGraphYear(),
+            'harvestGraphMonth'  => $this->harvestGraphMonth(),
+            'harvestGraphWeek'   => $this->harvestGraphWeek(),
+            'harvestGraphDays'   => $this->harvestGraphDays(),
         ];
     }
 
@@ -2951,5 +2955,136 @@ Keep the answer to three sentences or fewer."],
         }
 
         return ($pct >= 0 ? '+' : '') . $pct . '%';
+    }
+
+    /**
+     * Harvest graph data for the past 12 months (year view).
+     * Matches AuthController logic for admin dashboard.
+     *
+     * @return array<int, array{label: string, count: int, yield: float, expenses: float}>
+     */
+    private function harvestGraphYear(): array
+    {
+        $harvestDaily = $this->loadHarvestDaily();
+        $harvestByMonth = $harvestDaily->groupBy(fn ($row, $key) => substr((string) $key, 0, 7));
+
+        $monthRows = function (Carbon $month) use ($harvestByMonth) {
+            return $harvestByMonth->get($month->format('Y-m'), collect());
+        };
+
+        return collect(range(11, 0))
+            ->map(function ($i) use ($monthRows) {
+                $m = now()->startOfMonth()->subMonths($i);
+                $rows = $monthRows($m);
+
+                return [
+                    'label' => $m->format('M'),
+                    'count' => (int) $rows->sum('total'),
+                    'yield' => (float) $rows->sum('yield'),
+                    'expenses' => (float) $rows->sum('expenses'),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Harvest graph data for current month (days 1 through today).
+     *
+     * @return array<int, array{label: string, count: int, yield: float, expenses: float}>
+     */
+    private function harvestGraphMonth(): array
+    {
+        $harvestDaily = $this->loadHarvestDaily();
+
+        $dayRow = fn ($d) => $harvestDaily->get($d->toDateString());
+
+        return collect(range(0, (int) now()->day - 1))
+            ->map(function ($d) use ($dayRow) {
+                $day = now()->startOfMonth()->addDays($d);
+                $row = $dayRow($day);
+
+                return [
+                    'label' => (string) $day->day,
+                    'count' => (int) ($row->total ?? 0),
+                    'yield' => (float) ($row->yield ?? 0),
+                    'expenses' => (float) ($row->expenses ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Harvest graph data for past 7 days (week view).
+     *
+     * @return array<int, array{label: string, count: int, yield: float, expenses: float}>
+     */
+    private function harvestGraphWeek(): array
+    {
+        $harvestDaily = $this->loadHarvestDaily();
+
+        $dayRow = fn ($d) => $harvestDaily->get($d->toDateString());
+
+        return collect(range(6, 0))
+            ->map(function ($i) use ($dayRow) {
+                $day = now()->subDays($i);
+                $row = $dayRow($day);
+
+                return [
+                    'label' => $day->format('D j'),
+                    'count' => (int) ($row->total ?? 0),
+                    'yield' => (float) ($row->yield ?? 0),
+                    'expenses' => (float) ($row->expenses ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Harvest graph data for last 30 days.
+     *
+     * @return array<int, array{label: string, count: int, yield: float, expenses: float}>
+     */
+    private function harvestGraphDays(): array
+    {
+        $harvestDaily = $this->loadHarvestDaily();
+
+        $dayRow = fn ($d) => $harvestDaily->get($d->toDateString());
+
+        return collect(range(29, 0))
+            ->map(function ($i) use ($dayRow) {
+                $day = now()->subDays($i);
+                $row = $dayRow($day);
+
+                return [
+                    'label' => $day->format('M j'),
+                    'count' => (int) ($row->total ?? 0),
+                    'yield' => (float) ($row->yield ?? 0),
+                    'expenses' => (float) ($row->expenses ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Load daily aggregated harvest data keyed by date string (Y-m-d).
+     *
+     * @return \Illuminate\Support\Collection<string, object{total: int, yield: float, expenses: float}>
+     */
+    private function loadHarvestDaily(): Collection
+    {
+        return HarvestReport::selectRaw('
+                harvest_date,
+                count(*) as total,
+                sum(actual_yield_metric_tons) as yield,
+                sum(actual_total_expenses) as expenses
+            ')
+            ->groupBy('harvest_date')
+            ->orderBy('harvest_date')
+            ->get()
+            ->keyBy('harvest_date');
     }
 }
