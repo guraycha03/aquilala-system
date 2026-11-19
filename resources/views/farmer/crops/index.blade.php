@@ -252,7 +252,7 @@
     .plot-polygon { cursor: pointer; transform-box: fill-box; transform-origin: center; transition: opacity 0.15s ease; }
     .plot-polygon:hover { opacity: 0.85; }
     .plot-tooltip { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0F172A; color: #FFFFFF; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    .land-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #F1F5F9; }
+    .land-legend { display: grid; grid-template-rows: repeat(2, auto); grid-auto-flow: column; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #F1F5F9; overflow-x: auto; max-height: 90px; }
     .land-legend-pill { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #F8FAF9; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 12px; font-weight: 600; color: #334155; }
     .land-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
@@ -385,7 +385,7 @@
     <div class="land-plot-head">
         <div>
             <h3 class="land-plot-title">Field Overview</h3>
-            <p class="land-plot-sub">{{ number_format($usedArea, 1) }} {{ $unitLabel }} planted of {{ number_format($totalArea, 1) }} {{ $unitLabel }} total@if(($stats['land_area_is_default'] ?? false)) · default land size until admin sets member record@endif</p>
+            <p class="land-plot-sub">{{ number_format($usedArea, 1) }} {{ $unitLabel }} planted of {{ number_format($totalArea, 1) }} {{ $unitLabel }}@if(($stats['land_area_is_default'] ?? false)) (default land size)@endif</p>
         </div>
         <div style="background: #F1F5F9; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #1E293B;">
             {{ $allocPct }}% Allocated
@@ -394,7 +394,7 @@
 
     <div class="land-plot-svg-wrap">
         <div class="plot-map-controls">
-            <button class="plot-map-btn" title="Toggle Legend" onclick="togglePlotLegend()">
+            <button class="plot-map-btn" title="Show names" onclick="togglePlotLegend()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             </button>
         </div>
