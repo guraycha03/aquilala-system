@@ -12,71 +12,70 @@
     public/css/dark-mode.css themes this page through them.
 --}}
 <style>
-  .nf-page { max-width: 900px; }
+  .nf-page { max-width: 900px; padding: 0 6px; }
 
   /* One calm pointer to the outside-the-app pop-ups. Hidden by script on a
      device that already has push turned on. */
   .nf-hint {
-    display: flex; align-items: flex-start; gap: 9px;
-    background: #F3F5F0; border: 1px solid #E0E5DB; border-radius: 12px;
-    padding: 10px 14px; margin-bottom: 16px;
-    font-size: 12.5px; line-height: 1.55; color: #647263;
+    display: flex; align-items: flex-start; gap: 10px;
+    background: #F3F5F0; border: 1px solid #E0E5DB; border-radius: 14px;
+    padding: 12px 16px; margin-bottom: 18px;
+    font-size: 13px; line-height: 1.6; color: #647263;
   }
   .nf-hint[hidden] { display: none; }
-  .nf-hint svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; stroke: #648268; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nf-hint svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 3px; stroke: #648268; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .nf-hint a { color: #166534; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
   [data-theme="dark"] .nf-hint { background-color: rgba(15, 23, 42, 0.72); border-color: #334155; color: #9fb3a6; }
   [data-theme="dark"] .nf-hint svg { stroke: #6ee7a0; }
   [data-theme="dark"] .nf-hint a { color: #6ee7a0; }
 
-  .nf-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
-  .nf-header h1 { font-size: 22px; font-weight: 700; color: #344B38; letter-spacing: -0.01em; margin: 0 0 3px 0; }
-  .nf-header p { font-size: 13px; color: #647263; margin: 0; line-height: 1.5; }
+  .nf-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+  .nf-head-copy { min-width: 0; flex: 1; }
+  .nf-header h1 { font-size: 21px; font-weight: 700; color: #344B38; letter-spacing: -0.01em; margin: 0 0 4px 0; }
+  .nf-header p { font-size: 14px; color: #647263; margin: 0; line-height: 1.6; }
 
-  .nf-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .nf-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
   .nf-unread-pill {
     display: inline-flex; align-items: center; gap: 6px;
     background: #F3F5F0; border: 1px solid #E0E5DB; border-radius: 999px;
-    padding: 6px 13px; font-size: 12px; font-weight: 600; color: #647263;
+    padding: 7px 14px; font-size: 12px; font-weight: 600; color: #647263;
   }
   .nf-unread-pill b { color: #344B38; font-size: 13px; }
 
   .btn-markread {
     display: inline-flex; align-items: center; gap: 7px; border: none; cursor: pointer;
     background: #3F6B4D; color: #fff; font-size: 12px; font-weight: 700;
-    padding: 8px 15px; border-radius: 10px; font-family: inherit;
+    padding: 8px 16px; border-radius: 10px; font-family: inherit;
     transition: background 0.15s ease;
   }
   .btn-markread:hover { background: #375F43; }
-  .btn-markread:disabled { opacity: 0.5; cursor: wait; }
+  .btn-markread:disabled { opacity: 0.55; cursor: wait; }
   .btn-markread svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
   .nf-panel {
     background: #fff; border: 1px solid #E0E5DB; border-radius: 16px; overflow: hidden;
   }
-  .nf-list { padding: 2px 22px 18px; }
-  .nf-item { display: flex; align-items: stretch; gap: 8px; padding: 6px 0; }
-  .nf-item + .nf-item { border-top: 1px solid #F0F2F1; }
+  .nf-list { padding: 8px 2px 2px; }
+  .nf-item { display: flex; align-items: stretch; gap: 12px; padding: 17px 0; }
+  .nf-item + .nf-item { border-top: 1px solid #F5F7F5; }
 
   /* The one dot that carries "unread" — nothing else on the row shouts. */
-  .nf-dot { width: 8px; height: 8px; border-radius: 50%; background: transparent; flex-shrink: 0; margin-top: 7px; }
+  .nf-dot { width: 10px; height: 10px; border-radius: 50%; background: transparent; flex-shrink: 0; margin-top: 11px; }
   .nf-item.is-unread .nf-dot { background: #4A7A54; }
 
   .nf-mid { flex: 1; min-width: 0; }
   .nf-item-link {
     display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0;
-    padding: 12px 10px; border-radius: 12px; text-decoration: none; color: inherit;
+    padding: 15px 16px; border-radius: 14px; text-decoration: none; color: inherit;
     transition: background 0.15s ease, box-shadow 0.15s ease;
   }
   .nf-item-link:hover { background: #F7F9F6; }
   .nf-item-link:focus-visible { outline: 2px solid #8FB89A; outline-offset: 2px; }
   [data-theme="dark"] .nf-item-link:hover { background: rgba(51, 65, 85, 0.45); }
-  .nf-title { font-size: 14px; font-weight: 500; color: #344B38; line-height: 1.5; }
+  .nf-title { font-size: 14.5px; font-weight: 500; color: #344B38; line-height: 1.5; }
   .nf-item.is-unread .nf-title { font-weight: 600; color: #1f2d24; }
 
-  /* Live status chip: where the notified event sits right now. The state is
-     recomputed on every render, so a finished event reads "Done" instead of
-     keeping the "Upcoming" wording it was born with. */
+  /* Live status chip: where the notified event sits right now. */
   .nf-state {
     display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px;
     border: 1px solid #E0E5DB; background: #F3F5F0; color: #647263;
@@ -88,27 +87,29 @@
   .nf-state--done     { background: #FAFBFA; color: #94a3b8; border-color: #EDF0EC; }
 
   .nf-meta {
-    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
-    font-size: 12px; color: #94a3b8; font-weight: 500; margin-top: 4px;
+    display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+    font-size: 12px; color: #94a3b8; font-weight: 500; margin-top: 8px;
   }
+  .nf-meta .nf-sep { color: #d7ddd7; }
   .nf-meta svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nf-actor { font-weight: 600; color: #647263; }
 
   .nf-dismiss {
-    border: 1px solid #E0E5DB; background: #fff; cursor: pointer; color: #94a3b8;
-    width: 28px; height: 28px; flex-shrink: 0; display: inline-flex; align-items: center;
-    justify-content: center; border-radius: 50%; transition: all 0.15s ease; align-self: center;
+    flex-shrink: 0; border: 1px solid #E0E5DB; background: #fff; cursor: pointer; color: #94a3b8;
+    width: 32px; height: 32px; border-radius: 10px; display: inline-flex; align-items: center;
+    justify-content: center; transition: all 0.15s ease; align-self: flex-start; margin-top: 4px;
   }
   .nf-dismiss:hover { background: #EDF1E9; border-color: #C8D5C5; color: #166534; }
-  .nf-dismiss svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .nf-dismiss svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 
-  .nf-empty { text-align: center; padding: 52px 22px; }
+  .nf-empty { text-align: center; padding: 60px 24px; }
   .nf-empty-icon {
-    width: 52px; height: 52px; border-radius: 14px; margin: 0 auto 14px;
+    width: 64px; height: 64px; border-radius: 18px; margin: 0 auto 18px;
     background: #EDF1E9; color: #648268; display: flex; align-items: center; justify-content: center;
   }
-  .nf-empty-icon svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
-  .nf-empty h3 { font-size: 15px; font-weight: 700; color: #344B38; margin: 0 0 6px 0; }
-  .nf-empty p { font-size: 13px; color: #647263; margin: 0 auto; max-width: 420px; line-height: 1.6; }
+  .nf-empty-icon svg { width: 28px; height: 28px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  .nf-empty h3 { font-size: 16px; font-weight: 700; color: #344B38; margin: 0 0 8px 0; }
+  .nf-empty p { font-size: 14px; color: #647263; margin: 0 auto; max-width: 460px; line-height: 1.7; }
 
   .nf-toast {
     position: fixed; bottom: 26px; left: 50%; transform: translate(-50%, 20px); z-index: 1000;
@@ -123,19 +124,19 @@
   @media (max-width: 640px) {
     .nf-header { align-items: flex-start; }
     .nf-header h1 { font-size: 20px; }
-    .nf-list { padding: 2px 16px 14px; }
-    .nf-item { gap: 10px; padding: 14px 0; }
+    .nf-list { padding: 8px 16px 14px; }
+    .nf-item { gap: 12px; padding: 16px 0; }
     .nf-item { flex-direction: row; }
-    .nf-dot { margin-top: 6px; }
-    .nf-dismiss { align-self: flex-start; }
-    .nf-empty { padding: 40px 16px; }
+    .nf-dot { margin-top: 10px; }
+    .nf-dismiss { align-self: flex-start; margin-top: 6px; }
+    .nf-empty { padding: 48px 16px; }
   }
 </style>
 
 <div class="nf-page">
   <div class="nf-content">
     <div class="nf-header">
-      <div>
+      <div class="nf-head-copy">
         <h1>Notifications</h1>
         <p>{{ $subtitle }}</p>
       </div>
@@ -144,7 +145,10 @@
           <span class="nf-unread-pill"><b>{{ $unreadCount }}</b> unread</span>
           <form method="POST" action="{{ route($routePrefix . '.read-all') }}">
             @csrf
-            <button type="submit" class="btn-markread">Mark all as read</button>
+            <button type="submit" class="btn-markread">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Mark all as read
+            </button>
           </form>
         @endif
       </div>
@@ -191,11 +195,9 @@
                     <div class="nf-meta">
                       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                       <span>{{ optional($notification->created_at)->diffForHumans() }}</span>
-                      <span>&middot;</span>
-                      <span>{{ optional($notification->created_at)->format('M d, Y \a\t g:i A') }}</span>
                       @if($notification->display_actor_name)
-                        <span>&middot;</span>
-                        <span>{{ $notification->display_actor_name }}</span>
+                        <span class="nf-sep">·</span>
+                        <span class="nf-actor">{{ $notification->display_actor_name }}</span>
                       @endif
                     </div>
                   </div>

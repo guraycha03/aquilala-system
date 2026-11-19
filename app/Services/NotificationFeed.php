@@ -113,8 +113,10 @@ class NotificationFeed
         return [
             'id'          => (int) $log->id,
             'text'        => (string) $log->display_description,
+            // Just the relative time keeps the modal row short and scannable;
+            // the full date-time is shown on the notifications page.
             'meta'        => $created
-                ? $created->diffForHumans() . ' · ' . $created->format('M d, Y \a\t g:i A')
+                ? $created->diffForHumans()
                 : '',
             'actor'       => (string) $log->display_actor_name,
             'state'       => $log->event_state,

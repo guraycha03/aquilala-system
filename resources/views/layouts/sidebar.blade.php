@@ -561,47 +561,53 @@
     /* ── The notification panel ───────────────────────────────────
        The bell opens this instead of leaving the page. It hangs under
        the bell itself, so it reads as the bell's own list rather than
-       a takeover of the screen. One white card, plain rows, one sage
-       dot for what is still unread - the same language the
-       notifications page speaks. */
-    .nmodal { position: fixed; top: calc(74px + var(--aq-netbar-offset, 0px)); right: 20px; z-index: 1200; width: min(400px, calc(100vw - 32px)); }
+       a takeover of the screen. Minimal and quiet: lots of air, one
+       sage dot for what is still unread, and each row leads to the
+       page it is about. Same language the notifications page speaks.
+
+       Class names are kept stable (.nmodal, .nmodal-item, …) because
+       public/css/dark-mode.css themes this panel through them. */
+    .nmodal { position: fixed; top: calc(80px + var(--aq-netbar-offset, 0px)); right: 20px; z-index: 1200; width: min(480px, calc(100vw - 32px)); }
     .nmodal[hidden] { display: none; }
     .nmodal-card {
       display: flex; flex-direction: column; overflow: hidden;
-      max-height: min(72vh, 560px);
-      background: #ffffff; border: 1px solid #E0E5DB; border-radius: 16px;
-      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+      max-height: min(78vh, 640px);
+      background: #ffffff; border: 1px solid #E0E5DB; border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.16);
     }
     .nmodal-head {
       display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-      padding: 16px 18px; border-bottom: 1px solid #F0F2F1; background: #fafdfb;
+      padding: 20px 22px; border-bottom: 1px solid #F0F2F1; background: #fafdfb;
     }
-    .nmodal-head h2 { font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0; }
-    .nmodal-head p { font-size: 12px; color: #879a8c; margin: 3px 0 0 0; }
+    .nmodal-head h2 { font-size: 16px; font-weight: 700; color: #1a2b1e; margin: 0 0 3px 0; letter-spacing: -0.01em; }
+    .nmodal-head p { font-size: 12.5px; color: #879a8c; margin: 0; }
+
     .nmodal-close {
-      width: 30px; height: 30px; border-radius: 9px; border: none; cursor: pointer; flex-shrink: 0;
+      width: 36px; height: 36px; border-radius: 10px; border: none; cursor: pointer; flex-shrink: 0;
       background: #f0f2f1; color: #6b7c6e; display: inline-flex; align-items: center; justify-content: center;
       transition: background 0.15s ease, color 0.15s ease;
     }
     .nmodal-close:hover { background: #E0E5DB; color: #344B38; }
     .nmodal-close svg { stroke: currentColor; fill: none; }
 
-    .nmodal-body { flex: 1; overflow-y: auto; padding: 6px 12px; overscroll-behavior: contain; }
-    .nmodal-item { display: flex; align-items: stretch; gap: 6px; padding: 4px 0; }
-    .nmodal-item + .nmodal-item { border-top: 1px solid #F0F2F1; }
+    .nmodal-body { flex: 1; overflow-y: auto; padding: 12px 16px; overscroll-behavior: contain; }
+    .nmodal-item { display: flex; align-items: stretch; gap: 10px; padding: 12px 0; }
+    .nmodal-item + .nmodal-item { border-top: 1px solid #F5F7F5; }
     .nmodal-item-link {
-      display: flex; align-items: flex-start; gap: 11px; flex: 1; min-width: 0;
-      padding: 11px 8px; border-radius: 11px; text-decoration: none; color: inherit;
-      transition: background 0.15s ease;
+      display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0;
+      padding: 14px 12px; border-radius: 14px; text-decoration: none; color: inherit;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
     }
     .nmodal-item-link:hover { background: #F7F9F6; }
     .nmodal-item-link:focus-visible { outline: 2px solid #8FB89A; outline-offset: 2px; }
-    .nmodal-dot { width: 8px; height: 8px; border-radius: 50%; background: transparent; flex-shrink: 0; margin-top: 6px; }
+    .nmodal-dot { width: 10px; height: 10px; border-radius: 50%; background: transparent; flex-shrink: 0; margin-top: 8px; }
     .nmodal-item.is-unread .nmodal-dot { background: #4A7A54; }
     .nmodal-mid { flex: 1; min-width: 0; }
-    .nmodal-text { font-size: 13.5px; font-weight: 500; color: #344B38; line-height: 1.5; }
+    .nmodal-text { font-size: 14px; font-weight: 500; color: #344B38; line-height: 1.55; }
     .nmodal-item.is-unread .nmodal-text { font-weight: 600; color: #1f2d24; }
-    .nmodal-meta { font-size: 11.5px; color: #94a3b8; font-weight: 500; margin-top: 4px; }
+    .nmodal-meta { display: flex; align-items: baseline; gap: 6px; font-size: 12px; color: #94a3b8; font-weight: 500; margin-top: 7px; }
+    .nmodal-meta .nmodal-sep { color: #d7ddd7; }
+    .nmodal-actor { font-weight: 600; color: #647263; }
     .nmodal-state {
       display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px; margin-right: 7px;
       border: 1px solid #E0E5DB; background: #F3F5F0; color: #647263;
@@ -610,35 +616,38 @@
     .nmodal-state--ongoing { background: #EDF1E9; color: #166534; border-color: #C8D5C5; }
     .nmodal-state--done { background: #FAFBFA; color: #94a3b8; border-color: #EDF0EC; }
     .nmodal-done {
-      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; border: 1px solid #E0E5DB;
+      width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; border: 1px solid #E0E5DB;
       background: #fff; color: #94a3b8; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
       transition: all 0.15s ease; align-self: center;
+      opacity: 0; pointer-events: none;
     }
+    .nmodal-item.is-unread .nmodal-done { opacity: 1; pointer-events: auto; }
+    .nmodal-item:hover .nmodal-done { opacity: 1; pointer-events: auto; }
     .nmodal-done:hover { background: #EDF1E9; border-color: #C8D5C5; color: #166534; }
-    .nmodal-done svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+    .nmodal-done svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 
-    .nmodal-empty { text-align: center; padding: 40px 18px; }
+    .nmodal-empty { text-align: center; padding: 60px 24px; }
     .nmodal-empty-icon {
-      width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 12px;
+      width: 64px; height: 64px; border-radius: 18px; margin: 0 auto 16px;
       background: #EDF1E9; color: #648268; display: flex; align-items: center; justify-content: center;
     }
-    .nmodal-empty-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
-    .nmodal-empty h3 { font-size: 14px; font-weight: 700; color: #344B38; margin: 0 0 5px 0; }
-    .nmodal-empty p { font-size: 12.5px; color: #647263; margin: 0; line-height: 1.55; }
+    .nmodal-empty-icon svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .nmodal-empty h3 { font-size: 15px; font-weight: 700; color: #344B38; margin: 0 0 7px 0; }
+    .nmodal-empty p { font-size: 13.5px; color: #647263; margin: 0; line-height: 1.6; }
 
     .nmodal-foot {
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      padding: 12px 18px; border-top: 1px solid #F0F2F1; background: #fafdfb;
+      padding: 16px 22px; border-top: 1px solid #F0F2F1; background: #fafdfb;
     }
     .nmodal-readall {
       display: inline-flex; align-items: center; gap: 6px; border: 1px solid #E0E5DB; cursor: pointer;
-      background: #fff; color: #4b5c50; font-size: 11.5px; font-weight: 700; font-family: inherit;
-      padding: 7px 12px; border-radius: 9px; transition: all 0.15s ease;
+      background: #fff; color: #4b5c50; font-size: 12.5px; font-weight: 700; font-family: inherit;
+      padding: 9px 16px; border-radius: 10px; transition: all 0.15s ease;
     }
     .nmodal-readall:hover { background: #EDF1E9; border-color: #C8D5C5; color: #344B38; }
     .nmodal-readall[hidden] { display: none; }
     .nmodal-readall svg { stroke: currentColor; fill: none; }
-    .nmodal-all { font-size: 12.5px; font-weight: 700; color: #166534; text-decoration: none; }
+    .nmodal-all { font-size: 13px; font-weight: 700; color: #166534; text-decoration: none; }
     .nmodal-all:hover { text-decoration: underline; text-underline-offset: 2px; }
 
     [data-theme="dark"] .nmodal-card { background: rgba(15, 23, 42, 0.96); border-color: #334155; }
@@ -652,8 +661,11 @@
     [data-theme="dark"] .nmodal-text { color: #e2e8f0; }
     [data-theme="dark"] .nmodal-item.is-unread .nmodal-text { color: #d6f5e3; }
     [data-theme="dark"] .nmodal-meta { color: #94a3b8; }
+    [data-theme="dark"] .nmodal-meta .nmodal-sep { color: #40505b; }
+    [data-theme="dark"] .nmodal-actor { color: #a5b3ac; }
     [data-theme="dark"] .nmodal-state { background: #1f2937; border-color: #334155; color: #9fb3a6; }
     [data-theme="dark"] .nmodal-state--ongoing { background: #16301f; border-color: #166534; color: #a7f3d0; }
+    [data-theme="dark"] .nmodal-state--done { background: #0f172a; border-color: #334155; color: #94a3b8; }
     [data-theme="dark"] .nmodal-done { background: #1f2937; border-color: #334155; color: #94a3b8; }
     [data-theme="dark"] .nmodal-done:hover { background: #16301f; color: #a7f3d0; }
     [data-theme="dark"] .nmodal-empty-icon { background: #16301f; color: #6ee7a0; }
@@ -682,10 +694,10 @@
 
   /* On a phone the panel sits under the bell, across the width of the
      screen, where the thumb already is. */
-  .nmodal { top: calc(60px + var(--aq-netbar-offset, 0px)); right: 12px; left: 12px; width: auto; }
-  .nmodal-card { max-height: 72vh; border-radius: 16px; }
-  .nmodal-body { padding: 4px 16px; }
-  .nmodal-foot { padding: 12px 16px; }
+  .nmodal { top: calc(64px + var(--aq-netbar-offset, 0px)); right: 12px; left: 12px; width: auto; }
+  .nmodal-card { max-height: 78vh; border-radius: 20px; }
+  .nmodal-body { padding: 10px 16px; }
+  .nmodal-foot { padding: 14px 20px; }
 
   /* --- UPDATE HERE --- */
   /* 1. Add right padding to nav-body so space matches the left (14px on both sides) */
@@ -1548,7 +1560,7 @@
                       {{ $item['text'] }}
                     </div>
                     <div class="nmodal-meta">
-                      {{ $item['meta'] }}@if($item['actor']) &middot; {{ $item['actor'] }}@endif
+                      {{ $item['meta'] }}@if($item['actor']) <span class="nmodal-sep">·</span> <span class="nmodal-actor">{{ $item['actor'] }}</span>@endif
                     </div>
                   </div>
               @if(!empty($item['url']))
