@@ -93,24 +93,7 @@
 
 <div class="page-header">
   <h1 class="page-title">Top Quoted Products</h1>
-  <p class="page-subtitle">Farm supplies other farmers request most in cost quotations — ranked by real purchase intent, not ratings.</p>
-</div>
-
-<div class="stats-row kpi-strip">
-  <div class="stat-chip">
-    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    <div>
-      <div class="stat-num">{{ $totalQuoted }}</div>
-      <div class="stat-label">In Demand</div>
-    </div>
-  </div>
-  <div class="stat-chip">
-    <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-    <div>
-      <div class="stat-num">{{ $products->sum(fn ($p) => $p->quotationItems_count ?? 0) }}</div>
-      <div class="stat-label">Total Quotations</div>
-    </div>
-  </div>
+  <p class="page-subtitle">Farm supplies other farmers request most in cost quotations across the whole system — ranked by real purchase intent, not ratings.</p>
 </div>
 
 {{-- Shared catalog filter bar: search, category, season, availability, price
