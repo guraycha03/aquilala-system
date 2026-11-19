@@ -405,14 +405,14 @@
             <defs>
                 <!-- Subtle topographic survey dot grid for canvas backdrop -->
                 <pattern id="survey-grid" width="28" height="28" patternUnits="userSpaceOnUse">
-                    <circle cx="14" cy="14" r="0.8" fill="#C9CEC2" />
+                    <circle cx="14" cy="14" r="1.1" fill="#E8E8E0" />
                 </pattern>
 
                 <!-- Free / unplanted soil cross-hatch texture -->
                 <pattern id="free-soil" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(32)">
-                    <rect width="16" height="16" fill="#EBE7DA" />
-                    <line x1="0" y1="0" x2="0" y2="16" stroke="#D9D3C1" stroke-width="1.2" />
-                    <circle cx="8" cy="8" r="0.9" fill="#CEC7B3" />
+                    <rect width="16" height="16" fill="#F5F2EB" />
+                    <line x1="0" y1="0" x2="0" y2="16" stroke="#E0DCD0" stroke-width="1.3" />
+                    <circle cx="8" cy="8" r="1.0" fill="#D8D4C8" />
                 </pattern>
 
                 <!-- Per-crop directional furrow line patterns -->
