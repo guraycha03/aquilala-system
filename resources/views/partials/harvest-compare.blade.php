@@ -130,34 +130,6 @@
       </a>
     @endif
   </div>
-{{-- ── KPI cards ── --}}
-<div class="cmp-kpis kpi-strip">
-  <div class="cmp-kpi">
-    <div class="k">Estimated Yield</div>
-    <div class="v">{{ number_format($kpis['total_estimate_mt'], 2) }} <span style="font-size:13px;font-weight:700;color:#94a3b8;">MT</span></div>
-    <div class="s">Captured at planting{{ $kpis['baseline_pairs'] ? ' · ' . $kpis['baseline_pairs'] . ' baseline' : '' }}</div>
-  </div>
-  <div class="cmp-kpi">
-    <div class="k">Actual Yield</div>
-    <div class="v pos">{{ number_format($kpis['total_actual_mt'], 2) }} <span style="font-size:13px;font-weight:700;color:#94a3b8;">MT</span></div>
-    <div class="s">From filed harvest reports</div>
-  </div>
-  <div class="cmp-kpi">
-    <div class="k">Variance</div>
-    <div class="v {{ $kpis['variance_mt'] > 0.005 ? 'pos' : ($kpis['variance_mt'] < -0.005 ? 'neg' : '') }}">
-      {{ $kpis['variance_mt'] >= 0 ? '+' : '' }}{{ number_format($kpis['variance_mt'], 2) }} <span style="font-size:13px;font-weight:700;color:#94a3b8;">MT</span>
-    </div>
-    <div class="s">Actual minus estimate</div>
-  </div>
-  <div class="cmp-kpi">
-    <div class="k">Estimate Accuracy</div>
-    <div class="v {{ $kpis['accuracy_pct'] === null ? '' : ($kpis['accuracy_pct'] >= 100 ? 'pos' : 'neg') }}">
-      {{ $kpis['accuracy_pct'] === null ? '—' : $kpis['accuracy_pct'] . '%' }}
-    </div>
-    <div class="s">Actual ÷ estimated</div>
-  </div>
-</div>
-
 {{-- ── Chart ── --}}
 <div class="cmp-grid">
   <div class="cmp-card">
@@ -175,7 +147,30 @@
         <span><span class="sw" style="background:#648268;"></span>Actual</span>
       </div>
     </div>
-    {{-- ── Filters (inline below chart header) ── --}}
+    {{-- Compact KPI row ── --}}
+    <div class="cmp-kpis" style="display:flex; gap:16px; flex-wrap:wrap; padding:0 18px 14px; border-bottom:1px solid #f1f5f9; margin-bottom:8px;">
+      <div style="flex:1; min-width:140px;">
+        <div class="k" style="font-size:11px;">Estimated</div>
+        <div class="v" style="font-size:18px;">{{ number_format($kpis['total_estimate_mt'], 2) }} <span style="font-size:11px;font-weight:700;color:#94a3b8;">MT</span></div>
+      </div>
+      <div style="flex:1; min-width:140px;">
+        <div class="k" style="font-size:11px;">Actual</div>
+        <div class="v pos" style="font-size:18px;">{{ number_format($kpis['total_actual_mt'], 2) }} <span style="font-size:11px;font-weight:700;color:#94a3b8;">MT</span></div>
+      </div>
+      <div style="flex:1; min-width:140px;">
+        <div class="k" style="font-size:11px;">Variance</div>
+        <div class="v {{ $kpis['variance_mt'] > 0.005 ? 'pos' : ($kpis['variance_mt'] < -0.005 ? 'neg' : '') }}" style="font-size:18px;">
+          {{ $kpis['variance_mt'] >= 0 ? '+' : '' }}{{ number_format($kpis['variance_mt'], 2) }} <span style="font-size:11px;font-weight:700;color:#94a3b8;">MT</span>
+        </div>
+      </div>
+      <div style="flex:1; min-width:140px;">
+        <div class="k" style="font-size:11px;">Accuracy</div>
+        <div class="v {{ $kpis['accuracy_pct'] === null ? '' : ($kpis['accuracy_pct'] >= 100 ? 'pos' : 'neg') }}" style="font-size:18px;">
+          {{ $kpis['accuracy_pct'] === null ? '—' : $kpis['accuracy_pct'] . '%' }}
+        </div>
+      </div>
+    </div>
+    {{-- Filters (inline below chart header) ── --}}
     <form class="table-toolbar cmp-filters" method="GET" action="{{ route($cmpRoute) }}">
       <div class="cmp-filter-row">
         <select name="year" aria-label="Year" onchange="this.form.submit()">
