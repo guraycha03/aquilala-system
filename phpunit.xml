@@ -28,8 +28,12 @@
         <env name="DB_URL" value=""/>
         <!-- The developer .env carries a real key; tests must never call the
              provider by accident. Tests that exercise AI set the config and
-             Http::fake explicitly. -->
+             Http::fake explicitly. AI_PROVIDER is forced back to groq because
+             a switched .env (openrouter + real key) would otherwise make
+             available() true and send explain() to the live API. -->
+        <env name="AI_PROVIDER" value="groq" force="true"/>
         <env name="GROQ_API_KEY" value="" force="true"/>
+        <env name="OPENROUTER_API_KEY" value="" force="true"/>
         <env name="PUSH_VAPID_PUBLIC_KEY" value="" force="true"/>
         <env name="PUSH_VAPID_PRIVATE_KEY" value="" force="true"/>
         <env name="FIREBASE_API_KEY" value="" force="true"/>

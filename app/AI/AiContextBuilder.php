@@ -554,6 +554,31 @@ class AiContextBuilder
             $missing[] = 'area';
         }
 
+        // Everything the formula needs is on the table, so the formula runs —
+        // this is the "tell me your farm area and season and I will run them
+        // for you" the assistant has already promised, kept. A budgeted
+        // request keeps the price-filtered list instead: the engine takes no
+        // price ceiling, and silently exceeding one the farmer set would be
+        // worse than no calculation at all.
+        if ($missing === [] && $maxPrice === null) {
+            $result = $this->recommendations->evaluate([
+                'crop'    => $crop,
+                'season'  => $season,
+                'area'    => $slots['area'],
+                'soil'    => $slots['soil'] ?? null,
+                'weather' => $slots['weather'] ?? null,
+            ], $user);
+
+            if ($result['status'] === CropRecommendationEngine::STATUS_OK) {
+                return [$this->products->findActiveByIds($result['formula_ids'], $user), $result, []];
+            }
+
+            // The engine has no formula for this combination after all. The
+            // approved product list is still a real answer; there is simply
+            // no quantity to quote, and inventing one is what must not happen.
+            return [$products, null, []];
+        }
+
         return [$products, null, $missing];
     }
 

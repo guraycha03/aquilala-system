@@ -1027,7 +1027,7 @@ class AquilalaAssistant
                 ? $this->ambiguousProductQuestion($contextData['facts']['ambiguous_product_reference'])
                 : $this->searchAnswer($products, $crop, $routing),
             AiIntent::PRODUCT_RECOMMENDATION,
-            AiIntent::FERTILIZER_ADVICE => $this->recommendationAnswer($products, $crop, $missing, $routing),
+            AiIntent::FERTILIZER_ADVICE => $this->recommendationAnswer($products, $crop, $missing, $routing, $contextData['recommendation'] ?? null),
             AiIntent::COST_ESTIMATION => $this->costAnswer($contextData, $crop, $missing),
             AiIntent::QUOTATION => $this->quotationAnswer($contextData['quotation']),
             AiIntent::STORE_DEMAND => $this->storeDemandAnswer($contextData),
@@ -1476,8 +1476,9 @@ class AquilalaAssistant
      * @param  array<int, array<string, mixed>>  $products
      * @param  array<int, string>  $missing
      * @param  array{intent: string, slots: array<string, mixed>, follow_up: bool}  $routing
+     * @param  array<string, mixed>|null  $recommendation  the engine's run, when it had everything it needed
      */
-    private function recommendationAnswer(array $products, ?string $crop, array $missing, array $routing): string
+    private function recommendationAnswer(array $products, ?string $crop, array $missing, array $routing, ?array $recommendation = null): string
     {
         // Something required is missing, so there is no recommendation to
         // give yet. The question is the whole answer here: a product list
@@ -1487,6 +1488,15 @@ class AquilalaAssistant
 
         if ($pendingQuestion !== null) {
             return $pendingQuestion;
+        }
+
+        // The engine ran — the farmer gave the area and the season, so the
+        // formulas produced quantities, rates and a total. This is the
+        // recommendation the flow promised, and its numbers are the rows the
+        // engine itself computed, never a product list reinterpreted.
+        if (is_array($recommendation)
+            && ($recommendation['status'] ?? null) === CropRecommendationEngine::STATUS_OK) {
+            return implode("\n", $this->engineRecommendationLines($recommendation));
         }
 
         $lines = [];
@@ -1515,6 +1525,55 @@ class AquilalaAssistant
         }
 
         return implode("\n", array_filter($lines, static fn ($line) => $line !== '')) ?: 'I could not build a recommendation from the Aquilala data.';
+    }
+
+    /**
+     * The engine's own arithmetic for a completed recommendation: quantity,
+     * rate per hectare, price and total, line by line.
+     *
+     * Deliberately the same shapes the cost branch prints — both read the
+     * same formula rows, and two renderings of one number are two ways to
+     * disagree about it.
+     *
+     * @param  array<string, mixed>  $recommendation
+     * @return array<int, string>
+     */
+    private function engineRecommendationLines(array $recommendation): array
+    {
+        $summary = $recommendation['summary'];
+        $area = $recommendation['area'];
+
+        $lines = [
+            '### Aquilala recommendation for ' . $recommendation['crop']
+                . ' (' . $recommendation['season'] . ' season, ' . $area . ' ha)',
+            '',
+        ];
+
+        foreach ($recommendation['items'] as $item) {
+            $rate = $item['rate_per_hectare'] !== null
+                ? number_format($item['rate_per_hectare'], 2) . ' ' . $item['unit'] . '/ha'
+                : 'formula rate';
+
+            $lines[] = '- **' . $item['product_name'] . '** — ' . $this->number($item['quantity']) . ' ' . $item['unit']
+                . ' (' . $rate . ') at ₱' . number_format($item['price'], 2) . ' = **₱' . number_format($item['subtotal'], 2) . '**'
+                . ($item['in_stock'] ? '' : ' · currently ' . strtolower($item['stock_status']));
+        }
+
+        $lines[] = '';
+        $lines[] = '**Estimated total: ₱' . number_format((float) $summary['grand_total'], 2) . '** for '
+            . $area . ' ha — about ₱' . number_format((float) $summary['grand_total'] / max((float) $area, 0.01), 2) . ' per hectare.';
+
+        if (($recommendation['assumptions'] ?? []) !== []) {
+            $lines[] = '';
+            foreach ($recommendation['assumptions'] as $assumption) {
+                $lines[] = '*' . $assumption . '*';
+            }
+        }
+
+        $lines[] = '';
+        $lines[] = 'Every figure above comes from the Aquilala formula rows — ask me for a different area or season and I will recalculate.';
+
+        return $lines;
     }
 
     /**

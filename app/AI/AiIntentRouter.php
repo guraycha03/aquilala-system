@@ -353,6 +353,20 @@ class AiIntentRouter
             return AiIntent::PRODUCT_RECOMMENDATION;
         }
 
+        // The assistant's own last question was a slot question ("What is
+        // your farm area in hectares?", "wet season or dry season?") and
+        // this message answers it: a bare number with a unit, or a bare
+        // season word. The flow that asked continues with the slot filled.
+        //
+        // Without this branch the answer falls through every question
+        // pattern to the inherited-crop catch-all at the bottom, and the
+        // farmer gets a crop fact sheet — with a request for the very
+        // information they just supplied — in reply to their own answer.
+        if ($this->isBareSlotAnswer($text, $detected)
+            && $this->wantsArea($context->lastIntent ?? '')) {
+            return $context->lastIntent;
+        }
+
         // Check for empty utterances first - these are not greetings, just
         // the farmer pausing mid-thought or sending an empty message.
         if ($this->isEmptyUtterance($text)) {
@@ -803,6 +817,49 @@ class AiIntentRouter
         return $hasReference || $hasQuestion;
     }
 
+    /**
+     * A slot answer and nothing else: "1ha", "2.5 hectares", "wet".
+     *
+     * It must actually state the slot the flow was waiting for, must not be
+     * a question, and must not carry the vocabulary that starts a new ask —
+     * "how much for 1 ha?" is a cost question, not a reply to the question
+     * the assistant just asked, and it has to reach the cost branch.
+     *
+     * @param  array<string, mixed>  $detected  slots as stated in this message
+     */
+    private function isBareSlotAnswer(string $text, array $detected): bool
+    {
+        if (($detected['area'] ?? null) === null && ($detected['season'] ?? null) === null) {
+            return false;
+        }
+
+        if (str_contains($text, '?')) {
+            return false;
+        }
+
+        if (preg_match(
+            '/\b(?:how|what|which|where|when|why|who|much|cost|price|budget|peso|recommend|suggest|best|should|show|list|give|open|view|need|want|buy|order|available|stock|is|are|do|does|can|will|would|have)\b/iu',
+            $text,
+        ) === 1) {
+            return false;
+        }
+
+        // An answer is short. A paragraph that happens to mention a season
+        // is a new message, not a slot reply.
+        return mb_strlen($text) <= 60;
+    }
+
+    /**
+     * The flows whose open question is a slot — farm area or season — and
+     * therefore the flows a bare slot answer belongs to. Kept identical to
+     * the assistant's own wantsArea(): the two must agree on which
+     * conversations an answer may resume.
+     */
+    private function wantsArea(string $intent): bool
+    {
+        return in_array($intent, [AiIntent::COST_ESTIMATION, AiIntent::PRODUCT_RECOMMENDATION, AiIntent::FERTILIZER_ADVICE], true);
+    }
+
     // ────────────────────────────────────────────────────────────
     //  Slot detection
     // ────────────────────────────────────────────────────────────
@@ -851,8 +908,12 @@ class AiIntentRouter
     {
         $hectares = $this->matchArea($text, [
             'hectares?' => 1.0,
-            '\bhas\b'   => 1.0,
-            '\bha\b'    => 1.0,
+            // The short units carry no leading word boundary on purpose:
+            // between a digit and a letter there is none, so the boundary-
+            // anchored "\bha\b" never matched a farmer's own "1ha" and their
+            // answer fell through the whole router as if no area was given.
+            'has'       => 1.0,
+            'ha'        => 1.0,
         ]);
 
         if ($hectares !== null) {
@@ -861,7 +922,7 @@ class AiIntentRouter
 
         // Acres are common in farm conversations even in hectares-first
         // countries; converting keeps the farmer from having to do it.
-        $acres = $this->matchArea($text, ['acres?' => 0.404686, '\bac\b' => 0.404686]);
+        $acres = $this->matchArea($text, ['acres?' => 0.404686, 'ac' => 0.404686]);
 
         if ($acres !== null) {
             return round($acres, 4);
