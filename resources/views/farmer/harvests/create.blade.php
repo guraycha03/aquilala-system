@@ -604,15 +604,15 @@
             <label for="actualYieldField">Actual Yield</label>
             <div class="yield-input-group" style="display:flex; gap:8px; align-items:center;">
               <input type="number" name="actual_yield" id="actualYieldField" step="0.01" min="0" value="{{ old('actual_yield') }}" placeholder="e.g. 4200" required style="flex:1;">
-              <select name="yield_unit" id="yieldUnitSelect" style="min-width:140px;">
-                <option value="kg" {{ old('yield_unit') === 'kg' ? 'selected' : '' }}>Kilograms (kg)</option>
-                <option value="mt" {{ old('yield_unit') === 'mt' ? 'selected' : '' }}>Metric Tons (MT)</option>
-                <option value="sack50" {{ old('yield_unit') === 'sack50' ? 'selected' : '' }}>Sacks (50 kg each)</option>
-                <option value="cavan" {{ old('yield_unit') === 'cavan' ? 'selected' : '' }}>Cavan (50 kg)</option>
+              <select name="yield_unit" id="yieldUnitSelect" style="min-width:140px; padding:8px 12px; border:1px solid #E2E8F0; border-radius:8px; background:#fff; color:#1e293b; font-size:13px; font-weight:500; cursor:pointer; -webkit-appearance:none; -moz-appearance:none; appearance:none; background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2364748b%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; background-size:16px; padding-right:36px;">
+                <option value="kg" {{ old('yield_unit') === 'kg' ? 'selected' : '' }} style="padding:8px 12px;">Kilograms (kg)</option>
+                <option value="mt" {{ old('yield_unit') === 'mt' ? 'selected' : '' }} style="padding:8px 12px;">Metric Tons (MT)</option>
+                <option value="sack50" {{ old('yield_unit') === 'sack50' ? 'selected' : '' }} style="padding:8px 12px;">Sacks (50 kg each)</option>
+                <option value="cavan" {{ old('yield_unit') === 'cavan' ? 'selected' : '' }} style="padding:8px 12px;">Cavan (50 kg)</option>
               </select>
             </div>
             <input type="hidden" name="actual_yield_metric_tons" id="actualYieldMetricTons" value="{{ old('actual_yield_metric_tons') }}">
-            <p class="input-hint">Enter amount and select unit. Stored as metric tons (1 MT = 1000 kg = 20 sacks = 20 cavan).</p>
+            <p class="input-hint">Stored as metric tons (1 MT = 1000 kg = 20 sacks = 20 cavan).</p>
           </div>
 
           <div class="form-field">
