@@ -551,11 +551,21 @@
           </div>
 
           <div class="form-field" id="hrvVarietyField" style="display:none;">
-            <label for="harvestVariety">Variety</label>
-            <input type="hidden" name="variety_key" id="harvestVarietyKey" value="{{ old('variety_key', '') }}">
-            <select name="variety" id="harvestVariety" class="input-field" style="width:100%;">
-              <option value="">Select variety</option>
-            </select>
+            <label id="varietyLabel">Variety</label>
+            <div class="q-select" data-field="variety" id="varietySelectWrap">
+              <input type="hidden" name="variety_key" id="harvestVarietyKey" value="{{ old('variety_key', '') }}">
+              <input type="hidden" name="variety" id="harvestVariety" value="{{ old('variety', '') }}" required>
+              <button type="button" class="q-select-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="varietyLabel">
+                <span class="qsel-title">Select variety</span>
+                <svg class="qsel-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="q-select-menu" role="listbox" aria-labelledby="varietyLabel">
+                <div class="q-select-item" data-value="" role="option">
+                  <div class="qsel-opt"><div class="qsel-t">Select variety</div></div>
+                  <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+            </div>
             <p class="input-hint" id="harvestVarietyHint">Choose the crop first. Uses the same crop library as My Crops.</p>
           </div>
 
@@ -637,7 +647,6 @@
       if (typeof flatpickr !== 'undefined') {
         flatpickr('#harvestDateField', {
           dateFormat: 'Y-m-d',
-          maxDate: 'today',
           disableMobile: 'true'
         });
       }
@@ -900,24 +909,60 @@
       var _HRV_GENERAL = @json(\App\Services\CropLibraryService::GENERAL_VARIETY);
       var _HRV_GENERAL_KEY = @json(\App\Services\CropLibraryService::GENERAL_VARIETY_KEY);
       var hrvVarietyField = document.getElementById('hrvVarietyField');
-      var hrvVarietySel = document.getElementById('harvestVariety');
+      var hrvVarietyWrap = document.getElementById('varietySelectWrap');
+      var hrvVarietyHidden = document.getElementById('harvestVariety');
       var hrvVarietyKey = document.getElementById('harvestVarietyKey');
+      var hrvVarietyTitle = hrvVarietyWrap ? hrvVarietyWrap.querySelector('.qsel-title') : null;
+      var hrvVarietyMenu = hrvVarietyWrap ? hrvVarietyWrap.querySelector('.q-select-menu') : null;
       var hrvVarietyHint = document.getElementById('harvestVarietyHint');
 
       function fillHarvestVarieties(cropName, selectedKey, selectedName) {
-        if (!hrvVarietySel) return;
+        if (!hrvVarietyMenu || !hrvVarietyHidden) return;
         var opts = _HRV_VARIETIES[cropName] || [{key: _HRV_GENERAL_KEY, name: _HRV_GENERAL}];
-        hrvVarietySel.innerHTML = '';
+        hrvVarietyMenu.innerHTML = '';
         opts.forEach(function (o) {
-          var opt = document.createElement('option');
-          opt.value = o.name; opt.textContent = o.name; opt.setAttribute('data-key', o.key || '');
-          if ((selectedKey && o.key === selectedKey) || (!selectedKey && selectedName && o.name === selectedName) || (!selectedKey && !selectedName && o.key === _HRV_GENERAL_KEY)) opt.selected = true;
-          hrvVarietySel.appendChild(opt);
+          var val = o.name;
+          var item = document.createElement('div');
+          item.className = 'q-select-item';
+          item.setAttribute('data-value', val);
+          item.setAttribute('data-key', o.key || '');
+          item.setAttribute('role', 'option');
+          item.innerHTML = '<div class="qsel-opt"><div class="qsel-t">' + val + '</div></div>' +
+            '<svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+          hrvVarietyMenu.appendChild(item);
+          var match = (selectedKey && o.key === selectedKey) || (!selectedKey && selectedName && o.name === selectedName) || (!selectedKey && !selectedName && o.key === _HRV_GENERAL_KEY);
+          if (match) {
+            item.classList.add('is-active');
+            hrvVarietyHidden.value = val;
+            if (hrvVarietyTitle) {
+              hrvVarietyTitle.textContent = val;
+              hrvVarietyTitle.classList.remove('is-placeholder');
+            }
+            hrvVarietyKey.value = o.key || _HRV_GENERAL_KEY;
+          }
         });
-        syncHarvestVarietyKey();
+        if (!hrvVarietyHidden.value && opts.length) {
+          hrvVarietyHidden.value = opts[0].name;
+          hrvVarietyKey.value = opts[0].key || _HRV_GENERAL_KEY;
+          if (hrvVarietyTitle) {
+            hrvVarietyTitle.textContent = opts[0].name;
+            hrvVarietyTitle.classList.remove('is-placeholder');
+          }
+        }
+        hrvVarietyMenu.querySelectorAll('.q-select-item').forEach(function (item) {
+          item.addEventListener('click', function () {
+            var v = item.getAttribute('data-value');
+            var k = item.getAttribute('data-key');
+            hrvVarietyHidden.value = v;
+            hrvVarietyKey.value = k || _HRV_GENERAL_KEY;
+            if (hrvVarietyTitle) {
+              hrvVarietyTitle.textContent = v;
+              hrvVarietyTitle.classList.remove('is-placeholder');
+            }
+            hrvVarietyWrap.classList.remove('open');
+          });
+        });
       }
-      function syncHarvestVarietyKey(){ if(!hrvVarietySel||!hrvVarietyKey)return; var opt=hrvVarietySel.options[hrvVarietySel.selectedIndex]; hrvVarietyKey.value=opt?(opt.getAttribute('data-key')||''):_HRV_GENERAL_KEY; }
-      if (hrvVarietySel) hrvVarietySel.addEventListener('change', syncHarvestVarietyKey);
       function setHarvestManual(isManual, cropName, vKey, vName){
         [cropField,seasonField,landField].forEach(function(f){ if(!f) return; f.readOnly=!isManual; var wrap=f.closest('.q-select'); if(wrap){ wrap.classList.toggle('is-readonly',!isManual); var b=wrap.querySelector('.q-select-btn'); if(b) b.tabIndex=isManual?0:-1; }});
         if(cropQuery){ cropQuery.readOnly=!isManual; cropQuery.tabIndex=isManual?0:-1; if(cropWrap) cropWrap.classList.toggle('is-readonly',!isManual); }
