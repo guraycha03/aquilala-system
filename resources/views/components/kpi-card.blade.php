@@ -53,15 +53,6 @@
                 <span class="kpi-trend-pill">{{ $trendValue }}</span>
             @endif
         </div>
-        @if($link)
-            <div class="kpi-arrow" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="1.8" stroke-linecap="round"
-                     stroke-linejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-            </div>
-        @endif
     </div>
 
     <div class="kpi-value" data-count-target="{{ $countTarget ?? '' }}" data-count-decimals="{{ $decimals }}" data-count-prefix="{{ $prefix }}" data-count-suffix="{{ $suffix }}">
@@ -114,17 +105,6 @@
         align-items: flex-start;
         min-width: 0;
     }
-    .kpi-arrow {
-        flex-shrink: 0;
-        margin-top: 6px;
-        color: #94a3b8;
-        transition: color 0.15s ease, transform 0.15s ease;
-    }
-    .kpi-card:hover .kpi-arrow {
-        color: var(--accent, #4A7A54);
-        transform: translateX(3px);
-    }
-    .kpi-arrow svg { width: 16px; height: 16px; }
     .kpi-title {
         margin: 4px 0 0;
         font-size: 14px;
@@ -201,8 +181,6 @@
     [data-theme="dark"] .kpi-value { color: #d6f5e3; }
     [data-theme="dark"] .kpi-title { color: #d6f5e3; }
     [data-theme="dark"] .kpi-desc { color: #9fb3a6; }
-    [data-theme="dark"] .kpi-arrow { color: #9fb3a6; }
-    [data-theme="dark"] .kpi-card:hover .kpi-arrow { color: #6ee7a0; }
 
     @keyframes kpiPop { 0% { transform: scale(1); } 45% { transform: scale(1.08); } 100% { transform: scale(1); } }
     @keyframes kpiSuffixBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
