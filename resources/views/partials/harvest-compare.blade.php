@@ -85,51 +85,6 @@
   .cmp-empty b { display: block; color: #475569; font-size: 15px; margin: 8px 0 4px; }
 </style>
 
-{{-- ── Filters (shared .table-toolbar + .btn-filter collapse — auto-applies on change) ── --}}
-<form class="table-toolbar cmp-filters" method="GET" action="{{ route($cmpRoute) }}">
-  <div class="cmp-filter-row">
-    <select name="year" aria-label="Year" onchange="this.form.submit()">
-      <option value="all">All years</option>
-      @foreach($options['years'] as $y)
-        <option value="{{ $y }}" {{ (string) $f['year'] === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
-      @endforeach
-    </select>
-    <select name="season" aria-label="Season" onchange="this.form.submit()">
-      <option value="">All seasons</option>
-      <option value="wet" {{ $f['season'] === 'wet' ? 'selected' : '' }}>Wet</option>
-      <option value="dry" {{ $f['season'] === 'dry' ? 'selected' : '' }}>Dry</option>
-    </select>
-    <select name="crop" aria-label="Crop" onchange="this.form.submit()">
-      <option value="">All crops</option>
-      @foreach($options['crops'] as $c)
-        <option value="{{ $c }}" {{ $f['crop'] === $c ? 'selected' : '' }}>{{ $c }}</option>
-      @endforeach
-    </select>
-    @if($cmpIsAdmin && count($options['farmers']))
-      <select name="farmer" aria-label="Farmer" onchange="this.form.submit()">
-        <option value="">All farmers</option>
-        @foreach($options['farmers'] as $name)
-          <option value="{{ $name }}" {{ $f['farmer'] === $name ? 'selected' : '' }}>{{ $name }}</option>
-        @endforeach
-      </select>
-    @endif
-    <select name="group_by" aria-label="Group chart by" onchange="this.form.submit()">
-      <option value="crop" {{ $group_by === 'crop' ? 'selected' : '' }}>Chart by crop</option>
-      <option value="period" {{ $group_by === 'period' ? 'selected' : '' }}>Chart by year + season</option>
-    </select>
-    @php
-      $hasCmpFilters = in_array($f['year'] ?? '', ['', 'all'], true) === false
-          || ($f['season'] ?? '') !== ''
-          || ($f['crop'] ?? '') !== ''
-          || ($f['farmer'] ?? '') !== '';
-    @endphp
-    @if($hasCmpFilters)
-      <a class="btn-clear" href="{{ route($cmpRoute) }}">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        Clear
-      </a>
-    @endif
-  </div>
 {{-- ── Chart ── --}}
 <div class="cmp-grid">
   <div class="cmp-card">
@@ -217,15 +172,7 @@
       </div>
     </form>
     <div class="cmp-chart">
-      @if($kpis['pairs'] > 0)
-        <canvas id="cmpChart" aria-label="Grouped bar chart comparing estimated and actual yield in metric tons" role="img"></canvas>
-      @else
-        <div class="cmp-empty">
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 9h4v4H7zM14 6h3v7h-3z"/></svg>
-          <b>No harvest pairs match these filters</b>
-          Widen the filters above, or wait for farmers to file harvest reports.
-        </div>
-      @endif
+      <canvas id="cmpChart" aria-label="Grouped bar chart comparing estimated and actual yield in metric tons" role="img"></canvas>
     </div>
   </div>
 </div>
@@ -375,6 +322,36 @@
             grid: { display: false },
             border: { display: false }
           }
+        }
+      }
+    });
+  });
+</script>
+@else
+<script src="{{ asset('js/chart.umd.min.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!window.Chart) return;
+    var canvas = document.getElementById('cmpChart');
+    if (!canvas) return;
+    if (window.aqDestroyChart) aqDestroyChart(canvas);
+
+    new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [
+          { label: 'Estimate', data: [], backgroundColor: 'rgba(154, 167, 180, 0.85)' },
+          { label: 'Actual', data: [], backgroundColor: 'rgba(100, 130, 104, 0.88)' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: '#f1f5f9' }, border: { display: false }, title: { display: true, text: 'Metric tons (MT)', color: '#94a3b8', font: { size: 11, weight: '600' } } },
+          x: { ticks: { color: '#64748b', font: { size: 11 } }, grid: { display: false }, border: { display: false } }
         }
       }
     });
