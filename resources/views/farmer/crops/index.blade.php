@@ -252,8 +252,8 @@
     .plot-polygon { cursor: pointer; transform-box: fill-box; transform-origin: center; transition: opacity 0.15s ease; }
     .plot-polygon:hover { opacity: 0.85; }
     .plot-tooltip { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: #0F172A; color: #FFFFFF; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; pointer-events: none; opacity: 0; transition: opacity 0.2s ease; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    .land-legend { display: grid; grid-template-rows: repeat(2, auto); grid-auto-flow: column; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #F1F5F9; overflow-x: auto; max-height: 90px; }
-    .land-legend-pill { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #F8FAF9; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 12px; font-weight: 600; color: #334155; }
+    .land-legend { display: flex; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #F1F5F9; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+    .land-legend-pill { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #F8FAF9; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 12px; font-weight: 600; color: #334155; white-space: nowrap; flex-shrink: 0; }
     .land-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
     /* ── Farm Plot Fullscreen ── */
