@@ -601,8 +601,18 @@
           </div>
 
           <div class="form-field">
-            <label for="actualYieldField">Actual Yield (metric tons)</label>
-            <input type="number" name="actual_yield_metric_tons" id="actualYieldField" step="0.01" min="0" value="{{ old('actual_yield_metric_tons') }}" placeholder="e.g. 4.20" required>
+            <label for="actualYieldField">Actual Yield</label>
+            <div class="yield-input-group" style="display:flex; gap:8px; align-items:center;">
+              <input type="number" name="actual_yield" id="actualYieldField" step="0.01" min="0" value="{{ old('actual_yield') }}" placeholder="e.g. 4200" required style="flex:1;">
+              <select name="yield_unit" id="yieldUnitSelect" style="min-width:140px;">
+                <option value="kg" {{ old('yield_unit') === 'kg' ? 'selected' : '' }}>Kilograms (kg)</option>
+                <option value="mt" {{ old('yield_unit') === 'mt' ? 'selected' : '' }}>Metric Tons (MT)</option>
+                <option value="sack50" {{ old('yield_unit') === 'sack50' ? 'selected' : '' }}>Sacks (50 kg each)</option>
+                <option value="cavan" {{ old('yield_unit') === 'cavan' ? 'selected' : '' }}>Cavan (50 kg)</option>
+              </select>
+            </div>
+            <input type="hidden" name="actual_yield_metric_tons" id="actualYieldMetricTons" value="{{ old('actual_yield_metric_tons') }}">
+            <p class="input-hint">Enter amount and select unit. Stored as metric tons (1 MT = 1000 kg = 20 sacks = 20 cavan).</p>
           </div>
 
           <div class="form-field">
@@ -658,6 +668,31 @@
         // Initialize season from current date value on load
         var initialDate = document.getElementById('harvestDateField')?.value;
         if (initialDate) applySeasonFromDate(initialDate);
+      }
+
+      // ── Yield unit conversion to metric tons ──
+      var yieldInput = document.getElementById('actualYieldField');
+      var yieldUnit = document.getElementById('yieldUnitSelect');
+      var yieldHidden = document.getElementById('actualYieldMetricTons');
+      function convertToMT(val, unit) {
+        val = parseFloat(val) || 0;
+        switch (unit) {
+          case 'kg': return val / 1000;
+          case 'mt': return val;
+          case 'sack50': return (val * 50) / 1000;
+          case 'cavan': return (val * 50) / 1000;
+          default: return 0;
+        }
+      }
+      function updateHiddenYield() {
+        if (yieldInput && yieldUnit && yieldHidden) {
+          yieldHidden.value = convertToMT(yieldInput.value, yieldUnit.value).toFixed(4);
+        }
+      }
+      if (yieldInput && yieldUnit) {
+        yieldInput.addEventListener('input', updateHiddenYield);
+        yieldUnit.addEventListener('change', updateHiddenYield);
+        updateHiddenYield(); // initial
       }
 
       // ── Tabs ────────────────────────────────────────────────────────────

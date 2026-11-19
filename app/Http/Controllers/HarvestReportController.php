@@ -533,10 +533,24 @@ class HarvestReportController extends Controller
             'variety_key' => ['nullable', 'string', 'max:60'],
             'season' => ['required', 'in:wet,dry'],
             'land_area' => ['required', 'numeric', 'min:0.01', 'max:999.99'],
-            'actual_yield_metric_tons' => ['required', 'numeric', 'min:0', 'max:999999.99'],
+            'actual_yield' => ['required', 'numeric', 'min:0', 'max:999999999.99'],
+            'yield_unit' => ['required', 'string', 'in:kg,mt,sack50,cavan'],
             'actual_total_expenses' => ['required', 'numeric', 'min:0', 'max:999999999.99'],
             'harvest_date' => ['required', 'date', 'before_or_equal:today'],
         ]);
+
+        // Convert actual_yield to metric tons based on yield_unit
+        $yield = (float) $validated['actual_yield'];
+        $unit = $validated['yield_unit'];
+        $actualYieldMt = match ($unit) {
+            'kg' => $yield / 1000,
+            'mt' => $yield,
+            'sack50' => ($yield * 50) / 1000,
+            'cavan' => ($yield * 50) / 1000,
+            default => 0,
+        };
+        $validated['actual_yield_metric_tons'] = $actualYieldMt;
+        unset($validated['actual_yield'], $validated['yield_unit']);
 
         $batchId = (int) ($validated['crop_batch_id'] ?? 0);
         unset($validated['crop_batch_id']);
