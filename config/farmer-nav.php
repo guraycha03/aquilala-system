@@ -37,22 +37,21 @@ return [
             ['label' => 'AI Assistant', 'routes' => ['farmer.ai-chat.index', 'farmer.ai-chat.history.show']],
         ],
     ],
-    'harvest' => [
+'harvest' => [
         'label' => 'Harvest',
         'icon' => '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
         'items' => [
             ['label' => 'Harvest Reports', 'routes' => ['farmer.harvests.index']],
             ['label' => 'Submit Harvest Report', 'routes' => ['farmer.harvests.create']],
+            ['label' => 'Estimate vs Actual Harvest', 'routes' => ['farmer.harvests.compare']],
         ],
     ],
-'my-farm' => [
+    'my-farm' => [
         'label' => 'My Farm',
         'icon' => '<svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>',
         'items' => [
             ['label' => 'My Crops', 'routes' => ['farmer.crops.index', 'farmer.crops.show']],
             ['label' => 'Crop Guide', 'routes' => ['farmer.crops-directory.index']],
-            ['label' => 'Submit Harvest Report', 'routes' => ['farmer.harvests.create']],
-            ['label' => 'Estimate vs Actual Harvest', 'routes' => ['farmer.harvests.compare']],
         ],
     ],
     'cost-quotations' => [

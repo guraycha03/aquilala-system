@@ -419,7 +419,7 @@
                 @foreach($partition['plots'] as $plot)
                 <pattern id="furrow-{{ $plot['id'] }}" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate({{ $plot['furrowAngleDeg'] }})">
                     <rect width="14" height="14" fill="{{ $plot['palette']['fill'] }}" />
-                    <line x1="0" y1="0" x2="0" y2="14" stroke="rgba(255,255,255,0.14)" stroke-width="1.6" />
+                    <line x1="0" y1="0" x2="0" y2="14" stroke="rgba(255,255,255,0.35)" stroke-width="1.8" />
                 </pattern>
                 @endforeach
             </defs>
