@@ -246,7 +246,10 @@
     .land-plot-title { font-size: 16px; font-weight: 800; color: #1E293B; margin: 0; letter-spacing: -0.01em; }
     .land-plot-sub { font-size: 12px; color: #64748B; margin-top: 2px; }
     .land-plot-svg-wrap { position: relative; border-radius: 18px; background: #F8FAF9; border: 1px solid #E2E8F0; padding: 16px; overflow: hidden; }
-    .plot-map-controls { position: absolute; top: 28px; right: 28px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
+    .plot-map-controls { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
+    @media (max-width: 768px) {
+        .plot-map-controls { top: 8px; right: 8px; }
+    }
     .plot-map-btn { width: 32px; height: 32px; border-radius: 50%; background: #FFFFFF; border: 1px solid #E2E8F0; color: #475569; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; transition: all 0.15s ease; }
     .plot-map-btn:hover { background: #edf1e9; color: #648268; }
     .plot-polygon { cursor: pointer; transform-box: fill-box; transform-origin: center; transition: opacity 0.15s ease; }
