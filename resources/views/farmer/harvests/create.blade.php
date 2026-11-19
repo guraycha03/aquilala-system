@@ -571,29 +571,14 @@
 
           <div class="form-field">
             <label id="seasonLabel">Season</label>
-            <div class="q-select" data-field="season" id="seasonSelectWrap">
+            <div class="q-select" data-field="season" id="seasonSelectWrap" style="pointer-events:none; opacity:0.7;">
               <input type="hidden" name="season" id="seasonField" value="{{ old('season', \App\Helpers\SeasonHelper::getCurrentSeason()) }}" required>
-              <button type="button" class="q-select-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="seasonLabel">
+              <button type="button" class="q-select-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="seasonLabel" disabled>
                 <span class="qsel-title">{{ \App\Helpers\SeasonHelper::getSeasonLabel() }}</span>
                 <svg class="qsel-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
-              <div class="q-select-menu" role="listbox" aria-labelledby="seasonLabel">
-                <div class="q-select-item" data-value="dry" role="option">
-                  <div class="qsel-opt">
-                    <div class="qsel-t">Dry Season</div>
-                    <div class="qsel-s">{{ \App\Helpers\SeasonHelper::rangeLabel('dry') }}</div>
-                  </div>
-                  <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-                <div class="q-select-item" data-value="wet" role="option">
-                  <div class="qsel-opt">
-                    <div class="qsel-t">Wet Season</div>
-                    <div class="qsel-s">{{ \App\Helpers\SeasonHelper::rangeLabel('wet') }}</div>
-                  </div>
-                  <svg class="qsel-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                </div>
-              </div>
             </div>
+            <p class="input-hint">Auto-detected from harvest date. Wet: Jun–Nov, Dry: Dec–May.</p>
           </div>
 
           <!-- Harvest Date: Custom Flatpickr Datepicker (matched to My Crops) -->
@@ -643,12 +628,35 @@
 
   <script>
     (function () {
+      // ── Season auto-detection from harvest date ──────────────────────────
+      // Mirrors App\Helpers\SeasonHelper::getCurrentSeason logic.
+      // Wet window defaults: Jun (6) – Nov (11). Dry: Dec (12) – May (5).
+      var WET_START = 6, WET_END = 11;
+      function getSeasonFromDate(dateStr) {
+        if (!dateStr) return 'dry';
+        var m = parseInt(dateStr.split('-')[1], 10);
+        return (m >= WET_START && m <= WET_END) ? 'wet' : 'dry';
+      }
+      function applySeasonFromDate(dateStr) {
+        var season = getSeasonFromDate(dateStr);
+        var field = document.getElementById('seasonField');
+        var title = document.querySelector('#seasonSelectWrap .qsel-title');
+        if (field) field.value = season;
+        if (title) title.textContent = season === 'wet' ? 'Wet Season' : 'Dry Season';
+      }
+
       // ── Custom Flatpickr Calendar Initialization (matched to My Crops) ──
       if (typeof flatpickr !== 'undefined') {
         flatpickr('#harvestDateField', {
           dateFormat: 'Y-m-d',
-          disableMobile: 'true'
+          disableMobile: 'true',
+          onChange: function (selectedDates, dateStr) {
+            applySeasonFromDate(dateStr);
+          }
         });
+        // Initialize season from current date value on load
+        var initialDate = document.getElementById('harvestDateField')?.value;
+        if (initialDate) applySeasonFromDate(initialDate);
       }
 
       // ── Tabs ────────────────────────────────────────────────────────────
