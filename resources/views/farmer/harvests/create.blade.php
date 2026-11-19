@@ -649,6 +649,7 @@
       if (typeof flatpickr !== 'undefined') {
         flatpickr('#harvestDateField', {
           dateFormat: 'Y-m-d',
+          maxDate: 'today',
           disableMobile: 'true',
           onChange: function (selectedDates, dateStr) {
             applySeasonFromDate(dateStr);
