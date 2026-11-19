@@ -16,8 +16,7 @@
   /* Filter bar + table base live in the shared .table-toolbar / .data-table /
      select rules (layouts.sidebar) — this form dresses exactly like every
      other filter bar in the app and auto-applies when a select changes. */
-  .cmp-filters { align-items: center; gap: 10px; flex-wrap: wrap; }
-  .cmp-filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; width: 100%; }
+.cmp-filters { align-items: center; gap: 10px; flex-wrap: wrap; }
   .cmp-filters select {
     padding: 8px 14px;
     border: 1px solid #e5e7eb;
@@ -29,6 +28,14 @@
     min-width: 160px;
     cursor: pointer;
     transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
   }
   .cmp-filters select:focus {
     outline: none;
@@ -126,33 +133,33 @@
       </div>
     </div>
     {{-- Filters (floating inline) ── --}}
-    <form class="cmp-filters" method="GET" action="{{ route($cmpRoute) }}" style="padding:0 18px 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-      <select name="year" aria-label="Year" onchange="this.form.submit()">
+    <div class="cmp-filters" style="padding:0 18px 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;" id="cmpFilters">
+      <select name="year" aria-label="Year" class="cmp-select" data-param="year">
         <option value="all">All years</option>
         @foreach($options['years'] as $y)
           <option value="{{ $y }}" {{ (string) $f['year'] === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
         @endforeach
       </select>
-      <select name="season" aria-label="Season" onchange="this.form.submit()">
+      <select name="season" aria-label="Season" class="cmp-select" data-param="season">
         <option value="">All seasons</option>
         <option value="wet" {{ $f['season'] === 'wet' ? 'selected' : '' }}>Wet</option>
         <option value="dry" {{ $f['season'] === 'dry' ? 'selected' : '' }}>Dry</option>
       </select>
-      <select name="crop" aria-label="Crop" onchange="this.form.submit()">
+      <select name="crop" aria-label="Crop" class="cmp-select" data-param="crop">
         <option value="">All crops</option>
         @foreach($options['crops'] as $c)
           <option value="{{ $c }}" {{ $f['crop'] === $c ? 'selected' : '' }}>{{ $c }}</option>
         @endforeach
       </select>
       @if($cmpIsAdmin && count($options['farmers']))
-        <select name="farmer" aria-label="Farmer" onchange="this.form.submit()">
+        <select name="farmer" aria-label="Farmer" class="cmp-select" data-param="farmer">
           <option value="">All farmers</option>
           @foreach($options['farmers'] as $name)
             <option value="{{ $name }}" {{ $f['farmer'] === $name ? 'selected' : '' }}>{{ $name }}</option>
           @endforeach
         </select>
       @endif
-      <select name="group_by" aria-label="Group chart by" onchange="this.form.submit()">
+      <select name="group_by" aria-label="Group chart by" class="cmp-select" data-param="group_by">
         <option value="crop" {{ $group_by === 'crop' ? 'selected' : '' }}>Chart by crop</option>
         <option value="period" {{ $group_by === 'period' ? 'selected' : '' }}>Chart by year + season</option>
       </select>
@@ -163,12 +170,12 @@
             || ($f['farmer'] ?? '') !== '';
       @endphp
       @if($hasCmpFilters)
-        <a class="btn-clear" href="{{ route($cmpRoute) }}">
+        <a class="btn-clear" href="{{ route($cmpRoute) }}" id="cmpClearBtn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           Clear
         </a>
       @endif
-    </form>
+    </div>
     <div class="cmp-chart">
       <canvas id="cmpChart" aria-label="Grouped bar chart comparing estimated and actual yield in metric tons" role="img"></canvas>
     </div>
@@ -349,3 +356,106 @@
   });
 </script>
 @endif
+
+<script>
+  (function () {
+    var filterWrap = document.getElementById('cmpFilters');
+    if (!filterWrap) return;
+    var selects = filterWrap.querySelectorAll('.cmp-select');
+    var clearBtn = document.getElementById('cmpClearBtn');
+    var chartCanvas = document.getElementById('cmpChart');
+    var chartInstance = null;
+
+    function buildUrl() {
+      var params = new URLSearchParams();
+      selects.forEach(function (sel) {
+        var val = sel.value;
+        if (val && val !== '') params.set(sel.getAttribute('data-param'), val);
+      });
+      return '{{ route($cmpRoute) }}?' + params.toString();
+    }
+
+    function fetchData(url) {
+      return fetch(url, {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+      }).then(function (r) { return r.json(); });
+    }
+
+    function updateChart(data) {
+      if (!chartCanvas) return;
+      if (chartInstance) chartInstance.destroy();
+      var ctx = chartCanvas.getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.chart.labels,
+          datasets: [
+            { label: 'Estimate', data: data.chart.estimate, backgroundColor: 'rgba(154, 167, 180, 0.85)', hoverBackgroundColor: 'rgba(133, 146, 159, 1)', borderColor: 'rgba(120, 133, 145, 0.9)', borderWidth: 1, borderRadius: 5, barPercentage: 0.7, categoryPercentage: 0.7 },
+            { label: 'Actual', data: data.chart.actual, backgroundColor: 'rgba(100, 130, 104, 0.88)', hoverBackgroundColor: 'rgba(74, 122, 84, 1)', borderColor: 'rgba(74, 122, 84, 0.9)', borderWidth: 1, borderRadius: 5, barPercentage: 0.7, categoryPercentage: 0.7 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (ctx) { var pairs = data.chart.pairs; var extra = pairs && pairs[ctx.dataIndex] !== undefined ? ' · ' + pairs[ctx.dataIndex] + ' harvest pair' + (pairs[ctx.dataIndex] === 1 ? '' : 's') : ''; return ' ' + ctx.dataset.label + ': ' + Number(ctx.parsed.y).toFixed(3) + ' MT' + extra; } } } },
+          scales: { y: { beginAtZero: true, ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: '#f1f5f9' }, border: { display: false }, title: { display: true, text: 'Metric tons (MT)', color: '#94a3b8', font: { size: 11, weight: '600' } } }, x: { ticks: { color: '#64748b', font: { size: 11 } }, grid: { display: false }, border: { display: false } } }
+        }
+      });
+    }
+
+    function updateKPIs(kpis) {
+      var els = document.querySelectorAll('.cmp-kpis > div');
+      if (els[0]) { els[0].querySelector('.v').textContent = Number(kpis.total_estimate_mt).toFixed(2) + ' MT'; }
+      if (els[1]) { els[1].querySelector('.v').textContent = Number(kpis.total_actual_mt).toFixed(2) + ' MT'; els[1].querySelector('.v').className = 'v ' + (kpis.variance_mt > 0.005 ? 'pos' : (kpis.variance_mt < -0.005 ? 'neg' : '')); }
+      if (els[2]) { els[2].querySelector('.v').textContent = (kpis.variance_mt >= 0 ? '+' : '') + Number(kpis.variance_mt).toFixed(2) + ' MT'; els[2].querySelector('.v').className = 'v ' + (kpis.variance_mt > 0.005 ? 'pos' : (kpis.variance_mt < -0.005 ? 'neg' : '')); }
+      if (els[3]) { els[3].querySelector('.v').textContent = kpis.accuracy_pct === null ? '—' : kpis.accuracy_pct + '%'; els[3].querySelector('.v').className = 'v ' + (kpis.accuracy_pct === null ? '' : (kpis.accuracy_pct >= 100 ? 'pos' : 'neg')); }
+    }
+
+    function updateTable(rows, cmpIsAdmin, kpis) {
+      var tbody = document.querySelector('#cmpTable tbody');
+      if (!tbody) return;
+      var html = '';
+      var rowsDesc = [].concat(rows).reverse();
+      rowsDesc.forEach(function (row) {
+        var varVal = row.actual_mt - row.estimate_mt;
+        var varClass = Math.abs(varVal) < 0.005 ? 'flat' : (varVal > 0 ? 'up' : 'down');
+        var varPct = row.estimate_mt > 0 ? Math.round((varVal / row.estimate_mt) * 100 * 10) / 10 : null;
+        html += '<tr>';
+        if (cmpIsAdmin) html += '<td style="font-weight:600;color:#334155;">' + row.farmer + '</td>';
+        html += '<td style="font-weight:700;color:#1a2b1e;">' + row.crop + '</td>';
+        html += '<td style="color:#64748b;">' + (row.batch || '—') + '</td>';
+        html += '<td><span class="cmp-pill ' + (row.season || '—') + '">' + (row.season ? row.season.charAt(0).toUpperCase() + row.season.slice(1) : '—') + '</span></td>';
+        html += '<td>' + (row.harvest_date ? new Date(row.harvest_date).toLocaleDateString('en-PH', { month: 'short', day: '2-digit', year: 'numeric' }) : '—') + '</td>';
+        html += '<td class="num">' + Number(row.land_area).toFixed(2).replace(/\.?0+$/, '') + '</td>';
+        html += '<td class="num">' + Number(row.estimate_mt).toFixed(2) + '</td>';
+        html += '<td class="num" style="font-weight:700;color:#14532d;">' + Number(row.actual_mt).toFixed(2) + '</td>';
+        html += '<td class="num"><span class="cmp-var ' + varClass + '">' + (varVal >= 0 ? '+' : '') + Number(varVal).toFixed(2) + (varPct !== null ? ' (' + (varPct >= 0 ? '+' : '') + varPct + '%)' : '') + '</span></td>';
+        html += '<td><span class="cmp-src ' + row.estimate_source + '">' + (row.estimate_source === 'batch' ? 'Planting estimate' : 'Baseline') + '</span></td>';
+        html += '</tr>';
+      });
+      tbody.innerHTML = html || '<tr><td colspan="' + (cmpIsAdmin ? 11 : 10) + '" class="cmp-empty" style="padding:24px;">No matching harvest pairs</td></tr>';
+    }
+
+    function applyFilters() {
+      var url = buildUrl();
+      fetchData(url).then(function (data) {
+        updateChart(data);
+        updateKPIs(data.kpis);
+        updateTable(data.rows, {{ $cmpIsAdmin ? 'true' : 'false' }}, data.kpis);
+        history.replaceState(null, '', url);
+      }).catch(function (err) { console.error(err); });
+    }
+
+    selects.forEach(function (sel) {
+      sel.addEventListener('change', function () { applyFilters(); });
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        selects.forEach(function (sel) { if (sel.getAttribute('data-param') !== 'group_by') sel.value = ''; });
+        applyFilters();
+      });
+    }
+  })();
+</script>

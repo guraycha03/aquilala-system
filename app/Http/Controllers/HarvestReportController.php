@@ -264,6 +264,10 @@ class HarvestReportController extends Controller
     {
         $data = $compare->compare('farmer', Auth::id(), $request->query());
 
+        if ($request->wantsJson()) {
+            return response()->json($data);
+        }
+
         return view('farmer.harvests.compare', $data);
     }
 
@@ -273,6 +277,10 @@ class HarvestReportController extends Controller
     public function adminCompare(Request $request, HarvestCompareService $compare)
     {
         $data = $compare->compare('admin', null, $request->query());
+
+        if ($request->wantsJson()) {
+            return response()->json($data);
+        }
 
         return view('admin.harvests.compare', $data);
     }
