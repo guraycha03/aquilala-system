@@ -18,32 +18,36 @@
   $seasonMonths = $climateInfo['months'] ?? '';
 
   // KPI cards — the signed-in farmer's own records (see FarmerDashboardController).
-  $dashboardStats = [
-      [
-          'label'       => 'My Crops',
-          'value'       => $myCropsCount ?? 0,
-          'description' => 'Crops on your farm',
-          'icon'        => 'sprout',
-      ],
-      [
-          'label'       => 'My Cost Quotations',
-          'value'       => $costEstimatesCount ?? 0,
-          'description' => 'Saved quotations',
-          'icon'        => 'calculator',
-      ],
-      [
-          'label'       => 'Harvest Reports',
-          'value'       => $harvestReportsCount ?? 0,
-          'description' => 'Reports submitted',
-          'icon'        => 'file',
-      ],
-      [
-          'label'       => 'Local Stores',
-          'value'       => $localStoresCount ?? 0,
-          'description' => 'Stores listed in Aquilala',
-          'icon'        => 'store',
-      ],
-  ];
+   $dashboardStats = [
+       [
+           'label'       => 'My Crops',
+           'value'       => $myCropsCount ?? 0,
+           'description' => 'Crops on your farm',
+           'icon'        => 'sprout',
+           'link'        => route('farmer.crops.index'),
+       ],
+       [
+           'label'       => 'My Cost Quotations',
+           'value'       => $costEstimatesCount ?? 0,
+           'description' => 'Saved quotations',
+           'icon'        => 'calculator',
+           'link'        => route('farmer.quotations.index'),
+       ],
+       [
+           'label'       => 'Harvest Reports',
+           'value'       => $harvestReportsCount ?? 0,
+           'description' => 'Reports submitted',
+           'icon'        => 'file',
+           'link'        => route('farmer.harvests.index'),
+       ],
+       [
+           'label'       => 'Local Stores',
+           'value'       => $localStoresCount ?? 0,
+           'description' => 'Stores listed in Aquilala',
+           'icon'        => 'store',
+           'link'        => route('farmer.stores.index'),
+       ],
+   ];
 @endphp
 
 <style>
@@ -168,6 +172,7 @@
                     :title="$stat['label']"
                     :value="number_format($stat['value'])"
                     :trendLabel="$stat['description']"
+                    :link="$stat['link'] ?? null"
                 >
                     <x-slot:icon>
                         @if ($stat['icon'] === 'sprout')
