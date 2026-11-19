@@ -754,8 +754,19 @@ span.flatpickr-weekday {
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         if (typeof flatpickr !== "undefined") {
-            flatpickr(".custom-datepicker", {
+            // Planting date: no past dates allowed (planning forward)
+            flatpickr("#plantingDate", {
                 dateFormat: "Y-m-d",
+                minDate: "today",
+                disableMobile: "true",
+                onChange: function (selectedDates, dateStr) {
+                    window.recalcHarvest();
+                }
+            });
+            // Expected harvest date: auto-fills, min date = planting date
+            flatpickr("#estHarvest", {
+                dateFormat: "Y-m-d",
+                minDate: function () { return document.getElementById('plantingDate').value || "today"; },
                 disableMobile: "true"
             });
         }
