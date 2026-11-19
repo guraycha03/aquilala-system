@@ -25,11 +25,12 @@
     ];
 
     // ─────────────────────────────────────────────────────────────────────────
-    // CROP IMAGE PLACEHOLDERS (in public/images/)
-    // Uncomment a line once you drop the matching image into public/images/.
-    // Note: Even while commented out, if you save a file matching the crop's
-    // lowercase slug (e.g. tomato.png, sweet-potato.png) in public/images/,
-    // the resolver below will auto-detect it and append ?v=filemtime!
+    // CROP IMAGES (files live in public/images/crops/)
+    // You normally do not need these lines: drop {slug}.{jpg|png} into
+    // public/images/crops/ (e.g. tomato.jpg, sweet-potato.jpg, corn.jpg) and
+    // the resolver below finds it — a fresh jpg beats the older png of the
+    // same crop, with ?v=filemtime for cache-busting. Uncomment a line only to
+    // pin one crop to a specific file name.
     // ─────────────────────────────────────────────────────────────────────────
     $cropImages = [
         // Grains
@@ -97,8 +98,10 @@
 
     // Resolves the crop image with ?v=filemtime cache-busting:
     // 1. Checks uncommented entry in $cropImages
-    // 2. Checks explicit $crop['image'] from controller/data
-    // 3. Auto-detects public/images/{slug}.{png|webp|jpg|jpeg}
+    // 2. Auto-detects the crop's slug in public/images/crops/ — the folder
+    //    every crop photo actually lives in — newest extension first, so a
+    //    dropped jpg beats the older png of the same crop; then public/images/
+    // 3. Checks explicit $crop['image'] from config (values like crops/rice.png)
     // 4. Falls back cleanly to images/crop.png if missing
     $resolveCropImage = function ($crop) use ($cropImages, $fallbackUrl) {
         $name = trim((string) ($crop['name'] ?? ''));
@@ -110,14 +113,10 @@
             }
         }
 
-        if (!empty($crop['image'])) {
-            $candidates[] = ltrim($crop['image'], '/');
-        }
-
         if ($name !== '') {
             $slugDash = \Illuminate\Support\Str::slug($name, '-');
             $slugUnderscore = \Illuminate\Support\Str::slug($name, '_');
-            foreach (['png', 'webp', 'jpg', 'jpeg'] as $ext) {
+            foreach (['jpg', 'jpeg', 'webp', 'png'] as $ext) {
                 $candidates[] = "{$slugDash}.{$ext}";
                 if ($slugUnderscore !== $slugDash) {
                     $candidates[] = "{$slugUnderscore}.{$ext}";
@@ -125,11 +124,26 @@
             }
         }
 
+        if (!empty($crop['image'])) {
+            $candidates[] = ltrim($crop['image'], '/');
+        }
+
         foreach (array_unique($candidates) as $filename) {
-            $relativePath = str_starts_with($filename, 'images/') ? $filename : "images/{$filename}";
-            $fullPath = public_path($relativePath);
-            if (file_exists($fullPath)) {
-                return asset($relativePath) . '?v=' . filemtime($fullPath);
+            if (str_contains($filename, '/')) {
+                // A config value already carries its directory: crops/rice.png.
+                $paths = [str_starts_with($filename, 'images/') ? $filename : "images/{$filename}"];
+            } else {
+                // A bare filename — a manual entry or a slug the resolver
+                // built — lives in the crops folder first, then (for any
+                // older layout) at the root of public/images/.
+                $paths = ["images/crops/{$filename}", "images/{$filename}"];
+            }
+
+            foreach ($paths as $relativePath) {
+                $fullPath = public_path($relativePath);
+                if (file_exists($fullPath)) {
+                    return asset($relativePath) . '?v=' . filemtime($fullPath);
+                }
             }
         }
 
