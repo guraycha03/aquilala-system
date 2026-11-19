@@ -526,7 +526,7 @@
               </div>
             </div>
             <p class="input-hint">
-              Select a planted crop to auto-fill your crop, season, and farm size. Choose <strong>None</strong> if you are typing a past harvest manually.
+              Select a planted crop to auto-fill your crop, season, and farm size.
             </p>
           </div>
         </div>
@@ -578,7 +578,7 @@
                 <svg class="qsel-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
             </div>
-            <p class="input-hint">Auto-detected from harvest date. Wet: Jun–Nov, Dry: Dec–May.</p>
+            <p class="input-hint">Auto-detected from harvest date.</p>
           </div>
 
           <!-- Harvest Date: Custom Flatpickr Datepicker (matched to My Crops) -->
@@ -977,7 +977,7 @@
         if(cropQuery){ cropQuery.readOnly=!isManual; cropQuery.tabIndex=isManual?0:-1; if(cropWrap) cropWrap.classList.toggle('is-readonly',!isManual); }
         if(hrvVarietyField) hrvVarietyField.style.display='';
         fillHarvestVarieties(cropName||'', vKey||'', vName||'');
-        if(hrvVarietyHint) hrvVarietyHint.textContent=isManual ? (cropName?'Variety for this harvest (from crop library).':'Choose the crop first. Uses the same crop library as My Crops.') : 'Variety comes from the selected planting batch.';
+        if(hrvVarietyHint) hrvVarietyHint.textContent=isManual ? (cropName?'':'Choose the crop first.') : 'Variety comes from the selected planting batch.';
       }
       var batchWrap   = document.getElementById('batchSelectWrap');
       var batchInput  = document.getElementById('cropBatchInput');
