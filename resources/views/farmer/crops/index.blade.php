@@ -496,7 +496,7 @@
 
             <!-- Survey Corner Nodes on Outer Parcel -->
             @foreach($partition['outerPolygon'] as $idx => $pt)
-            <circle cx="{{ number_format($pt['x'], 2) }}" cy="{{ number_format($pt['y'], 2) }}" r="3.2" fill="#FAFBF8" stroke="#2C3A31" stroke-width="1.6" style="pointer-events: none;" />
+            <circle cx="{{ number_format($pt['x'], 2) }}" cy="{{ number_format($pt['y'], 2) }}" r="3.2" fill="#FAFBF8" stroke="#8FA89A" stroke-width="1.6" style="pointer-events: none;" />
             @endforeach
         </svg>
     </div>
