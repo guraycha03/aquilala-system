@@ -1275,6 +1275,68 @@ class AquilalaAssistant
      */
     private function farmingAdviceAnswer(array $contextData, ?string $crop, array $missing, array $routing): string
     {
+        // A reported symptom is worded differently from a topic question: the
+        // farmer told us something is wrong, and the first line has to be
+        // that we will not guess at what it is.
+        if (($routing['plant_problem'] ?? false) === true) {
+            return $this->plantProblemAnswer($contextData, $crop, $missing, $routing);
+        }
+
+        return $this->farmingAdviceBody($contextData, $crop, $missing, $routing);
+    }
+
+    /**
+     * "What can I do about yellowing leaves?" — a symptom, not a topic.
+     *
+     * The assistant has no diagnosis knowledge and none is approved for it,
+     * so it says that plainly in its first line and hands over what it does
+     * have: the approved care guidance for the crop — which includes watching
+     * the leaves and asking the supplier what the local recommendations are —
+     * and the formula route for the exact numbers. What it must not do is
+     * name a cause: "yellow leaves means nitrogen" is an invention in the
+     * voice of the association.
+     *
+     * @param  array<string, mixed>  $contextData
+     * @param  array{intent: string, slots: array<string, mixed>, missing: array<int, string>, follow_up: bool}  $routing
+     */
+    private function plantProblemAnswer(array $contextData, ?string $crop, array $missing, array $routing): string
+    {
+        if ($crop !== null) {
+            $intro = 'I can\'t diagnose a plant problem from a chat message — I won\'t guess at a cause. '
+                . 'What I can share is the approved care guidance for **' . $crop . '**:';
+
+            return $intro . "\n\n" . $this->farmingAdviceBody($contextData, $crop, $missing, $routing);
+        }
+
+        $lines = [
+            'I can\'t diagnose a plant problem from a chat message — I won\'t guess at a cause.',
+            '',
+            'Tell me which crop is affected and I will share the approved care guidance for it. '
+                . 'And if you give me the crop, season and farm area, Aquilala will calculate the exact rates for you.',
+        ];
+
+        $crops = $contextData['facts']['crops'] ?? [];
+
+        if ($crops !== []) {
+            $lines[] = '';
+            $lines[] = 'Mga tanim na pwede: ' . implode(', ', array_slice(array_map(
+                static fn (array $entry) => (string) $entry['name'],
+                $crops
+            ), 0, 15)) . '.';
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * The approved-knowledge answer itself: the general process for the crop
+     * labelled as general practice, then Aquilala's own record for it.
+     *
+     * @param  array<string, mixed>  $contextData
+     * @param  array{intent: string, slots: array<string, mixed>, missing: array<int, string>, follow_up: bool}  $routing
+     */
+    private function farmingAdviceBody(array $contextData, ?string $crop, array $missing, array $routing): string
+    {
         if ($crop !== null) {
             $facts = $this->knowledge->factsFor($crop) ?? [];
             $steps = $this->knowledge->plantingSteps($crop, $facts['group'] ?? null);

@@ -207,8 +207,11 @@ class AiIntentRouter
         // Non-farming topics
         '/\b(write|compose|generate)\s+(me\s+)?(a\s+|an\s+)?(poem|essay|song|story|code|program|script|email|letter)\b/i',
         '/\b(debug|refactor|unit\s+test|stack\s*trace|exception)\b/i',
-        // Personal/legal/medical topics
-        '/\b(medical|doctor|hospital|diagnos(is|e)|symptoms?\s+of\s+(a\s+)?(human|child|adult))\b/i',
+        // Personal/legal/medical topics. "Diagnose" on its own is not a medical
+        // topic — "can you diagnose my rice?" is a farming question, and the
+        // plant-problem route answers it. A message that never reaches a
+        // positive route is refused at the bottom of classify() either way.
+        '/\b(medical|doctor|hospital|symptoms?\s+of\s+(a\s+)?(human|child|adult))\b/i',
         '/\b(loan|credit|salary|job\s+opening|resume|certificate|training)\b/i',
         '/\b(legal|lawyer|court|permit|tax)\b/i',
     ];
@@ -226,7 +229,7 @@ class AiIntentRouter
 
     /**
      * @param  array<int, array{role: string, content: string}>  $history
-     * @return array{intent: string, slots: array<string, mixed>, missing: array<int, string>, follow_up: bool, subjective: bool}
+     * @return array{intent: string, slots: array<string, mixed>, missing: array<int, string>, follow_up: bool, subjective: bool, plant_problem: bool}
      */
     public function route(string $message, AiConversationContext $context = new AiConversationContext, array $history = []): array
     {
@@ -309,6 +312,12 @@ class AiIntentRouter
             // decides if the crop's compatibility list is an answer or a
             // substitute.
             'names_specific_product' => $this->namesASpecificProduct($text),
+            // Whether the message reported a symptom on a plant. The advice
+            // branch reads it to word the answer: a symptom gets an honest
+            // "I cannot diagnose" plus the approved guidance, rather than the
+            // crop's planting process arriving out of nowhere.
+            'plant_problem' => $intent === AiIntent::FARMING_ADVICE
+                && $this->mentionsPlantProblem($normalized),
         ];
     }
 
@@ -487,7 +496,20 @@ class AiIntentRouter
             return AiIntent::CROP_DISCOVERY;
         }
 
-        if ($this->mentionsCultivation($text)) {
+        // "What can I do about yellowing leaves?" — a symptom the farmer is
+        // reporting. It has to reach the advice branch even when a crop is
+        // inherited from the previous turn, because the catch-all below would
+        // answer it with the crop's fact sheet, and with no crop at all it
+        // fell through to the capability list — both answer a question
+        // nobody asked.
+        if ($this->mentionsPlantProblem($text)) {
+            return AiIntent::FARMING_ADVICE;
+        }
+
+        // "How can I improve rice yield?" — an outcome, not the crop's record.
+        // The fact sheet plus the rate warning that the catch-all produces
+        // tells the farmer nothing about improving anything.
+        if ($this->mentionsCultivation($text) || $this->mentionsYieldImprovement($text)) {
             return AiIntent::FARMING_ADVICE;
         }
 
@@ -780,6 +802,46 @@ class AiIntentRouter
         }
 
         return null;
+    }
+
+    /**
+     * A symptom reported on a plant: "what can I do about yellowing leaves?".
+     *
+     * Two parts are required — a symptom and the thing it is happening to —
+     * so a topic question ("can you help me with planting problems?") keeps
+     * the cultivation route it already answers well, and "my order has a
+     * problem" never becomes a farming answer. Crop names count as the
+     * subject, because "my rice is turning yellow" is the same question.
+     */
+    private function mentionsPlantProblem(string $text): bool
+    {
+        $symptom = '/\b(yellow\w*|wilting|wilt(?:ed|ing)?|droop\w*|curl\w*|spots?|spotted|holes?|eaten'
+            . '|damage[d]?|discolou?r\w*|browning|browned|blight|mould|mold|rot(?:ted|ting|ten)?|rust'
+            . '|aphids?|worms?|caterpillars?|mites?|insects?|bugs?|pests?|diseases?|symptoms?'
+            . '|diagnos(?:is|e)|treat(?:s|ed|ing|ment)?|remed(?:y|ies)|cure[sd]?'
+            . '|dying|dead|sick|withered|problems?|issues?)\b/i';
+
+        $subject = '/\b(leaves?|leaf|plants?|crops?|roots?|stems?|branches|trees?|seedlings?|palay)\b'
+            . '|\b' . $this->cropNamePattern() . '\b/i';
+
+        return preg_match($symptom, $text) === 1 && preg_match($subject, $text) === 1;
+    }
+
+    /**
+     * "How can I improve rice yield?" — an outcome the farmer wants, not the
+     * crop's record. Answered with the approved care process, which is what
+     * improving yield actually consists of here; the fact sheet the crop
+     * catch-all produces answers a different question.
+     */
+    private function mentionsYieldImprovement(string $text): bool
+    {
+        return preg_match(
+            '/\b(?:improve|increase|boost|raise|better|higher|maximi[sz]e|grow)\b[^.?!]{0,44}'
+                . '\b(?:yield|harvests?|production|output)\b'
+                . '|\b(?:yield|harvests?|production|output)\b[^.?!]{0,44}'
+                . '\b(?:improve|increase|boost|better|higher)\b/i',
+            $text
+        ) === 1;
     }
 
     private function mentionsCultivation(string $text): bool

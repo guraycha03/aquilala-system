@@ -350,12 +350,21 @@ class ProductSearchService
                 'after', 'up', 'down', 'out', 'off', 'again', 'once', 'here', 'same',
                 'other', 'others', 'another', 'each', 'every', 'both', 'few', 'too',
                 'very', 'am', 'was', 'were', 'been', 'being', 'have', 'sell', 'order',
+                // How the question is being asked, not what is being asked for.
+                // keepOnlyRelevant() requires every remaining keyword to appear
+                // in the product, so a filler verb left in the query empties the
+                // result: "i am just asking for you to list fertilizers" searched
+                // for "asking" and came back with nothing at all.
+                'ask', 'asking', 'asks', 'wonder', 'wondering', 'wondered',
+                'curious', 'interested', 'interest', 'check', 'checked', 'checking',
+                'hoping', 'hope', 'like', 'meant', 'meaning', 'mean',
+                'think', 'thinking', 'trying', 'try', 'confused', 'clarify', 'clarifying',
             ];
 
         $tokens = preg_split('/[^\p{L}\p{N}\-]+/u', $normalised, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         $keywords = array_values(array_filter(
-            array_map(fn ($token) => $this->normalizeKeyword($token), $tokens),
+            array_map(fn ($token) => $this->singularize($this->normalizeKeyword($token)), $tokens),
             fn ($token) => $token !== '' && mb_strlen($token) > 1 && ! in_array($token, $stopWords, true)
         ));
 
@@ -374,6 +383,26 @@ class ProductSearchService
             ['-', '-', '-', '-', '-', '-', ' ', ' '],
             $keyword
         ));
+    }
+
+    /**
+     * The stem a farmer would recognise, so the plural they type matches the
+     * singular the catalogue holds.
+     *
+     * "list fertilizers" searched for the literal plural and matched nothing:
+     * no product row contains "fertilizers", and the category is called
+     * "Fertilizer". Stripping one trailing s makes the stem a substring of
+     * both forms on each side of the comparison, which is why it is one s and
+     * not a real pluraliser — "fertilizer" is inside "fertilizers", and words
+     * like "class" or "gas" are left alone.
+     */
+    private function singularize(string $token): string
+    {
+        if (mb_strlen($token) > 3 && str_ends_with($token, 's') && ! str_ends_with($token, 'ss')) {
+            return mb_substr($token, 0, -1);
+        }
+
+        return $token;
     }
 
     /**
