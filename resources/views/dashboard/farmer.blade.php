@@ -204,7 +204,7 @@
                             {{-- Custom storefront icon (replaces Lucide store) --}}
                             <svg viewBox="0 0 64 64"
                                  fill="none" stroke="currentColor"
-                                 stroke-width="3.4" stroke-linecap="round"
+                                 stroke-width="3.2" stroke-linecap="round"
                                  stroke-linejoin="round" aria-hidden="true"
                                  class="w-6 h-6">
                                 <path d="M52,27.18V52.76a2.92,2.92,0,0,1-3,2.84H15a2.92,2.92,0,0,1-3-2.84V27.17"/>
