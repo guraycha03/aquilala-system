@@ -644,6 +644,14 @@
     height: 34px;
     object-fit: contain;
   }
+  /* Real photos fill the whole tile — the tile's rounded corners clip
+     them, so the image matches the badge background. */
+  .cd-card-icon img.cd-img-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 11px;
+  }
   .cd-card-title-group {
     min-width: 0;
     flex: 1;
@@ -880,24 +888,31 @@
 
   .cd-drawer-hero {
     display: flex;
-    align-items: center;
-    gap: 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
     margin-bottom: 20px;
   }
+  /* Full-width banner so the real crop photos read at a useful size. */
   .cd-drawer-icon {
-    width: 66px;
-    height: 66px;
+    width: 100%;
+    height: 210px;
     border-radius: 16px;
     border: 1px solid var(--cd-icon-ring);
+    background: var(--cd-surface-subtle);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    overflow: hidden;
   }
   .cd-drawer-icon img {
-    width: 44px;
-    height: 44px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
+  }
+  .cd-drawer-icon img.cd-img-photo {
+    object-fit: cover;
   }
   .cd-drawer-title {
     font-size: 22px;
@@ -1199,7 +1214,7 @@
           <div>
             <div class="cd-card-header">
               <div class="cd-card-icon" style="background:{{ $cropColor }};">
-                <img src="{{ $imgSrc }}" alt="{{ $crop['name'] }}" loading="lazy" onerror="this.onerror=null;this.src='{{ $fallbackUrl }}';">
+                <img src="{{ $imgSrc }}" alt="{{ $crop['name'] }}" loading="lazy" class="{{ preg_match('/\.(jpe?g|webp)(\?|$)/i', $imgSrc) ? 'cd-img-photo' : '' }}" onerror="this.onerror=null;this.src='{{ $fallbackUrl }}';">
               </div>
               <div class="cd-card-title-group">
                 <h2 class="cd-card-name">{{ $crop['name'] }}</h2>
@@ -1257,7 +1272,7 @@
   <div class="cd-drawer-body">
     <div class="cd-drawer-hero">
       <div id="cdDrawerIcon" class="cd-drawer-icon">
-        <img id="cdDrawerImg" src="" alt="" onerror="this.onerror=null;this.src='{{ $fallbackUrl }}';">
+        <img id="cdDrawerImg" src="{{ $fallbackUrl }}" alt="" onerror="this.onerror=null;this.src='{{ $fallbackUrl }}';">
       </div>
       <div>
         <h2 id="cdDrawerTitle" class="cd-drawer-title"></h2>
@@ -1405,6 +1420,7 @@
         const imgEl = document.getElementById('cdDrawerImg');
         imgEl.src = data.image;
         imgEl.alt = data.name;
+        imgEl.classList.toggle('cd-img-photo', /\.(jpe?g|webp)(\?|$)/i.test(data.image));
 
         document.getElementById('cdDrawerTitle').textContent = data.name;
         document.getElementById('cdDrawerCat').textContent   = data.categoryLabel;
