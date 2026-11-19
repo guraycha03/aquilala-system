@@ -103,7 +103,7 @@
       </div>
     </div>
     {{-- Compact KPI row ── --}}
-    <div class="cmp-kpis" style="display:flex; gap:16px; flex-wrap:wrap; padding:0 18px 14px; border-bottom:1px solid #f1f5f9; margin-bottom:8px;">
+    <div class="cmp-kpis" style="display:flex; gap:16px; flex-wrap:wrap; padding:18px 18px 14px; border-bottom:1px solid #f1f5f9; margin-bottom:8px;">
       <div style="flex:1; min-width:140px;">
         <div class="k" style="font-size:11px;">Estimated</div>
         <div class="v" style="font-size:18px;">{{ number_format($kpis['total_estimate_mt'], 2) }} <span style="font-size:11px;font-weight:700;color:#94a3b8;">MT</span></div>
@@ -125,51 +125,49 @@
         </div>
       </div>
     </div>
-    {{-- Filters (inline below chart header) ── --}}
-    <form class="table-toolbar cmp-filters" method="GET" action="{{ route($cmpRoute) }}">
-      <div class="cmp-filter-row">
-        <select name="year" aria-label="Year" onchange="this.form.submit()">
-          <option value="all">All years</option>
-          @foreach($options['years'] as $y)
-            <option value="{{ $y }}" {{ (string) $f['year'] === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
+    {{-- Filters (floating inline) ── --}}
+    <form class="cmp-filters" method="GET" action="{{ route($cmpRoute) }}" style="padding:0 18px 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <select name="year" aria-label="Year" onchange="this.form.submit()">
+        <option value="all">All years</option>
+        @foreach($options['years'] as $y)
+          <option value="{{ $y }}" {{ (string) $f['year'] === (string) $y ? 'selected' : '' }}>{{ $y }}</option>
+        @endforeach
+      </select>
+      <select name="season" aria-label="Season" onchange="this.form.submit()">
+        <option value="">All seasons</option>
+        <option value="wet" {{ $f['season'] === 'wet' ? 'selected' : '' }}>Wet</option>
+        <option value="dry" {{ $f['season'] === 'dry' ? 'selected' : '' }}>Dry</option>
+      </select>
+      <select name="crop" aria-label="Crop" onchange="this.form.submit()">
+        <option value="">All crops</option>
+        @foreach($options['crops'] as $c)
+          <option value="{{ $c }}" {{ $f['crop'] === $c ? 'selected' : '' }}>{{ $c }}</option>
+        @endforeach
+      </select>
+      @if($cmpIsAdmin && count($options['farmers']))
+        <select name="farmer" aria-label="Farmer" onchange="this.form.submit()">
+          <option value="">All farmers</option>
+          @foreach($options['farmers'] as $name)
+            <option value="{{ $name }}" {{ $f['farmer'] === $name ? 'selected' : '' }}>{{ $name }}</option>
           @endforeach
         </select>
-        <select name="season" aria-label="Season" onchange="this.form.submit()">
-          <option value="">All seasons</option>
-          <option value="wet" {{ $f['season'] === 'wet' ? 'selected' : '' }}>Wet</option>
-          <option value="dry" {{ $f['season'] === 'dry' ? 'selected' : '' }}>Dry</option>
-        </select>
-        <select name="crop" aria-label="Crop" onchange="this.form.submit()">
-          <option value="">All crops</option>
-          @foreach($options['crops'] as $c)
-            <option value="{{ $c }}" {{ $f['crop'] === $c ? 'selected' : '' }}>{{ $c }}</option>
-          @endforeach
-        </select>
-        @if($cmpIsAdmin && count($options['farmers']))
-          <select name="farmer" aria-label="Farmer" onchange="this.form.submit()">
-            <option value="">All farmers</option>
-            @foreach($options['farmers'] as $name)
-              <option value="{{ $name }}" {{ $f['farmer'] === $name ? 'selected' : '' }}>{{ $name }}</option>
-            @endforeach
-          </select>
-        @endif
-        <select name="group_by" aria-label="Group chart by" onchange="this.form.submit()">
-          <option value="crop" {{ $group_by === 'crop' ? 'selected' : '' }}>Chart by crop</option>
-          <option value="period" {{ $group_by === 'period' ? 'selected' : '' }}>Chart by year + season</option>
-        </select>
-        @php
-          $hasCmpFilters = in_array($f['year'] ?? '', ['', 'all'], true) === false
-              || ($f['season'] ?? '') !== ''
-              || ($f['crop'] ?? '') !== ''
-              || ($f['farmer'] ?? '') !== '';
-        @endphp
-        @if($hasCmpFilters)
-          <a class="btn-clear" href="{{ route($cmpRoute) }}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Clear
-          </a>
-        @endif
-      </div>
+      @endif
+      <select name="group_by" aria-label="Group chart by" onchange="this.form.submit()">
+        <option value="crop" {{ $group_by === 'crop' ? 'selected' : '' }}>Chart by crop</option>
+        <option value="period" {{ $group_by === 'period' ? 'selected' : '' }}>Chart by year + season</option>
+      </select>
+      @php
+        $hasCmpFilters = in_array($f['year'] ?? '', ['', 'all'], true) === false
+            || ($f['season'] ?? '') !== ''
+            || ($f['crop'] ?? '') !== ''
+            || ($f['farmer'] ?? '') !== '';
+      @endphp
+      @if($hasCmpFilters)
+        <a class="btn-clear" href="{{ route($cmpRoute) }}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Clear
+        </a>
+      @endif
     </form>
     <div class="cmp-chart">
       <canvas id="cmpChart" aria-label="Grouped bar chart comparing estimated and actual yield in metric tons" role="img"></canvas>
@@ -178,13 +176,6 @@
 </div>
 
 {{-- ── Detail table ── --}}
-<x-table-toolbar
-    uid="cmpDetail"
-    work-table="cmpTable"
-    per-page="10"
-    noun="pairs"
-    search-placeholder="Search crop, batch, or farmer…"
-  />
 <div class="cmp-card">
   <div class="cmp-card-head">
     <div>
