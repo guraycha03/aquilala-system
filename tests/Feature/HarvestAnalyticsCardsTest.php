@@ -74,6 +74,23 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->assertDontSee('id="hpHistoryModal"', false);
     }
 
+    public function test_dashboard_and_harvest_performance_share_one_identical_chart(): void
+    {
+        $this->seedHarvests();
+
+        foreach ([route('dashboard.admin'), route('admin.harvests.index')] as $url) {
+            $html = $this->actingAs($this->admin)->get($url)->assertOk()->getContent();
+
+            // The dashboard's chart has generous left padding and a bold
+            // total-yield figure. Both pages must now get those exact rules
+            // from the same partial, not a local copy that drifts.
+            $this->assertStringContainsString('.chart-grid { display: flex; gap: 28px; padding: 24px 26px;', $html);
+            $this->assertStringContainsString('.yield-big-value { font-size: 28px; font-weight: 800;', $html);
+            $this->assertStringContainsString('id="harvestYieldValue"', $html);
+            $this->assertSame(1, substr_count($html, 'id="harvestChart"'), $url . ' must render exactly one harvest chart.');
+        }
+    }
+
     public function test_the_full_view_button_opens_the_full_history_page(): void
     {
         $this->seedHarvests();
