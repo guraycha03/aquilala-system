@@ -1158,7 +1158,7 @@
 
     var source = (data && data.source === 'ai')
       ? '<span class="fq-btn fq-btn--ghost" style="font-size:11px;padding:4px 10px;"><svg viewBox="0 0 24 24" stroke-width="2.2"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15.5l.85 2.15L22 18.5l-2.15.85L19 21.5l-.85-2.15L16 18.5l2.15-.85L19 15.5z"/></svg>AI assisted</span>'
-      : '<span class="fq-btn fq-btn--ghost" style="font-size:11px;padding:4px 10px;"><svg viewBox="0 0 24 24" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>Smart summary (AI offline)</span>';
+      : '<span class="fq-btn fq-btn--ghost" style="font-size:11px;padding:4px 10px;"><svg viewBox="0 0 24 24" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>Smart summary (from your data)</span>';
 
     var sections = parseAiSections(data.overview || '');
     var cards = '';

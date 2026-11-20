@@ -615,7 +615,7 @@
             }
         } catch (err) {
             removeLoadingMessage();
-            addOfflineMessage('The AI is currently offline. Please check your connection and try again in a moment.');
+            addOfflineMessage('The AI could not complete that request. Please try again in a moment.');
         }
 
         enableInput();

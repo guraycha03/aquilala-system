@@ -97,6 +97,29 @@ sudo tail -n 100 /var/www/aquilala/storage/logs/laravel.log
 sudo tail -n 100 /var/log/aquilala/queue-error.log
 ```
 
+## Uploaded files (do not lose these)
+
+Uploaded product photos live under `storage/app/public/products/` and are
+served through the `public/storage` symlink. Crop photos in
+`public/images/crops/` are tracked in Git, but product uploads are **not**.
+A release that replaces `storage/app/public/` with an empty directory makes
+every product detail page show broken images while the database still points
+at those paths.
+
+- Keep the existing `storage/app/public/products/` tree when replacing app
+  files. The deploy script copies `storage/app` out of the pre-deploy backup;
+  verify the backup actually contains those files before running it.
+- If the current server's uploads are missing, copy them up explicitly after
+  the release:
+  ```powershell
+  scp -r -i .\aquilala_key.pem .\storage\app\public\products\* `
+    guraycha03@20.2.221.9:/var/www/aquilala/storage/app/public/products/
+  ssh -i .\aquilala_key.pem guraycha03@20.2.221.9 `
+    'sudo chown -R www-data:www-data /var/www/aquilala/storage/app/public/products'
+  ```
+- Product images that genuinely no longer exist on disk fall back to
+  `images/product.png` instead of rendering a broken-image icon.
+
 ## Database safety
 
 Normal deployments run migrations and preserve existing rows. They do not

@@ -161,13 +161,12 @@ class WeatherService
         }
 
         try {
-            $response = self::http()
-                ->get(config('services.openweather.url'), [
-                    'lat' => self::LATITUDE,
-                    'lon' => self::LONGITUDE,
-                    'units' => 'metric',
-                    'appid' => $apiKey,
-                ]);
+            $response = self::request(config('services.openweather.url'), [
+                'lat' => self::LATITUDE,
+                'lon' => self::LONGITUDE,
+                'units' => 'metric',
+                'appid' => $apiKey,
+            ]);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -245,13 +244,12 @@ class WeatherService
             }
 
             try {
-                $response = self::http()
-                    ->get(config('services.openweather.forecast_url'), [
-                        'lat' => self::LATITUDE,
-                        'lon' => self::LONGITUDE,
-                        'units' => 'metric',
-                        'appid' => $apiKey,
-                    ]);
+                $response = self::request(config('services.openweather.forecast_url'), [
+                    'lat' => self::LATITUDE,
+                    'lon' => self::LONGITUDE,
+                    'units' => 'metric',
+                    'appid' => $apiKey,
+                ]);
 
                 if ($response->successful()) {
                     $list = $response->json()['list'] ?? [];
@@ -474,13 +472,42 @@ class WeatherService
      * environments without a system bundle), falling back to Guzzle's default
      * verification otherwise.
      */
-    private static function http(): \Illuminate\Http\Client\PendingRequest
+    private static function http(bool $verify = true): \Illuminate\Http\Client\PendingRequest
     {
+        if (! $verify) {
+            return Http::timeout(4)->connectTimeout(2)->withoutVerifying();
+        }
+
         $cacert = storage_path('certs/cacert.pem');
         if (is_file($cacert)) {
             return Http::timeout(4)->connectTimeout(2)->withOptions(['verify' => $cacert]);
         }
         return Http::timeout(4)->connectTimeout(2);
+    }
+
+    /**
+     * GET the weather API, retrying once without TLS verification when this
+     * machine cannot complete the handshake against any CA bundle.
+     *
+     * Some Windows/CLI PHP installs time out on cURL's TLS verification even
+     * though the endpoint is reachable — the AI client already has to use the
+     * same fallback. The retry still reads the real API; it never substitutes
+     * invented weather. The failure is remembered for the rest of the request
+     * so a second weather question is not delayed by a doomed first attempt.
+     */
+    private static function request(string $url, array $query)
+    {
+        static $skipVerification = false;
+
+        if (! $skipVerification) {
+            try {
+                return self::http()->get($url, $query);
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                $skipVerification = true;
+            }
+        }
+
+        return self::http(false)->get($url, $query);
     }
 
     /**

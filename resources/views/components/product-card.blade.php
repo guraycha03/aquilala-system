@@ -376,9 +376,9 @@
     </span>
 
     @if($product->mainImage && !empty($product->mainImage->file_path))
-      <img src="{{ $product->mainImage->thumb_url }}" alt="{{ $displayName }}" class="product-card-img" loading="lazy">
+      <img src="{{ $product->mainImage->card_url }}" alt="{{ $displayName }}" class="product-card-img" loading="lazy">
     @elseif($product->images && $product->images->first())
-      <img src="{{ $product->images->first()->thumb_url }}" alt="{{ $displayName }}" class="product-card-img" loading="lazy">
+      <img src="{{ $product->images->first()->card_url }}" alt="{{ $displayName }}" class="product-card-img" loading="lazy">
     @else
       <i data-lucide="image" width="40" height="40" aria-hidden="true"></i>
     @endif

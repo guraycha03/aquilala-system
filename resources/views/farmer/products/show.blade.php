@@ -254,7 +254,7 @@
         <!-- LEFT: Product Image Gallery -->
         @php
             $gallery = $product->gallery;
-            $gallerySources = $gallery->map(fn ($image) => asset('storage/' . $image->file_path))->values()->all();
+            $gallerySources = $gallery->map(fn ($image) => $image->display_url)->values()->all();
         @endphp
         <div class="gallery" data-gallery data-gallery-sources="{{ json_encode($gallerySources) }}" data-gallery-name="{{ $product->display_name }}">
             <div class="gallery-main" data-gallery-main>
@@ -262,7 +262,7 @@
                     <div class="gallery-track" data-gallery-track tabindex="0" role="group" aria-label="Product images — scroll left and right to browse">
                         @foreach($gallery as $index => $image)
                             <img class="gallery-slide"
-                                 src="{{ asset('storage/' . $image->file_path) }}"
+                                 src="{{ $image->display_url }}"
                                  alt="{{ $product->display_name }}{{ $gallery->count() > 1 ? ' — image ' . ($index + 1) : '' }}"
                                  data-gallery-image
                                  data-gallery-index="{{ $index }}"
@@ -300,7 +300,7 @@
                                 aria-selected="{{ $index === 0 ? 'true' : 'false' }}"
                                 data-gallery-thumb
                                 data-gallery-index="{{ $index }}">
-                            <img src="{{ asset('storage/' . $image->file_path) }}" alt="{{ $product->display_name }} — image {{ $index + 1 }}" loading="lazy">
+                            <img src="{{ $image->display_url }}" alt="{{ $product->display_name }} — image {{ $index + 1 }}" loading="lazy">
                         </button>
                     @endforeach
                 </div>

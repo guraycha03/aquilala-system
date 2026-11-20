@@ -134,6 +134,23 @@ class AquilalaAssistant
         // carries a real question after it, the greeting is stripped and
         // prepended to the answer so the user feels heard and still gets
         // an answer to what they actually asked.
+        // "How are you?" is a courtesy, whether it stands alone or follows a
+        // "Hello, ..." / "Good morning, ...". It gets a warm human reply in
+        // the person's own language — never a greeting template, a capability
+        // briefing, or a scope refusal. A real question after it is left for
+        // the normal route below, so nothing the person asked is dropped.
+        if ($this->isHowAreYouOnly($message)) {
+            return [
+                'reply'       => $this->howAreYouReply($message),
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::GREETING,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
         $greetingPrefix = $this->extractGreetingPrefix($message);
         $greetingHandled = false;
         if ($greetingPrefix !== null) {
@@ -172,6 +189,50 @@ class AquilalaAssistant
             // so every later check sees the question, not the courtesy.
             $message = $stripped;
             $greetingHandled = true;
+        }
+
+        // "Sino ka ba?" / "who are you?" is a question about the assistant,
+        // not an out-of-scope topic. Answer it plainly in the person's own
+        // language instead of handing back the capability briefing or the
+        // scope refusal.
+        if (preg_match('/\b(?:sino\s+ka|who\s+are\s+you|what\s+are\s+you|ano\s+ka|ikaw\s+ba)\b/iu', $message) === 1) {
+            $reply = $this->wantsTagalog($message)
+                ? 'Ako si Aquilala — ang AI assistant ng sistema. Tumutulong ako sa pagsasaka, presyo ng produkto, gastusin sa bukid, at paggabay sa mga pahina ng inyong account. Ano ang gusto ninyong malaman?'
+                : "I am Aquilala's AI assistant. I help with farming, product prices, farm cost estimates, and finding your way around your account pages. What would you like to know?";
+
+            return [
+                'reply'       => $reply,
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
+        // A farmer asking how to add a product: that is a store-owner task,
+        // not a missing product in the catalog. Say so and point at the page
+        // they do own, rather than returning a failed product search.
+        if (($user?->role ?? null) === 'farmer'
+            && preg_match('/\b(?:add|create|upload|list|insert|register|ilagay|maglagay|lagay|gumawa)\b[^.?!]{0,50}\b(?:product|products|item|items|supplies|produkto)\b/iu', $message)) {
+            $browseLink = \Illuminate\Support\Facades\Route::has('farmer.products.browse')
+                ? '[Browse Supplies](' . route('farmer.products.browse') . ')'
+                : 'Browse Supplies';
+
+            $reply = $this->wantsTagalog($message)
+                ? "Ang pagdaragdag ng produkto ay gawain ng may-ari ng tindahan. Bilang magsasaka, maaari kayong mag-browse sa $browseLink at tanungin ako tungkol sa presyo o inputs. Kung may tindahan kayo, gamitin ang inyong store account para magdagdag ng produkto."
+                : "Adding products is a store-owner task in **Product Listings**. As a farmer, you can browse what is available in $browseLink and ask me about prices or inputs. If you manage a store, use your store account to add a product.";
+
+            return [
+                'reply'       => $reply,
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
         }
 
         // How to do something in the account comes first: this page exists to
@@ -227,6 +288,105 @@ class AquilalaAssistant
         $isStoreDemandQuestion = $user?->role === 'store_owner'
             && preg_match('/\b(sell|sold|restock|demand|top products?|trend|most)\b/i', $message) === 1;
 
+        // An administrator asking where the product catalog is: catalog and
+        // supplies browsing belongs to farmers and store owners; an admin
+        // oversees stores instead. Point at the pages that actually exist
+        // for this role so the answer is not a product-search failure.
+        if ($user?->role === 'admin'
+            && preg_match('/\b(?:catalog|catalogue|supplies|products?|items?)\b/iu', $message)
+            && (preg_match('/\b(?:where|find|link|open|navigate|menu|go\s+to|take\s+me|show|list|page|saan|pano|paano)\b/iu', $message)
+                || preg_match('/\b(?:add|create|upload|insert|register|new)\b/iu', $message))) {
+            $asksToAdd = preg_match('/\b(?:add|create|upload|insert|register|new)\b/iu', $message) === 1;
+            $storesLink = '[Stores](' . route('admin.stores.index') . ')';
+
+            return [
+                'reply'       => $asksToAdd
+                    ? "Adding products is done by store owners in their **Product Listings**. As an administrator you oversee the stores rather than their catalogs — open $storesLink to reach them."
+                    : "Product browsing is a farmer and store-owner feature. Your account oversees the stores "
+                        . "instead — check $storesLink for stores and "
+                        . "[Quotations](" . route('admin.quotations.index') . ") for what is being stocked and demanded.",
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
+        // An administrator asking how many people are in the association is
+        // asking about their own data. Count it from the users table rather
+        // than answering with the out-of-scope template.
+        if ($user?->role === 'admin'
+            && preg_match('/\b(?:how\s+many|count|number\s+of|total)\b[^.?!]{0,40}\b(?:members?|users?|farmers?|store\s+owners?)\b/iu', $message)) {
+            $farmers = User::query()->where('role', 'farmer')->count();
+            $stores = User::query()->where('role', 'store_owner')->count();
+            $admins = User::query()->where('role', 'admin')->count();
+
+            $reply = "Your Aquilala association currently has **$farmers farmers**, **$stores store owners**, and **$admins administrators**. "
+                . 'Open [Members](' . route('admin.members.index') . ') for the full list.';
+
+            return [
+                'reply'       => $reply,
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'data',
+                'violations'  => [],
+            ];
+        }
+
+        // "What products are trending?" is a demand question, not a request
+        // for a crop recommendation. Only store owners have the demand-trend
+        // view; show the other roles the page that does answer their part of
+        // the question instead of asking "which crop?".
+        if (($user?->role ?? null) !== 'store_owner'
+            && preg_match('/\b(?:trending|trends|most\s+(?:quoted|sold|popular)|best.?selling|popular\s+products?|demand)\b/iu', $message)) {
+            if ($user?->role === 'admin') {
+                $reply = 'Demand trends come from store owners\' quotations. You can see them in '
+                    . '[Quotations](' . route('admin.quotations.index') . ') on your admin account.';
+            } else {
+                $topLink = \Illuminate\Support\Facades\Route::has('farmer.top-quoted.index')
+                    ? '[Top Quoted Products](' . route('farmer.top-quoted.index') . ')'
+                    : 'Top Quoted Products';
+                $reply = 'Demand trends are a store-owner view. As a farmer you can see what is most quoted in '
+                    . "$topLink — ask me about any product there for its price and inputs.";
+            }
+
+            return [
+                'reply'       => $reply,
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
+        // A farmer asking about "the farmers' updates" cannot see other
+        // members' records — that is an administrator's view. Say so plainly
+        // and point at the farmer's own reports instead of letting the model
+        // invent a community board that does not exist.
+        if ($user?->role === 'farmer'
+            && preg_match('/\b(?:updates?|activities|activity|news|submissions?)\b/iu', $message)
+            && preg_match('/\b(?:farmers?|others?|association|community|members?)\b/iu', $message)) {
+            $reply = "Other farmers' records are private to their own accounts. Your own activity is in "
+                . '[Harvest Reports](' . route('farmer.harvests.index') . ') and '
+                . '[My Crops](' . route('farmer.crops.index') . '). Ask me about yours and I will read it for you.';
+
+            return [
+                'reply'       => $reply,
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
         if (! $isStoreDemandQuestion
             && ($pageReply = $this->pageLinkReply($message, (string) ($user?->role ?? ''))) !== null) {
             return [
@@ -240,6 +400,22 @@ class AquilalaAssistant
             ];
         }
 
+        // The association's own calendar: "any upcoming event?", "what is
+        // happening this week?". Read from the events table, so the answer is
+        // whatever is actually scheduled — and an empty calendar is reported
+        // as an empty calendar, not as an assistant failure.
+        if (($eventAnswer = $this->upcomingEventsAnswer($message, (string) ($user?->role ?? ''))) !== null) {
+            return [
+                'reply'       => $eventAnswer,
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'data',
+                'violations'  => [],
+            ];
+        }
+
         if (preg_match('/\bweather\b/iu', $message) === 1
             && preg_match('/\b(tokyo|manila|cebu|davao|makati|quezon|baguio)\b/iu', $message) !== 1) {
             return [
@@ -249,6 +425,71 @@ class AquilalaAssistant
                 'context'     => $context->toArray(),
                 'intent'      => AiIntent::GENERAL_FARMING,
                 'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
+        // "What time is it?" — answered plainly instead of being refused as
+        // off-topic. It is not farming data, but it is a courtesy the
+        // assistant can answer from its own clock.
+        if (preg_match('/\b(?:what(?:\s+is|\s+\'s)?\s+the\s+time|what\s+time\s+is\s+it|anong\s*oras\b|oras\s+na\b)\b/iu', $message)) {
+            $now = now();
+            $tagalog = $this->wantsTagalog($message);
+
+            $reply = $tagalog
+                ? 'Oras ngayon: ' . $now->format('g:i A') . '.'
+                : 'It is ' . $now->format('g:i A') . ' on ' . $now->format('l, F j, Y') . '.';
+
+            return [
+                'reply'       => $reply,
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
+        // "Anong panahon ngayon?" / "what season is it?" — the current
+        // season, from the calendar the whole app already uses.
+        if (preg_match('/\b(?:anong\s+panahon|what\s+(?:is\s+the\s+)?season|season\s+is\s+it|panahon\s+ngayon)\b/iu', $message)) {
+            $season = \App\Helpers\SeasonHelper::getSeasonLabel();
+
+            $reply = $this->wantsTagalog($message)
+                ? "Ang panahon ngayon ay **$season** sa Bulan. Tanungin ninyo ako tungkol sa tanim, produkto, o gastusin sa bukid, at sagot ko ito sa inyo."
+                : "It is **$season** in Bulan right now. Ask me about a crop, a product, or a cost estimate, and I will answer it.";
+
+            return [
+                'reply'       => $reply,
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::GENERAL_FARMING,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
+        // "Which year had the least harvest performance?" is a question about
+        // one year. It is answered with the single year it names (or the single
+        // year the ranking points at) — never with a table of every year the
+        // records happen to hold, which is what used to be sent back.
+        if (($yearAnswer = $this->yearHarvestAnswer($message, $user)) !== null) {
+            return $yearAnswer;
+        }
+
+        // "What crops can be harvested the fastest?" is a ranking by days to
+        // maturity. Answering it with the whole crop directory — every crop,
+        // every category, all 47 of them — answered a question nobody asked.
+        if ($this->isFastestHarvestQuestion($message)) {
+            return [
+                'reply'       => $this->fastestHarvestAnswer($message),
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::CROP_DISCOVERY,
+                'source'      => 'data',
                 'violations'  => [],
             ];
         }
@@ -296,21 +537,44 @@ class AquilalaAssistant
                 }
             }
 
-            if ($user?->role === 'store_owner') {
+            if ($user?->role === 'admin') {
+                $examples = [
+                    'Any new activity today by farmers?',
+                    'Which year had the least harvest?',
+                    'Where are the harvest records?',
+                    'How many members do we have?',
+                ];
+                $reply = "I'm the Aquilala assistant for administrators. I can help with member management, store and product oversight, harvest records, reports, and system pages.\n\n"
+                    . "Ask me directly, for example:\n"
+                    // Built from an array: a single-quoted '- "…"\n' line
+                    // printed a literal "\n" to the user.
+                    . implode("\n", array_map(fn (string $q) => '- "' . $q . '"', $examples))
+                    . "\n";
+            } elseif ($user?->role === 'store_owner') {
+                $examples = [
+                    'Show my store inventory',
+                    'Which products sell most?',
+                    'How do I add a new product?',
+                    'Where can I find Input Formulas?',
+                ];
                 $reply = "I'm the Aquilala assistant for store owners. I can help with your product listings, inventory, quotation demand trends, top products, and prices.\n\n"
                     . "Ask me directly, for example:\n"
-                    . '- "Show my store inventory"\n'
-                    . '- "Which products sell most?"\n'
-                    . '- "How do I add a new product?"\n'
-                    . '- "Where can I find Input Formulas?"\n';
+                    // Built from an array: a single-quoted '- "…"\n' line
+                    // printed a literal "\n" to the user.
+                    . implode("\n", array_map(fn (string $q) => '- "' . $q . '"', $examples))
+                    . "\n";
             } else {
+                $examples = [
+                    'Do you have urea products?',
+                    'What fertilizers for corn?',
+                    'How much would 2 hectares of corn cost?',
+                    'How do I plant corn?',
+                    'Where can I find My Cost Quotations?',
+                ];
                 $reply = "I'm Aquilala's assistant for your farm. I can help with product prices, fertilizer and crop advice, cost estimates, and planting guidance.\n\n"
                     . "Ask me directly, for example:\n"
-                    . '- "Do you have urea products?"\n'
-                    . '- "What fertilizers for corn?"\n'
-                    . '- "How much would 2 hectares of corn cost?"\n'
-                    . '- "How do I plant corn?"\n'
-                    . '- "Where can I find My Cost Quotations?"\n';
+                    . implode("\n", array_map(fn (string $q) => '- "' . $q . '"', $examples))
+                    . "\n";
             }
 
             if ($links !== []) {
@@ -350,16 +614,14 @@ class AquilalaAssistant
         $contextData = $this->contextBuilder->build($message, $routing, $user, $context);
         $fallback = $this->deterministicAnswer($intent, $contextData, $routing, $user, $message);
 
-        // A turn the database cannot answer is answered by Laravel. Two
-        // situations, and both are refusals rather than turns:
-        //
-        //   - the intent has no model involvement at all (a clarification, an
-        //     off-topic question, an approved-knowledge answer);
-        //   - a required input is missing, so there is nothing to explain yet.
-        //     The model is not asked to fill the gap, because "how much
-        //     fertilizer do I need" with no farm area has no answer, and a
-        //     plausible one is exactly the failure this pipeline exists to
-        //     prevent.
+        // A turn the database cannot answer is answered by Laravel directly.
+        // Clarifications are templates the model must not improvise, and an
+        // off-topic question always gets Laravel's own role-scoped refusal —
+        // instant, offline-proof, and never echoing the topic it cannot
+        // answer. A required input is missing, so there is nothing to explain
+        // yet either: "how much fertilizer do I need" with no farm area has no
+        // answer, and a plausible one is exactly the failure this pipeline
+        // exists to prevent.
         $skipModel = AiIntent::isDeterministicOnly($intent)
             || $contextData['quotation'] === null && $intent === AiIntent::QUOTATION
             || $contextData['missing'] !== []
@@ -1060,7 +1322,7 @@ class AquilalaAssistant
     {
         $season = $contextData['facts']['season_profile'] ?? [];
 
-        $reply = 'Hi! How can I help with your farm today?';
+        $reply = 'Hi! How can I help you today?';
 
         if (! empty($season['label'])) {
             $reply .= ' It is **' . $season['label'] . '** in Bulan right now'
@@ -1898,18 +2160,18 @@ class AquilalaAssistant
         if ($role === 'admin') {
             return $tagalog
                 ? 'Sa admin account, gabayan ko po kayo sa member management, store at product oversight, harvest records, at reports — kung paano gumawa ng isang task sa inyong account. Tanong niyo po tungkol doon.'
-                : 'I can guide an admin through member management, store and product oversight, harvest records, and reports — including how to do any task in your account. Ask me about those.';
+                : "That's outside what Aquilala covers, so I can't answer it from this system. I can guide an admin through member management, store and product oversight, harvest records, and reports — including how to do any task in your account. Ask me about those.";
         }
 
         if ($role === 'store_owner') {
             return $tagalog
                 ? 'Para sa inyong tindahan, masasagot ko sa inventory, produkto, demand trends, top products, at prices — at kung paano gamitin ang mga pahina ng inyong account. Tanong niyo po tungkol doon.'
-                : 'I can help with your store inventory, products, demand trends, top products, and prices — and with how to use any page in your store account. Ask me about those.';
+                : "That's outside what Aquilala covers, so I can't answer it from this system. I can help with your store inventory, products, demand trends, top products, and prices — and with how to use any page in your store account. Ask me about those.";
         }
 
         return $tagalog
             ? 'Tungkol sa pagsasaka at produkto ng Aquilala ang masasagot ko — tanim, presyo, gastusin sa bukid, at kung paano gamitin ang mga pahina ng account ninyo. Tanong niyo po tungkol doon.'
-            : 'I can help with farming, Aquilala products, prices, cost estimates, and with how to use the pages in your account. Ask me about any of those.';
+            : "That's outside what Aquilala covers, so I can't answer it from this system. I can help with farming, Aquilala products, prices, cost estimates, and with how to use the pages in your account. Ask me about any of those.";
     }
 
     /**
@@ -1922,7 +2184,7 @@ class AquilalaAssistant
     {
         return preg_match(
             '/\b(?:pano|paano|ako|ng|mga|ang|wala|ito|yung|gusto|salamat|ninyo|niyo|inyo|tindahan|presyo|tanim|'
-                . 'ubos|maubos|magubos|ilagay|gawin|gamitin|tanungin|sabihin|po|ba)\b/iu',
+                . 'ubos|maubos|magubos|ilagay|gawin|gamitin|tanungin|sabihin|po|ba|panahon|ngayon)\b/iu',
             $message
         ) === 1;
     }
@@ -1996,6 +2258,31 @@ class AquilalaAssistant
      * @param  array<string, mixed>  $contextData
      * @return array<int, string>
      */
+    /**
+     * Words a member uses for a page without naming it.
+     *
+     * "Where is the product catalog?" shares no word with the page actually
+     * called *Browse Supplies*, so the label match scored nothing and the
+     * turn fell through to a product search that answered a question nobody
+     * asked. These are the aliases a person reaches for instead of our label.
+     *
+     * @var array<string, array<int, string>>
+     */
+    private const PAGE_SYNONYMS = [
+        'Browse Supplies'        => ['catalog', 'catalogue', 'product', 'products', 'supplies', 'shop', 'store', 'items', 'goods'],
+        'Product Listings'       => ['catalog', 'catalogue', 'product', 'products', 'listings', 'items'],
+        'Inventory'              => ['stock', 'stocks', 'supplies', 'items', 'products'],
+        'Crop Guide'             => ['directory', 'catalog', 'catalogue', 'crops', 'crop'],
+        'Top Quoted Products'    => ['popular', 'trending', 'best-selling', 'most-requested'],
+        'Quotation Demand Trends' => ['trending', 'trends', 'demand', 'popular'],
+        'Events'                 => ['events', 'schedule', 'schedules', 'happening'],
+        'Calendar'               => ['calendar', 'schedule', 'schedules', 'dates'],
+        'Harvest Reports'        => ['harvest', 'report', 'reports', 'records'],
+        'Submit Harvest Report'  => ['harvest', 'report', 'reports', 'submit', 'record'],
+        'Activity History'       => ['activity', 'activities', 'history', 'logs'],
+        'AI Harvest Chat'        => ['insights', 'analysis', 'analyse', 'analyze'],
+    ];
+
     private function pageLinkReply(string $message, string $role): ?array
     {
         $pages = $this->assistantPageCatalog($role);
@@ -2034,12 +2321,34 @@ class AquilalaAssistant
         $messageWords = array_values(array_unique(preg_split('/\s+/u', preg_replace('/[^a-z0-9\s]+/iu', ' ', $lower) ?? '') ?: []));
         $matches = [];
 
+        // The wording a person uses for "where is it?" rather than for
+        // "show it to me": only a location question may borrow a page's
+        // synonym, so "show me the urea products" stays a product search.
+        $isLocationQuestion = preg_match(
+            '/\b(where|find|link|url|open|navigate|menu|go\s+to|take\s+me|location|saan|pano|paano|makikita|puntahan)\b/iu',
+            $lower
+        ) === 1;
+
         foreach ($pages as $label => $routeName) {
             $labelWords = array_values(array_unique(preg_split('/\s+/u', preg_replace('/[^a-z0-9\s]+/iu', ' ', mb_strtolower($label)) ?? '') ?: []));
             $score = count(array_intersect($labelWords, $messageWords));
 
             if ($score > 0) {
                 $matches[$label] = ['route' => $routeName, 'score' => $score];
+            }
+        }
+
+        if ($isLocationQuestion) {
+            foreach (self::PAGE_SYNONYMS as $label => $synonyms) {
+                if (! isset($pages[$label])) {
+                    continue;
+                }
+
+                $hits = count(array_intersect($synonyms, $messageWords));
+
+                if ($hits > 0 && (! isset($matches[$label]) || $matches[$label]['score'] < $hits)) {
+                    $matches[$label] = ['route' => $pages[$label], 'score' => $hits];
+                }
             }
         }
 
@@ -2194,6 +2503,240 @@ class AquilalaAssistant
     /**
      * @return array{reply: string, type: string, suggestions: array<int,mixed>, context: array<string,mixed>, intent: string, source: string, violations: array<int,string>}
      */
+    /**
+     * A question about harvest performance by year — "which year had the
+     * least harvest performance?", "how was 2020?" — answered with the one
+     * year it points at.
+     *
+     * The records span several years and every one of them used to be sent
+     * back as a list, which is the opposite of the question. This states the
+     * year, its figure, and the period the records cover in a single clause.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function yearHarvestAnswer(string $message, ?User $user): ?array
+    {
+        $role = $user?->role ?? '';
+
+        // Store accounts hold no harvest records at all; the harvest branch
+        // below already tells them that in their own terms.
+        if (! in_array($role, ['farmer', 'admin'], true)) {
+            return null;
+        }
+
+        $mentionsYear = preg_match('/\b(?:19|20)\d{2}\b|\byears?\b/iu', $message) === 1;
+        $mentionsHarvest = preg_match(
+            '/\b(?:harvest|yield|production|output|ani|records?|reports?|performance)\b/iu',
+            $message
+        ) === 1;
+
+        if (! $mentionsYear || ! $mentionsHarvest) {
+            return null;
+        }
+
+        $make = fn (string $reply): array => [
+            'reply'       => $reply,
+            'type'        => 'answer',
+            'suggestions' => [],
+            'context'     => [],
+            'intent'      => AiIntent::SYSTEM_HELP,
+            'source'      => 'data',
+            'violations'  => [],
+        ];
+
+        $mine = $role === 'farmer';
+
+        $reports = HarvestReport::query()
+            ->when($mine, fn ($query) => $query->where('user_id', $user->id))
+            ->get(['harvest_date', 'actual_yield_metric_tons']);
+
+        $byYear = [];
+        foreach ($reports as $report) {
+            if ($report->harvest_date === null) {
+                continue;
+            }
+
+            $year = (int) $report->harvest_date->year;
+            $byYear[$year]['yield'] = ($byYear[$year]['yield'] ?? 0.0)
+                + (float) ($report->actual_yield_metric_tons ?? 0);
+            $byYear[$year]['count'] = ($byYear[$year]['count'] ?? 0) + 1;
+        }
+
+        ksort($byYear);
+
+        if ($byYear === []) {
+            return $make($mine
+                ? 'You have no harvest reports on file yet, so there is no year to compare. Submit one through '
+                    . '[Submit Harvest Report](' . route('farmer.harvests.create') . ') and this will have an answer.'
+                : 'There are no harvest records in the system yet, so no year can be compared.');
+        }
+
+        $years = array_keys($byYear);
+        $range = count($years) === 1
+            ? (string) $years[0]
+            : $years[0] . '–' . $years[count($years) - 1];
+
+        $tonnes = fn (int $year): string => number_format($byYear[$year]['yield'], 2) . ' t';
+
+        preg_match('/\b((?:19|20)\d{2})\b/', $message, $yearMatch);
+        $namedYear = isset($yearMatch[1]) ? (int) $yearMatch[1] : null;
+
+        if ($namedYear !== null) {
+            if (! isset($byYear[$namedYear])) {
+                return $make(
+                    'There are no harvest records for ' . $namedYear . '. '
+                    . ($mine ? 'Your records' : 'The records held') . ' cover ' . $range . '.'
+                );
+            }
+
+            $count = $byYear[$namedYear]['count'];
+
+            return $make(
+                ($mine ? 'Your' : "The association's") . ' harvest in **' . $namedYear . '** came to **'
+                . $tonnes($namedYear) . '** across ' . $count . ' '
+                . Str::plural('report', $count) . '. The records cover ' . $range . '.'
+            );
+        }
+
+        $lowestYear = null;
+        $highestYear = null;
+        foreach ($years as $year) {
+            $value = $byYear[$year]['yield'];
+            if ($lowestYear === null || $value < $byYear[$lowestYear]['yield']) {
+                $lowestYear = $year;
+            }
+            if ($highestYear === null || $value > $byYear[$highestYear]['yield']) {
+                $highestYear = $year;
+            }
+        }
+
+        $weakest = preg_match('/\b(?:least|lowest|worst|weakest|smallest|fewest|worse)\b/iu', $message) === 1;
+        $strongest = preg_match('/\b(?:most|highest|best|largest|greatest|biggest|strongest|better)\b/iu', $message) === 1;
+
+        if (($weakest || $strongest) && $lowestYear !== $highestYear) {
+            $year = $weakest ? $lowestYear : $highestYear;
+            $word = $weakest
+                ? ($mine ? 'lowest year for your harvests' : "the association's lowest harvest year")
+                : ($mine ? 'best year for your harvests' : "the association's best harvest year");
+
+            return $make(
+                '**' . $year . '** was ' . $word . ': **' . $tonnes($year) . '** across '
+                . $byYear[$year]['count'] . ' ' . Str::plural('report', $byYear[$year]['count'])
+                . '. The records cover ' . $range . '.'
+            );
+        }
+
+        return $make(
+            ($mine ? 'Your records' : 'The records held') . ' cover ' . $range . ': highest was **'
+            . $highestYear . '** at ' . $tonnes($highestYear) . ', lowest was **' . $lowestYear . '** at '
+            . $tonnes($lowestYear) . '. Ask about a single year and I will give you its figures.'
+        );
+    }
+
+    /**
+     * "What crops can be harvested the fastest?", "which crop matures
+     * fastest?" — a ranking by days to harvest, not a directory listing.
+     *
+     * The "how" half is excluded: "the fastest way to harvest rice" is a
+     * question about method and would be answered with a crop ranking it did
+     * not ask for.
+     */
+    private function isFastestHarvestQuestion(string $message): bool
+    {
+        if (preg_match('/\b(?:fastest|quickest|shortest|soonest|pinakamabilis)\b/iu', $message) !== 1) {
+            return false;
+        }
+
+        if (preg_match('/\b(?:way|ways|method|methods|technique|techniques|how\s+to)\b/iu', $message) === 1) {
+            return false;
+        }
+
+        return preg_match(
+            '/\b(?:harvest(?:ed|ing)?|ready|maturity|mature|days?|weeks?|months?|grow(?:ing|s)?|tumubo|ani|crops?|plants?)\b/iu',
+            $message
+        ) === 1;
+    }
+
+    /**
+     * The shortest days-to-harvest figures Aquilala actually holds, from the
+     * Sorsogon crop library — the same source the yield estimator reads.
+     *
+     * Only the crops the question names are compared when it names two or
+     * more; otherwise the five soonest are listed. Nothing is invented: a
+     * crop with no maturity figure in the library is left out rather than
+     * given an average.
+     */
+    private function fastestHarvestAnswer(string $message): string
+    {
+        $catalog = $this->knowledge->catalog();
+
+        $ranked = [];
+        foreach ($catalog as $crop) {
+            $days = $crop['maturity_days'] ?? null;
+
+            if (! is_numeric($days) || (int) $days <= 0 || empty($crop['name'])) {
+                continue;
+            }
+
+            $ranked[] = [
+                'name'     => (string) $crop['name'],
+                'days'     => (int) $days,
+                'category' => isset($crop['category']) && is_string($crop['category']) ? $crop['category'] : null,
+            ];
+        }
+
+        if ($ranked === []) {
+            return "Aquilala's crop library does not carry days-to-harvest figures right now, so I will not guess a "
+                . 'ranking. Tell me the crop you have in mind and I will share what the library does hold for it.';
+        }
+
+        usort($ranked, fn (array $a, array $b): int => $a['days'] <=> $b['days']);
+
+        // Crops the question actually names, so "which is faster, rice or
+        // corn?" compares those two instead of the five soonest overall.
+        $named = array_values(array_filter(
+            $ranked,
+            fn (array $crop): bool => preg_match(
+                '/\b' . preg_quote($crop['name'], '/') . '\b/iu',
+                $message
+            ) === 1
+        ));
+
+        $line = fn (array $crop): string => '- **' . $crop['name'] . '** — about '
+            . $crop['days'] . ' days' . ($crop['category'] !== null ? ' (' . $crop['category'] . ')' : '');
+
+        if (count($named) >= 2) {
+            $lines = array_map($line, $named);
+            $lines[] = '';
+            $lines[] = 'Days are from planting to first harvest in the Sorsogon crop library Aquilala uses.';
+
+            return implode("\n", $lines);
+        }
+
+        if (count($named) === 1) {
+            return '- **' . $named[0]['name'] . '** — about ' . $named[0]['days'] . ' days from planting to first '
+                . 'harvest, per the Sorsogon crop library Aquilala uses.'
+                . "\n\nTell me which crop you plan to grow and I will show the inputs and the cost estimate for it.";
+        }
+
+        $lines = [
+            '### Fastest to harvest in Aquilala\'s crop library',
+            '',
+            'These are the crops that reach first harvest soonest, counted from planting:',
+            '',
+        ];
+
+        foreach (array_slice($ranked, 0, 5) as $crop) {
+            $lines[] = $line($crop);
+        }
+
+        $lines[] = '';
+        $lines[] = 'Days are from the Sorsogon crop library Aquilala uses. Tell me which one you want to grow and I '
+            . 'will show the inputs and the cost estimate for it.';
+
+        return implode("\n", $lines);
+    }
+
     private function harvestOverviewAnswer(string $message, ?\App\Models\User $user): array
     {
         $makeResponse = fn (string $reply): array => [
@@ -2330,8 +2873,11 @@ class AquilalaAssistant
             return false;
         }
 
+        // `eve` is a word of its own, not a prefix: "event", "events" and
+        // "ever" are not greetings. Reading `eve\w*` here is what made
+        // "any upcoming event?" come back as "Hello! How can I help…".
         return preg_match(
-            '/\b(good\s+(morning|afternoon|evening|day|eve\w*)|hello|hi|hey|greetings|morning|afternoon|evening|eve\w*|how\s+are\s+you|kumusta)\b/iu',
+            '/\b(good\s+(morning|afternoon|evening|day|eve)|hello|hi|hey|greetings|morning|afternoon|evening|eve|how\s+are\s+you|kumusta)\b/iu',
             $normalized
         ) === 1;
     }
@@ -2340,14 +2886,16 @@ class AquilalaAssistant
     {
         $normalized = mb_strtolower(trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message)));
 
+        // Role-neutral on purpose: an administrator and a store owner get the
+        // same courtesy as a farmer, with no assumption about whose farm it is.
         if (str_contains($normalized, 'evening')) {
-            $base = 'Good evening! How can I help with your farm today?';
+            $base = 'Good evening! How can I help you today?';
         } elseif (str_contains($normalized, 'afternoon')) {
-            $base = 'Good afternoon! How can I help with your farm today?';
+            $base = 'Good afternoon! How can I help you today?';
         } elseif (str_contains($normalized, 'morning')) {
-            $base = 'Good morning! How can I help with your farm today?';
+            $base = 'Good morning! How can I help you today?';
         } else {
-            $base = 'Hello! How can I help with your farm today?';
+            $base = 'Hello! How can I help you today?';
         }
 
         $season = $contextData['facts']['season_profile'] ?? [];
@@ -2360,15 +2908,73 @@ class AquilalaAssistant
     }
 
     /**
+     * A warm answer to "how are you?", in the language the person used.
+     *
+     * The assistant is a program and does not have a day, so it does not
+     * claim one: it answers the courtesy, mirrors the greeting, and turns
+     * back to the person's own work — which is what a person on the other
+     * end of a chat would do.
+     */
+    /**
+     * True when the message is only the courtesy "how are you?".
+     *
+     * An optional opening greeting is stripped first, so "Hello, how are
+     * you?" and "Good morning! Kumusta ka?" are answered the same way as the
+     * bare question. A follow-up question after the courtesy makes this false
+     * so the real question still gets routed and answered.
+     */
+    private function isHowAreYouOnly(string $message): bool
+    {
+        $normalized = mb_strtolower(trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message)));
+        $normalized = trim((string) preg_replace('/\s+/u', ' ', $normalized));
+
+        if ($normalized === '') {
+            return false;
+        }
+
+        $remainder = trim((string) preg_replace(
+            '/^(?:magandang\s+(?:umaga|hapon|gabi)|good\s+(?:morning|afternoon|evening|day)|hello|hi|hey|morning|afternoon|evening)\s*/iu',
+            '',
+            $normalized
+        ));
+
+        return preg_match(
+            '/^(?:how\s+are\s+you(?:\s+(?:doing|feeling))?(?:\s+(?:today|now|po|ninyo))?'
+                . '|kumusta\s+ka(?:\s+(?:po|ninyo|today))?'
+                . '|how\s+s?\s+it\s+going)\s*$/iu',
+            $remainder
+        ) === 1;
+    }
+
+    private function howAreYouReply(string $message): string
+    {
+        if ($this->wantsTagalog($message)) {
+            return 'Mabuti naman, salamat sa pagtatanong! Handa akong tumulong sa inyong bukid — anong gusto ninyong malaman ngayon?';
+        }
+
+        return "I'm doing well, thanks for asking — and it's good to hear from you. "
+            . 'What can I help you with today?';
+    }
+
+    /**
      * True when an administrator asks about recent or today's farmer
      * activity — planting, crop updates, land changes, harvest records.
      */
     private function isAdminFarmerActivityQuestion(string $message): bool
     {
-        return preg_match(
-            '/\b(?:activity|activities|action|actions|update|updates|submission|submissions|recent|today|this\s+(?:week|month)|what\s+(?:have|are|did|has|have\s+been))\b/iu',
+        $subject = preg_match(
+            '/\b(?:activity|activities|active|update|updates|submission|submissions|recent|planting|harvest|crops?|farmers|members|land)\b/iu',
             $message
         ) === 1;
+
+        $recent = preg_match(
+            '/\b(?:recent|today|this\s+(?:week|month)|yesterday|lately|now)\b/iu',
+            $message
+        ) === 1;
+
+        // A clearly activity-related word ("activity", "active", submissions)
+        // is enough on its own; a time word alone ("feeling sad today") is not.
+        return $subject && ($recent || preg_match('/\b(?:activity|activities|active|submission|submissions)\b/iu', $message) === 1);
     }
 
     /**
@@ -2511,6 +3117,80 @@ class AquilalaAssistant
         return [$start, $end, 'Today'];
     }
 
+    /**
+     * "Any upcoming event?", "what is happening this week?", "when is the
+     * next meeting?" — answered from the association's own calendar.
+     *
+     * Returns null when the message is not asking about events, so the rest
+     * of the pipeline keeps the turn.
+     */
+    private function upcomingEventsAnswer(string $message, string $role): ?string
+    {
+        $subject = preg_match(
+            '/\b(?:events?|meetings?|seminars?|water\s+schedul\w*|calendar\s+events?)\b/iu',
+            $message
+        ) === 1;
+
+        // A subject word alone is not a request: "the events page is broken"
+        // and "add an event" are not "tell me what is coming up".
+        $cue = preg_match(
+            '/\b(?:any|upcoming|next|what|when|are\s+there|is\s+there|show|list|schedule|scheduling|happening|today|tomorrow|this\s+(?:week|month)|soon|have)\b/iu',
+            $message
+        ) === 1;
+
+        if (! $subject || ! $cue) {
+            return null;
+        }
+
+        $tagalog = $this->wantsTagalog($message);
+        $events = \App\Models\AssociationEvent::query()->upcoming()->take(4)->get();
+
+        $calendarLink = null;
+        foreach ($this->assistantPageCatalog($role) as $label => $routeName) {
+            if (preg_match('/\b(?:calendar|events)\b/iu', $label) === 1) {
+                try {
+                    $calendarLink = route($routeName);
+                } catch (\Throwable $e) {
+                    $calendarLink = null;
+                }
+                break;
+            }
+        }
+
+        if ($events->isEmpty()) {
+            $reply = $tagalog
+                ? 'Wala pang nakatakdang event sa kalendaryo ng Aquilala ngayon. Agad kong ipapaalam dito kapag may idinagdag ang asosasyon — mga libreng input, water scheduling, o miting.'
+                : 'There is nothing scheduled on the Aquilala calendar right now. As soon as the association adds one — a free input release, water scheduling, a meeting — it will show up here.';
+        } else {
+            $lines = $tagalog
+                ? ['Narito ang mga paparating sa kalendaryo ng Aquilala:', '']
+                : ['Here is what is coming up on the Aquilala calendar:', ''];
+
+            foreach ($events as $event) {
+                $when = $event->event_date->format('D, M j');
+                $time = $event->time_label ? ' · ' . $event->time_label : '';
+                $where = $event->location ? ' · ' . $event->location : '';
+
+                $lines[] = '- **' . $event->title . '** — ' . $when . $time . $where;
+            }
+
+            $lines[] = '';
+            $lines[] = $tagalog
+                ? 'Tanungin ninyo ako tungkol sa isa sa mga ito at ibabahagi ko ang detalye.'
+                : 'Ask me about any one of them and I will tell you more about it.';
+
+            $reply = implode("\n", $lines);
+        }
+
+        if ($calendarLink !== null) {
+            $reply .= "\n" . ($tagalog
+                ? 'Buksan ang [Kalendaryo](' . $calendarLink . ') para sa buong iskedyul.'
+                : 'Open the [Calendar](' . $calendarLink . ') for the full schedule.');
+        }
+
+        return $reply;
+    }
+
     private function assistantIsSystemHelp(string $message): bool
     {
         $normalized = trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message));
@@ -2518,6 +3198,10 @@ class AquilalaAssistant
         return trim($normalized) !== '' && (
             preg_match('/\b(how\s+(?:do|can|to)\s+(?:i|we|you)?\s*(?:use|navigate|find|open|get\s+started)|what\s+(?:can|does)\s+(?:this|you|ai)?\s*(?:do|help)|how\s+does\s+(?:this|it)\s+work|use\s+this|this\s+system|are\s+you\s+(?:working|there|online|ai)|ai\s+ka\s+ba|is\s+this\s+working)\b/iu', $normalized) === 1
             || trim($normalized) === 'how do i use the this'
+            // A bare "help" / "tulong" is a request for the capability reply,
+            // not an out-of-scope topic. It used to land on the scope refusal,
+            // which is the least useful possible answer to "help".
+            || preg_match('/^(?:help|help\s+me|i\s+need\s+help|can\s+you\s+help|tulong|tumulong|tulong\s+po)\s*$/iu', $normalized) === 1
         );
     }
 
@@ -2541,7 +3225,7 @@ class AquilalaAssistant
         // turn this exists for, and the remainder is routed as a real
         // question after the greeting is peeled off.
         if (! preg_match(
-            '/^(?:magandang\s+(?:umaga|hapon|gabi)|good\s+(?:morning|afternoon|evening|day|eve\w*)|hello|hi|hey|greetings|morning|afternoon|evening|eve\w*|how\s+are\s+you|kumusta)\b/iu',
+            '/^(?:magandang\s+(?:umaga|hapon|gabi)|good\s+(?:morning|afternoon|evening|day|eve)|hello|hi|hey|greetings|morning|afternoon|evening|eve|how\s+are\s+you|kumusta)\b/iu',
             $normalized
         )) {
             return null;
@@ -2574,6 +3258,13 @@ class AquilalaAssistant
      */
     private function assistantIsGreetingOnly(string $message): bool
     {
+        // "How are you?" is a courtesy, not a question with an answer behind
+        // it. Treated as one so it is not handed to the router, which has no
+        // route for it and used to answer it with the out-of-scope reply.
+        if (preg_match('/^(?:how\s+are\s+you|kumusta\s+ka|how\'?s\s+it\s+going|kumusta\s+po)\b/iu', trim($message)) === 1) {
+            return true;
+        }
+
         if (! $this->assistantIsGreetingFlexible($message)) {
             return false;
         }

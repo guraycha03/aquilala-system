@@ -65,7 +65,11 @@ class CropsDirectoryIndexTest extends TestCase
             ->get(route('farmer.crops-directory.index'));
 
         $response->assertOk();
-        $response->assertSee('images/crops/rice.png', false);
+        // A real photo dropped as rice.jpg wins over the older config PNG.
+        $expected = file_exists(public_path('images/crops/rice.jpg'))
+            ? 'images/crops/rice.jpg'
+            : 'images/crops/rice.png';
+        $response->assertSee($expected, false);
     }
 
     public function test_a_dropped_image_in_the_crops_folder_is_auto_detected(): void

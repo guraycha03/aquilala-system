@@ -103,22 +103,27 @@ final class AiIntent
      * Intents whose answer is produced entirely by Laravel, with no model call
      * at all.
      *
-     * Two groups qualify. A clarification question is a template, not a
-     * conversation, and letting the model write one is how a clarification
-     * turns into a guess. The approved-knowledge intents are answers to
-     * questions the application already has a curated record for, and the
-     * model's only possible contribution there is to add an agronomic detail
-     * nobody approved — a spacing, a rate, a spray schedule. So it is not
-     * called.
+     * A clarification question is a template, not a conversation, and letting
+     * the model write one is how a clarification turns into a guess. The
+     * approved-knowledge intents are answers to questions the application
+     * already has a curated record for, and the model's only possible
+     * contribution there is to add an agronomic detail nobody approved — a
+     * spacing, a rate, a spray schedule. So it is not called.
      *
-     * That reasoning is why the crop and seasonal routes are here too. They were
-     * added to stop the assistant refusing legitimate farming questions, and
-     * routing them to the model would have reopened exactly the failure they
-     * were added to fix: a crop list with a planting distance attached to it,
-     * invented, in the voice of the association.
+     * That reasoning is why the crop and seasonal routes are here too. They
+     * were added to stop the assistant refusing legitimate farming questions,
+     * and routing them to the model would have reopened exactly the failure
+     * they were added to fix: a crop list with a planting distance attached to
+     * it, invented, in the voice of the association.
      *
-     * A greeting is here for a different reason. It is a courtesy, and there is
-     * nothing in it for a model to improve.
+     * A greeting is here for a different reason. It is a courtesy, and there
+     * is nothing in it for a model to improve.
+     *
+     * Off-topic questions are deliberately here too: they are answered with
+     * Laravel's own role-scoped refusal — instant, offline-proof, and never
+     * echoing the topic they cannot answer. Even when a provider is
+     * configured the model is not asked, so a refusal can never be delayed or
+     * dropped by the network.
      *
      * The model is left with the work it is actually good at: explaining
      * catalog rows and rule-engine output, both of which it must then defend
@@ -133,7 +138,10 @@ final class AiIntent
             // conversationally; that cost a network call per turn, and the
             // model's version of a refusal was the "I can't answer that"
             // sentence users complained about. The fixed answers below are
-            // role-aware and still friendly.
+            // role-aware and still friendly. An off-topic question is never
+            // answered from the model, even when a provider is configured —
+            // that keeps refusals instant, offline-proof, and free of the
+            // model echoing a topic the system does not cover.
             self::UNSUPPORTED,
             self::FARMING_ADVICE,
             self::CROP_ADVICE,

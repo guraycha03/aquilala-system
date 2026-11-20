@@ -103,7 +103,8 @@ class AiIntentRouter
      * Checked FIRST so "Good evening, what's happening today?" gets a greeting response.
      */
     private const GREETING_WITH_TEXT_PATTERNS = [
-        '/\b(good\s+(morning|afternoon|evening|day|eve\w*)|hello|hi|hey|greetings|kumusta|magandang\s+(umaga|hapon|gabi))\b/i',
+        // `eve` only as a word: "good eve" is a greeting, "event" is not.
+        '/\b(good\s+(morning|afternoon|evening|day|eve)|hello|hi|hey|greetings|kumusta|magandang\s+(umaga|hapon|gabi))\b/i',
     ];
 
     /**
@@ -433,6 +434,15 @@ class AiIntentRouter
         // shape, and the farmer was asked for a farm area when all they wanted
         // was to know whether the products exist.
         if ($this->mentionsCatalogAvailability($text)) {
+            return AiIntent::PRODUCT_SEARCH;
+        }
+
+        // A price asked for by name is a fact about one catalogue row, and it
+        // is decided before the recommendation branch: "what is the price of
+        // urea?" contains the word "what", which the recommendation vocabulary
+        // also matches, so without this the price of a product came back as
+        // "Which crop are you asking about?".
+        if ($this->mentionsCost($text) && $this->isNamedProductPriceQuestion($text, $detected)) {
             return AiIntent::PRODUCT_SEARCH;
         }
 

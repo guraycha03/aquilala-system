@@ -260,4 +260,31 @@ class ProductImageResizeTest extends TestCase
         $this->assertNull($image->thumb_path);
         $this->assertSame($image->url, $image->thumb_url);
     }
+
+    public function test_display_url_falls_back_to_thumb_then_placeholder_when_files_are_missing(): void
+    {
+        Storage::fake('public');
+        $store = $this->storeOwner();
+        $category = $this->category();
+        $product = Product::create($this->payload($store, $category, ['user_id' => $store->id]));
+
+        $image = $product->images()->create([
+            'image_type' => 'main',
+            'file_path' => 'products/' . $product->id . '/missing.jpg',
+            'thumb_path' => 'products/' . $product->id . '/missing.thumb.jpg',
+        ]);
+
+        // Neither file survived an upload/migration: a placeholder beats a
+        // broken-image icon with alt text.
+        $this->assertSame(asset('images/product.png'), $image->display_url);
+
+        // The thumbnail is the copy the cards serve, so it is the first
+        // usable fallback when the full-size file is gone.
+        Storage::disk('public')->put($image->thumb_path, 'thumb');
+        $this->assertSame($image->thumb_url, $image->display_url);
+
+        // With the real file present the gallery gets the full-size image.
+        Storage::disk('public')->put($image->file_path, 'full');
+        $this->assertSame($image->url, $image->display_url);
+    }
 }
