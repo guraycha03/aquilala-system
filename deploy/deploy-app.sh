@@ -59,15 +59,35 @@ for need in env/.env app.tar.gz; do
   fi
 done
 
+# ---------- preserve user uploads before replacing the application ----------
+# A git deploy replaces APP_DIR wholesale, so without this the product photos,
+# avatars, imports and store documents uploaded through the UI disappear on
+# every deploy. The live copy wins (it may hold uploads made after an older
+# backup); the backup is only the first-deploy fallback.
+PRESERVE_STAGE="/tmp/aquilala-storage-app-preserve"
+rm -rf "$PRESERVE_STAGE"
+mkdir -p "$PRESERVE_STAGE"
+
+if [ -d "$APP_DIR/storage/app" ]; then
+  log "Preserving uploads from $APP_DIR/storage/app ..."
+  cp -a "$APP_DIR/storage/app/." "$PRESERVE_STAGE/"
+elif [ -f "$STAGE/app.tar.gz" ]; then
+  log "No live app directory — recovering uploads from backup ..."
+  BACKUP_APP_STAGE="/tmp/aquilala-storage-app-from-backup"
+  rm -rf "$BACKUP_APP_STAGE"
+  mkdir -p "$BACKUP_APP_STAGE"
+  tar -xzf "$STAGE/app.tar.gz" -C "$BACKUP_APP_STAGE" ./storage/app/ || true
+  if [ -d "$BACKUP_APP_STAGE/storage/app" ]; then
+    cp -a "$BACKUP_APP_STAGE/storage/app/." "$PRESERVE_STAGE/"
+  fi
+fi
+log "Preserved $(find "$PRESERVE_STAGE" -type f | wc -l) upload file(s)."
+
 # ---------- place the application -------------------------------------------
 if [ -n "${GIT_REPO_URL:-}" ]; then
   log "Cloning $GIT_REPO_URL (${GIT_REPO_BRANCH:-main}) -> $APP_DIR"
   rm -rf "$APP_DIR"
   git clone --depth 1 --branch "${GIT_REPO_BRANCH:-main}" "$GIT_REPO_URL" "$APP_DIR"
-  if [ -d "$STAGE/appdir/storage/app" ]; then
-    mkdir -p "$APP_DIR/storage/app"
-    cp -a "$STAGE/appdir/storage/app/." "$APP_DIR/storage/app/"
-  fi
 else
   log "Restoring application from backup -> $APP_DIR"
   mkdir -p "$STAGE/appdir"
@@ -75,6 +95,15 @@ else
   rm -rf "$APP_DIR"
   mkdir -p "$APP_DIR"
   cp -a "$STAGE/appdir/." "$APP_DIR/"
+fi
+
+# ---------- put uploads back -------------------------------------------------
+if [ -n "$(find "$PRESERVE_STAGE" -mindepth 1 -print -quit)" ]; then
+  mkdir -p "$APP_DIR/storage/app"
+  cp -a "$PRESERVE_STAGE/." "$APP_DIR/storage/app/"
+  log "Uploads restored into $APP_DIR/storage/app."
+else
+  warn "No uploads were preserved — check the backup contents."
 fi
 
 # ---------- .env -------------------------------------------------------------

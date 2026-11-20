@@ -106,9 +106,11 @@ A release that replaces `storage/app/public/` with an empty directory makes
 every product detail page show broken images while the database still points
 at those paths.
 
-- Keep the existing `storage/app/public/products/` tree when replacing app
-  files. The deploy script copies `storage/app` out of the pre-deploy backup;
-  verify the backup actually contains those files before running it.
+- `deploy/deploy-app.sh` preserves the whole live `storage/app` tree (product
+  photos, avatars, imports, store documents) before replacing the app, then
+  copies it back. On a first deploy with no existing app, it recovers that tree
+  from the backup's `app.tar.gz`. You should not need to re-upload anything
+  after a normal deploy.
 - If the current server's uploads are missing, copy them up explicitly after
   the release:
   ```powershell
