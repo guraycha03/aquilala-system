@@ -292,7 +292,8 @@ PROMPT
         if (isset($context['facts'])) {
             $f = $context['facts'];
             if (isset($f['crop']) && is_array($f['crop'])) {
-                $lines[] = '- crop facts: ' . $f['crop']['crop'] ?? 'unknown'
+                $cropName = $f['crop']['crop'] ?? $f['crop']['name'] ?? 'unknown';
+                $lines[] = '- crop facts: ' . $cropName
                     . ', typical yield: ' . ($f['crop']['typical_yield_per_ha'] ?? 'n/a') . ' per ha';
             }
             if (isset($f['current_season']) && is_array($f['current_season'])) {

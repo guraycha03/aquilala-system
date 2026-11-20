@@ -211,6 +211,21 @@ class AquilalaAssistant
             ];
         }
 
+        // The language question is about the assistant, not about farming
+        // knowledge. Answer it directly in the language it was asked in: the
+        // old path sent it to general farming and left the answer to the model.
+        if (preg_match('/\b(?:pwede|puwede|puede|can|could|kaya)\s+(?:ka\s+|you\s+)?(?:ba\s+)?(?:mag[\s\-]?|magsalita\s+ng\s+|salitin\s+ng\s+|speak\s+|salita\s+ng\s+)?tagalog\b|\bmag[\s\-]?tagalog\b|\bspeak\s+tagalog\b/iu', $message) === 1) {
+            return [
+                'reply'       => 'Oo, marunong akong mag-Tagalog at Taglish. Maaari kayong magtanong tungkol sa mga pananim, abono at binhi, presyo ng produkto, gastusin sa bukid, at gabay sa inyong account — ano ang gusto ninyong malaman?',
+                'type'        => 'answer',
+                'suggestions' => [],
+                'context'     => $context->toArray(),
+                'intent'      => AiIntent::SYSTEM_HELP,
+                'source'      => 'conversation',
+                'violations'  => [],
+            ];
+        }
+
         // A farmer asking how to add a product: that is a store-owner task,
         // not a missing product in the catalog. Say so and point at the page
         // they do own, rather than returning a failed product search.
@@ -642,6 +657,54 @@ class AquilalaAssistant
             $reply = $result['answer'];
             $violations = $result['violations'];
             $source = $result['source'];
+
+            // A category recommendation may choose among retrieved products,
+            // but it may not talk about products that were never retrieved.
+            // A model that names invented varieties loses its prose: the
+            // deterministic answer with the real cards takes over.
+            if (($routing['category_recommendation'] ?? false) === true
+                && $source === 'ai'
+                && $contextData['products'] !== []) {
+                $lowerReply = mb_strtolower($reply);
+                $namesMentioned = collect($contextData['products'])
+                    ->flatMap(static fn (array $card): array => [$card['name'] ?? '', $card['display_name'] ?? ''])
+                    ->filter(static fn ($name): bool => is_string($name) && trim($name) !== '')
+                    ->contains(static fn (string $name): bool => str_contains($lowerReply, mb_strtolower($name)));
+
+                if (! $namesMentioned) {
+                    $reply = $fallback;
+                    $source = 'fallback';
+                    $violations[] = 'answer_named_no_retrieved_product';
+                }
+            }
+
+            // A model occasionally prints an internal id beside a name. Those
+            // are not part of a product label and never belong in a reply.
+            if (($routing['category_recommendation'] ?? false) === true) {
+                $reply = (string) preg_replace('/\s*\(id\s+\d+\)/iu', '', $reply);
+            }
+
+            // In a category recommendation the model's job is to choose from
+            // the shelf we retrieved. An accepted, non-empty selection narrows
+            // the cards and the remembered ids; an empty or rejected selection
+            // keeps the deterministic ranking.
+            if (($routing['category_recommendation'] ?? false) === true
+                && $source === 'ai'
+                && ! empty($result['product_ids'])) {
+                $chosen = array_flip(array_map('intval', $result['product_ids']));
+                $narrowed = array_values(array_filter(
+                    $contextData['products'],
+                    static fn (array $card): bool => isset($chosen[(int) $card['id']]),
+                ));
+
+                if ($narrowed !== []) {
+                    $contextData['products'] = $narrowed;
+                    $contextData['product_ids'] = array_map(
+                        static fn (array $card): int => (int) $card['id'],
+                        $narrowed,
+                    );
+                }
+            }
         }
 
         $nextContext = $context->withResolved(
@@ -1041,6 +1104,7 @@ class AquilalaAssistant
         $source = 'fallback';
         $feedback = '';
         $validated = null;
+        $chosenProductIds = null;
 
         for ($attempt = 1; $attempt <= 3; $attempt++) {
             $userContent = AquilalaAssistantPrompt::user($contextData, $message);
@@ -1081,6 +1145,11 @@ class AquilalaAssistant
                 $fallback,
                 $this->trustedCropNames($contextData),
             );
+
+            // The model may narrow the retrieved shelf to the products that
+            // actually suit the crop. It can never add an id that was not
+            // retrieved — the validator has already removed those.
+            $chosenProductIds = $validated['product_ids'] ?? null;
 
             $candidate = $validated['answer'] !== '' ? $validated['answer'] : $fallback;
             $candidate = $this->dedupeRepeatedLines($candidate);
@@ -1161,9 +1230,10 @@ class AquilalaAssistant
         }
 
         return [
-            'answer'     => $answer,
-            'violations' => $violations,
-            'source'     => $source === 'unavailable'
+            'answer'      => $answer,
+            'violations'  => $violations,
+            'product_ids' => $answer === $fallback ? null : $chosenProductIds,
+            'source'      => $source === 'unavailable'
                 ? 'unavailable'
                 : ($source === 'fallback' || $answer === $fallback ? 'fallback' : 'ai'),
         ];
@@ -1285,16 +1355,20 @@ class AquilalaAssistant
         }
 
         return match ($intent) {
-            AiIntent::PRODUCT_SEARCH => $contextData['facts']['ambiguous_product_reference'] ?? null
-                ? $this->ambiguousProductQuestion($contextData['facts']['ambiguous_product_reference'])
-                : $this->searchAnswer($products, $crop, $routing),
+            AiIntent::PRODUCT_SEARCH => ($routing['category_recommendation'] ?? false) === true
+                ? $this->categoryRecommendationAnswer($products, $contextData, $message)
+                : ($contextData['facts']['ambiguous_product_reference'] ?? null
+                    ? $this->ambiguousProductQuestion($contextData['facts']['ambiguous_product_reference'])
+                    : $this->searchAnswer($products, $crop, $routing)),
             AiIntent::PRODUCT_RECOMMENDATION,
-            AiIntent::FERTILIZER_ADVICE => $this->recommendationAnswer($products, $crop, $missing, $routing, $contextData['recommendation'] ?? null),
+            AiIntent::FERTILIZER_ADVICE => ($routing['category_recommendation'] ?? false) === true
+                ? $this->categoryRecommendationAnswer($products, $contextData, $message)
+                : $this->recommendationAnswer($products, $crop, $missing, $routing, $contextData['recommendation'] ?? null),
             AiIntent::COST_ESTIMATION => $this->costAnswer($contextData, $crop, $missing),
             AiIntent::QUOTATION => $this->quotationAnswer($contextData['quotation']),
             AiIntent::STORE_DEMAND => $this->storeDemandAnswer($contextData),
             AiIntent::CROP_ADVICE => $this->cropAdviceAnswer($crop, $missing, $routing),
-            AiIntent::GREETING => $this->greetingAnswer($contextData),
+            AiIntent::GREETING => $this->greetingAnswer($contextData, $message),
             AiIntent::CROP_DISCOVERY,
             AiIntent::CROP_SEARCH => $this->cropDiscoveryAnswer($contextData, $routing),
             AiIntent::CROP_RECOMMENDATION => $this->cropChoiceAnswer($contextData, $routing),
@@ -1318,8 +1392,15 @@ class AquilalaAssistant
      *
      * @param  array<string, mixed>  $contextData
      */
-    private function greetingAnswer(array $contextData): string
+    private function greetingAnswer(array $contextData, string $message = ''): string
     {
+        // Keep the language and the time of day the farmer used, whether the
+        // greeting reached this handler through the router or the greeting
+        // shortcut. The old fixed "Hi!" answered "Magandang gabi" with English.
+        if ($message !== '') {
+            return $this->assistantGreetingReply($message, $contextData);
+        }
+
         $season = $contextData['facts']['season_profile'] ?? [];
 
         $reply = 'Hi! How can I help you today?';
@@ -1797,6 +1878,94 @@ class AquilalaAssistant
     }
 
     /**
+     * A "which products suit this crop?" answer for shelves with no decision
+     * formula. It carries the real catalogue cards (with their images), the
+     * general reason those products suit the crop, and a role-appropriate link
+     * to the crop directory when the crop is one the farmer can open.
+     *
+     * @param  array<int, array<string, mixed>>  $products
+     * @param  array<string, mixed>  $contextData
+     */
+    private function categoryRecommendationAnswer(array $products, array $contextData, string $message): string
+    {
+        $guidance = $contextData['facts']['input_guidance'] ?? [];
+        $crop = (string) ($guidance['crop'] ?? ($contextData['facts']['crop']['crop'] ?? 'your crop'));
+        $tagalog = $this->wantsTagalog($message);
+
+        // Name the crop the way the farmer named it, with the directory name
+        // alongside it — "sitaw (String Beans)" is both familiar and verifiable.
+        $cropLabel = $crop;
+
+        if ($tagalog) {
+            foreach ((array) ($contextData['facts']['trusted_crop_names'] ?? []) as $alias) {
+                $alias = (string) $alias;
+
+                if ($alias !== '' && $alias !== $crop && mb_stripos($message, $alias) !== false) {
+                    $cropLabel = $alias . ' (' . $crop . ')';
+                    break;
+                }
+            }
+        }
+
+        $summary = (string) ($tagalog
+            ? ($guidance['summary_tl'] ?? $guidance['summary'] ?? '')
+            : ($guidance['summary'] ?? ''));
+        $points = (array) ($tagalog
+            ? ($guidance['points_tl'] ?? $guidance['points'] ?? [])
+            : ($guidance['points'] ?? []));
+
+        $lines = [];
+
+        $lines[] = $tagalog
+            ? 'Narito ang mga produktong bagay para sa **' . $cropLabel . '** na makikita sa Aquilala:'
+            : 'Here are the products I found for **' . $crop . '** that suit this need:';
+
+        if ($summary !== '') {
+            $lines[] = '';
+            $lines[] = $summary;
+        }
+
+        if ($points !== []) {
+            $lines[] = '';
+
+            foreach ($points as $point) {
+                $lines[] = '- ' . (string) $point;
+            }
+        }
+
+        if ($products !== []) {
+            $lines[] = '';
+            $lines[] = $tagalog ? 'Available products:' : 'Available products:';
+
+            foreach ($products as $product) {
+                $lines[] = '- **' . $product['display_name'] . '** — ₱' . $product['price']
+                    . ' / ' . $product['price_unit'] . ' · ' . $product['stock'];
+            }
+        } else {
+            $lines[] = '';
+            $lines[] = $tagalog
+                ? 'Wala pa akong produktong nahanap sa kategoryang ito sa Aquilala. Ang gabay sa itaas ay pangkalahatang kaalaman sa pagsasaka.'
+                : 'I could not find a product on this shelf in Aquilala. The guidance above is general farming knowledge.';
+        }
+
+        $directory = $contextData['facts']['crop_directory'] ?? null;
+
+        if (is_array($directory) && ! empty($directory['url'])) {
+            $lines[] = '';
+            $lines[] = $tagalog
+                ? 'Tingnan ang [Crop Directory](' . $directory['url'] . ') para sa larawan at buong gabay sa ' . $crop . '.'
+                : 'See the [Crop Directory](' . $directory['url'] . ') for the crop photo and full growing guide for ' . $crop . '.';
+        }
+
+        $lines[] = '';
+        $lines[] = $tagalog
+            ? 'Ang presyo at availability ay mula sa Aquilala catalog; ang gabay sa pagsasaka ay pangkalahatang kaalaman, hindi tiyak na rate para sa inyong lupa.'
+            : 'Prices and availability come from the Aquilala catalog; the farming guidance is general practice, not a rate for your specific soil.';
+
+        return implode("\n", array_filter($lines, static fn ($line) => $line !== ''));
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $products
      * @param  array<int, string>  $missing
      * @param  array{intent: string, slots: array<string, mixed>, follow_up: bool}  $routing
@@ -2184,7 +2353,9 @@ class AquilalaAssistant
     {
         return preg_match(
             '/\b(?:pano|paano|ako|ng|mga|ang|wala|ito|yung|gusto|salamat|ninyo|niyo|inyo|tindahan|presyo|tanim|'
-                . 'ubos|maubos|magubos|ilagay|gawin|gamitin|tanungin|sabihin|po|ba|panahon|ngayon)\b/iu',
+                . 'ubos|maubos|magubos|ilagay|gawin|gamitin|tanungin|sabihin|po|ba|panahon|ngayon|'
+                . 'magandang|gabi|umaga|hapon|pwede|puwede|puede|nga|kong|natin|naman|ka|'
+                . 'produkto|produto|abono|pataba|binhi|buto|punla|para|magrecommend|magsuggest)\b/iu',
             $message
         ) === 1;
     }
@@ -2885,14 +3056,31 @@ class AquilalaAssistant
     private function assistantGreetingReply(string $message, array $contextData): string
     {
         $normalized = mb_strtolower(trim((string) preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $message)));
+        $tagalog = $this->wantsTagalog($message) || preg_match('/\b(?:magandang|kumusta)\b/u', $normalized) === 1;
+
+        $evening = preg_match('/\b(?:gabi|evening)\b/u', $normalized) === 1;
+        $afternoon = preg_match('/\b(?:hapon|afternoon)\b/u', $normalized) === 1;
+        $morning = preg_match('/\b(?:umaga|morning)\b/u', $normalized) === 1;
 
         // Role-neutral on purpose: an administrator and a store owner get the
         // same courtesy as a farmer, with no assumption about whose farm it is.
-        if (str_contains($normalized, 'evening')) {
+        // A Tagalog time-of-day greeting gets the same greeting back —
+        // "Magandang gabi" must not come back as "Hello".
+        if ($tagalog) {
+            if ($evening) {
+                $base = 'Magandang gabi! Paano po ako makakatulong sa inyo ngayon?';
+            } elseif ($afternoon) {
+                $base = 'Magandang hapon! Paano po ako makakatulong sa inyo ngayon?';
+            } elseif ($morning) {
+                $base = 'Magandang umaga! Paano po ako makakatulong sa inyo ngayon?';
+            } else {
+                $base = 'Kumusta! Paano po ako makakatulong sa inyo ngayon?';
+            }
+        } elseif ($evening) {
             $base = 'Good evening! How can I help you today?';
-        } elseif (str_contains($normalized, 'afternoon')) {
+        } elseif ($afternoon) {
             $base = 'Good afternoon! How can I help you today?';
-        } elseif (str_contains($normalized, 'morning')) {
+        } elseif ($morning) {
             $base = 'Good morning! How can I help you today?';
         } else {
             $base = 'Hello! How can I help you today?';
@@ -2901,7 +3089,9 @@ class AquilalaAssistant
         $season = $contextData['facts']['season_profile'] ?? [];
 
         if (! empty($season['label'])) {
-            return $base . ' It is **' . $season['label'] . '** in Bulan right now.';
+            return $base . ($tagalog
+                ? ' Sa Bulan ngayon ay **' . $season['label'] . '**.'
+                : ' It is **' . $season['label'] . '** in Bulan right now.');
         }
 
         return $base;
@@ -3335,7 +3525,15 @@ class AquilalaAssistant
             $names[] = (string) $contextData['facts']['crop']['crop'];
         }
 
-        return $names;
+        // A category recommendation names the crop and the alias the farmer
+        // typed ("String Beans" and "sitaw"). Both are real names from the crop
+        // library, so the model may use either without being treated as having
+        // invented a crop.
+        foreach ($contextData['facts']['trusted_crop_names'] ?? [] as $name) {
+            $names[] = (string) $name;
+        }
+
+        return array_values(array_unique(array_filter($names)));
     }
 
     /**

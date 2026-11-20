@@ -84,6 +84,15 @@ final class AquilalaAssistantPrompt
           and crop husbandry - answer from your own knowledge. That is what a
           good adviser does. Say "general practice" when a figure is a rule of
           thumb rather than one of this system's rules.
+        - When the question names a product shelf and a crop - fertilizer,
+          seeds, crop protection, tools - use `input_guidance` together with
+          your own agronomic knowledge to decide which verified products suit
+          that crop. Return only those ids in "product_ids", bold each chosen
+          name in the answer so its real image is shown, and give one short
+          reason tied to the crop. A legume such as sitaw does not need the
+          same fertilizer as rice; do not offer seed when fertilizer was asked
+          for. Never state a rate, a quantity or a price that is not in the
+          verified products.
         - Aquilala serves farmers in Bulan, Sorsogon (a hot, humid, tropical
           lowland). When a farmer asks about a crop that is not in the directory,
           do not just say you lack data: explain the real situation. Name the
@@ -161,6 +170,8 @@ final class AquilalaAssistantPrompt
             'verified_products'    => $context['products'] ?? [],
             'approved_knowledge'   => $context['facts'] ?? [],
             'crops_directory'      => $context['facts']['crops'] ?? [],
+            'input_guidance'       => $context['facts']['input_guidance'] ?? null,
+            'crop_directory'       => $context['facts']['crop_directory'] ?? null,
             'season_window'        => $context['facts']['season_window'] ?? null,
             'rule_engine_result'   => $context['recommendation'] ?? null,
             'existing_quotation'   => $context['quotation'] ?? null,

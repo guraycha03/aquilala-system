@@ -33,7 +33,7 @@ class AiIntentRouter
      * check into "does the message contain an input word" — which is how
      * "do you have rice products?" ended up classified as a recommendation.
      */
-    private const INPUT_WORDS = '(?:fertilizers?|inputs?|products?|seeds?|seedlings?|pesticides?|herbicides?|fungicides?|insecticides?|brands?|urea|npk|complete|mop|potash|ammonium|soil\s*amendments?|tools?|equipment|machinery|sprayers?|pumps?|irrigation|storage|feed|nursery|crop\s+protection|containers?|crates?)';
+    private const INPUT_WORDS = '(?:fertilizers?|fertilisers?|abono|pataba|inputs?|products?|produkto|seeds?|seedlings?|binhi|buto|punla|pesticides?|pestisidyo|herbicides?|fungicides?|insecticides?|brands?|urea|npk|complete|mop|potash|ammonium|soil\s*amendments?|tools?|kagamitan|equipment|machinery|sprayers?|pumps?|irrigation|storage|feed|nursery|crop\s+protection|containers?|crates?)';
 
     /**
      * Input *names* rather than input categories: things a farmer would ask the
@@ -47,6 +47,35 @@ class AiIntentRouter
      * produced a different answer because the answer never depended on it.
      */
     private const SPECIFIC_PRODUCTS = '(?:urea|npk|mop|potash|ammonium|complete\s+(?:fertilizer|fertiliser)|\d{1,2}\s*[\-\/]\s*\d{1,2}\s*[\-\/]\s*\d{1,2})';
+
+    /**
+     * Product types a farmer asks for by name, in English, Tagalog or Taglish.
+     *
+     * A farmer who says "abono para sa sitaw" is asking for the same shelf as
+     * "fertilizer for string beans". Keeping the vocabulary here lets the
+     * router resolve both to one category that the catalog can search and the
+     * assistant can explain with general agronomic knowledge.
+     *
+     * Order matters: "organic fertilizer" is a fertilizer before it is a soil
+     * amendment, and "seedling" is a seed before it is a separate item.
+     *
+     * @var array<string, string>
+     */
+    private const INPUT_CATEGORIES = [
+        'Fertilizer' => '/\b(?:fertilizers?|fertilisers?|abono|pataba|urea|npk|complete(?:\s+fertilizer)?|mop|potash|ammonium|micronutrients?|organic\s+fertilizer)\b/iu',
+        'Seeds' => '/\b(?:seeds?|binhi|buto|seedlings?|punla)\b/iu',
+        'Pesticide' => '/\b(?:pesticides?|pestisidyo|insecticides?|insectisidyo|fungicides?|fungisidyo|herbicides?|weed\s+control|pamatay[-\s]?(?:peste|halaman|damo))\b/iu',
+        'Tools & Equipment' => '/\b(?:tools?|kagamitan|equipment|machinery|irrigation|pumps?|sprayers?)\b/iu',
+        'Soil Amendments' => '/\b(?:soil\s+amendments?|lime|compost|humus|organic\s+matter)\b/iu',
+    ];
+
+    /**
+     * Words that turn a category + crop into "show me what suits this crop",
+     * rather than "price this out for my farm". The latter keeps the rule-engine
+     * slot flow ("What fertilizers for rice?" still asks for the farm area);
+     * the former answers with the actual products and a short reason.
+     */
+    private const CATEGORY_RECOMMEND_CUES = '/\b(?:recommend(?:ation)?s?|mag[\s\-]?recommend|suggest(?:ion)?s?|mag[\s\-]?suggest|show|pakita|ipakita|give|bigay|best|pinakamaganda|angkop|suitable|bagay)\b/iu';
 
     /**
      * A farmer naming a product that the catalogue may not hold.
@@ -247,6 +276,9 @@ class AiIntentRouter
             // "What fruits can I plant?" names a category, not a crop. The
             // crops directory is what turns the word into a real set of rows.
             'crop_category'  => $this->detectCropCategory($normalized),
+            // "fertilizer", "abono", "binhi" — the shelf the farmer is asking
+            // about. Null means the question is not about a product category.
+            'input_category' => $this->detectInputCategory($normalized),
             // The month a seasonal question is about, resolved against the
             // application's own Bicol climate calendar.
             'month'          => $this->detectMonthWindow($normalized),
@@ -274,9 +306,10 @@ class AiIntentRouter
         // carried over from the previous turn cannot turn "how much is urea?"
         // into a cost estimate.
         $detected = [
-            'crop'   => $slots['crop'],
-            'season' => $slots['season'],
-            'area'   => $slots['area'],
+            'crop'           => $slots['crop'],
+            'season'         => $slots['season'],
+            'area'           => $slots['area'],
+            'input_category' => $slots['input_category'],
         ];
 
         // A follow-up inherits the crop and season it was last asked about, so
@@ -286,6 +319,16 @@ class AiIntentRouter
         $slots['area'] = $slots['area'] ?? $context->lastArea;
 
         $intent = $this->classify($normalized, $context, $slots, $detected);
+
+        // A category recommendation is "which of these suit my crop?", not
+        // "compute a rate for my farm". It still has to name both the crop and
+        // the shelf, and it must not be a cost question in disguise — an area
+        // in the message sends the turn to COST_ESTIMATION instead.
+        $categoryRecommendation = in_array($intent, [AiIntent::PRODUCT_SEARCH, AiIntent::PRODUCT_RECOMMENDATION, AiIntent::FERTILIZER_ADVICE], true)
+            && $slots['input_category'] !== null
+            && $detected['crop'] !== null
+            && $detected['area'] === null
+            && preg_match(self::CATEGORY_RECOMMEND_CUES, $normalized) === 1;
 
         // Only a message that actually points backwards may claim the previous
         // turn's products. Otherwise "give me the best product" would silently
@@ -301,6 +344,9 @@ class AiIntentRouter
             'slots'      => $slots,
             'missing'    => $this->missingFor($intent, $slots),
             'follow_up'  => $followUp,
+            // Consumed by AiContextBuilder: answer with suitable products from
+            // the named shelf instead of asking for farm area and season.
+            'category_recommendation' => $categoryRecommendation,
             // Whether the farmer asked for a personal preference as though it
             // were a fact. The answer has to acknowledge that it is one.
             'subjective' => $this->isSubjective($normalized),
@@ -581,12 +627,14 @@ class AiIntentRouter
             return false;
         }
 
-        // "...for/of/on <something>" ties the request to a crop or a use.
-        if (preg_match('/\b' . self::INPUT_WORDS . '\b[^.?!]{0,24}\b(for|of|on|to\s+use\s+for|to\s+apply)\b/i', $text) === 1) {
+        // "...for/of/on/para sa <something>" ties the request to a crop or a
+        // use. Tagalog "para sa tanim kong sitaw" is the same shape as English
+        // "for my string beans", so both must reach the recommendation branch.
+        if (preg_match('/\b' . self::INPUT_WORDS . '\b[^.?!]{0,32}\b(for|of|on|to\s+use\s+for|to\s+apply|para\s+(?:sa\s+)?|sa)\b/iu', $text) === 1) {
             return true;
         }
 
-        return preg_match('/\b(recommend(?:ation)?s?|suggest(?:ion)?s?|best|which|what|should\s+i|need|want|appropriate|suitable|right)\b/i', $text) === 1;
+        return preg_match('/\b(recommend(?:ation)?s?|mag[\s\-]?recommend|suggest(?:ion)?s?|mag[\s\-]?suggest|best|pinakamaganda|which|what|ano|should\s+i|need|kailangan|want|gusto|appropriate|angkop|suitable|bagay|right)\b/iu', $text) === 1;
     }
 
     /**
@@ -937,6 +985,24 @@ class AiIntentRouter
     // ────────────────────────────────────────────────────────────
 
     /**
+     * The product shelf the farmer is asking about, if any.
+     *
+     * This is a slot rather than an intent: "fertilizer for sitaw" and "seeds
+     * for ampalaya" are the same question shape, and the answer differs only in
+     * which catalogue rows and which general guidance are retrieved.
+     */
+    private function detectInputCategory(string $text): ?string
+    {
+        foreach (self::INPUT_CATEGORIES as $name => $pattern) {
+            if (preg_match($pattern, $text) === 1) {
+                return $name;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Match the crop against the names the application actually knows: the
      * Bulan catalogue, the crops table and the decision formulas. A word the
      * application has no record of is not a crop, however much it looks like
@@ -1149,6 +1215,66 @@ class AiIntentRouter
         ];
 
         foreach ($aliases as $alias => $canonical) {
+            if (isset($known[$canonical]) && ! array_key_exists($alias, $map)) {
+                $map[$alias] = $canonical;
+            }
+        }
+
+        // The crop directory already carries the names farmers actually use —
+        // sitaw, mangga, kamatis, ampalaya, gabi — as aliases on each library
+        // entry. Reusing them here means one word is taught to the assistant in
+        // one place: the directory page and the chat cannot disagree about what
+        // "sitaw" is.
+        $library = app(\App\Services\CropLibraryService::class);
+
+        foreach ($library->all() as $entry) {
+            $canonical = trim((string) ($entry['name'] ?? ''));
+
+            if ($canonical === '' || ! isset($known[$canonical])) {
+                continue;
+            }
+
+            $words = array_merge([$canonical], (array) ($entry['aliases'] ?? []));
+
+            foreach ($words as $word) {
+                $word = trim((string) $word);
+
+                if ($word === '') {
+                    continue;
+                }
+
+                // Both the spaced form ("string bean") and the compact form
+                // ("stringbeans") are kept: detectCrop anchors on word
+                // boundaries, and farmers type either.
+                foreach ([$this->slug($word), $library->key($word)] as $key) {
+                    if ($key !== '' && ! array_key_exists($key, $map)) {
+                        $map[$key] = $canonical;
+                    }
+                }
+            }
+        }
+
+        // A few table crops whose Filipino names are not in the library.
+        $extraAliases = [
+            'camote'  => 'Sweet Potato',
+            'kamote'  => 'Sweet Potato',
+            'niyog'   => 'Coconut',
+            'saging'  => 'Banana',
+            'tubo'    => 'Sugarcane',
+            'mangga'  => 'Mango',
+            'pinya'   => 'Pineapple',
+            'mani'    => 'Peanut',
+            'munggo'  => 'Mungbean',
+            'labanos' => 'Radish',
+            'karot'   => 'Carrot',
+            'bawang'  => 'Garlic',
+            'sibuyas' => 'Onion',
+            'luya'    => 'Ginger',
+            'kape'    => 'Coffee',
+            'kakaw'   => 'Cacao',
+        ];
+
+        foreach ($extraAliases as $alias => $canonical) {
             if (isset($known[$canonical]) && ! array_key_exists($alias, $map)) {
                 $map[$alias] = $canonical;
             }

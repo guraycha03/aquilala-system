@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\User;
 use App\Rules\CropRecommendationEngine;
+use App\Services\CropInputAdviceService;
 use App\Services\CropService;
 use App\Services\FarmingKnowledgeService;
 use App\Services\ProductSearchService;
@@ -36,6 +37,7 @@ class AiContextBuilder
         private readonly FarmingKnowledgeService $knowledge,
         private readonly CropService $crops,
         private readonly StoreDemandService $storeDemand,
+        private readonly CropInputAdviceService $inputAdvice,
     ) {
     }
 
@@ -81,6 +83,13 @@ class AiContextBuilder
 
         switch ($intent) {
             case AiIntent::PRODUCT_SEARCH:
+                if (($routing['category_recommendation'] ?? false) === true) {
+                    [$retrieved, $inputFacts] = $this->retrieveForCategoryRecommendation($slots, $user);
+                    $facts = array_merge($facts, $inputFacts);
+                    $missing = [];
+                    break;
+                }
+
                 $retrieved = $this->retrieveForSearch(
                     $slots,
                     $user,
@@ -110,6 +119,17 @@ class AiContextBuilder
 
             case AiIntent::PRODUCT_RECOMMENDATION:
             case AiIntent::FERTILIZER_ADVICE:
+                // "Recommend a fertilizer for my sitaw" is a shelf question, not
+                // a rate calculation. The formula engine cannot price a crop it
+                // has no formula for, so answer with the real products on that
+                // shelf plus general crop guidance instead of asking for area.
+                if (($routing['category_recommendation'] ?? false) === true) {
+                    [$retrieved, $inputFacts] = $this->retrieveForCategoryRecommendation($slots, $user);
+                    $facts = array_merge($facts, $inputFacts);
+                    $missing = [];
+                    break;
+                }
+
                 [$retrieved, $recommendation, $missing] = $this->retrieveForRecommendation($slots, $user, (float) ($slots['budget'] ?? 0) ?: null);
 
                 if (($slots['budget'] ?? null) !== null) {
@@ -517,6 +537,77 @@ class AiContextBuilder
             ->concat($compatible)
             ->unique('id')
             ->values();
+    }
+
+    /**
+     * "Recommend a fertilizer for my sitaw" — the shelf the farmer named,
+     * narrowed to products that suit the crop by general agronomic knowledge.
+     *
+     * This is the fallback for the very common case where the crop is in the
+     * directory and the products are in the catalogue but no decision formula
+     * links the two. The formula engine is not run and no rate is invented;
+     * only real catalogue rows are returned, and the guidance explains why
+     * they suit this crop.
+     *
+     * @param  array<string, mixed>  $slots
+     * @return array{0: Collection<int, \App\Models\Product>, 1: array<string, mixed>}
+     */
+    private function retrieveForCategoryRecommendation(array $slots, ?User $user): array
+    {
+        $crop = $slots['crop'] ?? null;
+        $category = (string) ($slots['input_category'] ?? '');
+        $guidance = $this->inputAdvice->guidanceFor($crop, $category);
+
+        $found = new Collection();
+
+        foreach ($this->inputAdvice->searchTerms($category) as $term) {
+            $found = $found->concat($this->products->search($term, $user));
+        }
+
+        $found = $found->unique('id')->values();
+
+        $budget = $slots['budget'] ?? null;
+
+        if ($budget !== null) {
+            $found = $found
+                ->filter(static fn ($product) => (float) $product->price <= (float) $budget)
+                ->values();
+        }
+
+        // Six cards is enough to choose from. A longer shelf becomes a catalog
+        // dump, which is exactly what this answer is meant to avoid.
+        $ranked = $this->inputAdvice
+            ->rank($found, $guidance)
+            ->take(6)
+            ->values();
+
+        $entry = $guidance['crop_entry'] ?? null;
+        $aliases = $entry['aliases'] ?? [];
+        $trusted = array_values(array_unique(array_filter(array_merge(
+            [$guidance['crop'] ?? $crop],
+            is_array($aliases) ? $aliases : []
+        ))));
+
+        $facts = [
+            'input_guidance'      => $guidance,
+            'crop'                => $entry ?: ['crop' => $crop],
+            'trusted_crop_names'  => $trusted,
+            'recommendation_basis' => [
+                'crop'            => $guidance['crop'] ?? $crop,
+                'category'        => $category,
+                'source'          => 'catalog products ranked with general crop guidance; no formula-linked rate exists for this crop and shelf',
+            ],
+        ];
+
+        if (($user?->role ?? auth()->user()?->role) === 'farmer') {
+            $facts['crop_directory'] = [
+                'name' => $guidance['crop'] ?? $crop,
+                'url'  => route('farmer.crops-directory.index'),
+                'image' => $guidance['crop_image'] ?? null,
+            ];
+        }
+
+        return [$ranked, $facts];
     }
 
     /***
