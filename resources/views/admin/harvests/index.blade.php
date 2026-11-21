@@ -15,6 +15,49 @@
   $harvestGraphMonth = $context['harvestGraphMonth'] ?? [];
   $harvestGraphWeek  = $context['harvestGraphWeek'] ?? [];
   $harvestGraphDays  = $context['harvestGraphDays'] ?? [];
+
+  // Prepare chart data (mirroring visual-report.blade.php)
+  $byYear = [];
+  foreach ($periods as $p) {
+    $y = (int) $p['year'];
+    if (!isset($byYear[$y])) {
+      $byYear[$y] = ['year' => $y, 'wet_yield_mt' => 0, 'wet_area_ha' => 0, 'wet_expenses_php' => 0, 'dry_yield_mt' => 0, 'dry_area_ha' => 0, 'dry_expenses_php' => 0, 'total_yield_mt' => 0, 'total_area_ha' => 0, 'total_expenses_php' => 0];
+    }
+    $byYear[$y]['total_yield_mt'] += (float) $p['yield_tons'];
+    $byYear[$y]['total_area_ha'] += (float) $p['area_ha'];
+    $byYear[$y]['total_expenses_php'] += (float) $p['expenses_php'];
+    $season = strtolower($p['season'] ?? '');
+    if ($season === 'wet') {
+      $byYear[$y]['wet_yield_mt'] += (float) $p['yield_tons'];
+      $byYear[$y]['wet_area_ha'] += (float) $p['area_ha'];
+      $byYear[$y]['wet_expenses_php'] += (float) $p['expenses_php'];
+    } elseif ($season === 'dry') {
+      $byYear[$y]['dry_yield_mt'] += (float) $p['yield_tons'];
+      $byYear[$y]['dry_area_ha'] += (float) $p['area_ha'];
+      $byYear[$y]['dry_expenses_php'] += (float) $p['expenses_php'];
+    }
+  }
+  ksort($byYear);
+  $years = array_values($byYear);
+
+  $byCrop = collect($context['by_crop'] ?? [])->values()->all();
+
+  $wetTotalYield = collect($years)->sum('wet_yield_mt');
+  $dryTotalYield = collect($years)->sum('dry_yield_mt');
+  $totalYieldAll = $wetTotalYield + $dryTotalYield;
+  $wetShare = $totalYieldAll > 0 ? round(($wetTotalYield / $totalYieldAll) * 100) : 0;
+  $dryShare = 100 - $wetShare;
+
+  $wetArea = collect($years)->sum('wet_area_ha');
+  $dryArea = collect($years)->sum('dry_area_ha');
+  $wetRecords = collect($periods)->where('season', 'wet')->sum('reports');
+  $dryRecords = collect($periods)->where('season', 'dry')->sum('reports');
+  $wetYieldPerHa = $wetArea > 0 ? round($wetTotalYield / $wetArea, 2) : null;
+  $dryYieldPerHa = $dryArea > 0 ? round($dryTotalYield / $dryArea, 2) : null;
+  $wetExpenses = collect($years)->sum('wet_expenses_php');
+  $dryExpenses = collect($years)->sum('dry_expenses_php');
+  $wetCostPerMt = $wetTotalYield > 0 ? round($wetExpenses / $wetTotalYield, 2) : null;
+  $dryCostPerMt = $dryTotalYield > 0 ? round($dryExpenses / $dryTotalYield, 2) : null;
 @endphp
 <style>
   .stat-card {
@@ -186,6 +229,149 @@
       @include('partials.harvest-report-chart')
     </div>
   </div>
+
+  {{-- ── Year-by-Year Seasonal Performance ─────────────────────────── --}}
+  @if(!empty($years))
+  <div class="hp-card" style="grid-column:1 / -1;">
+    <div class="hp-card-head hp-card-head-split">
+      <div>
+        <p class="hp-card-title">Year-by-Year Seasonal Performance</p>
+        <p class="hp-card-sub">Wet monsoon vs. dry irrigated harvest cycles in the selected scope</p>
+      </div>
+      <div class="ahr-metric-switch no-print" role="group" aria-label="Chart metric" style="display:inline-flex; gap:6px; padding:4px; background:#f8faf9; border:1px solid #eef1f4; border-radius:8px;">
+        <button type="button" class="ahr-metric-btn active" data-metric-btn="yield" style="padding:6px 12px; border-radius:6px; border:none; background:transparent; color:#14532d; font-weight:700; font-size:12px; cursor:pointer;">Yield (MT)</button>
+        <button type="button" class="ahr-metric-btn" data-metric-btn="rate" style="padding:6px 12px; border-radius:6px; border:none; background:transparent; color:#64748b; font-weight:600; font-size:12px; cursor:pointer;">MT / ha</button>
+        <button type="button" class="ahr-metric-btn" data-metric-btn="expenses" style="padding:6px 12px; border-radius:6px; border:none; background:transparent; color:#64748b; font-weight:600; font-size:12px; cursor:pointer;">Expenses</button>
+      </div>
+    </div>
+    <div class="hp-card-body" style="padding:0;">
+      <div class="ahr-chart" style="height:280px; padding:18px 20px;">
+        <div class="ahr-readout" style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 0 10px; flex-wrap:wrap;">
+          <span><strong>{{ $years[count($years)-1]['year'] }}</strong> · {{ (int) $years[count($years)-1]['total_yield_mt'] > 0 ? number_format($years[count($years)-1]['total_yield_mt'], 1) . ' MT' : 'No data' }}</span>
+          <div class="ahr-readout-values" style="display:flex; gap:16px; align-items:center; font-size:13px; font-weight:600;">
+            @if(true)
+              <span style="color:#1d8a3e">Wet: <strong>{{ number_format(collect($years)->sum('wet_yield_mt'), 1) }} MT</strong></span>
+            @endif
+            @if(true)
+              <span style="color:#b45309">Dry: <strong>{{ number_format(collect($years)->sum('dry_yield_mt'), 1) }} MT</strong></span>
+            @endif
+            <span>Total: <strong>{{ number_format(collect($years)->sum('total_yield_mt'), 1) }} MT</strong></span>
+          </div>
+        </div>
+        <div class="ahr-chart-scroll" style="height:200px; overflow-x:auto; padding-bottom:8px;">
+          <svg class="ahr-chart-svg" viewBox="0 0 640 240" role="img" aria-label="Year-by-Year Seasonal Performance" style="width:100%; height:100%; min-width:max(640px, 100%);">
+            @php
+              $showWet = true;
+              $showDry = true;
+              $maxYield = collect($years)->max('total_yield_mt');
+              $maxWet = collect($years)->max('wet_yield_mt');
+              $maxDry = collect($years)->max('dry_yield_mt');
+              $chartMax = max($maxYield, $maxWet, $maxDry, 10);
+              $chartMax = $chartMax * 1.15;
+            @endphp
+            @foreach([0, .25, .5, .75, 1] as $step)
+              @php
+                $yPos = 198 - $step * 168;
+                $tick = $chartMax * $step;
+              @endphp
+              <line class="ahr-gridline" x1="48" y1="{{ $yPos }}" x2="624" y2="{{ $yPos }}" style="stroke:rgba(0,0,0,0.06); stroke-width:1;"></line>
+              <text class="ahr-axis-text" x="40" y="{{ $yPos + 4 }}" text-anchor="end" style="font-size:10px; fill:#64748b; font-weight:500;">{{ number_format($tick, 0) }}</text>
+            @endforeach
+            @foreach($years as $index => $year)
+              @php
+                $slot = 576 / max(count($years), 1);
+                $center = 48 + $slot * $index + $slot / 2;
+                $vals = [
+                  'wet' => $year['wet_yield_mt'],
+                  'dry' => $year['dry_yield_mt'],
+                ];
+                $barWidth = min(34, $slot * .28);
+                $gap = 6;
+                $wetX = $center - $barWidth - $gap / 2;
+                $dryX = $center + $gap / 2;
+                $wetH = max(2, ($vals['wet'] / $chartMax) * 168);
+                $dryH = max(2, ($vals['dry'] / $chartMax) * 168);
+              @endphp
+              <g>
+                <rect x="{{ $wetX }}" y="{{ 198 - $wetH }}" width="{{ $barWidth }}" height="{{ $wetH }}" rx="4" fill="#1d8a3e" opacity=".9"></rect>
+                <text class="ahr-bar-label" x="{{ $wetX + $barWidth / 2 }}" y="{{ 198 - $wetH - 5 }}" text-anchor="middle" fill="#1d8a3e" style="font-size:9px; font-weight:700;">{{ number_format($vals['wet'], 0) }}</text>
+                <rect x="{{ $dryX }}" y="{{ 198 - $dryH }}" width="{{ $barWidth }}" height="{{ $dryH }}" rx="4" fill="#b45309" opacity=".9"></rect>
+                <text class="ahr-bar-label" x="{{ $dryX + $barWidth / 2 }}" y="{{ 198 - $dryH - 5 }}" text-anchor="middle" fill="#b45309" style="font-size:9px; font-weight:700;">{{ number_format($vals['dry'], 0) }}</text>
+                <text class="ahr-axis-text" x="{{ $center }}" y="220" text-anchor="middle" style="font-weight:700; font-size:10px; fill:#334155;">{{ $year['year'] }}</text>
+              </g>
+            @endforeach
+          </svg>
+        </div>
+        <div class="ahr-legend" style="display:flex; align-items:center; gap:16px; padding:10px 0 0; font-size:12px; font-weight:600;">
+          <span><span class="ahr-legend-dot" style="width:10px; height:10px; border-radius:50%; background:#1d8a3e; display:inline-block; margin-right:6px; vertical-align:middle;"></span>Wet Season (Aug–Nov)</span>
+          <span><span class="ahr-legend-dot" style="width:10px; height:10px; border-radius:50%; background:#b45309; display:inline-block; margin-right:6px; vertical-align:middle;"></span>Dry Season (Feb–May)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- ── Crop Output & Unit Cost ──────────────────────────────────── --}}
+  @if(!empty($byCrop))
+  <div class="hp-card" style="grid-column:1 / -1;">
+    <div class="hp-card-head">
+      <p class="hp-card-title">Crop Output & Unit Cost</p>
+      <p class="hp-card-sub">Each crop's share of total yield, efficiency, and recorded cost per metric ton</p>
+    </div>
+    <div class="hp-card-body" style="padding:0;">
+      <div class="ahr-crop-bars" style="padding:0 20px 18px;">
+        @foreach($byCrop as $crop)
+          <div class="ahr-crop-row" style="display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px dashed #eef1f4;">
+            <div class="ahr-crop-row-head" style="display:flex; align-items:center; gap:8px; min-width:180px;">
+              <span class="ahr-crop-row-name" style="font-weight:700; color:#1e293b; font-size:13.5px;">{{ $crop['crop_type'] }}</span>
+              <span class="ahr-crop-row-yield" style="color:#64748b; font-size:12.5px; font-weight:600; white-space:nowrap;">{{ number_format((float) ($crop['total_yield_mt'] ?? 0), 1) }} MT ({{ (int) ($crop['share_pct'] ?? 0) }}%)</span>
+            </div>
+            <div class="ahr-share-track" style="flex:1; height:6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
+              <div class="ahr-share-fill" style="width:{{ max(4, (int) ($crop['share_pct'] ?? 0)) }}%; height:100%; background:#1d8a3e; border-radius:3px;"></div>
+            </div>
+            <div class="ahr-crop-row-meta" style="display:flex; flex-direction:column; gap:2px; min-width:160px; text-align:right; font-size:12px; color:#64748b;">
+              <span>{{ number_format((float) ($crop['yield_per_ha'] ?? 0), 2) }} MT/ha · {{ number_format((float) ($crop['total_area_ha'] ?? 0), 1) }} ha</span>
+              <span>₱{{ number_format((float) ($crop['cost_per_mt'] ?? 0), 0) }}/MT</span>
+            </div>
+          </div>
+        @endforeach
+      </div>
+    </div>
+  </div>
+
+  {{-- ── Wet vs. Dry Season Balance ────────────────────────────────── --}}
+  <div class="hp-card" style="grid-column:1 / -1;">
+    <div class="hp-card-head">
+      <p class="hp-card-title">Wet vs. Dry Season Balance</p>
+      <p class="hp-card-sub">Share of total harvest output and unit efficiency across seasons in scope</p>
+    </div>
+    <div class="hp-card-body" style="padding:0 20px 18px;">
+      <div class="ahr-balance-head" style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding-bottom:10px; border-bottom:1px solid #eef1f4;">
+        <div>
+          <span style="color:#1d8a3e; font-weight:800; font-size:18px;">Wet {{ $wetShare }}%</span>
+          <span style="color:#b45309; font-weight:800; font-size:18px; margin-left:12px;">Dry {{ $dryShare }}%</span>
+        </div>
+      </div>
+      <div class="ahr-balance-bar" style="height:16px; background:#f1f5f9; border-radius:8px; overflow:hidden; margin:10px 0;">
+        <div class="ahr-balance-fill wet" style="width:{{ $wetShare }}%; height:100%; background:#1d8a3e; border-radius:8px 0 0 8px; transition:width .3s ease;"></div>
+        <div class="ahr-balance-fill dry" style="width:{{ $dryShare }}%; height:100%; background:#b45309; border-radius:0 8px 8px 0; transition:width .3s ease;"></div>
+      </div>
+      <div class="ahr-balance-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:16px;">
+        <div class="ahr-balance-col" style="padding:12px; background:#f8fdf9; border:1px solid #edf1e9; border-radius:10px;">
+          <span class="ahr-balance-name" style="color:#1d8a3e; font-weight:800; font-size:12.5px; text-transform:uppercase; letter-spacing:.04em;">Wet Season (Aug–Nov)</span>
+          <span class="ahr-balance-meta" style="display:block; color:#64748b; font-size:12px; margin-top:4px;">{{ (int) $wetRecords }} harvests · {{ number_format((float) $wetArea, 1) }} ha</span>
+          <span class="ahr-balance-value" style="display:block; color:#1d8a3e; font-weight:800; font-size:16px; margin-top:4px;">{{ number_format((float) $wetTotalYield, 1) }} MT</span>
+          <span class="ahr-balance-meta" style="display:block; color:#64748b; font-size:12px; margin-top:4px;">{{ $wetYieldPerHa !== null ? number_format($wetYieldPerHa, 2) . ' MT/ha' : '—' }} · {{ $wetCostPerMt !== null ? '₱' . number_format($wetCostPerMt, 0) . '/MT' : '—' }}</span>
+        </div>
+        <div class="ahr-balance-col" style="padding:12px; background:#fef3c7; border:1px solid #fde68a; border-radius:10px;">
+          <span class="ahr-balance-name dry" style="color:#b45309; font-weight:800; font-size:12.5px; text-transform:uppercase; letter-spacing:.04em;">Dry Season (Feb–May)</span>
+          <span class="ahr-balance-meta" style="display:block; color:#64748b; font-size:12px; margin-top:4px;">{{ (int) $dryRecords }} harvests · {{ number_format((float) $dryArea, 1) }} ha</span>
+          <span class="ahr-balance-value" style="display:block; color:#b45309; font-weight:800; font-size:16px; margin-top:4px;">{{ number_format((float) $dryTotalYield, 1) }} MT</span>
+          <span class="ahr-balance-meta" style="display:block; color:#64748b; font-size:12px; margin-top:4px;">{{ $dryYieldPerHa !== null ? number_format($dryYieldPerHa, 2) . ' MT/ha' : '—' }} · {{ $dryCostPerMt !== null ? '₱' . number_format($dryCostPerMt, 0) . '/MT' : '—' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  @endif
 
   {{-- ── Latest comparison ────────────────────────────────────── --}}
   <div class="hp-card">
