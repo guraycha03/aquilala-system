@@ -23,6 +23,7 @@ use App\Http\Controllers\FarmerDashboardController;
 use App\Http\Controllers\FarmerNotificationController;
 use App\Http\Controllers\FormulaController;
 use App\Http\Controllers\HarvestReportController;
+use App\Http\Controllers\HarvestReportGenerationController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PasswordSetupController;
@@ -678,8 +679,19 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         // The standalone decision-formula matrix page is gone: formulas will
         // be maintained alongside each product's own info instead of in a
         // separate list. Old links land on the catalog.
-        Route::get('/operations', fn () => redirect()->route('admin.operations.catalog'))->name('operations.index');
+Route::get('/operations', fn () => redirect()->route('admin.operations.catalog'))->name('operations.index');
         Route::get('/operations/formulas', fn () => redirect()->route('admin.operations.catalog'))->name('operations.formulas');
+
+        // Admin Crop Directory — same crop library the farmer sees, full read-only view
+        Route::get('/operations/crop-directory', function () {
+            $crops = Crop::where('is_category_placeholder', false)->orderBy('name')->get();
+            $cropsByCategory = $crops->groupBy('category_id')->map(function ($items, $id) {
+                return ['id' => $id, 'name' => $items->first()->category->name ?? 'Uncategorized', 'crops' => $items->values()];
+            })->sortBy('name')->values();
+
+            return view('admin.operations.crop-directory', compact('cropsByCategory'));
+        })->name('operations.crop-directory');
+
         Route::get('/operations/catalog', function () {
             $products = Product::with(['category', 'storeOwner'])
                 ->orderBy('name')
@@ -829,6 +841,24 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/harvests/reports', [HarvestReportController::class, 'reportsIndex'])
             ->name('harvests.reports')
             ->middleware('shield');
+
+        // Saved AI harvest reports. Literal paths stay ahead of any future
+        // /harvests/reports/{report} detail route. The report is generated once
+        // on POST; viewing and downloading only read the saved copy.
+        Route::get('/harvests/reports/generate/export', [HarvestReportGenerationController::class, 'exportCsv'])
+            ->name('harvests.reports.generate.export');
+        Route::get('/harvests/reports/generate', [HarvestReportGenerationController::class, 'index'])
+            ->name('harvests.reports.generate')
+            ->middleware('shield');
+        Route::post('/harvests/reports/generate', [HarvestReportGenerationController::class, 'store'])
+            ->name('harvests.reports.generate.store');
+        Route::get('/harvests/reports/generated/{generatedHarvestReport}', [HarvestReportGenerationController::class, 'show'])
+            ->name('harvests.reports.generated.show')
+            ->middleware('shield');
+        Route::get('/harvests/reports/generated/{generatedHarvestReport}/download', [HarvestReportGenerationController::class, 'download'])
+            ->name('harvests.reports.generated.download');
+        Route::delete('/harvests/reports/generated/{generatedHarvestReport}', [HarvestReportGenerationController::class, 'destroy'])
+            ->name('harvests.reports.generated.destroy');
 
         // Removing wrong records from the table: the officer ticks rows in
         // the list (or the Uploads page removes a whole file's worth) and

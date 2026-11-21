@@ -88,6 +88,12 @@ return [
         'items' => [
             ['label' => 'Harvest Performance', 'routes' => ['admin.harvests.index']],
             ['label' => 'All Harvest Reports', 'routes' => ['admin.harvests.reports']],
+            ['label' => 'AI Harvest Reports', 'routes' => [
+                'admin.harvests.reports.generate',
+                'admin.harvests.reports.generate.store',
+                'admin.harvests.reports.generated.show',
+                'admin.harvests.reports.generated.download',
+            ]],
             ['label' => 'Estimate vs Actual Harvest', 'routes' => ['admin.harvests.compare']],
             // The cost report is budgeted-vs-actual off this same harvest
             // table, so it belongs beside the rest of the harvest figures
@@ -114,10 +120,11 @@ return [
     // account management and harvest. Planting Requests moved up into
     // "Report and Request".
     'operations' => [
-        'label' => 'Farm Supplies',
+        'label' => 'Farm & Supplies',
         'icon' => '<svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>',
         'items' => [
             ['label' => 'Product Catalog', 'routes' => ['admin.operations.catalog']],
+            ['label' => 'Crop Directory', 'routes' => ['admin.operations.crop-directory']],
             ['label' => 'Stores', 'routes' => ['admin.stores.index', 'admin.stores.create', 'admin.stores.edit']],
             // Which products are being quoted, i.e. product demand in
             // numbers — a supply-and-stores report, so it sits with them.
