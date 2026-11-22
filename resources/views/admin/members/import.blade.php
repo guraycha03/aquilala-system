@@ -41,29 +41,7 @@
       position: relative; 
       font-family: inherit;
     }
-    .import-page::before,
-    .import-page::after {
-      content: ""; 
-      position: fixed; 
-      border-radius: 50%; 
-      filter: blur(80px); 
-      pointer-events: none; 
-      z-index: 0;
-    }
-    .import-page::before { 
-      width: 380px; 
-      height: 380px; 
-      background: rgba(16, 185, 129, 0.08); 
-      top: -100px; 
-      right: -100px; 
-    }
-    .import-page::after { 
-      width: 320px; 
-      height: 320px; 
-      background: rgba(34, 197, 94, 0.06); 
-      bottom: -80px; 
-      left: -80px; 
-    }
+
     .import-content { 
       position: relative; 
       z-index: 1; 

@@ -139,6 +139,81 @@ class DarkModeTest extends TestCase
         $this->assertSame('matcha', $user->fresh()->sidebar_theme);
     }
 
+    public function test_dashboard_sage_is_a_selectable_light_mode_color(): void
+    {
+        $this->assertSame('#DFE9D9', config('sidebar.themes.sage.colors.bg'));
+        $this->assertSame(config('sidebar.themes.sage.chip.fg'), config('sidebar.themes.sage.colors.brand_accent'));
+
+        $user = $this->makeUser('Sidebar Sage', 'farmer');
+
+        $this->actingAs($user)
+            ->get(route('farmer.settings.index'))
+            ->assertOk()
+            ->assertSee('data-stp-theme="sage"', false)
+            ->assertSee('Dashboard Sage');
+
+        $this->actingAs($user)
+            ->postJson(route('settings.ui'), ['theme' => 'sage'])
+            ->assertOk()
+            ->assertJson(['ok' => true, 'theme' => 'sage']);
+
+        $this->actingAs($user)
+            ->get(route('dashboard.farmer'))
+            ->assertOk()
+            ->assertSee('<body data-sidebar-theme="sage"', false)
+            ->assertSee('--sb-brand-accent:' . config('sidebar.themes.sage.colors.brand_accent'), false);
+    }
+
+    public function test_active_side_menu_surface_matches_the_page_background_in_every_theme(): void
+    {
+        foreach (array_keys(config('sidebar.themes')) as $theme) {
+            $user = $this->makeUser('Active Surface ' . $theme, 'farmer');
+            $user->sidebar_theme = $theme;
+            $user->save();
+
+            $this->actingAs($user)
+                ->get(route('dashboard.farmer'))
+                ->assertOk()
+                ->assertSee('a.active { background: var(--aq-bg)', false)
+                ->assertSee('box-shadow: 10px 10px 0 10px var(--aq-bg)', false);
+        }
+    }
+
+    public function test_global_search_focus_border_follows_the_selected_light_theme(): void
+    {
+        $this->assertNotSame(
+            config('sidebar.themes.matcha.colors.search_focus'),
+            config('sidebar.themes.sage.colors.search_focus')
+        );
+
+        $user = $this->makeUser('Search Focus', 'farmer');
+        $user->sidebar_theme = 'sage';
+        $user->save();
+
+        $this->actingAs($user)
+            ->get(route('dashboard.farmer'))
+            ->assertOk()
+            ->assertSee('--sb-search-focus:' . config('sidebar.themes.sage.colors.search_focus'), false)
+            ->assertSee('border-color: var(--sb-search-focus', false);
+    }
+
+    public function test_page_load_progress_bar_uses_the_active_theme_green(): void
+    {
+        $user = $this->makeUser('Progress Bar', 'farmer');
+        $user->sidebar_theme = 'sage';
+        $user->save();
+
+        $this->actingAs($user)
+            ->get(route('dashboard.farmer'))
+            ->assertOk()
+            ->assertSee('.turbo-progress-bar { background: var(--sb-progress', false)
+            ->assertSee(
+                'html:has(body[data-sidebar-theme="sage"]) { --sb-progress: '
+                    . config('sidebar.themes.sage.colors.brand_accent') . '; }',
+                false
+            );
+    }
+
     public function test_side_menu_color_is_locked_in_dark_mode(): void
     {
         $user = $this->makeUser('Sidebar Dark', 'admin');

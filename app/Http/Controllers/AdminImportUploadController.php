@@ -17,25 +17,11 @@ use Illuminate\Support\Facades\Storage;
  * members list, the photographed forms read by OCR, and the historical
  * harvest files — so the association can still open the exact file a list
  * was built from years later. The two importers keep separate lists: the
- * Members page shows member files only, the Harvest Reports page shows
- * harvest files only.
+ * Members page's inline Uploads panel shows member files only, while the
+ * Harvest Uploads page shows harvest files only.
  */
 class AdminImportUploadController extends Controller
 {
-    /** Files submitted to the members importer: spreadsheets and OCR scans. */
-    public function members()
-    {
-        abort_unless(auth()->user()?->role === 'admin', 403);
-
-        return view('admin.imports.uploads', $this->viewData(
-            ImportUpload::KIND_MEMBERS,
-            'Import Uploads',
-            'Every spreadsheet and scanned form submitted to the members importer is kept here — the exact file the members list was built from.',
-            'admin.members.index',
-            'Back to Members'
-        ));
-    }
-
     /** Files submitted to the harvest importer. */
     public function harvest()
     {

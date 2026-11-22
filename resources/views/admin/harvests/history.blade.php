@@ -66,7 +66,7 @@
   <div class="fh-card">
     <div class="fh-card-head">
       <p class="fh-card-title">Yield per hectare over time</p>
-      <p class="fh-card-sub">One bar per harvest period, coloured by season — the same colours as the Latest comparison chart on Harvest Performance, so the two read as one story.</p>
+      <p class="fh-card-sub">One bar per harvest period, coloured by season — the same colours as the Wet vs. Dry Season card on the admin dashboard, so the two read as one story.</p>
     </div>
     <div class="fh-card-body">
       @if($periods)

@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * The admin Harvest Performance landing page and its "All Harvest Reports"
+ * The admin Harvest Performance landing page and its "Harvest Reports"
  * sub-page.
  *
  * The table was split off the landing page so that page can show headline
@@ -57,7 +57,7 @@ class HarvestReportsSubpageTest extends TestCase
 
         $response->assertOk()
             ->assertSee(route('admin.harvests.reports'), false)
-            ->assertSee('All Harvest Reports');
+            ->assertSee('Harvest Reports');
     }
 
     public function test_the_landing_page_keeps_ai_insights_on_its_separate_subpage(): void
@@ -77,7 +77,7 @@ class HarvestReportsSubpageTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.harvests.reports'));
 
         $response->assertOk()
-            ->assertSee('All Harvest Reports')
+            ->assertSee('Harvest Reports')
             ->assertSee('Recorded by farmers across the Aquilala network.')
             ->assertSee('adminHarvestsTable')
             ->assertSee('id="exportBtn"', false)
@@ -116,8 +116,8 @@ class HarvestReportsSubpageTest extends TestCase
 
         $entry = $items->first(fn (array $item) => ($item['routes'] ?? []) === ['admin.harvests.reports']);
 
-        $this->assertNotNull($entry, 'All Harvest Reports must be listed in the Harvest sidebar section.');
-        $this->assertSame('All Harvest Reports', $entry['label']);
+        $this->assertNotNull($entry, "Farmer's Harvest must be listed in the Harvest sidebar section.");
+        $this->assertSame("Farmer's Harvest", $entry['label']);
     }
 
     // ── The toolbar's year and month filters ──────────────────────

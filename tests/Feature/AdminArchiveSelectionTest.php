@@ -107,7 +107,7 @@ class AdminArchiveSelectionTest extends TestCase
             ->assertOk()
             ->assertSee('Account Users')
             ->assertSee('Members')
-            ->assertSee('Harvest Reports');
+            ->assertSee("Farmer's Harvest");
 
         $this->actingAs($admin)
             ->get(route('admin.archive', ['type' => 'members']))

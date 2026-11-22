@@ -5,12 +5,7 @@
 @section('content')
   <style>
     .ana-page { position: relative; }
-    .ana-page::before,
-    .ana-page::after {
-      content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
-    }
-    .ana-page::before { width: 360px; height: 360px; background: rgba(94,144,112,0.16); top: -90px; right: -90px; }
-    .ana-page::after { width: 300px; height: 300px; background: rgba(59,130,246,0.13); bottom: -70px; left: -70px; }
+
     .ana-content { position: relative; z-index: 1; }
 
     .ana-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }

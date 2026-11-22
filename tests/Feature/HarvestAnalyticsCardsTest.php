@@ -10,20 +10,20 @@ use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 /**
- * The analytics cards moved off the AI page onto the Harvest Performance
- * landing page. Periods in scope was later taken off that page too and folded
- * into a "Full view" reachable from the Latest comparison card — first as a
- * dialog, then as its own page (/admin/harvests/history), because a dialog
- * never had the room to read the whole chart. The landing page carries two
- * cards plus the button into that page.
+ * The full charts live on the Harvest Performance landing page. The Wet vs.
+ * Dry Season Balance overview now sits on the admin dashboard, directly below
+ * the harvest report graph, with its own year filter (Overall performance plus
+ * each year). The redundant Latest comparison chart and the farmer ranking
+ * card are gone. The full history remains its own page.
  *
  * Three things are defended:
- *   1. The cards live on /admin/harvests and the AI page renders none of them.
- *   2. The full harvest history is still one click away — as a breadcrumbed
- *      page, deliberately absent from the sidebar.
- *   3. Nothing was lost to the model. The landing page and the AI digest read
- *      from the same HarvestInsightService context, so the figures the charts
- *      draw are exactly the figures the analysis is allowed to quote.
+ *   1. The overview lives on the dashboard; the full charts stay on
+ *      /admin/harvests; neither the removed cards render anywhere.
+ *   2. The Year-by-Year card keeps its #year-by-year anchor for deep links,
+ *      while history is still a breadcrumbed page absent from the sidebar.
+ *   3. Nothing was lost to the model. The dashboard, landing page and AI
+ *      digest read from the same HarvestInsightService context, so the figures
+ *      the charts draw are exactly the figures the analysis is allowed to quote.
  */
 class HarvestAnalyticsCardsTest extends TestCase
 {
@@ -55,23 +55,73 @@ class HarvestAnalyticsCardsTest extends TestCase
 
     // ── The charts are on the harvest page ────────────────────────
 
-    public function test_the_landing_page_renders_the_two_cards_that_stay(): void
+    public function test_the_landing_page_keeps_the_full_charts_and_drops_the_overview_cards(): void
     {
         $this->seedHarvests();
 
         $response = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
 
         $response->assertOk()
-            ->assertSee('Latest comparison')
-            ->assertSee('Farmers to recognise')
-            ->assertSee('Ranked by number of harvest reports filed.')
-            // Periods in scope was taken off the landing page…
+            ->assertSee('Year-by-Year Seasonal Performance')
+            ->assertSee('Crop Output & Unit Cost', false)
+            // The overviews are no longer on this page.
+            ->assertDontSee('Wet vs. Dry Season')
+            ->assertDontSee('id="wdbYearFilter"', false)
+            ->assertDontSee('Latest comparison')
+            ->assertDontSee('Farmers to recognise')
+            ->assertDontSee('Ranked by number of harvest reports filed.')
+            ->assertDontSee('id="latestChart"', false)
+            ->assertDontSee('id="latestComparisonChart"', false)
             ->assertDontSee('Periods in scope')
-            // …and moved behind the Latest comparison card's Full view button,
-            // which now opens a page of its own instead of a dialog.
-            ->assertSee('Full view')
-            ->assertSee(route('admin.harvests.history'), false)
+            // The full chart is the anchor that the dashboard's Full view targets.
+            ->assertSee('id="year-by-year"', false)
             ->assertDontSee('id="hpHistoryModal"', false);
+    }
+
+    public function test_the_dashboard_shows_the_wet_dry_balance_below_the_harvest_graph(): void
+    {
+        $this->seedHarvests();
+
+        $response = $this->actingAs($this->admin)->get(route('dashboard.admin'));
+
+        $response->assertOk()
+            ->assertSee('Wet vs. Dry Season')
+            ->assertSee('id="wdbYearFilter"', false)
+            // The menu scrolls for long year lists and escapes the panel's
+            // default overflow:hidden so its lower rows are not clipped.
+            ->assertSee('class="dash-panel reveal wdb-panel"', false)
+            ->assertSee('.wdb-panel { overflow: visible; }', false)
+            ->assertSee('max-height: min(220px, 42vh)', false)
+            ->assertSee('overflow-y: auto', false)
+            ->assertSee('Overall performance')
+            ->assertSee('data-year="overall"', false)
+            ->assertSee('data-year="2025"', false)
+            ->assertSee('data-year="2026"', false)
+            // Raw JSON in an application/json script — not a JSON.parse() call
+            // that would break the filter's JSON.parse(textContent).
+            ->assertSee('<script type="application/json" id="wdbBalanceData">{"overall":', false)
+            ->assertDontSee('<script type="application/json" id="wdbBalanceData">JSON.parse(', false)
+            ->assertSee('Wet 55%')
+            ->assertSee('Dry 45%')
+            ->assertSee('18.0 MT')
+            ->assertSee('4.50 MT/ha · ₱2,778/MT')
+            ->assertDontSee('Latest comparison')
+            ->assertDontSee('id="latestComparisonChart"', false)
+            ->assertDontSee('Farmers to recognise');
+
+        $html = $response->getContent();
+        $this->assertLessThan(
+            strpos($html, 'id="wdbYearFilter"'),
+            strpos($html, 'id="harvestChart"'),
+            'Wet vs. Dry balance must render after the harvest report graph.'
+        );
+
+        $balance = $response->viewData('seasonBalance');
+        $this->assertSame(['2025', '2026'], $balance['options']);
+        $this->assertSame(55, $balance['overall']['wet']['share']);
+        $this->assertSame(45, $balance['overall']['dry']['share']);
+        $this->assertSame(18.0, $balance['years']['2026']['wet']['yield']);
+        $this->assertSame(15.0, $balance['years']['2025']['dry']['yield']);
     }
 
     public function test_dashboard_and_harvest_performance_share_one_identical_chart(): void
@@ -91,17 +141,14 @@ class HarvestAnalyticsCardsTest extends TestCase
         }
     }
 
-    public function test_the_full_view_button_opens_the_full_history_page(): void
+    public function test_the_year_by_year_card_keeps_its_anchor_for_deep_links(): void
     {
         $this->seedHarvests();
 
         $landing = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
-
         $landing->assertOk()
-            ->assertSee(route('admin.harvests.history'), false)
-            // The dialog is gone — its contents live on the page now. (The
-            // layout's own notice modals keep aria-modal; only the harvest
-            // dialog's own hooks are asserted gone.)
+            ->assertSee('id="year-by-year"', false)
+            ->assertSee('scroll-margin-top:96px', false)
             ->assertDontSee('data-hp-history-open', false)
             ->assertDontSee('id="hpHistoryModal"', false);
 
@@ -147,18 +194,25 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->assertDontSee('id="periodsChart"', false);
     }
 
-    public function test_the_landing_page_draws_the_period_and_comparison_cards_as_charts(): void
+    public function test_the_dashboard_has_no_comparison_chart_while_history_draws_the_periods(): void
     {
         $this->seedHarvests();
 
-        $landing = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
+        $dashboard = $this->actingAs($this->admin)->get(route('dashboard.admin'));
 
-        $landing->assertOk()
+        $dashboard->assertOk()
             // Chart.js is vendored locally (no CDN requests on page load).
             ->assertSee('js/chart.umd.min.js', false)
             ->assertDontSee('cdn.jsdelivr.net', false)
-            // The comparison card stays; the periods chart moved to its page.
-            ->assertSee('id="latestChart"', false)
+            ->assertDontSee('id="latestComparisonChart"', false)
+            ->assertDontSee('id="latestChart"', false)
+            ->assertDontSee('id="periodsChart"', false)
+            ->assertSee('id="wdbYearFilter"', false);
+
+        $landing = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
+        $landing->assertOk()
+            ->assertDontSee('id="latestComparisonChart"', false)
+            ->assertDontSee('id="wdbYearFilter"', false)
             ->assertDontSee('id="periodsChart"', false);
 
         $page = $this->actingAs($this->admin)->get(route('admin.harvests.history'));
@@ -169,27 +223,21 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->assertSee('id="periodsChart"', false);
     }
 
-    public function test_the_farmer_ranking_is_a_medal_list_not_a_chart(): void
+    public function test_the_farmer_ranking_card_is_gone_for_now(): void
     {
         $this->seedHarvests();
 
-        $response = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
-
-        $response->assertOk()
-            // No canvas for this card — it lists names instead.
-            ->assertDontSee('id="farmersChart"', false)
-            // Gold, silver and bronze medals…
-            ->assertSee('hp-medal gold', false)
-            ->assertSee('hp-medal silver', false)
-            // …and an award ribbon for everyone below the top three.
-            ->assertSee('hp-medal other', false)
-            ->assertSee('Rank 1 — gold', false)
-            ->assertSee('Rank 2 — silver', false)
-            // With the names and figures beside them.
-            ->assertSee('#1 Analytics Ana')
-            ->assertSee('#2 Analytics Ben')
-            ->assertSee('3 rpt')
-            ->assertSee('1 rpt');
+        foreach ([route('admin.harvests.index'), route('dashboard.admin')] as $url) {
+            $this->actingAs($this->admin)
+                ->get($url)
+                ->assertOk()
+                ->assertDontSee('Farmers to recognise')
+                ->assertDontSee('Ranked by number of harvest reports filed.')
+                ->assertDontSee('id="farmersChart"', false)
+                ->assertDontSee('hp-medal gold', false)
+                ->assertDontSee('#1 Analytics Ana')
+                ->assertDontSee('#2 Analytics Ben');
+        }
     }
 
     public function test_the_full_history_page_continues_the_landing_pages_bar_chart(): void
@@ -200,9 +248,9 @@ class HarvestAnalyticsCardsTest extends TestCase
 
         $response->assertOk()
             ->assertSee('id="periodsChart"', false)
-            // The same bar chart the landing page's Latest comparison draws —
-            // same dataset name, same season colours — so the page reads as
-            // that graph continued rather than a second charting style.
+            // The same season colours the dashboard's Wet/Dry balance uses,
+            // so the page reads as that overview continued rather than a
+            // second charting style.
             ->assertSee("type: 'bar'", false)
             ->assertSee("label: 'Yield per hectare (MT/ha)'", false)
             ->assertSee('seasonColor(s, 0.72)', false)
@@ -217,29 +265,35 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->assertSee('class="data-table"', false)
             ->assertDontSee('fh-list', false);
 
-        // The comparison card on the landing page is still a bar chart.
+        // The redundant comparison chart is gone everywhere.
         $this->actingAs($this->admin)
-            ->get(route('admin.harvests.index'))
+            ->get(route('dashboard.admin'))
             ->assertOk()
-            ->assertSee('id="latestChart"', false)
-            ->assertSee("type: 'bar'", false);
+            ->assertDontSee('id="latestComparisonChart"', false)
+            ->assertDontSee('id="latestChart"', false);
     }
 
     public function test_the_charts_still_show_the_underlying_numbers_as_text(): void
     {
         $this->seedHarvests();
 
-        $response = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
+        $dashboard = $this->actingAs($this->admin)->get(route('dashboard.admin'));
 
-        // Comparison rows.
-        $response->assertSee('2026 Wet Season vs 2025 Dry Season')
-            ->assertSee('Change in yield per hectare');
+        // The Wet/Dry balance keeps the underlying season figures as text.
+        $dashboard->assertOk()
+            ->assertSee('Wet Season (Aug–Nov)')
+            ->assertSee('Dry Season (Feb–May)')
+            ->assertSee('4 harvests · 4.0 ha')
+            ->assertSee('3 harvests · 4.0 ha')
+            ->assertSee('18.0 MT')
+            ->assertSee('15.0 MT');
 
-        // Farmer rows, ranked: Ana filed 3, Ben filed 2.
-        $response->assertSee('#1 Analytics Ana')
-            ->assertSee('#2 Analytics Ben')
-            ->assertSee('3 rpt')
-            ->assertSee('2 rpt');
+        // The redundant comparison chart and the ranking card are gone.
+        $this->actingAs($this->admin)
+            ->get(route('admin.harvests.index'))
+            ->assertOk()
+            ->assertDontSee('#1 Analytics Ana')
+            ->assertDontSee('#2 Analytics Ben');
 
         // Period rows live on the full history page: both periods, their
         // report counts and their yield per hectare.
@@ -253,14 +307,21 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->assertSee('4.500 MT/ha');
     }
 
-    public function test_the_landing_page_shows_empty_states_before_any_report_exists(): void
+    public function test_empty_states_live_with_the_cards_that_own_them(): void
     {
-        $response = $this->actingAs($this->admin)->get(route('admin.harvests.index'));
-
-        $response->assertOk()
-            ->assertSee('Only one harvest period exists so far')
-            ->assertSee('No farmer records to rank yet.')
+        $this->actingAs($this->admin)
+            ->get(route('admin.harvests.index'))
+            ->assertOk()
+            ->assertDontSee('Only one harvest period exists so far')
+            ->assertDontSee('No farmer records to rank yet.')
             ->assertDontSee('id="periodsChart"', false);
+
+        $this->actingAs($this->admin)
+            ->get(route('dashboard.admin'))
+            ->assertOk()
+            ->assertSee('Wet vs. Dry Season')
+            ->assertDontSee('Only one harvest period exists so far')
+            ->assertDontSee('No farmer records to rank yet.');
     }
 
     // ── The cards are gone from the AI page ───────────────────────
@@ -273,6 +334,7 @@ class HarvestAnalyticsCardsTest extends TestCase
             ->get(route('admin.harvests.ai'))
             ->assertOk()
             ->assertDontSee('Periods in scope')
+            ->assertDontSee('Wet vs. Dry Season')
             ->assertDontSee('Latest comparison')
             ->assertDontSee('Farmers to recognise')
             // …but it still has the chat that asks about the same digest.

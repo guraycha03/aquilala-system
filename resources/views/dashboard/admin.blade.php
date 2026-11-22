@@ -234,6 +234,13 @@
   </div>
 </section>
 
+    <!-- 5. WET vs. DRY SEASON (overview of the full seasonal chart) -->
+<section style="margin-top:22px;">
+  <div class="dash-panel reveal wdb-panel" data-reveal>
+    @include('partials.wet-dry-season-balance')
+  </div>
+</section>
+
 </div>
 
 <script src="{{ asset('js/chart.umd.min.js') }}" defer></script>

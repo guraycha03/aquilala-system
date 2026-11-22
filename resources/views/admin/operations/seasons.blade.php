@@ -6,12 +6,7 @@
 
   <style>
     .sea-page { position: relative; }
-    .sea-page::before,
-    .sea-page::after {
-      content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
-    }
-    .sea-page::before { width: 340px; height: 340px; background: rgba(2,132,199,0.12); top: -80px; right: -80px; }
-    .sea-page::after { width: 300px; height: 300px; background: rgba(245,158,11,0.12); bottom: -60px; left: -60px; }
+
     .sea-content { position: relative; z-index: 1; }
 
     .sea-head { margin: 0 0 10px; }
@@ -95,7 +90,6 @@
         <h1>Planting Seasons</h1>
         <p>Seasonal cropping calendar for Bulan, Sorsogon and the current climate conditions.</p>
       </div>
-
 
       @php $current = $climate['season'] === 'wet' ? 'wet' : 'dry'; @endphp
       <div class="sea-banner {{ $current }}">

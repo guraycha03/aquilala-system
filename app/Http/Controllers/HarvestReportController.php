@@ -171,7 +171,7 @@ class HarvestReportController extends Controller
         if ($removed > 0) {
             ActivityLogger::log(
                 ActivityLog::TYPE_HARVEST_DELETED,
-                'Removed ' . $removed . ' harvest record' . ($removed > 1 ? 's' : '') . ' from All Harvest Reports',
+                'Removed ' . $removed . ' harvest record' . ($removed > 1 ? 's' : '') . ' from Harvest Reports',
                 null,
                 ['count' => $removed, 'ids' => $ids->all()]
             );

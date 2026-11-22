@@ -78,7 +78,41 @@ class HarvestInsightService
      */
     public function context(): array
     {
-        $reports = $this->loadReports();
+        return $this->digest($this->loadReports());
+    }
+
+    /**
+     * Build the same digest over an explicitly chosen set of rows.
+     *
+     * Saved AI harvest reports use this so their figures, narrative and
+     * download all describe the filtered records the officer selected, not a
+     * fresh read of the whole table.
+     *
+     * @param  Collection<int, \App\Models\HarvestReport>  $reports
+     * @return array<string, mixed>
+     */
+    public function contextForReports(Collection $reports): array
+    {
+        $context = $this->digest(
+            $reports->map(fn (\App\Models\HarvestReport $report) => HarvestDigestRow::from($report))->values()
+        );
+
+        // These dashboard keys are read from the whole table by design. A saved
+        // report has its own scope, so leave them empty rather than freezing a
+        // chart the report never shows.
+        foreach (['harvestGraphYear', 'harvestGraphMonth', 'harvestGraphWeek', 'harvestGraphDays'] as $key) {
+            $context[$key] = [];
+        }
+
+        return $context;
+    }
+
+    /**
+     * @param  Collection<int, HarvestDigestRow>  $reports
+     * @return array<string, mixed>
+     */
+    private function digest(Collection $reports): array
+    {
         $memberCount = Member::count();
 
         if ($reports->isEmpty()) {
@@ -1397,7 +1431,7 @@ Keep the answer to three sentences or fewer."],
             'Weather Log' => ['weather log', 'weather history', 'tala ng panahon'],
             'Calendar' => ['calendar', 'schedule', 'meeting', 'event'],
             'Events' => ['events', 'meeting', 'schedule'],
-            'All Harvest Reports' => ['reports', 'report for october', 'reports for october'],
+            'Harvest Reports' => ['reports', 'report for october', 'reports for october'],
             'General Settings' => ['settings', 'appearance', 'dark mode', 'theme'],
         ];
 
@@ -1453,9 +1487,8 @@ Keep the answer to three sentences or fewer."],
             'All Users' => 'where you can view and manage user accounts.',
             'Create Account' => 'where you can create and register a new account.',
             'Harvest Performance' => 'where you can review harvest performance.',
-            'All Harvest Reports' => 'where you can filter, search, and archive harvest reports.',
+            'Harvest Reports' => 'where you can filter, search, and archive harvest reports.',
             'Estimate vs Actual Harvest' => 'where you can compare estimates with actual harvests.',
-            'Farming Cost Reports' => 'where you can review expense and cost analytics.',
             'Planting Requests' => 'where you can confirm or reject planting requests.',
             'Calendar' => 'where you can view the association calendar.',
             'Events' => 'where you can manage association events.',
@@ -1505,13 +1538,11 @@ Keep the answer to three sentences or fewer."],
             'AI Harvest Insights' => 'admin.harvests.ai',
             'Members' => 'admin.members.index',
             'Import Members' => 'admin.members.import',
-            'Import Uploads' => 'admin.members.uploads',
             'All Users' => 'admin.users.index',
             'Create Account' => 'admin.users.create',
             'Harvest Performance' => 'admin.harvests.index',
-            'All Harvest Reports' => 'admin.harvests.reports',
+            'Harvest Reports' => 'admin.harvests.reports',
             'Estimate vs Actual Harvest' => 'admin.harvests.compare',
-            'Farming Cost Reports' => 'admin.analytics.expenses',
             'Planting Requests' => 'admin.plantings.index',
             'Calendar' => 'admin.calendar.index',
             'Events' => 'admin.calendar.events',

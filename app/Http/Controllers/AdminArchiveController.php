@@ -27,7 +27,7 @@ class AdminArchiveController extends Controller
             ],
             'harvest-reports' => [
                 'label' => 'Harvest Reports',
-                'description' => 'Older harvest records archived from All Harvest Reports.',
+                'description' => 'Older harvest records archived from Harvest Reports.',
                 'count' => \App\Models\HarvestReport::onlyTrashed()->count(),
             ],
         ];

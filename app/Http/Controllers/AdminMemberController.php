@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\ImportUpload;
 use App\Models\Member;
 use App\Services\ActivityLogger;
 use App\Services\UserInvitationService;
@@ -56,7 +57,17 @@ class AdminMemberController extends Controller
             'with_account' => Member::whereNotNull('user_id')->count(),
         ];
 
-        return view('admin.members.index', compact('members', 'stats', 'q', 'status', 'account'));
+        // The Uploads button on this page opens an inline panel rather than
+        // a second page. The archive is still the members importer's own files
+        // — the exact ones the list above was built from.
+        $uploads = ImportUpload::query()
+            ->where('kind', ImportUpload::KIND_MEMBERS)
+            ->with('user')
+            ->withCount(['harvestReports as records_present'])
+            ->latest()
+            ->get();
+
+        return view('admin.members.index', compact('members', 'stats', 'q', 'status', 'account', 'uploads'));
     }
 
     /**

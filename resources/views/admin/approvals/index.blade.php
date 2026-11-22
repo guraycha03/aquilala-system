@@ -54,12 +54,7 @@
 
   <style>
     .app-page { position: relative; }
-    .app-page::before,
-    .app-page::after {
-      content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
-    }
-    .app-page::before { width: 340px; height: 340px; background: rgba(94,144,112,0.16); top: -90px; right: -90px; }
-    .app-page::after { width: 280px; height: 280px; background: rgba(59,130,246,0.13); bottom: -70px; left: -70px; }
+
     .app-content { position: relative; z-index: 1; }
 
     .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }

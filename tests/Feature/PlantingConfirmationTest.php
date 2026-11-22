@@ -158,6 +158,9 @@ class PlantingConfirmationTest extends TestCase
         $response->assertSee('Planting Requests');
         $response->assertSee('RICE-TEST-001');
         $response->assertSee('Pending');
+        $response->assertDontSee('class="kpi-strip"', false);
+        $response->assertDontSee('stat-card', false);
+        $response->assertSee('pr-filters', false);
     }
 
     public function test_admin_can_confirm_a_pending_planting(): void

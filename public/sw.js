@@ -34,7 +34,7 @@
  * payload carries the notification text plus the in-app page to open, and a
  * click focuses an already-open window (navigating it) or opens a fresh one.
  */
-const VERSION = 'aquilala-v12';
+const VERSION = 'aquilala-v13';
 const STATIC_CACHE = VERSION + '-static';
 const PAGE_CACHE = VERSION + '-pages';
 const SHELL_CACHE = VERSION + '-shell';
@@ -268,15 +268,22 @@ async function cachePage(request, fresh) {
 
     if (!cacheable) return;
 
-    const cache = await caches.open(PAGE_CACHE);
-    await cache.put(request, fresh.clone());
+    // Caching is best-effort. A Cache API failure (quota, private/immutable
+    // headers, a browser quirk) must never turn a page that the server already
+    // answered successfully into a failed navigation and a dashboard fallback.
+    try {
+        const cache = await caches.open(PAGE_CACHE);
+        await cache.put(request, fresh.clone());
 
-    // Trim the oldest entries only — never the whole cache. Wiping it here
-    // would throw away the copy just stored, which is precisely the page a
-    // browser that loses its connection a moment later most needs.
-    const keys = await cache.keys();
-    for (let i = 0; keys.length - i > PAGE_CACHE_LIMIT; i++) {
-        await cache.delete(keys[i]);
+        // Trim the oldest entries only — never the whole cache. Wiping it here
+        // would throw away the copy just stored, which is precisely the page a
+        // browser that loses its connection a moment later most needs.
+        const keys = await cache.keys();
+        for (let i = 0; keys.length - i > PAGE_CACHE_LIMIT; i++) {
+            await cache.delete(keys[i]);
+        }
+    } catch (err) {
+        // Navigation continues with the fresh response below.
     }
 }
 

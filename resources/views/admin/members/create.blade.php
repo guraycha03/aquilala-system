@@ -5,12 +5,6 @@
 @section('content')
   <style>
     .register-page { position: relative; max-width: 960px; }
-    .register-page::before,
-    .register-page::after {
-      content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
-    }
-    .register-page::before { width: 300px; height: 300px; background: rgba(94,144,112,0.14); top: -70px; right: -60px; }
-    .register-page::after { width: 260px; height: 260px; background: rgba(93,194,87,0.10); bottom: -60px; left: -40px; }
 
     .header-row { position: relative; z-index: 1; margin-bottom: 20px; }
     .header-row h1 { font-size: 24px; font-weight: 700; color: #1e293b; letter-spacing: 0.02em; margin: 0 0 4px 0; }

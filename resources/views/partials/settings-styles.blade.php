@@ -3,12 +3,7 @@
      reusable component styles so each settings page stays lean. --}}
 <style>
     .set-page { position: relative; }
-    .set-page::before,
-    .set-page::after {
-      content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
-    }
-    .set-page::before { width: 320px; height: 320px; background: rgba(94,144,112,0.15); top: -80px; right: -80px; }
-    .set-page::after { width: 280px; height: 280px; background: rgba(59,130,246,0.12); bottom: -60px; left: -60px; }
+
     .set-content { position: relative; z-index: 1; }
 
     .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }

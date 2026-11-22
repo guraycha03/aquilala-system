@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'All Harvest Reports')
+@section('title', 'Harvest Reports')
 
 @section('content')
 <style>
@@ -40,6 +40,21 @@
   .btn-export:hover { background: #294035; transform: translateY(-1px); }
   .btn-export svg { width: 18px; height: 18px; }
 
+  /* One quiet entry point into the saved AI report builder. The table stays
+     the working view; the generator is a separate page so it never clutters
+     this one. */
+  .btn-ai-report {
+    appearance: none; -webkit-appearance: none; height: 42px; padding: 0 18px;
+    font-size: 13px; font-weight: 700; border-radius: 10px;
+    border: 1px solid #c7d8cb; background: #f3f8f4; color: #334c3e;
+    text-decoration: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s ease;
+  }
+  .btn-ai-report:hover { background: #e7f0e9; border-color: #648268; transform: translateY(-1px); }
+  .btn-ai-report svg { width: 18px; height: 18px; }
+  [data-theme="dark"] .btn-ai-report { background: #1e293b; border-color: #475569; color: #e2e8f0; }
+
   /* Bulk-load the association's paper records instead of typing them one by one. */
   .btn-import {
     appearance: none; -webkit-appearance: none; height: 42px; padding: 0 20px;
@@ -64,6 +79,7 @@
   .btn-uploads:hover { background: #f8fafc; border-color: #cbd5e1; transform: translateY(-1px); }
   .btn-uploads svg { width: 18px; height: 18px; }
 
+  .page-actions { display: flex; justify-content: flex-end; margin: 0 0 16px; }
   .table-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
   /* Phones: the three header actions share one line with a steady, moderate
@@ -144,6 +160,15 @@
   [data-theme="dark"] .col-sel input[type="checkbox"] { accent-color: #4ade80; }
 </style>
 
+@php
+  // Carry the table's current filters into the AI report builder so a report
+  // can be generated for exactly the rows the officer is looking at.
+  $aiReportQuery = http_build_query(array_filter(
+      request()->only(['q', 'crop', 'season', 'farmer', 'year', 'month']),
+      fn ($value) => is_string($value) && $value !== ''
+  ));
+@endphp
+
 @if (session('success'))
   <div class="page-flash page-flash--success" role="status">{{ session('success') }}</div>
 @endif
@@ -153,8 +178,30 @@
 
 <x-breadcrumb :items="[
   ['label' => 'Harvest Performance', 'url' => route('admin.harvests.index')],
-  ['label' => 'All Harvest Reports'],
+  ['label' => 'Harvest Reports'],
 ]"/>
+
+<!-- Page actions: kept outside the table so the header stays about the data. -->
+<div class="page-actions">
+    <div class="table-actions">
+      <a href="{{ route('admin.harvests.reports.generate') . ($aiReportQuery !== '' ? '?' . $aiReportQuery : '') }}" class="btn-ai-report" title="Generate a saved harvest report from the current filters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Generate report
+      </a>
+      <a href="{{ route('admin.harvests.import') }}" class="btn-import" title="Import historical harvest records from a CSV or Excel file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import Records
+      </a>
+      <a href="{{ route('admin.harvests.uploads') }}" class="btn-uploads" title="Every historical harvest file this importer was ever given">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+        Uploads
+      </a>
+      <button id="exportBtn" class="btn-export" title="Export filtered data as CSV">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+</div>
 
 <x-table-toolbar
     uid="admin-harvests"
@@ -184,22 +231,8 @@
 <div class="data-table-container">
   <div class="table-head">
     <div>
-      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">All Harvest Reports</h2>
+      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Harvest Reports</h2>
       <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Recorded by farmers across the Aquilala network.</p>
-    </div>
-    <div class="table-actions">
-      <a href="{{ route('admin.harvests.import') }}" class="btn-import" title="Import historical harvest records from a CSV or Excel file">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Import Records
-      </a>
-      <a href="{{ route('admin.harvests.uploads') }}" class="btn-uploads" title="Every historical harvest file this importer was ever given">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-        Uploads
-      </a>
-      <button id="exportBtn" class="btn-export" title="Export filtered data as CSV">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Export CSV
-      </button>
     </div>
   </div>
   <div class="app-scroll-wrap" style="--sb-bottom: 16px;">
@@ -301,7 +334,7 @@
             data-aqui-tone="neutral"
             data-aqui-title="Archive records?"
             data-aqui-confirm-label="Archive records"
-            data-aqui-confirm="Selected records will leave All Harvest Reports but remain available in the Archive.">
+            data-aqui-confirm="Selected records will leave Harvest Reports but remain available in the Archive.">
       Archive selected
     </button>
   </form>

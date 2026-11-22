@@ -5,12 +5,7 @@
 @section('content')
   <style>
     .users-page { position: relative; }
-    .users-page::before,
-    .users-page::after {
-      content: ""; position: fixed; border-radius: 50%; filter: blur(60px); pointer-events: none; z-index: 0;
-    }
-    .users-page::before { width: 320px; height: 320px; background: rgba(94,144,112,0.16); top: -80px; right: -80px; }
-    .users-page::after { width: 280px; height: 280px; background: rgba(93,194,87,0.12); bottom: -60px; left: -60px; }
+
     .users-content { position: relative; z-index: 1; }
 
     .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
@@ -125,6 +120,50 @@
     }
     .user-toast.show { opacity: 1; transform: translate(-50%, 0); }
     .user-toast.error { background: #7f1d1d; }
+
+    /* Uploads is a temporary subpage inside the content area. The app header
+       and side menu stay visible; only the main panel swaps out. */
+    .member-uploads-subpage {
+      position: fixed;
+      top: calc(60px + var(--aq-netbar-offset, 0px));
+      left: 260px; right: 0; bottom: 0;
+      z-index: 90;
+      background: var(--aq-bg, #f4f5f0);
+      overflow-y: auto;
+      padding: 28px clamp(16px, 4vw, 48px) 48px;
+      animation: aqSubpageIn 0.18s ease;
+    }
+    .member-uploads-subpage[hidden] { display: none; }
+    @keyframes aqSubpageIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .member-uploads-pagehead { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+    .member-uploads-back {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 13px; border-radius: 10px;
+      border: 1px solid #cbd9cd; background: #ffffff; color: #2f5d3f;
+      font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .member-uploads-back:hover { background: #eef5ef; }
+    .member-uploads-back svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .member-uploads-card {
+      max-width: 1180px; padding: 28px;
+      background: #ffffff; border: 1px solid #e5ebe7;
+      border-radius: 16px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+    .member-uploads-card h1 { font-size: 24px; font-weight: 700; color: #1e293b; margin: 0; letter-spacing: -0.01em; }
+    .member-uploads-card > p { font-size: 13.5px; color: #64748b; margin: 6px 0 22px; line-height: 1.6; max-width: 760px; }
+    [data-theme="dark"] .member-uploads-card { background: #16231b; border-color: #2a3b30; }
+    [data-theme="dark"] .member-uploads-card h1 { color: #dbe7df; }
+    [data-theme="dark"] .member-uploads-card > p { color: #9fb3a6; }
+    [data-theme="dark"] .member-uploads-back { background: #16231b; border-color: #2a3b30; color: #a7f3d0; }
+    @media (max-width: 768px) {
+      .member-uploads-subpage { top: calc(80px + var(--aq-netbar-offset, 0px)); left: 0; padding: 18px 16px 32px; }
+    }
+    @media (max-width: 640px) {
+      .member-uploads-card { padding: 18px 14px; }
+    }
   </style>
 
   <div class="users-page">
@@ -136,15 +175,15 @@
              a system account is always made by picking someone from this list, never by typing a new person in.</p>
         </div>
         <div class="header-actions">
-          <a href="{{ route('admin.members.uploads') }}" class="btn-users ghost" title="Every file this importer was ever given — spreadsheets and scanned forms alike">
+          <button type="button" class="btn-users ghost" id="memberUploadsBtn" aria-expanded="false" aria-controls="memberUploadsSubpage" title="View saved uploads">
             <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
             Uploads
-          </a>
-          <a href="{{ route('admin.members.import') }}" class="btn-users ghost">
+          </button>
+          <a href="{{ route('admin.members.import') }}" class="btn-users ghost" title="Import a member list">
             <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             Import Members
           </a>
-          <a href="{{ route('admin.members.create') }}" class="btn-users">
+          <a href="{{ route('admin.members.create') }}" class="btn-users" title="Add one member">
             <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Add Member
           </a>
@@ -326,6 +365,92 @@
   </div>
 
   <div class="user-toast" id="memberToast"></div>
+
+  {{-- Uploads is a temporary subpage in the content area. The header and side
+       menu stay visible; opening it never reloads the app shell. --}}
+  <div class="member-uploads-subpage" id="memberUploadsSubpage" hidden role="region" aria-labelledby="memberUploadsTitle">
+    <div class="member-uploads-pagehead">
+      <button type="button" class="member-uploads-back" id="memberUploadsClose">
+        <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to All Members
+      </button>
+    </div>
+    <div class="member-uploads-card">
+      <h1 id="memberUploadsTitle">Import Uploads</h1>
+      <p class="keep-sub">Every spreadsheet and scanned form submitted to the members importer is kept here — the exact file the members list was built from.</p>
+      @include('admin.imports.partials.uploads-list', [
+          'uploads' => $uploads,
+          'kind' => \App\Models\ImportUpload::KIND_MEMBERS,
+          'downloadRoute' => 'admin.members.uploads.download',
+          'previewRoute' => 'admin.members.uploads.preview',
+      ])
+    </div>
+  </div>
+
+  @include('admin.imports.partials.upload-viewer')
+
+  <script>
+    (function () {
+      function subpage() { return document.getElementById('memberUploadsSubpage'); }
+      function trigger() { return document.getElementById('memberUploadsBtn'); }
+
+      function openUploads() {
+        var page = subpage();
+        if (!page) return;
+        page.hidden = false;
+        document.body.style.overflow = 'hidden';
+        var btn = trigger();
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+      }
+
+      function closeUploads() {
+        var page = subpage();
+        if (!page || page.hidden) return;
+        page.hidden = true;
+        document.body.style.overflow = '';
+        var btn = trigger();
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+        // A bookmarked uploads URL lands here with #uploads. Drop the hash
+        // without reloading so the visitor stays on the very same page.
+        if (location.hash === '#uploads') {
+          history.replaceState(null, '', location.pathname + location.search);
+        }
+      }
+
+      if (!window.__memberUploadsBound) {
+        window.__memberUploadsBound = true;
+
+        document.addEventListener('click', function (e) {
+          if (e.target && e.target.closest && e.target.closest('#memberUploadsBtn')) {
+            e.preventDefault();
+            openUploads();
+            return;
+          }
+          if (e.target && e.target.closest && e.target.closest('#memberUploadsClose')) {
+            e.preventDefault();
+            closeUploads();
+          }
+        });
+
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') closeUploads();
+        });
+
+        window.addEventListener('turbo:load', function () {
+          if (location.hash === '#uploads') openUploads();
+        });
+      }
+
+      function openFromHash() {
+        if (location.hash === '#uploads') openUploads();
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', openFromHash, { once: true });
+      } else {
+        openFromHash();
+      }
+    })();
+  </script>
 
   <script>
     (function () {

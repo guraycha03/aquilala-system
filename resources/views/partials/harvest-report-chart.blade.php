@@ -169,7 +169,7 @@
     }
 
     function setHarvestPeriod(periodKey, label, activeBtn) {
-      document.querySelectorAll('.filter-option').forEach(function (o) {
+      document.querySelectorAll('#harvestFilter .filter-option').forEach(function (o) {
         o.classList.toggle('is-active', o === activeBtn || o.dataset.period === periodKey);
       });
       if (harvestFilterLabel) harvestFilterLabel.textContent = label;
@@ -196,7 +196,9 @@
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeHarvestFilter();
     });
-    document.querySelectorAll('.filter-option').forEach(function (opt) {
+    // Scope to this dropdown: the dashboard also carries the Wet/Dry balance
+    // filter, whose buttons must not drive the harvest report graph.
+    document.querySelectorAll('#harvestFilter .filter-option').forEach(function (opt) {
       opt.addEventListener('click', function () {
         setHarvestPeriod(opt.dataset.period, opt.dataset.label, opt);
       });

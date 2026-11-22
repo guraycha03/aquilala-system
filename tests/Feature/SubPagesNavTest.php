@@ -65,12 +65,12 @@ class SubPagesNavTest extends TestCase
             'There is no reporting section of its own: every report lives beside the data it describes.'
         );
 
-        // The cost report is budgeted-vs-actual off the harvest table, so it
-        // must sit in the Harvest section…
+        // Expense figures stay on Harvest Performance with the other charts;
+        // there is no longer a separate cost-report page in the sidebar.
         $harvest = collect($nav['harvest']['items']);
-        $this->assertNotNull(
-            $harvest->first(fn (array $item) => ($item['routes'] ?? []) === ['admin.analytics.expenses']),
-            'Farming Cost Reports belongs in the Harvest section.'
+        $this->assertNull(
+            $harvest->first(fn (array $item) => in_array('admin.analytics.expenses', $item['routes'] ?? [], true)),
+            'Farming Cost Reports must not have its own sidebar entry.'
         );
 
         // …and demand trends describe product demand, so Farm Supplies owns it.

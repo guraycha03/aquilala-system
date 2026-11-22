@@ -130,8 +130,9 @@ class AdminImportUploadsTest extends TestCase
         $this->assertTrue(Storage::disk('local')->exists($upload->stored_path));
         $this->assertSame([], Storage::disk('local')->files('imports/staging'));
 
-        $this->get(route('admin.members.uploads'))
+        $this->get(route('admin.members.index'))
             ->assertOk()
+            ->assertSee('id="memberUploadsSubpage"', false)
             ->assertSee('members.csv');
 
         $download = $this->get(route('admin.members.uploads.download', $upload));
@@ -179,8 +180,9 @@ class AdminImportUploadsTest extends TestCase
         $scan = $this->archivedFile(ImportUpload::KIND_MEMBERS, 'member-list.png', $admin, ImportUpload::SOURCE_OCR);
         $harvestFile = $this->archivedFile(ImportUpload::KIND_HARVEST, 'harvest-reports.csv', $admin);
 
-        // Members list: spreadsheets and scanned forms alike, never harvest files.
-        $this->actingAs($admin)->get(route('admin.members.uploads'))
+        // Members list: the page's inline Uploads panel shows spreadsheets and
+        // scanned forms alike, never harvest files.
+        $this->actingAs($admin)->get(route('admin.members.index'))
             ->assertOk()
             ->assertSee('members-2026.csv')
             ->assertSee('member-list.png')
@@ -225,7 +227,7 @@ class AdminImportUploadsTest extends TestCase
             ->assertNotFound();
 
         // The record stays in the list — it just cannot be handed out.
-        $this->get(route('admin.members.uploads'))
+        $this->get(route('admin.members.index'))
             ->assertOk()
             ->assertSee('members.csv')
             ->assertSee('File unavailable');
@@ -312,7 +314,7 @@ class AdminImportUploadsTest extends TestCase
             ->assertOk()
             ->assertSee('harvest-reports.csv');
 
-        $this->get(route('admin.members.uploads'))
+        $this->get(route('admin.members.index'))
             ->assertOk()
             ->assertDontSee('harvest-reports.csv');
     }
@@ -361,9 +363,16 @@ class AdminImportUploadsTest extends TestCase
     {
         $admin = $this->makeUser('admin');
 
+        // Members no longer links to a second page: the button opens an
+        // in-page subpage that covers the list. The old URL redirects here.
         $this->actingAs($admin)->get(route('admin.members.index'))
             ->assertOk()
-            ->assertSee('admin/members/uploads');
+            ->assertSee('id="memberUploadsBtn"', false)
+            ->assertSee('id="memberUploadsSubpage"', false)
+            ->assertDontSee('admin/members/uploads', false);
+
+        $this->get(route('admin.members.uploads'))
+            ->assertRedirect(route('admin.members.index', ['#' => 'uploads']));
 
         $this->get(route('admin.harvests.reports'))
             ->assertOk()
@@ -429,12 +438,11 @@ class AdminImportUploadsTest extends TestCase
             ->assertSee('href="'.route('admin.harvests.uploads.download', $harvestFile).'"', false)
             ->assertDontSee(' data-up-preview ', false);   // spaced: the link attribute, not the script's selector
 
-        // Members list: a scan's cell opens the in-page viewer instead of
-        // downloading, while its spreadsheet still downloads from the cell.
-        $this->get(route('admin.members.uploads'))
+        // Members page: the same file cell opens the in-page viewer instead
+        // of downloading, while its spreadsheet still downloads from the cell.
+        $this->get(route('admin.members.index'))
             ->assertOk()
-            ->assertDontSee('top-navigation', false)
-            ->assertSee('Back to Members')
+            ->assertSee('id="memberUploadsSubpage"', false)
             ->assertSee(' data-up-preview ', false)
             ->assertSee(route('admin.members.uploads.preview', $scan), false)
             ->assertSee('href="'.route('admin.members.uploads.download', $sheet).'"', false);

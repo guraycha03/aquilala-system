@@ -55,7 +55,7 @@
         // 'Tomato'       => 'tomato.png',
         // 'Eggplant'     => 'eggplant.png',
         // 'Okra'         => 'okra.png',
-        // 'String Bean'  => 'string-bean.png',
+         'String Bean'  => 'string-bean.jpg',
         // 'Squash'       => 'squash.png',
         // 'Ampalaya'     => 'ampalaya.png',
         // 'Pepper'       => 'pepper.png',
@@ -70,7 +70,7 @@
         // Root Crops
         // 'Cassava'      => 'cassava.png',
         // 'Sweet Potato' => 'sweet-potato.png',
-        // 'Taro'         => 'taro.png',
+         'Taro'         => 'taro.jpg',
         // 'Potato'       => 'potato.png',
         // 'Carrot'       => 'carrot.png',
 
@@ -82,7 +82,7 @@
         // 'Lemongrass'   => 'lemongrass.png',
 
         // Legumes
-        // 'Mung Bean'    => 'mung-bean.png',
+         'Mung Bean'    => 'mung-bean.jpg',
         // 'Soybean'      => 'soybean.png',
         // 'Peanut'       => 'peanut.png',
 
@@ -1185,7 +1185,8 @@
 
     {{-- ═══ 1. Breadcrumb ═══ --}}
     <nav class="cd-breadcrumb" aria-label="Breadcrumb">
-      <a href="{{ route('dashboard.farmer') }}">Dashboard</a>
+      {{-- One shared page; the dashboard behind this crumb stays role-specific. --}}
+      <a href="{{ route(auth()->user()->role === 'admin' ? 'dashboard.admin' : 'dashboard.farmer') }}">Dashboard</a>
       <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       <span class="cd-breadcrumb-current">Crops Directory</span>
     </nav>

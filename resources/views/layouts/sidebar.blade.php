@@ -369,7 +369,8 @@
     .app-scrollbar.dragging .app-scrollbar-thumb { background: var(--aq-sage-500, #648268); }
     
     /* Brand Section */
-    .brand-section { padding: 15px 20px 14px 20px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.95); letter-spacing: -0.01em; line-height: 1.35; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; }
+    /* Sits just below the fixed header's outer edge (header is 60px). */
+    .brand-section { height: 62px; padding: 0 20px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.95); letter-spacing: -0.01em; line-height: 1.35; border-bottom: 2px solid rgba(255, 255, 255, 0.14); display: flex; flex-direction: column; justify-content: center; }
     .brand-title { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; display: block; margin-bottom: 1px; color: #ffffff; line-height: 1.05; }
     .brand-accent { color: var(--sb-brand-accent, var(--sb-accent, #C8F36A)); text-shadow: 0 0 14px color-mix(in srgb, var(--sb-brand-accent, var(--sb-accent, #C8F36A)) 30%, transparent); }
 
@@ -452,11 +453,11 @@
     .nav-links li a:hover:not(.active) svg { stroke: #ffffff; }
 
     /* Continuous Active Hook */
-    .nav-links li a.active { background: #f4f5f0; color: #1e2922; font-weight: 700; position: relative; margin-right: -1px; z-index: 10; }
+    .nav-links li a.active { background: var(--aq-bg); color: #1e2922; font-weight: 700; position: relative; margin-right: -1px; z-index: 10; }
     .nav-links li a.active svg { stroke: #143d23; }
     .nav-links li:not(.nav-dropdown):has(a.active) { z-index: 12; }
-    .nav-links li:not(.nav-dropdown):has(a.active)::before { content: ""; position: absolute; top: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-bottom-right-radius: 20px; box-shadow: 10px 10px 0 10px #f4f5f0; pointer-events: none; z-index: 12; }
-    .nav-links li:not(.nav-dropdown):has(a.active)::after { content: ""; position: absolute; bottom: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-top-right-radius: 20px; box-shadow: 10px -10px 0 10px #f4f5f0; pointer-events: none; z-index: 12; }
+    .nav-links li:not(.nav-dropdown):has(a.active)::before { content: ""; position: absolute; top: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-bottom-right-radius: 20px; box-shadow: 10px 10px 0 10px var(--aq-bg); pointer-events: none; z-index: 12; }
+    .nav-links li:not(.nav-dropdown):has(a.active)::after { content: ""; position: absolute; bottom: -20px; right: 0; height: 20px; width: 20px; background-color: transparent; border-top-right-radius: 20px; box-shadow: 10px -10px 0 10px var(--aq-bg); pointer-events: none; z-index: 12; }
 
     /* Dropdown Sub-Navigation */
     .nav-dropdown { display: flex; flex-direction: column; }
@@ -681,6 +682,8 @@
     @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
+  /* Mobile header is 64px; keep the same small offset below its outer edge. */
+  .brand-section { height: 66px; }
   .main-content { margin-left: 0; padding: calc(80px + var(--aq-netbar-offset, 0px)) 16px 24px 16px; }
   .mobile-header { display: flex; }
   .sidebar-overlay { display: none; position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.4); z-index: 95; }
@@ -903,7 +906,9 @@
       --sb-hover-bg:{{ $stC['hover_bg'] }}; --sb-hover-strong:{{ $stC['hover_strong'] }};
       --sb-active-bg:{{ $stC['active_bg'] }}; --sb-active-fg:{{ $stC['active_fg'] }};
       --sb-accent:{{ $stC['accent'] }};
+      --sb-search-focus:{{ $stC['search_focus'] ?? $stC['accent'] }};
       --sb-brand-accent:{{ $stC['brand_accent'] ?? $stC['accent'] }};
+      --sb-progress:{{ $stC['brand_accent'] ?? $stC['accent'] }};
       --sb-avatar-bg:{{ $stC['avatar_bg'] }}; --sb-avatar-fg:{{ $stC['avatar_fg'] }};
       --sb-border:{{ $stC['border'] }}; --sb-border-soft:{{ $stC['border_soft'] }};
       --sb-card-bg-a:{{ $stC['card_a'] }}; --sb-card-bg-b:{{ $stC['card_b'] }};
@@ -918,6 +923,10 @@
       --sb-logout-bg:{{ $stC['logout_bg'] }}; --sb-logout-fg:{{ $stC['logout_fg'] }}; --sb-logout-border:{{ $stC['logout_border'] }};
       --sb-logout-hover-bg:{{ $stC['logout_hover_bg'] }}; --sb-logout-hover-fg:{{ $stC['logout_hover_fg'] }};
     }
+    /* Turbo mounts its progress bar as a sibling of <body>, so body-level
+       theme variables don't reach it. Mirror the chosen theme's green onto
+       <html> where the bar can inherit it. */
+    html:has(body[data-sidebar-theme="{{ $stKey }}"]) { --sb-progress: {{ $stC['brand_accent'] ?? $stC['accent'] }}; }
     @endforeach
 
     /* Theme-aware sidebar overrides (defaults recreate the original emerald design) */
@@ -932,10 +941,12 @@
     .nav-links li a svg { stroke: var(--sb-nav); }
     .nav-links li a:hover:not(.active) { background: var(--sb-hover-bg); color: var(--sb-nav-hover); }
     .nav-links li a:hover:not(.active) svg { stroke: var(--sb-nav-hover); }
-    .nav-links li a.active { background: #f4f5f0; color: #1e2922; }
+    /* The connected active pill uses the page's own matte background so it
+       reads as one continuous surface with the content, in every theme. */
+    .nav-links li a.active { background: var(--aq-bg); color: #1e2922; }
     .nav-links li a.active svg { stroke: #1e2922; }
-    .nav-links li:not(.nav-dropdown):has(a.active)::before { box-shadow: 10px 10px 0 10px #f4f5f0; }
-    .nav-links li:not(.nav-dropdown):has(a.active)::after { box-shadow: 10px -10px 0 10px #f4f5f0; }
+    .nav-links li:not(.nav-dropdown):has(a.active)::before { box-shadow: 10px 10px 0 10px var(--aq-bg); }
+    .nav-links li:not(.nav-dropdown):has(a.active)::after { box-shadow: 10px -10px 0 10px var(--aq-bg); }
     .nav-dropdown-btn { color: var(--sb-nav); }
     .nav-dropdown-btn:hover { background: var(--sb-hover-bg); color: var(--sb-nav-hover); }
     .nav-dropdown-title svg { stroke: var(--sb-nav); }
@@ -960,6 +971,10 @@
     .climate-season-sub { color: var(--sb-muted); }
     .nav-links li a:hover:not(.active) img { content: var(--sb-menu-ico-url); }
 
+    /* Turbo's page-load bar ships blue. Paint it with the active side-menu
+       theme's green instead so it belongs to the system, not Turbo. */
+    .turbo-progress-bar { background: var(--sb-progress, #8FB89A) !important; }
+
 /* -- Sub-page navigation inside the side menu ("Side menu" UI style):
    each main menu name becomes a dropdown and only the sub-page link
    carries the active state, styled with the same continuous active
@@ -976,7 +991,7 @@
     .sub-nav-links li a { border-radius: 8px; transition: color 0.18s ease, background 0.18s ease; }
     .sub-nav-links li a:hover { color: var(--sb-nav-hover); background: var(--sb-hover-bg); }
     .sub-nav-links li a.active {
-    background: #ffffff; color: #1e2922;
+    background: var(--aq-bg); color: #1e2922;
       font-weight: 700; position: relative;
       margin-right: -1px;
       border-top-left-radius: 12px; border-bottom-left-radius: 12px;
@@ -987,14 +1002,14 @@
       content: ""; position: absolute; top: -20px; right: 0;
       height: 20px; width: 20px; background-color: transparent;
       border-bottom-right-radius: 20px;
-      box-shadow: 10px 10px 0 10px var(--sb-active-bg);
+      box-shadow: 10px 10px 0 10px var(--aq-bg);
       pointer-events: none; z-index: 12;
     }
     .sub-nav-links li:has(a.active)::after {
       content: ""; position: absolute; bottom: -20px; right: 0;
       height: 20px; width: 20px; background-color: transparent;
       border-top-right-radius: 20px;
-      box-shadow: 10px -10px 0 10px var(--sb-active-bg);
+      box-shadow: 10px -10px 0 10px var(--aq-bg);
       pointer-events: none; z-index: 12;
     }
   </style>
@@ -1246,7 +1261,7 @@
           <li>
             <a href="{{ route('farmer.harvests.index') }}" class="{{ request()->routeIs('farmer.harvests.index') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
-              Harvest Reports
+              Farmer's Harvest
             </a>
           </li>
           <li>
@@ -2457,17 +2472,17 @@
           ['AI Assistant', 'admin.ai-chat.index', 'ai chat assistant general'],
           ['Members', 'admin.members.index', 'member list view members'],
           ['Import Members', 'admin.members.import', 'import member csv excel'],
-          ['Import Uploads', 'admin.members.uploads', 'uploads imported files'],
           ['All Users', 'admin.users.index', 'users list account management'],
           ['Create Account', 'admin.users.create', 'add account register user'],
           ['Harvest Performance', 'admin.harvests.index', 'harvest reports performance'],
-          ['All Harvest Reports', 'admin.harvests.reports', 'report list records'],
+          ["Farmer's Harvest", 'admin.harvests.reports', 'report list records'],
+          ['Generate report', 'admin.harvests.reports.generate', 'ai generated saved download tagalog english report'],
           ['Estimate vs Actual Harvest', 'admin.harvests.compare', 'compare estimate actual'],
-          ['Farming Cost Reports', 'admin.analytics.expenses', 'expense cost budget'],
           ['Planting Requests', 'admin.plantings.index', 'planting request confirm reject'],
           ['Calendar', 'admin.calendar.index', 'calendar schedule'],
           ['Events', 'admin.calendar.events', 'association events meetings'],
           ['Planting Seasons', 'admin.operations.seasons', 'season wet dry'],
+          ['Crop Directory', 'farmer.crops-directory.index', 'crop guide reference library'],
           ['Product Catalog', 'admin.operations.catalog', 'products catalog inputs'],
           ['Stores', 'admin.stores.index', 'stores owners paperwork'],
           ['Quotation Demand Trends', 'admin.quotations.index', 'demand quotation products'],
@@ -2494,7 +2509,7 @@
           ['Dashboard', 'farmer.dashboard', 'home overview'],
           ['Submit Harvest Report', 'farmer.harvests.create', 'submit add report'],
           ['My Crops', 'farmer.crops.index', 'crops batches'],
-          ['Harvest Reports', 'farmer.harvests.index', 'harvest list reports'],
+          ["Farmer's Harvest", 'farmer.harvests.index', 'harvest list reports'],
           ['Estimate vs Actual Harvest', 'farmer.harvests.compare', 'compare estimate actual'],
           ['My Cost Quotations', 'farmer.quotations.index', 'quotation request cost'],
           ['Browse Supplies', 'farmer.products.browse', 'products supplies inputs'],
@@ -2697,9 +2712,12 @@
     display: none;
   }
   .aq-global-search-input::placeholder { color: #8a94a6; }
-  .aq-global-search-input:focus {
+  /* The global light-mode input rule paints a dark focus border. This more
+     specific rule gives the header search a light border taken from the
+     active side-menu theme instead. */
+  .aq-global-search-host .aq-global-search-input:focus {
     background: #ffffff;
-    border-color: #d1d5db;
+    border-color: var(--sb-search-focus, #cbd5c8) !important;
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   }
   .aq-global-search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #94a3b8; }

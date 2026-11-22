@@ -19,9 +19,9 @@
 | association-specific section) just above Settings. The `harvest` group is
 | titled "Report and Request" because it now carries the planting requests
 | next to the harvest pages, so the name cannot be read as harvest-only.
-| There is no separate reporting section: Farming Cost Reports sits in
-| Harvest because it analyses the same harvest data, and Quotation Demand
-| Trends sits with Farm Supplies because it describes product demand. No
+| There is no separate reporting section: expense figures stay with the
+| other harvest charts, and Quotation Demand Trends sits with Farm Supplies
+| because it describes product demand. No
 | notification items or badges are shown here — notifications live outside
 | the sidebar. Quotation terminology is preserved intentionally. The
 | `harvest` and `settings` group keys are referenced by feature tests, so
@@ -57,7 +57,6 @@ return [
         'items' => [
             ['label' => 'All Members', 'routes' => ['admin.members.index']],
             ['label' => 'Import Members', 'routes' => ['admin.members.import', 'admin.members.import.preview', 'admin.members.import.confirm']],
-            ['label' => 'Import Uploads', 'routes' => ['admin.members.uploads', 'admin.members.uploads.download']],
         ],
     ],
     'users' => [
@@ -74,7 +73,7 @@ return [
         'label' => 'Report and Request',
         'icon' => '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
         // Importing and the archive of its files carry no menu entries of
-        // their own: both pages are one button away on "All Harvest Reports",
+        // their own: both pages are one button away on "Farmer's Harvest",
         // so a sidebar line would only repeat that page and pad the menu.
         // The routes stay listed here so the section still opens while
         // either page is on screen — every page remains reachable, it just
@@ -87,18 +86,14 @@ return [
         ],
         'items' => [
             ['label' => 'Harvest Performance', 'routes' => ['admin.harvests.index']],
-            ['label' => 'All Harvest Reports', 'routes' => ['admin.harvests.reports']],
-            ['label' => 'AI Harvest Reports', 'routes' => [
+            ['label' => "Farmer's Harvest", 'routes' => ['admin.harvests.reports']],
+            ['label' => 'Generate report', 'routes' => [
                 'admin.harvests.reports.generate',
                 'admin.harvests.reports.generate.store',
                 'admin.harvests.reports.generated.show',
                 'admin.harvests.reports.generated.download',
             ]],
             ['label' => 'Estimate vs Actual Harvest', 'routes' => ['admin.harvests.compare']],
-            // The cost report is budgeted-vs-actual off this same harvest
-            // table, so it belongs beside the rest of the harvest figures
-            // rather than in a reporting section of its own.
-            ['label' => 'Farming Cost Reports', 'routes' => ['admin.analytics.expenses']],
             // Moved here from Farm Supplies so the section's name holds true:
             // this dropdown lists the association's reports *and* its one
             // request page.
@@ -123,7 +118,8 @@ return [
         'label' => 'Farm & Supplies',
         'icon' => '<svg viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M12 20v-8"/><path d="M12 12c-3 0-6-1-6-5 3 0 6 2 6 5"/><path d="M12 12c3 0 6-1 6-5-3 0-6 2-6 5"/></svg>',
         'items' => [
-            ['label' => 'Crop Directory', 'routes' => ['admin.operations.crop-directory']],
+            // Shared with members: one crop reference page for both roles.
+            ['label' => 'Crop Directory', 'routes' => ['farmer.crops-directory.index']],
             ['label' => 'Product Catalog', 'routes' => ['admin.operations.catalog']],
             ['label' => 'Stores', 'routes' => ['admin.stores.index', 'admin.stores.create', 'admin.stores.edit']],
             // Which products are being quoted, i.e. product demand in

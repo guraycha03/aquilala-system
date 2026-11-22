@@ -37,7 +37,6 @@ use App\Http\Controllers\StoreOwnerActivityController;
 use App\Http\Controllers\WeatherController;
 use App\Models\DecisionFormula;
 use App\Models\FarmerCrop;
-use App\Models\HarvestReport;
 use App\Models\Product;
 use App\Models\Quotation;
 use Illuminate\Http\Request;
@@ -238,6 +237,20 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Shared: Crop Reference Directory
+    |--------------------------------------------------------------------------
+    | The one page association officials (admin) and members (farmer) both
+    | read. It deliberately sits outside the role-specific groups below so
+    | neither role inherits any other page from the other's space. The URL,
+    | name and view stay the farmer's original ones — there is no second
+    | admin-only copy or design of this page.
+    */
+    Route::get('/farmer/crops-directory', [CropsDirectoryController::class, 'index'])
+        ->name('farmer.crops-directory.index')
+        ->middleware('role:farmer,admin');
+
+    /*
+    |--------------------------------------------------------------------------
     | Farmer Space
     |--------------------------------------------------------------------------
     */
@@ -267,9 +280,6 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::get('/crops/{farmerCrop}', [FarmerCropController::class, 'show'])
             ->name('crops.show')
             ->whereNumber('farmerCrop');
-
-        // Supported Crops Directory
-        Route::get('/crops-directory', [CropsDirectoryController::class, 'index'])->name('crops-directory.index');
 
         // Products & Store Browsing
         Route::get('/products/browse', [ProductController::class, 'browse'])->name('products.browse');
@@ -469,6 +479,13 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
             ->name('members.archive');
         Route::get('/members/create', [AdminMemberController::class, 'create'])->name('members.create');
         Route::post('/members', [AdminMemberController::class, 'store'])->name('members.store');
+
+        // This used to be a standalone uploads page. It now lands on the
+        // Members page's inline Uploads panel; declared before {member} so a
+        // bookmarked link is never swallowed as a member id.
+        Route::get('/members/uploads', fn () => redirect()->route('admin.members.index', ['#' => 'uploads']))
+            ->name('members.uploads');
+
         Route::get('/members/{member}', [AdminMemberController::class, 'show'])->name('members.show');
         Route::get('/members/{member}/edit', [AdminMemberController::class, 'edit'])
             ->name('members.edit')
@@ -499,12 +516,10 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
         Route::post('/members/import/ocr/confirm', [AdminMemberImportController::class, 'confirmOcr'])
             ->name('members.import.ocr.confirm');
 
-        // The archive of every file this importer was ever given — CSV/XLSX
-        // and the photographed forms alike — so the original stays reachable
-        // years later. Declared with the literal /members/... paths above so
-        // it can never be shadowed by a {member} binding.
-        Route::get('/members/uploads', [AdminImportUploadController::class, 'members'])
-            ->name('members.uploads');
+        // The archive itself lives in the Members page's inline Uploads panel;
+        // these routes only hand the original file back. Declared with the
+        // literal /members/... paths so they can never be shadowed by a
+        // {member} binding.
         Route::get('/members/uploads/{importUpload}/download', [AdminImportUploadController::class, 'downloadMembers'])
             ->name('members.uploads.download');
         // Scans (pictures) render inside the page's viewer instead of
@@ -682,16 +697,6 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
 Route::get('/operations', fn () => redirect()->route('admin.operations.catalog'))->name('operations.index');
         Route::get('/operations/formulas', fn () => redirect()->route('admin.operations.catalog'))->name('operations.formulas');
 
-        // Admin Crop Directory — same crop library the farmer sees, full read-only view
-        Route::get('/operations/crop-directory', function () {
-            $crops = Crop::where('is_category_placeholder', false)->orderBy('name')->get();
-            $cropsByCategory = $crops->groupBy('category_id')->map(function ($items, $id) {
-                return ['id' => $id, 'name' => $items->first()->category->name ?? 'Uncategorized', 'crops' => $items->values()];
-            })->sortBy('name')->values();
-
-            return view('admin.operations.crop-directory', compact('cropsByCategory'));
-        })->name('operations.crop-directory');
-
         Route::get('/operations/catalog', function () {
             $products = Product::with(['category', 'storeOwner'])
                 ->orderBy('name')
@@ -765,65 +770,9 @@ Route::get('/operations', fn () => redirect()->route('admin.operations.catalog')
         Route::delete('/calendar/events/{event}', [CalendarController::class, 'destroy'])->name('calendar.events.destroy');
 
         // ── Analytics & Reports (grouped pages) ────────────────────
-        // Expenses — what farming actually cost, grouped the way an officer
-        // reads it: crop, season, year. "Planned" (the estimate) is the total
-        // of a store quotation linked to the report; the importer and the
-        // manual form both leave that link null, so with nothing quoted the
-        // page must not draw budget/variance conclusions from ₱0.
-        Route::get('/analytics/expenses', function () {
-            $reports = HarvestReport::with('quotation')->get();
-
-            $planned = fn ($set) => $set->sum(
-                fn ($r) => (float) ($r->quotation?->estimated_total_cost ?? 0)
-            );
-
-            $totals = [
-                'planned' => $planned($reports),
-                'actual' => $reports->sum(fn ($r) => (float) $r->actual_total_expenses),
-                'count' => $reports->count(),
-                'yield' => $reports->sum(fn ($r) => (float) $r->actual_yield_metric_tons),
-                'area' => $reports->sum(fn ($r) => (float) $r->land_area),
-            ];
-            $totals['variance'] = $totals['actual'] - $totals['planned'];
-
-            // No quotation has ever been linked to a report → there is no
-            // budget to compare against, and "variance" would just echo
-            // the whole spend back as "over budget".
-            $hasBudget = $totals['planned'] > 0;
-
-            $byCrop = $reports->groupBy('crop_type')->map(fn ($group) => [
-                'crop' => $group->first()->crop_type,
-                'count' => $group->count(),
-                'planned' => $planned($group),
-                'actual' => $group->sum(fn ($r) => (float) $r->actual_total_expenses),
-                'area' => $group->sum(fn ($r) => (float) $r->land_area),
-            ])->sortByDesc('actual')->values();
-
-            $bySeason = $reports->groupBy('season')->map(fn ($group) => [
-                'season' => ucfirst($group->first()->season ?? 'wet'),
-                'count' => $group->count(),
-                'planned' => $planned($group),
-                'actual' => $group->sum(fn ($r) => (float) $r->actual_total_expenses),
-                'yield' => $group->sum(fn ($r) => (float) $r->actual_yield_metric_tons),
-            ])->sortByDesc('actual')->values();
-
-            // The imported history spans many years of paper records —
-            // grouping by the year the harvest happened keeps a decade
-            // readable in one scan.
-            $byYear = $reports
-                ->groupBy(fn ($r) => $r->harvest_date?->format('Y') ?? 'Unknown')
-                ->map(fn ($group, $year) => [
-                    'year' => (string) $year,
-                    'count' => $group->count(),
-                    'planned' => $planned($group),
-                    'actual' => $group->sum(fn ($r) => (float) $r->actual_total_expenses),
-                    'yield' => $group->sum(fn ($r) => (float) $r->actual_yield_metric_tons),
-                ])
-                ->sortKeys()
-                ->values();
-
-            return view('admin.analytics.expenses', compact('totals', 'byCrop', 'bySeason', 'byYear', 'hasBudget'));
-        })->name('analytics.expenses');
+        // Expense analytics now live with the charts on Harvest Performance.
+        // The old URL still lands there so a bookmark never hits a 404.
+        Route::get('/analytics/expenses', fn () => redirect()->route('admin.harvests.index'));
 
         // ── Settings (grouped pages) ───────────────────────────────
         // Real audit trail: every row comes from activity_logs.
@@ -836,7 +785,7 @@ Route::get('/operations', fn () => redirect()->route('admin.operations.catalog')
             ->name('harvests.index')
             ->middleware('shield');
 
-        // All Harvest Reports — the full, filterable table, split out from the
+        // Harvest Reports — the full, filterable table, split out from the
         // landing page so that page can surface summary cards instead.
         Route::get('/harvests/reports', [HarvestReportController::class, 'reportsIndex'])
             ->name('harvests.reports')
@@ -855,6 +804,8 @@ Route::get('/operations', fn () => redirect()->route('admin.operations.catalog')
         Route::get('/harvests/reports/generated/{generatedHarvestReport}', [HarvestReportGenerationController::class, 'show'])
             ->name('harvests.reports.generated.show')
             ->middleware('shield');
+        Route::post('/harvests/reports/generated/{generatedHarvestReport}/language', [HarvestReportGenerationController::class, 'language'])
+            ->name('harvests.reports.generated.language');
         Route::get('/harvests/reports/generated/{generatedHarvestReport}/download', [HarvestReportGenerationController::class, 'download'])
             ->name('harvests.reports.generated.download');
         Route::delete('/harvests/reports/generated/{generatedHarvestReport}', [HarvestReportGenerationController::class, 'destroy'])

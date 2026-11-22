@@ -244,9 +244,9 @@ class AdminHarvestRecordRemovalTest extends TestCase
             'rows_skipped' => 0,
         ]);
 
-        // The members list shows no harvest-removal affordance…
+        // The members page's inline Uploads panel shows no harvest-removal affordance…
         $this->actingAs($admin)
-            ->get(route('admin.members.uploads'))
+            ->get(route('admin.members.index'))
             ->assertOk()
             ->assertDontSee('Remove records');
 

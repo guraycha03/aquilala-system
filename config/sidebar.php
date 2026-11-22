@@ -42,6 +42,9 @@ return [
                 'active_bg'         => '#f3f6f4',
                 'active_fg'         => '#143d23',
                 'accent'            => '#8FB89A',
+                // Header search field focus ring, tuned per theme so the
+                // active input never picks up the global dark focus border.
+                'search_focus'      => '#A9CBAF',
                 // Brand mark only: the "lala" in the sidebar/mobile "Aquilala".
                 // Kept separate from 'accent' so the wordmark can be a vivid,
                 // noticeable green while UI accents stay soft.
@@ -81,6 +84,7 @@ return [
                 'active_bg'         => '#f3f6f4',
                 'active_fg'         => '#5f7c2e',
                 'accent'            => '#5f7c2e',
+                'search_focus'      => '#B8CE9B',
                 'brand_accent'      => '#3a9426',
                 'avatar_bg'         => 'rgba(51, 66, 29, 0.12)',
 
@@ -103,6 +107,48 @@ return [
             ],
         ],
 
+        // Sage green based on the dashboard welcome panel
+        // (.fd-panel in components/dash-top.blade.php), nudged a touch deeper
+        // and greener so it doesn't read as almost-white in the sidebar.
+        'sage' => [
+            'name' => 'Dashboard Sage',
+            'desc' => 'Light green from the dashboard panel',
+            'chip' => ['bg' => '#DFE9D9', 'fg' => '#6a8d18'],
+            'colors' => [
+                'bg'                => '#DFE9D9',
+                'deep'              => '#D6E2D0',
+                'fg'                => '#344B38',
+                'nav'               => '#526653',
+                'muted'             => '#647263',
+                'nav_hover'         => '#344B38',
+                'hover_bg'          => 'rgba(52, 75, 56, 0.08)',
+                'hover_strong'      => 'rgba(52, 75, 56, 0.14)',
+                'active_bg'         => '#F7F9F5',
+                'active_fg'         => '#344B38',
+                'accent'            => '#648268',
+                'search_focus'      => '#B9CFB8',
+                // Lime/chartreuse "lala" — dark enough to stay legible on the
+                // light sage background while still reading yellowish-green.
+                'brand_accent'      => '#6a8d18',
+                'avatar_bg'         => 'rgba(255, 255, 255, 0.8)',
+                'avatar_fg'         => '#47654E',
+                'border'            => 'rgba(52, 75, 56, 0.18)',
+                'border_soft'       => 'rgba(52, 75, 56, 0.10)',
+                'card_a'            => 'rgba(255, 255, 255, 0.8)',
+                'card_b'            => 'rgba(255, 255, 255, 0.35)',
+                'card_border'       => '#DDE5D8',
+                'card_border_hover' => '#C9D6C4',
+                'card_shadow'       => 'inset 0 1px 0 rgba(255, 255, 255, 0.6)',
+                'badge_bg'          => 'rgba(52, 75, 56, 0.12)',
+                'logout_bg'         => 'rgba(220, 38, 38, 0.10)',
+                'logout_fg'         => '#b91c1c',
+                'logout_border'     => 'rgba(220, 38, 38, 0.25)',
+                'logout_hover_bg'   => '#ef4444',
+                'logout_hover_fg'   => '#ffffff',
+                'menu_ico_dark'     => true,
+            ],
+        ],
+
         'khaki' => [
             'name' => 'Dark Brown',
             'desc' => 'Dark coffee brown with warm accents',
@@ -119,6 +165,7 @@ return [
                 'active_bg'         => '#e8e0d4',
                 'active_fg'         => '#3a352d',
                 'accent'            => '#d5c2a1',
+                'search_focus'      => '#D5C2A1',
                 'brand_accent'      => '#9fe870',
                 'avatar_bg'         => 'rgba(255,255,255,0.16)',
                 'avatar_fg'         => '#f5efe4',

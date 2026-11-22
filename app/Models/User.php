@@ -291,6 +291,11 @@ class User extends Authenticatable
         return $this->hasMany(ChatHistory::class, 'user_id');
     }
 
+    public function generatedHarvestReports(): HasMany
+    {
+        return $this->hasMany(GeneratedHarvestReport::class, 'user_id');
+    }
+
     /**
      * The member record this account was created from, if any. Farmer
      * accounts always have one; store owners are outsiders and have none.

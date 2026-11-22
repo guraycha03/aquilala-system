@@ -6,12 +6,7 @@
 <style>
     /* ── Page Shell ── */
     .crops-page { position: relative; }
-    .crops-page::before, .crops-page::after {
-        content: ""; position: fixed; border-radius: 50%; filter: blur(80px);
-        pointer-events: none; z-index: 0;
-    }
-    .crops-page::before { width: 340px; height: 340px; background: rgba(74,122,84,0.10); top: -80px; right: -60px; }
-    .crops-page::after { width: 280px; height: 280px; background: rgba(143,184,154,0.08); bottom: -60px; left: -40px; }
+
     .crops-content { position: relative; z-index: 1; }
 
     /* ── Hero Banner ── */

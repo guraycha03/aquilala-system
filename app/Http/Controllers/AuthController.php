@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\HarvestInsightService;
 use App\Services\UserInvitationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -169,7 +170,7 @@ class AuthController extends Controller
     /**
      * Display the Admin Dashboard with live database metrics and user logs.
      */
-    public function showAdminDashboard()
+    public function showAdminDashboard(HarvestInsightService $insights)
     {
         // 1. Calculate live totals directly from the database table
         $totalUsers = User::count();
@@ -350,6 +351,11 @@ class AuthController extends Controller
             'out_of_stock' => Product::where('stock_quantity', '<=', 0)->count(),
         ];
 
+        // Wet vs. Dry Season now lives here rather than on Harvest
+        // Performance. It reads the same digest, so the figures match the
+        // Year-by-Year full view one click away on that page.
+        $seasonBalance = $this->seasonBalanceFromPeriods($insights->context()['periods'] ?? []);
+
         // 3. Render the administration dashboard layout view safely with variables
         return view('dashboard.admin', compact(
             'totalUsers',
@@ -383,7 +389,97 @@ class AuthController extends Controller
             'attentionQuotations',
             'recentPlatformQuotations',
             'recentProducts',
-            'stockCounts'
+            'stockCounts',
+            'seasonBalance'
         ));
+    }
+
+    /** Add one period's figures to a wet or dry bucket (by reference). */
+    private function addBalanceValues(array &$bucket, array $values): void
+    {
+        foreach ($values as $key => $value) {
+            $bucket[$key] += $value;
+        }
+    }
+
+    /**
+     * Build the Wet/Dry balance figures for "overall" and for each year.
+     *
+     * The dashboard card has its own year filter, so every displayed number
+     * has to be precomputed for both the all-years view and each individual
+     * year. Seasons other than wet/dry are ignored — they are not part of the
+     * two-way balance.
+     */
+    private function seasonBalanceFromPeriods(array $periods): array
+    {
+        $blank = static fn (): array => [
+            'reports' => 0,
+            'area' => 0.0,
+            'yield' => 0.0,
+            'expenses' => 0.0,
+        ];
+
+        $overall = ['wet' => $blank(), 'dry' => $blank()];
+        $byYear = [];
+
+        foreach ($periods as $period) {
+            $season = strtolower((string) ($period['season'] ?? ''));
+            if ($season !== 'wet' && $season !== 'dry') {
+                continue;
+            }
+
+            $year = (int) ($period['year'] ?? 0);
+            if (!isset($byYear[$year])) {
+                $byYear[$year] = ['wet' => $blank(), 'dry' => $blank()];
+            }
+
+            $values = [
+                'reports' => (int) ($period['reports'] ?? 0),
+                'area' => (float) ($period['area_ha'] ?? 0),
+                'yield' => (float) ($period['yield_tons'] ?? 0),
+                'expenses' => (float) ($period['expenses_php'] ?? 0),
+            ];
+
+            $this->addBalanceValues($overall[$season], $values);
+            $this->addBalanceValues($byYear[$year][$season], $values);
+        }
+
+        ksort($byYear);
+
+        $summarize = static function (array $wet, array $dry): array {
+            $totalYield = $wet['yield'] + $dry['yield'];
+            $wetShare = $totalYield > 0 ? (int) round(($wet['yield'] / $totalYield) * 100) : 0;
+
+            $decorate = static function (array $bucket, int $share): array {
+                return [
+                    'reports' => (int) $bucket['reports'],
+                    'area' => round($bucket['area'], 1),
+                    'yield' => round($bucket['yield'], 1),
+                    'share' => $share,
+                    'yield_per_ha' => $bucket['area'] > 0
+                        ? round($bucket['yield'] / $bucket['area'], 2)
+                        : null,
+                    'cost_per_mt' => $bucket['yield'] > 0
+                        ? (int) round($bucket['expenses'] / $bucket['yield'])
+                        : null,
+                ];
+            };
+
+            return [
+                'wet' => $decorate($wet, $wetShare),
+                'dry' => $decorate($dry, 100 - $wetShare),
+            ];
+        };
+
+        $years = [];
+        foreach ($byYear as $year => $buckets) {
+            $years[(string) $year] = $summarize($buckets['wet'], $buckets['dry']);
+        }
+
+        return [
+            'overall' => $summarize($overall['wet'], $overall['dry']),
+            'years' => $years,
+            'options' => array_map('strval', array_keys($years)),
+        ];
     }
 }
