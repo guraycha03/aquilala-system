@@ -51,19 +51,19 @@
           </div>
         </div>
 
-        {{-- Supplementary explanation only: never part of the report paper. --}}
+        {{-- Plain-language guide only: never part of the report paper. --}}
         <button type="button" class="ahr-ai-fab" id="ahr-ai-insight-open" aria-expanded="false" aria-controls="ahr-ai-insight-panel">
           <svg class="ahr-icon" aria-hidden="true"><use href="#ahr-i-sparkles"></use></svg>
-          AI Insight
+          Report Guide
         </button>
 
         <aside class="ahr-ai-panel" id="ahr-ai-insight-panel" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="ahr-ai-insight-title">
           <div class="ahr-ai-head">
             <div>
-              <p class="ahr-ai-eyebrow">Supplementary explanation</p>
-              <h2 id="ahr-ai-insight-title">AI Insight</h2>
+              <p class="ahr-ai-eyebrow">Plain-language guide</p>
+              <h2 id="ahr-ai-insight-title">Understand This Report</h2>
             </div>
-            <button type="button" class="ahr-ai-close" id="ahr-ai-insight-close" aria-label="Close AI insight">&times;</button>
+            <button type="button" class="ahr-ai-close" id="ahr-ai-insight-close" aria-label="Close report guide">&times;</button>
           </div>
           <div class="ahr-ai-body" id="ahr-ai-insight-body" aria-live="polite"></div>
         </aside>
@@ -246,8 +246,8 @@
       var note = document.createElement('p');
       note.className = 'ahr-ai-note';
       note.textContent = data.source === 'ai'
-        ? 'AI-assisted explanation using only this saved report. Official figures remain in the report paper.'
-        : 'Deterministic explanation shown because the AI enhancement was unavailable or unverified. Official figures remain unchanged.';
+        ? 'This guide uses only the figures saved in this report. The report paper remains the official record.'
+        : 'This guide is prepared from the saved figures. The report paper remains the official record.';
       aiBody.appendChild(note);
     }
 

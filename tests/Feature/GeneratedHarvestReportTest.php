@@ -732,7 +732,9 @@ class GeneratedHarvestReportTest extends TestCase
 
         $this->assertStringContainsString('id="ahr-ai-insight-open"', $showHtml);
         $this->assertStringContainsString('id="ahr-ai-insight-panel"', $showHtml);
-        $this->assertStringContainsString('AI Insight', $showHtml);
+        $this->assertStringContainsString('Report Guide', $showHtml);
+        $this->assertStringContainsString('Understand This Report', $showHtml);
+        $this->assertStringNotContainsString('Supplementary explanation', $showHtml);
         $this->assertStringContainsString(
             e(route('admin.harvests.reports.generated.insight', $saved)),
             $showHtml
@@ -753,9 +755,10 @@ class GeneratedHarvestReportTest extends TestCase
             ->json();
 
         $this->assertSame('fallback', $payload['source']);
-        $this->assertSame('Deterministic explanation', $payload['source_label']);
+        $this->assertSame('Report-based explanation', $payload['source_label']);
         $this->assertSame('en', $payload['language']);
-        $this->assertStringContainsString('What the report shows', $payload['text']);
+        $this->assertStringContainsString('Report scope', $payload['text']);
+        $this->assertStringContainsString('Why this result', $payload['text']);
         $this->assertStringContainsString('9.50 MT', $payload['text']);
         $this->assertStringContainsString('Rice', $payload['text']);
         $this->assertFalse($payload['cached']);
@@ -775,9 +778,11 @@ class GeneratedHarvestReportTest extends TestCase
         $this->seedHarvests();
         $saved = $this->generateSavedReport();
         $raw = json_encode([
-            'text' => "- What the report shows: 2 records and 9.50 MT are saved.\n"
-                . "- Why the figures matter: Rice contributes 6.00 MT.\n"
-                . "- Data note: Official figures remain in the saved report.",
+            'text' => "- Report scope: 2 records and 9.50 MT are saved.\n"
+                . "- Why this result: only the selected records were used.\n"
+                . "- Year with the most harvest: 2026 had 9.50 MT. The records do not state the cause.\n"
+                . "- Season with more harvest: wet season 9.50 MT (100%) and dry season 0.00 MT (0%). The records do not state the cause.\n"
+                . "- Main crops: Rice contributes 6.00 MT, Corn 3.50 MT.",
         ], JSON_UNESCAPED_UNICODE);
 
         $this->mock(AiLlmClient::class, function ($mock) use ($raw) {
@@ -794,7 +799,7 @@ class GeneratedHarvestReportTest extends TestCase
 
         $this->assertSame('ai', $payload['source']);
         $this->assertSame('llama-3.3-insight', $payload['model']);
-        $this->assertSame('Groq-enhanced explanation', $payload['source_label']);
+        $this->assertSame('AI-assisted explanation', $payload['source_label']);
 
         $again = $this->actingAs($this->admin)
             ->postJson(route('admin.harvests.reports.generated.insight', $saved), ['language' => 'en'])
