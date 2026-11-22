@@ -7,7 +7,10 @@ use App\Models\HarvestReport;
 use App\Services\HarvestInsightService;
 use App\Services\HarvestReportAnalyticsService;
 use App\Services\HarvestReportFilterService;
+use App\Services\HarvestReportInsightService;
 use App\Services\HarvestReportTextService;
+use App\Support\HarvestDigestRow;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -27,6 +30,7 @@ class HarvestReportGenerationController extends Controller
         private readonly HarvestReportFilterService $filterService,
         private readonly HarvestReportTextService $text,
         private readonly HarvestReportAnalyticsService $analytics,
+        private readonly HarvestReportInsightService $insightsForSavedReport,
     ) {}
 
     public function index(Request $request)
@@ -52,6 +56,23 @@ class HarvestReportGenerationController extends Controller
             ->latest()
             ->get();
 
+        // The generate page filters entirely in the browser. A compact,
+        // numeric snapshot of every harvest row lets the chips recalculate the
+        // scope instantly without re-fetching the page on every click.
+        $scopeRows = $allReports->map(function (HarvestReport $report) {
+            $row = HarvestDigestRow::from($report);
+
+            return [
+                (string) $row->harvest_date->year,
+                (string) $row->harvest_date->month,
+                $row->season,
+                (string) ($row->crop_type ?? ''),
+                $row->land_area,
+                $row->actual_yield_metric_tons,
+                $row->reporterName(),
+            ];
+        })->values()->all();
+
         $recordSearch = trim((string) $request->query('record_q', ''));
         $recordSort = (string) $request->query('record_sort', 'date');
         if (! in_array($recordSort, ['date', 'yield', 'expenses', 'area', 'crop'], true)) {
@@ -68,6 +89,7 @@ class HarvestReportGenerationController extends Controller
             'seasonFilter' => (string) ($filters['season'] ?? 'all'),
             'savedReports' => $savedReports,
             'options' => $this->analytics->options($allReports),
+            'scopeRows' => $scopeRows,
             'records' => $this->sortRecords($selectedReports, $recordSearch, $recordSort, $recordDir),
             'recordSearch' => $recordSearch,
             'recordSort' => $recordSort,
@@ -123,6 +145,7 @@ class HarvestReportGenerationController extends Controller
         // while the narrative and context remain the snapshot made today.
         $storedFilters = $filters + ['_report_ids' => $reports->pluck('id')->all()];
         $context['visual'] = $this->analytics->forReports($reports);
+        $context['prepared_by'] = auth()->user()->name;
 
         $saved = auth()->user()->generatedHarvestReports()->create([
             'title' => $title,
@@ -160,6 +183,7 @@ class HarvestReportGenerationController extends Controller
             'scope' => $this->scopeLabel($generatedHarvestReport->filters ?? []),
             'visual' => $context['visual'] ?? $this->analytics->forReports($reports),
             'language' => $language,
+            'savedView' => true,
             'downloadBaseName' => $generatedHarvestReport->downloadBaseName(),
             'savedReports' => auth()->user()->generatedHarvestReports()->latest()->get(),
             'narratives' => [
@@ -180,6 +204,28 @@ class HarvestReportGenerationController extends Controller
         $generatedHarvestReport->update(['default_language' => $validated['language']]);
 
         return response()->json(['language' => $validated['language']]);
+    }
+
+    /**
+     * Supplementary LLM explanation for the saved file viewer.
+     *
+     * This endpoint never reads live harvest rows and never rewrites the
+     * report. It explains the frozen snapshot, cached per language, and falls
+     * back to the deterministic wording when the provider is unavailable.
+     */
+    public function insight(Request $request, GeneratedHarvestReport $generatedHarvestReport): JsonResponse
+    {
+        $this->authorizeReport($generatedHarvestReport);
+
+        $validated = $request->validate([
+            'language' => ['sometimes', 'in:en,tl'],
+        ]);
+
+        $language = $validated['language'] ?? $generatedHarvestReport->default_language;
+
+        return response()->json(
+            $this->insightsForSavedReport->forReport($generatedHarvestReport, (string) $language)
+        );
     }
 
     public function download(GeneratedHarvestReport $generatedHarvestReport, Request $request): Response
@@ -317,8 +363,8 @@ class HarvestReportGenerationController extends Controller
         $scope = $this->scopeLabel($filters);
 
         return $scope === 'All recorded harvest reports'
-            ? 'Actual Harvest Report — ' . now()->format('F Y')
-            : 'Actual Harvest Report — ' . $scope;
+            ? 'Harvest Report — ' . now()->format('F Y')
+            : 'Harvest Report — ' . $scope;
     }
 
     /**

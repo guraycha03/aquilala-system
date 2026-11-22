@@ -806,6 +806,8 @@ Route::get('/operations', fn () => redirect()->route('admin.operations.catalog')
             ->middleware('shield');
         Route::post('/harvests/reports/generated/{generatedHarvestReport}/language', [HarvestReportGenerationController::class, 'language'])
             ->name('harvests.reports.generated.language');
+        Route::post('/harvests/reports/generated/{generatedHarvestReport}/insight', [HarvestReportGenerationController::class, 'insight'])
+            ->name('harvests.reports.generated.insight');
         Route::get('/harvests/reports/generated/{generatedHarvestReport}/download', [HarvestReportGenerationController::class, 'download'])
             ->name('harvests.reports.generated.download');
         Route::delete('/harvests/reports/generated/{generatedHarvestReport}', [HarvestReportGenerationController::class, 'destroy'])

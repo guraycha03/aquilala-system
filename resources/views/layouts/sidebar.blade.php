@@ -2476,7 +2476,7 @@
           ['Create Account', 'admin.users.create', 'add account register user'],
           ['Harvest Performance', 'admin.harvests.index', 'harvest reports performance'],
           ["Farmer's Harvest", 'admin.harvests.reports', 'report list records'],
-          ['Generate report', 'admin.harvests.reports.generate', 'ai generated saved download tagalog english report'],
+          ['Generate report', 'admin.harvests.reports.generate', 'generated saved download tagalog english report'],
           ['Estimate vs Actual Harvest', 'admin.harvests.compare', 'compare estimate actual'],
           ['Planting Requests', 'admin.plantings.index', 'planting request confirm reject'],
           ['Calendar', 'admin.calendar.index', 'calendar schedule'],

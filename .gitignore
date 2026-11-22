@@ -40,3 +40,23 @@ aquilala_key*
 # Local-only material — never push to GitHub, never deploy
 /Manuscript/
 /demo-data/
+/.env.local-backup
+
+# Local QA scratch files and archives
+/.kilo/
+/archive/
+/release_parts/
+/release.tar.gz
+/*-output.txt
+/*-results.txt
+/check_categories.php
+/crops-failure.txt
+/diag_fc.php
+/get(route('farmer.crops-directory.index'))
+/message_to_kilo.txt
+/public/qa-preview-inventory.html
+/start
+/test_output.txt
+/test_result.txt
+/web_based_farm_supply_management_system (5).pdf
+/z-home.html

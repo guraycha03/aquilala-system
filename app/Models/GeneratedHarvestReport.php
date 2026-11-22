@@ -17,6 +17,7 @@ class GeneratedHarvestReport extends Model
         'default_language',
         'source',
         'model',
+        'ai_insights',
     ];
 
     protected function casts(): array
@@ -24,6 +25,7 @@ class GeneratedHarvestReport extends Model
         return [
             'filters' => 'array',
             'context' => 'array',
+            'ai_insights' => 'array',
         ];
     }
 
@@ -35,6 +37,28 @@ class GeneratedHarvestReport extends Model
     public function narrativeFor(string $language): string
     {
         return $language === 'tl' ? $this->narrative_tl : $this->narrative_en;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function aiInsightFor(string $language): array
+    {
+        $insights = is_array($this->ai_insights) ? $this->ai_insights : [];
+
+        return is_array($insights[$language] ?? null) ? $insights[$language] : [];
+    }
+
+    /**
+     * Short display title without the legacy "Actual" prefix or scope suffix.
+     * Old saved records can still carry both, so every page normalises here.
+     */
+    public function displayTitle(): string
+    {
+        $title = preg_replace('/^Actual\s+/i', '', trim((string) $this->title));
+        $title = preg_replace('/\s+(?:—|-)\s+.*$/u', '', $title);
+
+        return trim((string) $title) !== '' ? trim((string) $title) : 'Harvest Report';
     }
 
     public function downloadBaseName(): string

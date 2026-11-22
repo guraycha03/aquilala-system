@@ -1,148 +1,485 @@
 <script>
 (function () {
-  if (window.__aqHarvestFilterBound) return;
-  window.__aqHarvestFilterBound = true;
-
-  var busy = false;
-  var status = document.getElementById('ahr-filter-status');
-  var statusMarkup = status ? status.innerHTML : '';
-  var errorTimer = null;
-
-  function setBusy(on) {
-    busy = on;
-    if (status) status.hidden = !on;
-    document.querySelectorAll('#ahr-scope, #ahr-preview, #ahr-records').forEach(function (node) {
-      node.setAttribute('aria-busy', on ? 'true' : 'false');
-    });
+  // Pure helpers live outside boot() so the delegated listeners can use them
+  // across Turbo visits without being re-registered.
+  function str(value) {
+    return value === null || value === undefined ? '' : String(value);
   }
 
-  function showFilterError() {
-    if (!status) return;
-    clearTimeout(errorTimer);
-    status.innerHTML = 'Could not update the report. Please try again.';
-    status.hidden = false;
-    errorTimer = setTimeout(function () {
-      status.innerHTML = statusMarkup;
-      status.hidden = true;
-    }, 3000);
-  }
-
-  function swap(html, id) {
-    if (!html) return;
-    var holder = document.createElement('div');
-    holder.innerHTML = html.trim();
-    var incoming = holder.firstElementChild;
-    var current = document.getElementById(id);
-    if (incoming && current) {
-      // The fragment partials do not carry their wrapper id; keep it so
-      // later delegated filter events still find this region.
-      incoming.id = id;
-      current.replaceWith(incoming);
+  function asArray(value) {
+    if (Array.isArray(value)) {
+      return value.map(str).filter(function (item) { return item !== ''; });
     }
+
+    return str(value).split(',').map(function (item) {
+      return item.trim();
+    }).filter(function (item) { return item !== ''; });
   }
 
-  async function load(url) {
-    if (busy) return;
-    setBusy(true);
-    var failed = false;
+  function closest(node, selector) {
+    return node && node.closest ? node.closest(selector) : null;
+  }
 
+  function copyState(source) {
+    return {
+      q: source.q,
+      farmer: source.farmer,
+      month: source.month,
+      year: source.year,
+      crop: source.crop,
+      years: source.years.slice(),
+      crops: source.crops.slice(),
+      season: source.season,
+      filtersOpen: source.filtersOpen
+    };
+  }
+
+  function toggleValue(list, value) {
+    var index = list.indexOf(value);
+    if (index === -1) list.push(value);
+    else list.splice(index, 1);
+  }
+
+  function normalizeName(value) {
+    return str(value).toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function readJson(value) {
     try {
-      var response = await fetch(url, {
-        credentials: 'same-origin',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-AQ-Filter-Fragment': '1'
-        }
-      });
-
-      if (!response.ok) throw new Error('Filter request failed');
-
-      var data = await response.json();
-      swap(data.scopeHtml, 'ahr-scope');
-      swap(data.previewHtml, 'ahr-preview');
-      swap(data.recordsHtml, 'ahr-records');
-
-      var label = document.getElementById('ahr-scope-text');
-      if (label && data.scopeText) label.textContent = data.scopeText;
-
-      history.pushState(null, '', data.url || url);
+      return JSON.parse(value || '{}');
     } catch (error) {
-      // Never fall back to a full reload: filters must stay in-page.
-      failed = true;
-    } finally {
-      setBusy(false);
-      if (failed) showFilterError();
+      return {};
     }
   }
 
-  function formUrl(form) {
-    var url = new URL(form.action, window.location.href);
-    url.search = '';
+  function normalizeRow(row) {
+    if (Array.isArray(row)) {
+      return {
+        year: String(row[0] || ''),
+        month: String(row[1] || ''),
+        season: String(row[2] || ''),
+        crop: String(row[3] || ''),
+        area: Number(row[4]) || 0,
+        yield: Number(row[5]) || 0,
+        farmer: String(row[6] || '')
+      };
+    }
 
-    new FormData(form).forEach(function (value, key) {
-      if (typeof value === 'string') url.searchParams.append(key, value);
-    });
-
-    return url.toString();
+    return {
+      year: String(row.year || ''),
+      month: String(row.month || ''),
+      season: String(row.season || ''),
+      crop: String(row.crop || ''),
+      area: Number(row.area) || 0,
+      yield: Number(row.yield) || 0,
+      farmer: String(row.farmer || '')
+    };
   }
 
-  document.addEventListener('click', function (event) {
-    var link = event.target.closest ? event.target.closest('[data-filter-link]') : null;
-    if (!link || event.defaultPrevented || event.button !== 0) return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  function normaliseState(raw) {
+    raw = raw || {};
+    var years = asArray(raw.years);
+    var crops = asArray(raw.crops);
+    var hasYears = Object.prototype.hasOwnProperty.call(raw, 'years');
+    var hasCrops = Object.prototype.hasOwnProperty.call(raw, 'crops');
 
-    event.preventDefault();
-    load(link.href);
-  });
+    if (!hasYears && raw.year) years = [str(raw.year)];
+    if (!hasCrops && raw.crop) crops = [str(raw.crop)];
 
-  document.addEventListener('change', function (event) {
-    var target = event.target;
+    return {
+      q: str(raw.q),
+      farmer: str(raw.farmer),
+      month: str(raw.month),
+      year: hasYears ? '' : str(raw.year),
+      crop: hasCrops ? '' : str(raw.crop),
+      years: years,
+      crops: crops,
+      season: str(raw.season || 'all') || 'all',
+      filtersOpen: raw.filtersOpen === undefined ? true : !!raw.filtersOpen
+    };
+  }
 
-    if (target && target.id === 'ahr-kpi-year') {
-      var url = new URL(window.location.href);
-      url.searchParams.delete('year');
-      url.searchParams.delete('years[]');
-      if (target.value) url.searchParams.set('year', target.value);
-      load(url.toString());
+  function format1(value) {
+    return Number(value || 0).toLocaleString('en-US', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    });
+  }
+
+  function boot() {
+    bindGenerateOverlay();
+
+    var form = document.getElementById('ahr-scope-form');
+    if (!form) {
+      window.__aqHarvestFilterCtx = null;
       return;
     }
 
-    var input = target && target.closest
-      ? target.closest('#ahr-scope input[name="years[]"], #ahr-scope input[name="crops[]"]')
-      : null;
-    if (!input || !input.form) return;
-
-    load(formUrl(input.form));
-  });
-
-  document.addEventListener('submit', function (event) {
-    var form = event.target;
-    if (!form.matches || !form.matches('#ahr-records form.ahr-search')) return;
-    event.preventDefault();
-    load(formUrl(form));
-  });
-
-  document.addEventListener('submit', function (event) {
-    var form = event.target;
-    if (!form.matches || !form.matches('#ahr-generate-form')) return;
-
-    var overlay = document.getElementById('ahr-generating-overlay');
-    if (overlay) overlay.hidden = false;
-
-    var button = form.querySelector('button[type="submit"]');
-    if (button) {
-      button.disabled = true;
-      button.setAttribute('aria-busy', 'true');
+    var dataNode = document.getElementById('ahr-scope-data');
+    var rows = [];
+    try {
+      rows = (JSON.parse(dataNode ? dataNode.textContent : '[]') || []).map(normalizeRow);
+    } catch (error) {
+      rows = [];
     }
-  });
 
-  window.addEventListener('pageshow', function () {
-    var overlay = document.getElementById('ahr-generating-overlay');
-    if (overlay) overlay.hidden = true;
-  });
+    var allYears = toArray(document.querySelectorAll('[data-year-chip][data-year]')).map(function (node) {
+      return node.dataset.year;
+    });
 
-  window.addEventListener('popstate', function () {
-    load(window.location.href);
-  });
+    var state = normaliseState(readJson(form.dataset.filterState));
+    var fields = document.getElementById('ahr-filter-fields');
+    var visibility = document.getElementById('ahr-filters-visibility');
+    var toggle = document.querySelector('[data-filter-toggle]');
+    var summaryText = document.getElementById('ahr-scope-summary-text');
+    var summary = document.getElementById('ahr-scope-summary');
+    var scopeText = document.getElementById('ahr-scope-text');
+    var subtitle = document.getElementById('ahr-scope-subtitle');
+    var hiddenInputs = document.getElementById('ahr-filter-inputs');
+    var generateButton = document.getElementById('ahr-generate-button');
+
+    function matches(row, filter) {
+      if (filter.q && row.crop.toLowerCase().indexOf(str(filter.q).toLowerCase()) === -1) return false;
+      if (filter.crop && row.crop !== filter.crop) return false;
+      if (filter.season && filter.season !== 'all' && filter.season !== 'both' && row.season !== filter.season) return false;
+      if (filter.farmer && normalizeName(row.farmer) !== normalizeName(filter.farmer)) return false;
+      if (filter.year && row.year !== str(filter.year)) return false;
+      if (filter.month && row.month !== str(filter.month)) return false;
+      if (filter.years.length && filter.years.indexOf(row.year) === -1) return false;
+      if (filter.crops.length && filter.crops.indexOf(row.crop) === -1) return false;
+
+      return true;
+    }
+
+    function totalsFor(filter) {
+      var totals = { count: 0, area: 0, yield: 0 };
+
+      rows.forEach(function (row) {
+        if (!matches(row, filter)) return;
+        totals.count += 1;
+        totals.area += row.area;
+        totals.yield += row.yield;
+      });
+
+      totals.area = Math.round(totals.area * 100) / 100;
+      totals.yield = Math.round(totals.yield * 100) / 100;
+
+      return totals;
+    }
+
+    function scopeLabel(filter) {
+      var labels = [
+        ['years', 'Years'], ['q', 'Search'], ['crop', 'Crop'], ['crops', 'Crops'],
+        ['season', 'Season'], ['farmer', 'Farmer'], ['year', 'Year'], ['month', 'Month']
+      ];
+      var parts = [];
+
+      labels.forEach(function (pair) {
+        var key = pair[0];
+        var value = filter[key];
+
+        if (Array.isArray(value)) {
+          var values = value.map(str).filter(function (item) { return item !== ''; });
+          if (values.length) parts.push(pair[1] + ': ' + values.join(', '));
+          return;
+        }
+
+        value = str(value);
+        if (value === '' || value === 'all' || value === 'both') return;
+        parts.push(pair[1] + ': ' + (key === 'season' ? value.charAt(0).toUpperCase() + value.slice(1) : value));
+      });
+
+      return parts.length ? parts.join(', ') : 'All recorded harvest reports';
+    }
+
+    function renderHiddenInputs(filter) {
+      if (!hiddenInputs) return;
+
+      hiddenInputs.textContent = '';
+
+      function addHidden(name, value) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        hiddenInputs.appendChild(input);
+      }
+
+      ['years', 'crops'].forEach(function (key) {
+        filter[key].forEach(function (value) {
+          addHidden('filters[' + key + '][]', value);
+        });
+      });
+
+      ['q', 'farmer', 'season', 'year', 'crop', 'month'].forEach(function (key) {
+        var value = filter[key];
+        if (value !== '' && value !== 'all' && value !== 'both') {
+          addHidden('filters[' + key + ']', value);
+        }
+      });
+    }
+
+    function syncControls(filter) {
+      document.querySelectorAll('[data-year-chip][data-year]').forEach(function (chip) {
+        var active = filter.years.indexOf(chip.dataset.year) !== -1;
+        chip.classList.toggle('active', active);
+        chip.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+
+      document.querySelectorAll('[data-crop-chip][data-crop]').forEach(function (chip) {
+        var active = filter.crops.indexOf(chip.dataset.crop) !== -1;
+        chip.classList.toggle('active', active);
+        chip.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+
+      document.querySelectorAll('[data-filter-crops-clear]').forEach(function (button) {
+        var active = filter.crops.length === 0;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+
+      document.querySelectorAll('[data-filter-crops-reset]').forEach(function (button) {
+        button.hidden = filter.crops.length === 0;
+      });
+
+      document.querySelectorAll('[data-filter-season]').forEach(function (button) {
+        var active = button.dataset.filterSeason === filter.season;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+
+      if (fields) fields.hidden = !filter.filtersOpen;
+      if (visibility) visibility.value = filter.filtersOpen ? 'open' : 'closed';
+
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', filter.filtersOpen ? 'true' : 'false');
+        toggle.classList.toggle('ahr-collapsed', !filter.filtersOpen);
+        toggle.innerHTML = '<svg class="ahr-icon sm ahr-toggle-chevron" aria-hidden="true">'
+          + '<use href="#ahr-i-chevron-down"></use></svg><span>'
+          + (filter.filtersOpen ? 'Hide filters' : 'Adjust filters') + '</span>';
+      }
+
+      if (subtitle) {
+        subtitle.textContent = filter.filtersOpen
+          ? 'Choose the harvests to include in this report.'
+          : scopeLabel(filter);
+      }
+    }
+
+    function updateUrl(filter) {
+      try {
+        var url = new URL(window.location.href);
+
+        Array.from(url.searchParams.keys()).forEach(function (key) {
+          if (/^(years|crops)(\[.*\])?$/.test(key)
+            || ['tab', 'filters', 'season', 'q', 'farmer', 'year', 'crop', 'month'].indexOf(key) !== -1) {
+            url.searchParams.delete(key);
+          }
+        });
+
+        url.searchParams.set('tab', 'generate');
+        url.searchParams.set('filters', filter.filtersOpen ? 'open' : 'closed');
+
+        ['q', 'farmer', 'month'].forEach(function (key) {
+          if (filter[key] !== '') url.searchParams.set(key, filter[key]);
+        });
+
+        if (filter.season !== 'all' && filter.season !== 'both') {
+          url.searchParams.set('season', filter.season);
+        }
+
+        filter.years.forEach(function (year) { url.searchParams.append('years[]', year); });
+        filter.crops.forEach(function (crop) { url.searchParams.append('crops[]', crop); });
+
+        history.replaceState(null, '', url.toString());
+      } catch (error) {
+        // History changes can be refused in restricted contexts; the report
+        // state is already applied to the form.
+      }
+    }
+
+    function valuesFor(params, base) {
+      var values = [];
+
+      params.forEach(function (value, key) {
+        if (key === base || key === base + '[]' || new RegExp('^' + base + '\\[\\d*\\]$').test(key)) {
+          str(value).split(',').forEach(function (part) {
+            part = part.trim();
+            if (part !== '') values.push(part);
+          });
+        }
+      });
+
+      return values;
+    }
+
+    function stateFromUrl() {
+      var params = new URLSearchParams(window.location.search);
+      var raw = {
+        years: valuesFor(params, 'years'),
+        crops: valuesFor(params, 'crops'),
+        season: params.get('season') || 'all',
+        q: params.get('q') || '',
+        farmer: params.get('farmer') || '',
+        month: params.get('month') || '',
+        filtersOpen: params.get('filters') !== 'closed'
+      };
+
+      if (!raw.years.length && params.get('year')) raw.years = [params.get('year')];
+      if (!raw.years.length && !params.get('year')) raw.years = allYears.slice();
+      if (!raw.crops.length && params.get('crop')) raw.crops = [params.get('crop')];
+
+      return normaliseState(raw);
+    }
+
+    function paint(filter, rewriteUrl) {
+      state = filter;
+      syncControls(state);
+      renderHiddenInputs(state);
+
+      var totals = totalsFor(state);
+      if (summaryText) {
+        summaryText.textContent = totals.count + ' records · ' + format1(totals.area)
+          + ' ha · ' + format1(totals.yield) + ' MT';
+      }
+      if (scopeText) scopeText.textContent = scopeLabel(state);
+      if (generateButton) generateButton.disabled = totals.count === 0;
+
+      if (ctx) ctx.state = state;
+
+      if (rewriteUrl) {
+        updateUrl(state);
+
+        // Immediate, visible acknowledgement of the click.
+        if (summary) {
+          summary.classList.remove('ahr-filter-updated');
+          void summary.offsetWidth;
+          summary.classList.add('ahr-filter-updated');
+        }
+      }
+    }
+
+    var ctx = {
+      paint: paint,
+      state: state,
+      allYears: allYears,
+      stateFromUrl: stateFromUrl
+    };
+    window.__aqHarvestFilterCtx = ctx;
+
+    paint(state, false);
+  }
+
+  function toArray(list) {
+    return Array.prototype.slice.call(list || []);
+  }
+
+  function bindGenerateOverlay() {
+    if (window.__aqGenerateOverlayBound) return;
+    window.__aqGenerateOverlayBound = true;
+
+    document.addEventListener('submit', function (event) {
+      var generateForm = event.target;
+      if (!generateForm.matches || !generateForm.matches('#ahr-generate-form')) return;
+
+      var overlay = document.getElementById('ahr-generating-overlay');
+      if (overlay) overlay.hidden = false;
+
+      var button = generateForm.querySelector('button[type="submit"]');
+      if (button) {
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+      }
+    });
+
+    window.addEventListener('pageshow', function () {
+      var overlay = document.getElementById('ahr-generating-overlay');
+      if (overlay) overlay.hidden = true;
+    });
+  }
+
+  function bindDelegates() {
+    if (window.__aqHarvestFilterDelegatesBound) return;
+    window.__aqHarvestFilterDelegatesBound = true;
+
+    // Listeners live on document, so one binding survives every Turbo swap.
+    // The live context is recreated by boot() for each new page.
+    document.addEventListener('click', function (event) {
+      var ctx = window.__aqHarvestFilterCtx;
+      if (!ctx) return;
+
+      var target = event.target;
+      var node;
+
+      node = closest(target, '[data-filter-toggle]');
+      if (node) {
+        event.preventDefault();
+        var toggled = copyState(ctx.state);
+        toggled.filtersOpen = !toggled.filtersOpen;
+        ctx.paint(toggled, true);
+        return;
+      }
+
+      node = closest(target, '[data-filter-reset]');
+      if (node) {
+        event.preventDefault();
+        var reset = copyState(ctx.state);
+        reset.years = ctx.allYears.slice();
+        reset.crops = [];
+        reset.season = 'all';
+        ctx.paint(reset, true);
+        return;
+      }
+
+      node = closest(target, '[data-filter-crops-clear], [data-filter-crops-reset]');
+      if (node) {
+        event.preventDefault();
+        var cleared = copyState(ctx.state);
+        cleared.crops = [];
+        ctx.paint(cleared, true);
+        return;
+      }
+
+      node = closest(target, '[data-year-chip][data-year]');
+      if (node) {
+        event.preventDefault();
+        var years = copyState(ctx.state);
+        toggleValue(years.years, node.dataset.year);
+        ctx.paint(years, true);
+        return;
+      }
+
+      node = closest(target, '[data-crop-chip][data-crop]');
+      if (node) {
+        event.preventDefault();
+        var crops = copyState(ctx.state);
+        toggleValue(crops.crops, node.dataset.crop);
+        ctx.paint(crops, true);
+        return;
+      }
+
+      node = closest(target, '[data-filter-season]');
+      if (node) {
+        event.preventDefault();
+        var season = copyState(ctx.state);
+        season.season = node.dataset.filterSeason || 'all';
+        ctx.paint(season, true);
+      }
+    });
+
+    window.addEventListener('popstate', function () {
+      var ctx = window.__aqHarvestFilterCtx;
+      if (ctx) ctx.paint(ctx.stateFromUrl(), false);
+    });
+  }
+
+  // The form is already in the DOM when this partial renders. Bind once, then
+  // rebuild the live context on every evaluation so Turbo visits work too.
+  bindDelegates();
+  if (document.readyState === 'loading' && !document.getElementById('ahr-scope-form')) {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 })();
 </script>

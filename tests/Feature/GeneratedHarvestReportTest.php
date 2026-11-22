@@ -83,7 +83,7 @@ class GeneratedHarvestReportTest extends TestCase
         $this->actingAs($this->otherAdmin)
             ->get(route('admin.harvests.reports.generate', ['tab' => 'saved']))
             ->assertOk()
-            ->assertSee('No Saved AI Harvest Reports Yet');
+            ->assertSee('No Saved Harvest Reports Yet');
     }
 
     public function test_generate_stays_focused_on_reporting_with_multiyear_filters(): void
@@ -99,7 +99,7 @@ class GeneratedHarvestReportTest extends TestCase
             ->getContent();
 
         foreach ([
-            'AI Harvest Report',
+            'Harvest Report Generation',
             'Report Scope',
             'Generate report',
         ] as $fragment) {
@@ -119,16 +119,30 @@ class GeneratedHarvestReportTest extends TestCase
         $this->assertStringContainsString('2 records', $html);
         $this->assertStringNotContainsString('Leave a filter', $html);
 
-        // Years are plain chips, and filter failures never force a reload.
+        // Years are plain chips; filtering now happens in the browser with no
+        // loader, fragment request, or full reload.
         $this->assertStringContainsString('ahr-year-chip', $html);
         $this->assertStringNotContainsString('ahr-year-tile', $html);
         $this->assertStringNotContainsString('ahr-year-meta', $html);
         $this->assertStringNotContainsString('window.location.href = url;', $html);
-        $this->assertStringContainsString('Could not update the report', $html);
-        $this->assertStringContainsString('incoming.id = id', $html);
+        $this->assertStringNotContainsString('ahr-filter-status', $html);
+        $this->assertStringNotContainsString('Could not update the report', $html);
+        $this->assertStringNotContainsString('incoming.id = id', $html);
+        $this->assertStringNotContainsString("'X-AQ-Filter-Fragment'", $html);
+        $this->assertStringContainsString('id="ahr-scope-data"', $html);
+        $this->assertStringContainsString('data-filter-season=', $html);
+        $this->assertStringContainsString('data-year-chip', $html);
+        $this->assertStringContainsString('data-crop-chip', $html);
+        $this->assertStringNotContainsString('<a class="ahr-year-chip', $html);
+        $this->assertStringNotContainsString('<a class="ahr-season-btn', $html);
+        $this->assertStringContainsString('<button type="button" class="ahr-year-chip', $html);
+        $this->assertStringContainsString('<button type="button" class="ahr-season-btn', $html);
+        $this->assertStringContainsString('ahr-i-chevron-down', $html);
+        $this->assertStringContainsString('--ahr-line-sage', $html);
+        $this->assertStringNotContainsString('border-color: var(--ahr-primary)', $html);
 
         // The generate tab is deliberately lean: title, tabs, then Report Scope.
-        $titleAt = strpos($html, '>AI Harvest Report</h1>');
+        $titleAt = strpos($html, '>Harvest Report Generation</h1>');
         $topbarAt = strpos($html, 'class="ahr-topbar');
         $scopeAt = strpos($html, 'Report Scope');
 
@@ -147,8 +161,8 @@ class GeneratedHarvestReportTest extends TestCase
             '.ahr-link-btn { border: 0; background: none; padding: 0; cursor: pointer; font: inherit; font-size: 11.5px; font-weight: 600; color: var(--ahr-primary); text-decoration: none; }',
             $html
         );
-        $this->assertStringContainsString('data-filter-link', $html);
-        $this->assertStringContainsString('ahr-spinner', $html);
+        $this->assertStringContainsString('data-filter-toggle', $html);
+        $this->assertStringNotContainsString('ahr-spinner', $html);
         $this->assertStringContainsString('id="ahr-generating-overlay"', $html);
         $this->assertStringContainsString('Preparing your report', $html);
         $this->assertStringContainsString("matches('#ahr-generate-form')", $html);
@@ -170,7 +184,9 @@ class GeneratedHarvestReportTest extends TestCase
         $data = $response->json();
 
         $this->assertStringContainsString('Report Scope', $data['scopeHtml']);
-        $this->assertStringContainsString('Total Harvest Volume', $data['previewHtml']);
+        $this->assertStringNotContainsString('Total Harvest Volume', $data['previewHtml']);
+        $this->assertStringNotContainsString('Yield Efficiency &amp; Area', $data['previewHtml']);
+        $this->assertStringNotContainsString('Production Expenses', $data['previewHtml']);
         $this->assertStringContainsString('Dry', $data['scopeText']);
         $this->assertStringNotContainsString('<html', $data['scopeHtml']);
         $this->assertStringNotContainsString('Ready to write your report', $data['previewHtml']);
@@ -264,6 +280,33 @@ class GeneratedHarvestReportTest extends TestCase
 
         $saved = $this->generateSavedReport();
 
+        // Deletion is confirmed inside the app, never with a browser alert.
+        $savedHtml = $this->actingAs($this->admin)
+            ->get(route('admin.harvests.reports.generate', ['tab' => 'saved']))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringNotContainsString("confirm('Remove this saved report?')", $savedHtml);
+        $this->assertStringContainsString('id="ahr-delete-modal"', $savedHtml);
+        $this->assertStringContainsString('data-delete-trigger', $savedHtml);
+        $this->assertStringContainsString('>Saved Reports</h2>', $savedHtml);
+        $this->assertStringNotContainsString('Archived reports', $savedHtml);
+        $this->assertStringNotContainsString('Prepared from the figures recorded for this scope', $savedHtml);
+
+        // The saved list uses one download link that follows the report's
+        // selected language, not separate EN/TL links.
+        $this->assertSame(1, substr_count($savedHtml, '>Download report</a>'));
+        $this->assertStringNotContainsString('Download EN', $savedHtml);
+        $this->assertStringNotContainsString('Download TL', $savedHtml);
+        $this->assertStringContainsString('lang=' . $saved->default_language, $savedHtml);
+
+        // While the request runs, a centred in-app progress card replaces the
+        // confirmation dialog so the deletion is unmistakable.
+        $this->assertStringContainsString('id="ahr-delete-loading"', $savedHtml);
+        $this->assertStringContainsString('class="ahr-delete-spinner"', $savedHtml);
+        $this->assertStringContainsString('Deleting report', $savedHtml);
+        $this->assertStringContainsString('id="ahr-delete-loading-name"', $savedHtml);
+
         $this->actingAs($this->otherAdmin)
             ->delete(route('admin.harvests.reports.generated.destroy', $saved))
             ->assertForbidden();
@@ -293,6 +336,7 @@ class GeneratedHarvestReportTest extends TestCase
         $saved = GeneratedHarvestReport::firstOrFail();
 
         $this->assertSame($this->admin->id, $saved->user_id);
+        $this->assertSame('Report Admin', $saved->context['prepared_by']);
         $this->assertSame('Wet Rice 2026', $saved->title);
         $this->assertSame('tl', $saved->default_language);
         $this->assertSame(['crop' => 'Rice', 'season' => 'wet'], collect($saved->filters)->except('_report_ids')->all());
@@ -311,6 +355,69 @@ class GeneratedHarvestReportTest extends TestCase
         $this->assertStringContainsString('Buod ng Tagapagpaganap', $saved->narrative_tl);
         $this->assertSame('template', $saved->source);
         $this->assertNull($saved->model);
+    }
+
+    public function test_report_narrative_uses_formal_association_wording(): void
+    {
+        $context = [
+            'coverage' => [
+                'reports' => 2,
+                'farmers' => 1,
+                'first_harvest' => '2026-06-10',
+                'last_harvest' => '2026-07-20',
+                'weather_events_logged' => 0,
+            ],
+            'totals' => [
+                'reports' => 2,
+                'farmers' => 1,
+                'area_ha' => 2.5,
+                'yield_tons' => 12.5,
+                'yield_per_ha' => 5.0,
+                'expenses_php' => 25000.0,
+                'expenses_per_ton' => 2000.0,
+            ],
+            'by_crop' => [['crop' => 'Rice', 'yield_tons' => 12.5]],
+            'by_season' => [['season' => 'wet', 'label' => 'Wet Season', 'yield_tons' => 12.5]],
+            'recent_vs_previous' => null,
+        ];
+
+        $narrative = app(HarvestReportTextService::class)->compose($context);
+
+        foreach ([
+            'Aquilala Irrigators Association, Inc.',
+            'hereby submits',
+            'Production Performance',
+            'Crop and Seasonal Distribution',
+            'Member Participation',
+            'Data Verification',
+            'Recommendations',
+            '12.50 MT',
+        ] as $fragment) {
+            $this->assertStringContainsString($fragment, $narrative['en']);
+        }
+
+        foreach ([
+            'Inihaharap ng Aquilala Irrigators Association, Inc.',
+            'Pagganap sa Produksiyon',
+            'Mga Rekomendasyon',
+        ] as $fragment) {
+            $this->assertStringContainsString($fragment, $narrative['tl']);
+        }
+
+        foreach ([
+            'This report covers',
+            'report(s)',
+            'farmer(s)',
+            'digest',
+            'leaderboard',
+            'weather claim',
+            'Recommended Next Steps',
+        ] as $fragment) {
+            $this->assertStringNotContainsString($fragment, $narrative['en']);
+            $this->assertStringNotContainsString($fragment, $narrative['tl']);
+        }
+
+        $this->assertSame('template', $narrative['source']);
     }
 
     public function test_generation_never_calls_the_llm(): void
@@ -344,6 +451,47 @@ class GeneratedHarvestReportTest extends TestCase
 
         $this->assertStringContainsString('Years: 2025, 2026', $text);
         $this->assertStringContainsString('Season: wet', $text);
+    }
+
+    public function test_default_report_title_no_longer_says_actual(): void
+    {
+        $this->seedHarvests();
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.harvests.reports.generate.store'), [
+                'default_language' => 'en',
+                'filters' => ['years' => ['2026']],
+            ])
+            ->assertRedirect();
+
+        $saved = GeneratedHarvestReport::firstOrFail();
+        $title = $saved->title;
+
+        $this->assertStringStartsWith('Harvest Report —', $title);
+        $this->assertStringNotContainsString('Actual', $title);
+
+        // Even older stored titles are shortened in the saved file list.
+        $savedHtml = $this->actingAs($this->admin)
+            ->get(route('admin.harvests.reports.generate', ['tab' => 'saved']))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('>Harvest Report</h3>', $savedHtml);
+        $this->assertStringNotContainsString('Actual Harvest Report', $savedHtml);
+        $this->assertStringNotContainsString('Years: 2026', $savedHtml);
+
+        // The page heading is short too; the years remain only inside the paper.
+        $showHtml = $this->actingAs($this->admin)
+            ->get(route('admin.harvests.reports.generated.show', $saved))
+            ->assertOk()
+            ->getContent();
+        preg_match('/<h1 class="ahr-h1">(.*?)<\/h1>/s', $showHtml, $headingMatch);
+        $heading = $headingMatch[1] ?? '';
+
+        $this->assertSame('Harvest Report', $heading);
+        $this->assertStringNotContainsString('Actual', $heading);
+        $this->assertStringNotContainsString('Years:', $heading);
+        $this->assertStringContainsString('Years:', $showHtml);
     }
 
     public function test_empty_selection_does_not_create_a_saved_report(): void
@@ -380,6 +528,9 @@ class GeneratedHarvestReportTest extends TestCase
             ->assertSee('data-lang-panel="en"', false)
             ->assertSee('data-lang-panel="tl"', false)
             ->assertSee('data-lang-btn="tl"', false)
+            ->assertSee('class="ahr-lang-switch"', false)
+            ->assertSee('id="ahr-overview-toggle"', false)
+            ->assertSee('All pages')
             ->assertSee('Download report')
             ->assertDontSee('Print / Export PDF')
             ->assertDontSee('window.print()', false)
@@ -387,6 +538,12 @@ class GeneratedHarvestReportTest extends TestCase
             ->assertDontSee('Download TL')
             ->assertDontSee('AI Harvest Report · Saved copy')
             ->assertDontSee('AI offline', false);
+
+        $showHtml = $show->getContent();
+        // Two language panels are rendered up front; only one is visible.
+        $this->assertSame(6, substr_count($showHtml, 'class="rp-sheet-frame"'));
+        $this->assertStringContainsString("classList.toggle('overview')", $showHtml);
+        $this->assertStringContainsString('ahr-report-paper-host.overview .rp-document', $showHtml);
 
         $download = $this->actingAs($this->admin)
             ->get(route('admin.harvests.reports.generated.download', [$saved, 'lang' => 'tl']))
@@ -415,6 +572,49 @@ class GeneratedHarvestReportTest extends TestCase
             'The exported report is missing its key figures section.'
         );
         $this->assertStringContainsString('Lahat ng bilang ay mula', $downloadHtml);
+
+        // The exported document is laid out as three A4 sheets with frozen
+        // chart data, not as a single web page.
+        $this->assertSame(3, substr_count($downloadHtml, 'class="rp-sheet"'));
+        $this->assertStringContainsString('class="rp-donut"', $downloadHtml);
+        $this->assertStringContainsString('class="rp-donut-dry"', $downloadHtml);
+        $this->assertStringContainsString('class="rp-bar-wet"', $downloadHtml);
+        $this->assertStringContainsString('rp-table', $downloadHtml);
+        $this->assertStringContainsString('.rp-sheet::before', $downloadHtml);
+        $this->assertStringContainsString('height: 12px; background: #8faf94', $downloadHtml);
+        $this->assertStringContainsString('Anim na pananim na may pinakamataas na naitalang ani', $downloadHtml);
+        $this->assertStringContainsString('Mga ulat ng ani', $downloadHtml);
+        $this->assertStringContainsString('Kalahok sa saklaw', $downloadHtml);
+
+        // The preparer is the admin who generated the report, not the generic
+        // association name.
+        $this->assertStringContainsString('Report Admin', $downloadHtml);
+        $this->assertStringNotContainsString('<td>Aquilala Irrigators Association, Inc.</td>', $downloadHtml);
+
+        // Crop rows are alphabetical in the distribution table.
+        $table2At = strpos($downloadHtml, 'Table 2 — Distribution by crop');
+        if ($table2At === false) {
+            $table2At = strpos($downloadHtml, 'Talahanayan 2 — Pamamahagi ayon sa pananim');
+        }
+        $this->assertNotFalse($table2At);
+        $cornAt = strpos($downloadHtml, '>Corn</td>', $table2At);
+        $riceAt = strpos($downloadHtml, '>Rice</td>', $table2At);
+        $this->assertNotFalse($cornAt);
+        $this->assertNotFalse($riceAt);
+        $this->assertLessThan($riceAt, $cornAt);
+
+        // System-style caveats and the underscored signature line stay out of
+        // the official paper; the note sits below the sheets instead.
+        $this->assertStringNotContainsString('Member Participation', $downloadHtml);
+        $this->assertStringNotContainsString('Data Verification', $downloadHtml);
+        $this->assertStringNotContainsString('Recommendations', $downloadHtml);
+        $this->assertStringNotContainsString('______________________________', $downloadHtml);
+        $this->assertStringContainsString('class="rp-outside-note"', $downloadHtml);
+        $this->assertGreaterThan(
+            (int) strpos($downloadHtml, 'Page 3 / 3'),
+            (int) strpos($downloadHtml, 'class="rp-outside-note"')
+        );
+        $this->assertStringNotContainsString('data-lang-btn=', $downloadHtml);
     }
 
     public function test_report_language_choice_is_saved_and_used_for_download(): void
@@ -518,6 +718,130 @@ class GeneratedHarvestReportTest extends TestCase
         $this->assertStringContainsString('12.50', $result['tl']);
         $this->assertStringNotContainsString('999.00', $result['en']);
         $this->assertStringNotContainsString('999.00', $result['tl']);
+    }
+
+    public function test_saved_report_view_exposes_the_ai_insight_drawer(): void
+    {
+        $this->seedHarvests();
+        $saved = $this->generateSavedReport();
+
+        $showHtml = $this->actingAs($this->admin)
+            ->get(route('admin.harvests.reports.generated.show', $saved))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('id="ahr-ai-insight-open"', $showHtml);
+        $this->assertStringContainsString('id="ahr-ai-insight-panel"', $showHtml);
+        $this->assertStringContainsString('AI Insight', $showHtml);
+        $this->assertStringContainsString(
+            e(route('admin.harvests.reports.generated.insight', $saved)),
+            $showHtml
+        );
+        $this->assertStringContainsString("host.getAttribute('data-insight-url')", $showHtml);
+    }
+
+    public function test_insight_uses_deterministic_explanation_when_no_provider_is_configured(): void
+    {
+        $this->seedHarvests();
+        $saved = $this->generateSavedReport();
+
+        // No provider key is configured in setUp(), so the real client returns
+        // null without any network call and the fallback path is exercised.
+        $payload = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.reports.generated.insight', $saved), ['language' => 'en'])
+            ->assertOk()
+            ->json();
+
+        $this->assertSame('fallback', $payload['source']);
+        $this->assertSame('Deterministic explanation', $payload['source_label']);
+        $this->assertSame('en', $payload['language']);
+        $this->assertStringContainsString('What the report shows', $payload['text']);
+        $this->assertStringContainsString('9.50 MT', $payload['text']);
+        $this->assertStringContainsString('Rice', $payload['text']);
+        $this->assertFalse($payload['cached']);
+
+        $cached = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.reports.generated.insight', $saved), ['language' => 'en'])
+            ->assertOk()
+            ->json();
+
+        $this->assertTrue($cached['cached']);
+        $this->assertSame($payload['text'], $cached['text']);
+        $this->assertSame('fallback', $saved->fresh()->aiInsightFor('en')['source']);
+    }
+
+    public function test_grounded_ai_insight_is_cached_per_language(): void
+    {
+        $this->seedHarvests();
+        $saved = $this->generateSavedReport();
+        $raw = json_encode([
+            'text' => "- What the report shows: 2 records and 9.50 MT are saved.\n"
+                . "- Why the figures matter: Rice contributes 6.00 MT.\n"
+                . "- Data note: Official figures remain in the saved report.",
+        ], JSON_UNESCAPED_UNICODE);
+
+        $this->mock(AiLlmClient::class, function ($mock) use ($raw) {
+            $mock->shouldReceive('completeJson')->once()->andReturn([
+                'raw' => $raw,
+                'model' => 'llama-3.3-insight',
+            ]);
+        });
+
+        $payload = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.reports.generated.insight', $saved), ['language' => 'en'])
+            ->assertOk()
+            ->json();
+
+        $this->assertSame('ai', $payload['source']);
+        $this->assertSame('llama-3.3-insight', $payload['model']);
+        $this->assertSame('Groq-enhanced explanation', $payload['source_label']);
+
+        $again = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.reports.generated.insight', $saved), ['language' => 'en'])
+            ->assertOk()
+            ->json();
+
+        $this->assertTrue($again['cached']);
+        $this->assertSame($payload['text'], $again['text']);
+    }
+
+    public function test_ungrounded_ai_insight_falls_back_to_saved_figures(): void
+    {
+        $this->seedHarvests();
+        $saved = $this->generateSavedReport();
+        $raw = json_encode([
+            'text' => "- What the report shows: 99 records and 999.00 MT are saved.\n"
+                . "- Why the figures matter: Rice contributes 888.00 MT.\n"
+                . "- Data note: Official figures remain in the saved report.",
+        ], JSON_UNESCAPED_UNICODE);
+
+        $this->mock(AiLlmClient::class, function ($mock) use ($raw) {
+            $mock->shouldReceive('completeJson')->once()->andReturn([
+                'raw' => $raw,
+                'model' => 'drifting-insight',
+            ]);
+        });
+
+        $payload = $this->actingAs($this->admin)
+            ->postJson(route('admin.harvests.reports.generated.insight', $saved), ['language' => 'tl'])
+            ->assertOk()
+            ->json();
+
+        $this->assertSame('fallback', $payload['source']);
+        $this->assertNull($payload['model']);
+        $this->assertSame('tl', $payload['language']);
+        $this->assertStringContainsString('9.50 MT', $payload['text']);
+        $this->assertStringNotContainsString('999.00', $payload['text']);
+    }
+
+    public function test_another_admin_cannot_request_a_saved_report_insight(): void
+    {
+        $this->seedHarvests();
+        $saved = $this->generateSavedReport();
+
+        $this->actingAs($this->otherAdmin)
+            ->postJson(route('admin.harvests.reports.generated.insight', $saved), ['language' => 'en'])
+            ->assertForbidden();
     }
 
     // ── Helpers ───────────────────────────────────────────────────

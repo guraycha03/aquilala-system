@@ -5,8 +5,8 @@
 
 <header class="ahr-topbar">
   <div class="ahr-topbar-inner">
-    <nav class="ahr-tabs" aria-label="AI harvest report sections">
-      <a class="ahr-tab {{ $activeTab === 'generate' ? 'active' : '' }}" href="{{ $tabLink('generate') }}">AI Harvest Report</a>
+    <nav class="ahr-tabs" aria-label="Harvest report sections">
+      <a class="ahr-tab {{ $activeTab === 'generate' ? 'active' : '' }}" href="{{ $tabLink('generate') }}">Generate Report</a>
       <a class="ahr-tab {{ $activeTab === 'saved' ? 'active' : '' }}" href="{{ $tabLink('saved') }}">
         Saved Reports @if($savedReports->count() > 0)({{ $savedReports->count() }})@endif
       </a>

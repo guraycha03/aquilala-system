@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'AI Harvest Reports')
+@section('title', 'Harvest Report Generation')
 
 @section('content')
 @include('admin.harvests.generated.partials.styles')
@@ -8,7 +8,7 @@
 <div class="ahr-page">
   <main class="ahr-main">
     <div class="ahr-page-head">
-      <h1 class="ahr-h1">AI Harvest Report</h1>
+      <h1 class="ahr-h1">Harvest Report Generation</h1>
       <p class="ahr-sub" id="ahr-scope-text">{{ $scope }}</p>
     </div>
 
@@ -24,11 +24,6 @@
       <div class="ahr-alert error" role="alert">{{ $errors->first() }}</div>
     @endif
 
-    <div id="ahr-filter-status" class="ahr-filter-status" role="status" aria-live="polite" hidden>
-      <span class="ahr-spinner" aria-hidden="true"></span>
-      <span>Updating report…</span>
-    </div>
-
     <div id="ahr-generating-overlay" class="ahr-generating-overlay" role="status" aria-live="assertive" aria-busy="true" hidden>
       <div class="ahr-generating-card">
         <span class="ahr-generating-spinner" aria-hidden="true"></span>
@@ -39,6 +34,7 @@
     </div>
 
     @if($activeTab === 'generate')
+      <script type="application/json" id="ahr-scope-data">{!! json_encode($scopeRows, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
       <div id="ahr-scope" class="ahr-fragment">
         @include('admin.harvests.generated.partials.scope-studio')
       </div>

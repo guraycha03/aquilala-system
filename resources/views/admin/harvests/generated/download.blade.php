@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ $report->title }} — {{ $language === 'tl' ? 'Tagalog' : 'English' }}</title>
+<title>{{ $report->displayTitle() }} — {{ $language === 'tl' ? 'Tagalog' : 'English' }}</title>
 <style>
   @page { size: A4; margin: 18mm 16mm; }
   * { box-sizing: border-box; }
@@ -16,6 +16,7 @@
 <div class="sheet">
   @include('admin.harvests.generated.partials.report-paper', [
     'language' => $language,
+    'visual' => $visual,
   ])
 </div>
 </body>

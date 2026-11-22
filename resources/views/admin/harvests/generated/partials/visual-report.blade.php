@@ -5,43 +5,9 @@
   $options = $options ?? [];
   $filters = $filters ?? [];
 
-  // Seasonal charts now live on the Harvest Performance page. The report
-  // keeps the narrative and the metrics that support it.
+  // The repeat KPI cards were removed: their figures already live inside the
+  // report sheets, so the preview now goes straight to the paper itself.
   $records = (int) ($visual['total_records'] ?? 0);
-  $fmt = fn ($value, int $digits = 1) => $value === null ? '—' : number_format((float) $value, $digits);
-  $money = fn ($value) => $value === null ? '—' : '₱' . number_format((float) $value, 0);
-  $pickSection = function (array $sections, array $headings) {
-    foreach ($headings as $heading) {
-      if (! empty($sections[$heading])) {
-        return $sections[$heading];
-      }
-    }
-    return [];
-  };
-
-  // Quick year picker for the headline figures. The current year leads so a
-  // reader can see this season's numbers at a glance without opening filters.
-  $yearOptions = collect($options['years'] ?? [])
-    ->pluck('year')
-    ->map(fn ($value) => (string) $value)
-    ->filter()
-    ->unique()
-    ->values()
-    ->all();
-  $currentYear = (string) now()->year;
-  usort($yearOptions, function (string $left, string $right) use ($currentYear) {
-    if ($left === $currentYear) return -1;
-    if ($right === $currentYear) return 1;
-
-    return (int) $right <=> (int) $left;
-  });
-  $selectedQuickYear = '';
-  if (count($filters['years'] ?? []) === 1) {
-    $selectedQuickYear = (string) ($filters['years'][0] ?? '');
-  } elseif (! empty($filters['year'])) {
-    $selectedQuickYear = (string) $filters['year'];
-  }
-
 @endphp
 
 @if($records === 0)
@@ -53,65 +19,7 @@
   </section>
 @else
   <div class="ahr-stack">
-    {{-- 1. KPI strip with a single-year quick filter --}}
-    @if(!$isSaved)
-      <div class="ahr-kpi-toolbar">
-        <div>
-          <h2 class="ahr-card-title">Performance at a glance</h2>
-          <p class="ahr-sub">{{ $scope }}</p>
-        </div>
-        <label class="ahr-year-pick">
-          <span>Year</span>
-          <select id="ahr-kpi-year" aria-label="Show figures for one year">
-            <option value="">All years</option>
-            @foreach($yearOptions as $year)
-              <option value="{{ $year }}" {{ $selectedQuickYear === $year ? 'selected' : '' }}>
-                {{ $year }}{{ $year === $currentYear ? ' (current)' : '' }}
-              </option>
-            @endforeach
-          </select>
-        </label>
-      </div>
-    @endif
-
-    <section class="ahr-kpis" aria-label="Key harvest metrics">
-      <div class="ahr-card ahr-kpi">
-        <div class="ahr-kpi-label">Total Harvest Volume</div>
-        <div class="ahr-kpi-main">
-          <span class="ahr-kpi-value">{{ $fmt($visual['total_yield_mt'] ?? 0, 1) }} <span class="ahr-kpi-unit">MT</span></span>
-          @if(($visual['yoy_yield_delta_pct'] ?? null) !== null)
-            <span class="ahr-delta {{ $visual['yoy_yield_delta_pct'] >= 0 ? 'up' : 'down' }}">
-              <svg class="ahr-icon sm" aria-hidden="true"><use href="#ahr-i-trend"></use></svg>
-              {{ $visual['yoy_yield_delta_pct'] >= 0 ? '+' : '' }}{{ $fmt($visual['yoy_yield_delta_pct'], 1) }}% YoY
-            </span>
-          @endif
-        </div>
-        <div class="ahr-kpi-note">
-          {{ (int) ($visual['total_records'] ?? 0) }} harvests · {{ $fmt($visual['total_farmers'] ?? 0, 0) }} farmers
-        </div>
-      </div>
-
-      <div class="ahr-card ahr-kpi">
-        <div class="ahr-kpi-label">Yield Efficiency &amp; Area</div>
-        <div class="ahr-kpi-main">
-          <span class="ahr-kpi-value">{{ $fmt($visual['avg_yield_per_ha'] ?? null, 2) }} <span class="ahr-kpi-unit">MT/ha</span></span>
-          <span class="ahr-kpi-unit">{{ $fmt($visual['total_area_ha'] ?? 0, 1) }} ha</span>
-        </div>
-        <div class="ahr-kpi-note">Across {{ count($visual['by_crop'] ?? []) }} crop(s) in this scope</div>
-      </div>
-
-      <div class="ahr-card ahr-kpi">
-        <div class="ahr-kpi-label">Production Expenses</div>
-        <div class="ahr-kpi-main">
-          <span class="ahr-kpi-value">{{ $money($visual['total_expenses_php'] ?? 0) }}</span>
-          <span class="ahr-kpi-unit">{{ $money($visual['cost_per_mt'] ?? null) }}/MT</span>
-        </div>
-        <div class="ahr-kpi-note">Recorded input and harvest costs</div>
-      </div>
-
-    </section>
-
-    {{-- 2. Saved report - the same paper layout the export uses. --}}
+    {{-- Saved report - the same paper layout the export uses. --}}
     @if($isSaved)
       @php
         $downloadBaseName = $downloadBaseName ?? $report->downloadBaseName();
@@ -121,14 +29,15 @@
            data-report-id="{{ $report->id }}"
            data-language="{{ $language }}"
            data-language-url="{{ route('admin.harvests.reports.generated.language', $report) }}"
+           data-insight-url="{{ route('admin.harvests.reports.generated.insight', $report) }}"
            data-download-base="{{ route('admin.harvests.reports.generated.download', $report) }}"
            data-download-base-name="{{ $downloadBaseName }}">
         <div class="ahr-report-toolbar">
-          <div class="ahr-lang-switch" role="group" aria-label="Report language">
-            <button type="button" class="ahr-lang-btn" data-lang-btn="en">English</button>
-            <button type="button" class="ahr-lang-btn" data-lang-btn="tl">Tagalog</button>
-          </div>
           <div class="ahr-actions">
+            <button type="button" class="ahr-btn" id="ahr-overview-toggle" aria-pressed="false">
+              <svg class="ahr-icon" aria-hidden="true"><use href="#ahr-i-layers"></use></svg>
+              <span>All pages</span>
+            </button>
             <a class="ahr-btn primary" id="ahr-download-report"
                href="{{ route('admin.harvests.reports.generated.download', [$report, 'lang' => $language]) }}"
                download="{{ $downloadFilename }}">
@@ -136,12 +45,34 @@
               Download report
             </a>
           </div>
+          <div class="ahr-lang-switch" role="group" aria-label="Report language">
+            <button type="button" class="ahr-lang-btn" data-lang-btn="en">English</button>
+            <button type="button" class="ahr-lang-btn" data-lang-btn="tl">Tagalog</button>
+          </div>
         </div>
+
+        {{-- Supplementary explanation only: never part of the report paper. --}}
+        <button type="button" class="ahr-ai-fab" id="ahr-ai-insight-open" aria-expanded="false" aria-controls="ahr-ai-insight-panel">
+          <svg class="ahr-icon" aria-hidden="true"><use href="#ahr-i-sparkles"></use></svg>
+          AI Insight
+        </button>
+
+        <aside class="ahr-ai-panel" id="ahr-ai-insight-panel" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="ahr-ai-insight-title">
+          <div class="ahr-ai-head">
+            <div>
+              <p class="ahr-ai-eyebrow">Supplementary explanation</p>
+              <h2 id="ahr-ai-insight-title">AI Insight</h2>
+            </div>
+            <button type="button" class="ahr-ai-close" id="ahr-ai-insight-close" aria-label="Close AI insight">&times;</button>
+          </div>
+          <div class="ahr-ai-body" id="ahr-ai-insight-body" aria-live="polite"></div>
+        </aside>
 
         @foreach(['en', 'tl'] as $panelLanguage)
           <div class="ahr-lang-panel" data-lang-panel="{{ $panelLanguage }}" {{ $panelLanguage !== $language ? 'hidden' : '' }}>
             @include('admin.harvests.generated.partials.report-paper', [
               'language' => $panelLanguage,
+              'visual' => $visual,
             ])
           </div>
         @endforeach
@@ -185,6 +116,40 @@
     var toastTimer = null;
     var storageKey = 'aq-report-language-' + host.getAttribute('data-report-id');
     var language = host.getAttribute('data-language') || 'en';
+    var aiOpen = host.querySelector('#ahr-ai-insight-open');
+    var aiPanel = host.querySelector('#ahr-ai-insight-panel');
+    var aiClose = host.querySelector('#ahr-ai-insight-close');
+    var aiBody = host.querySelector('#ahr-ai-insight-body');
+    var aiBusy = false;
+
+    // Match the crop-directory reference drawer: detect the real system header
+    // height so the mobile sub-page starts exactly below it.
+    function syncAiHeaderOffset() {
+      if (!aiPanel) return;
+      var candidates = [
+        '.aq-global-search-host',
+        '.mobile-header',
+        'header:not(.ahr-ai-panel)',
+        '.topbar',
+        '[data-topbar]'
+      ];
+
+      for (var i = 0; i < candidates.length; i++) {
+        var el = document.querySelector(candidates[i]);
+        if (!el) continue;
+
+        var style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') continue;
+
+        var rect = el.getBoundingClientRect();
+        if (rect.height > 0 && rect.top <= 10) {
+          document.documentElement.style.setProperty('--ahr-header-offset', rect.height + 'px');
+          return;
+        }
+      }
+    }
+    syncAiHeaderOffset();
+    window.addEventListener('resize', syncAiHeaderOffset);
 
     try {
       var remembered = localStorage.getItem(storageKey);
@@ -206,6 +171,9 @@
         download.setAttribute('download', filename);
         if (confirmFilename) confirmFilename.textContent = filename;
       }
+
+      // An open explanation follows the paper's active language.
+      if (aiPanel && aiPanel.classList.contains('open')) requestInsight(language);
 
       if (!persist) return;
 
@@ -232,6 +200,109 @@
         apply(button.getAttribute('data-lang-btn'), true);
       });
     });
+
+    // One-click paper overview for screenshots and quick review: the three A4
+    // sheets are shown together as thumbnails instead of one long scroll.
+    var overviewToggle = host.querySelector('#ahr-overview-toggle');
+    var overviewLabel = overviewToggle ? overviewToggle.querySelector('span') : null;
+    if (overviewToggle) {
+      overviewToggle.addEventListener('click', function () {
+        var on = host.classList.toggle('overview');
+        overviewToggle.setAttribute('aria-pressed', on ? 'true' : 'false');
+        if (overviewLabel) overviewLabel.textContent = on ? 'Single page' : 'All pages';
+      });
+    }
+
+    function csrfToken() {
+      var token = document.querySelector('meta[name="csrf-token"]');
+      return token ? token.getAttribute('content') : '';
+    }
+
+    function renderInsight(data) {
+      aiBody.innerHTML = '';
+
+      var text = document.createElement('p');
+      text.className = 'ahr-ai-text';
+      text.textContent = data.text || '';
+      aiBody.appendChild(text);
+
+      var meta = document.createElement('div');
+      meta.className = 'ahr-ai-meta';
+
+      var source = document.createElement('span');
+      source.className = 'ahr-ai-pill';
+      source.textContent = data.source_label || 'Explanation';
+      meta.appendChild(source);
+
+      if (data.model) {
+        var model = document.createElement('span');
+        model.className = 'ahr-ai-pill';
+        model.textContent = data.model;
+        meta.appendChild(model);
+      }
+
+      aiBody.appendChild(meta);
+
+      var note = document.createElement('p');
+      note.className = 'ahr-ai-note';
+      note.textContent = data.source === 'ai'
+        ? 'AI-assisted explanation using only this saved report. Official figures remain in the report paper.'
+        : 'Deterministic explanation shown because the AI enhancement was unavailable or unverified. Official figures remain unchanged.';
+      aiBody.appendChild(note);
+    }
+
+    function requestInsight(lang) {
+      if (!aiOpen || aiBusy) return;
+      aiBusy = true;
+      aiBody.innerHTML = '<div class="ahr-ai-loading"><span class="ahr-generating-spinner"></span><span>Preparing explanation…</span></div>';
+
+      fetch(host.getAttribute('data-insight-url'), {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken()
+        },
+        body: JSON.stringify({ language: lang })
+      })
+        .then(function (response) {
+          if (!response.ok) throw new Error('Insight unavailable');
+          return response.json();
+        })
+        .then(function (data) {
+          renderInsight(data);
+        })
+        .catch(function () {
+          aiBody.innerHTML = '<p class="ahr-ai-error">The explanation could not be loaded right now. The saved report and its official figures remain available.</p>';
+        })
+        .finally(function () { aiBusy = false; });
+    }
+
+    function openInsight() {
+      if (!aiPanel) return;
+      syncAiHeaderOffset();
+      aiPanel.classList.add('open');
+      aiPanel.setAttribute('aria-hidden', 'false');
+      aiOpen.setAttribute('aria-expanded', 'true');
+      if (window.innerWidth <= 768) document.body.style.overflow = 'hidden';
+      aiClose.focus();
+      requestInsight(language);
+    }
+
+    function closeInsight() {
+      if (!aiPanel) return;
+      aiPanel.classList.remove('open');
+      aiPanel.setAttribute('aria-hidden', 'true');
+      aiOpen.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+      aiOpen.focus();
+    }
+
+    if (aiOpen) {
+      aiOpen.addEventListener('click', openInsight);
+      aiClose.addEventListener('click', closeInsight);
+    }
 
     function openConfirm(event) {
       event.preventDefault();
@@ -284,7 +355,9 @@
       if (event.target === confirmOverlay) closeConfirm();
     });
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && !confirmOverlay.hidden) closeConfirm();
+      if (event.key !== 'Escape') return;
+      if (aiPanel && aiPanel.classList.contains('open')) closeInsight();
+      else if (confirmOverlay && !confirmOverlay.hidden) closeConfirm();
     });
   })();
 </script>

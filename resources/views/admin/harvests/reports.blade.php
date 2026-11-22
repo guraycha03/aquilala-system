@@ -40,7 +40,7 @@
   .btn-export:hover { background: #294035; transform: translateY(-1px); }
   .btn-export svg { width: 18px; height: 18px; }
 
-  /* One quiet entry point into the saved AI report builder. The table stays
+  /* One quiet entry point into the saved report builder. The table stays
      the working view; the generator is a separate page so it never clutters
      this one. */
   .btn-ai-report {
@@ -161,7 +161,7 @@
 </style>
 
 @php
-  // Carry the table's current filters into the AI report builder so a report
+  // Carry the table's current filters into the report builder so a report
   // can be generated for exactly the rows the officer is looking at.
   $aiReportQuery = http_build_query(array_filter(
       request()->only(['q', 'crop', 'season', 'farmer', 'year', 'month']),

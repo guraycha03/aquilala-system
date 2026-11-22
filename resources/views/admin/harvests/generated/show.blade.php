@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', $report->title)
+@section('title', $report->displayTitle())
 
 @section('content')
 @include('admin.harvests.generated.partials.styles')
@@ -14,7 +14,7 @@
     @endif
 
     <div class="ahr-page-head">
-      <h1 class="ahr-h1">{{ $report->title }}</h1>
+      <h1 class="ahr-h1">{{ $report->displayTitle() }}</h1>
     </div>
 
     @include('admin.harvests.generated.partials.visual-report', [
