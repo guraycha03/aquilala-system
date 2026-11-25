@@ -117,6 +117,30 @@
         margin-left: auto;
     }
 
+    /* Photos are always visible: no collapse control on this section. */
+    .form-section-static {
+        display: block;
+        grid-column: span 12 / span 12;
+        margin-bottom: 24px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+    .form-section-static > .section-header {
+        padding: 18px 24px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #14532d;
+        background: #f0fdf4;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
     .section-content {
         padding: 32px 28px; /* Roomy content area inside cards */
         display: grid;
@@ -723,20 +747,19 @@
                     </div>
                 </details>
 
-                <!-- SECTION 4: ADD MORE PHOTOS -->
-                <details class="form-section">
-                    <summary class="section-header">
+                <!-- SECTION 4: ADD PHOTOS (always visible, not collapsible) -->
+                <div class="form-section form-section-static">
+                    <div class="section-header">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                        <span>Add More Photos <span style="font-weight: 400; font-size: 0.8125rem; color: #64748b;">(Optional)</span></span>
-                        <i data-lucide="chevron-down" class="rotate-icon" style="width:18px;height:18px;"></i>
-                    </summary>
+                        <span>Add Photos</span>
+                    </div>
                     <div class="section-content">
                         <div class="col-12">
                             @if($slotsLeft > 0)
                                 <x-product-image-picker
                                     id="product_images"
                                     :max="$slotsLeft"
-                                    label="Add More Images"
+                                    label="Add Images"
                                     :hint="'PNG, JPG, WebP or GIF up to 5MB each · ' . $slotsLeft . ' slot' . ($slotsLeft === 1 ? '' : 's') . ' left'"
                                 />
                             @else
@@ -747,7 +770,7 @@
                             @endif
                         </div>
                     </div>
-                </details>
+                </div>
 
             </div>
 

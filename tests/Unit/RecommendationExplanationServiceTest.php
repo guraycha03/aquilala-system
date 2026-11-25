@@ -31,6 +31,8 @@ class RecommendationExplanationServiceTest extends TestCase
         $this->assertStringContainsString('Rice', $explanation);
         $this->assertStringContainsString('wet', $explanation);
         $this->assertStringNotContainsStringIgnoringCase('saved product', $explanation);
+        $this->assertStringNotContainsStringIgnoringCase('system', $explanation);
+        $this->assertMatchesRegularExpression('/\b(we|you|your)\b/i', $explanation);
         $this->assertDoesNotMatchRegularExpression('/\bAI\b/i', $explanation);
         $this->assertDoesNotMatchRegularExpression('/\bLLM\b/i', $explanation);
     }
@@ -58,6 +60,31 @@ class RecommendationExplanationServiceTest extends TestCase
         $this->assertStringContainsString('Pechay', $explanation);
         $this->assertStringContainsString('wet', $explanation);
         $this->assertStringContainsString('planting window', $explanation);
+    }
+
+    public function test_explanations_vary_across_products(): void
+    {
+        $service = new RecommendationExplanationService();
+        $reasons = ['planted_crop_match', 'season_fit', 'application_guidance'];
+        $data = [
+            'crop' => 'Pechay',
+            'crop_label' => 'Pechay (Bok Choy)',
+            'kind' => 'seed',
+            'kind_label' => 'seed',
+            'season' => 'wet',
+            'season_fit' => true,
+            'application_method' => 'Seedling tray to field',
+            'application_timing' => 'Wet season planting window',
+        ];
+
+        $explanations = [];
+        for ($id = 1; $id <= 15; $id++) {
+            $product = new Product();
+            $product->id = $id;
+            $explanations[] = $service->explain($product, $reasons, $data);
+        }
+
+        $this->assertGreaterThanOrEqual(3, count(array_unique($explanations)));
     }
 
     public function test_explanation_is_stable_for_the_same_product_and_day(): void

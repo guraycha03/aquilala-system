@@ -100,6 +100,7 @@ class ProductRecommendationTest extends TestCase
         $response->assertSee('rsrDrawer', false);
         $response->assertSee('rsrPayload', false);
         $response->assertSee('Back to recommendations', false);
+        $response->assertSee('Why we picked this for you', false);
         $response->assertDontSee('Why recommended', false);
         $response->assertDontSee('product-card-link', false);
         $response->assertDontSee('Ask the farm assistant', false);

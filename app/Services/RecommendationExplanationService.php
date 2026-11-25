@@ -6,60 +6,89 @@ use App\Models\Product;
 use Illuminate\Support\Str;
 
 /**
- * Writes the "Why recommended" text from structured reason data.
+ * Writes the friendly "why this pick" text from structured reason data.
  *
  * The wording is template-based and deterministic: the same product gets the
- * same explanation for a given day. It draws only on saved farm records, the
- * product's own application data and the current season. No AI service is used.
+ * same explanation for a given day. It speaks to the farmer in a personal,
+ * "we/you" voice and draws only on saved farm records, the product's own
+ * application data and the current season. No AI service is used, and the
+ * wording never refers to an unnamed system making the decision.
  */
 class RecommendationExplanationService
 {
     /** @var array<string, array<int, string>> */
     private const ADVICE = [
         'seed' => [
-            'Compare its seed rate and maturity with your field size before choosing.',
-            'It is worth weighing against other seed options for expected yield and price.',
-            'Check the seed rate and planting window against your land area.',
+            'We’d check the seed rate and maturity against your land area first.',
+            'Before you choose it, we’d compare its price and expected yield with your plan.',
+            'We’d look at the seed rate and planting window alongside your field size.',
+            'It’s worth comparing the maturity and pack size with when you want to plant.',
+            'We’d match the seed rate to the area you’re planting this time.',
+            'Take a look at the maturity and seed rate against your own field plan.',
         ],
         'seedling' => [
-            'Compare the transplanting window and seedling count with your field.',
-            'It is worth checking the seedlings’ maturity and price against your plan.',
-            'Match the transplanting timing with the crop you are preparing.',
+            'We’d line up the transplanting window with the crop you’re preparing.',
+            'Check the seedling count and timing against your field before choosing.',
+            'We’d compare its maturity and price with the seedlings you planned for.',
+            'It’s worth matching the transplanting date to your own schedule.',
+            'We’d count the seedlings you need against the pack on offer.',
+            'Look at the transplanting window and seedling count together with your plan.',
         ],
         'fertilizer' => [
-            'Check its nutrient rating and rate per hectare against your land area.',
-            'Compare the nutrient balance and application rate with your current input plan.',
-            'Its rate per hectare is worth checking before you add it to your cost plan.',
+            'We’d check the nutrient rating and rate per hectare against your land area.',
+            'Compare the nutrient balance and application rate with the inputs you already planned.',
+            'We’d look at the rate per hectare before you add it to your cost plan.',
+            'It’s worth matching the nutrient mix to what your crop needs right now.',
+            'We’d compare the bag size and rate with the area you’re treating.',
+            'Check the nutrient balance against the stage your crop is in.',
         ],
         'protection' => [
-            'Review the recommended timing and rate before adding it to your crop-protection plan.',
-            'It is worth checking the target pest and application window first.',
-            'Compare its timing and rate with the problem you are seeing in the field.',
+            'We’d check the timing and rate against the problem you’re seeing in the field.',
+            'Compare the target pest with what you’re dealing with right now.',
+            'We’d look at the application window before adding it to your crop-care plan.',
+            'It’s worth matching the rate to the area you need to treat.',
+            'We’d compare it with the crop-protection steps you already follow.',
+            'Check the target and timing so it fits the issue you have.',
         ],
         'tool' => [
-            'Compare it with your current tools before your next supply purchase.',
-            'It is worth checking the size and capacity against your farm.',
-            'Review its specifications against the work you need to do.',
+            'We’d compare its size and capacity with the work you need to do.',
+            'Check the tool against the ones you already have before buying.',
+            'We’d look at the specifications alongside your usual farm tasks.',
+            'It’s worth seeing if the capacity matches your field size.',
+            'We’d compare the build and price with other tools you’ve considered.',
+            'Match the tool’s capacity to the job you have in mind.',
         ],
         'irrigation' => [
-            'Compare its coverage with your field before your next supply purchase.',
-            'It is worth checking the capacity against your irrigation needs.',
-            'Review its reach and setup against the area you need to water.',
+            'We’d compare its coverage with the area you need to water.',
+            'Check the capacity against your irrigation schedule before choosing.',
+            'We’d look at the reach and setup alongside your field layout.',
+            'It’s worth matching the coverage to your current water needs.',
+            'We’d compare it with the irrigation setup you already use.',
+            'See whether the reach fits the part of the farm you’re watering.',
         ],
         'feed' => [
-            'Review it alongside the feed needs of your animals.',
-            'Compare it with the other feed supplies you already use.',
-            'It is worth checking the ration and pack size against your herd.',
+            'We’d compare it with the feed needs of your animals.',
+            'Check the ration and pack size against the number of animals you have.',
+            'We’d look at it alongside the feeds you already give.',
+            'It’s worth matching the ration to the stage your animals are in.',
+            'We’d compare the pack size with how much feed you use in a month.',
+            'Match the feed type to what your herd or flock needs now.',
         ],
         'postharvest' => [
-            'Review it alongside your post-harvest handling plan.',
-            'It is worth checking the capacity against your expected harvest.',
+            'We’d check the capacity against the harvest you’re expecting.',
             'Compare it with the post-harvest steps you already follow.',
+            'We’d look at the handling method alongside your storing and sorting plan.',
+            'It’s worth matching the capacity to the size of your harvest.',
+            'We’d compare it with the tools you use after harvest.',
+            'Check whether the handling steps fit the crops you’re bringing in.',
         ],
         'input' => [
-            'Worth comparing against your current farm input plan.',
-            'Check its rate and pack size against your land area before choosing.',
-            'Review it alongside the other supplies you are considering.',
+            'We’d compare it with the farm inputs you already use.',
+            'Check the rate and pack size against your land area before choosing.',
+            'We’d look at it alongside the other supplies you’re considering.',
+            'It’s worth matching the price and size to your current plan.',
+            'We’d check the use notes before you add it to your budget.',
+            'Compare it with what you already have on hand.',
         ],
     ];
 
@@ -100,7 +129,7 @@ class RecommendationExplanationService
         }
 
         return $parts === []
-            ? 'It matches the system’s farm-input rules.'
+            ? 'It fits your farm records and the use notes we have on file.'
             : implode(' ', array_slice($parts, 0, 3));
     }
 
@@ -130,34 +159,51 @@ class RecommendationExplanationService
 
         $lines = match ($code) {
             'planted_crop_match' => [
-                'This {kind} is matched to {crop}, the crop you have planted this season.',
-                'Your active {crop} planting record makes this {kind} a direct fit.',
-                'Because you planted {crop}, this {kind} belongs in your current farm plan.',
+                'We picked this {kind} because {crop} is already in your field this season.',
+                'You’re growing {crop} right now, so we put this {kind} on your list.',
+                'We matched this {kind} to the {crop} you planted this season.',
+                'Because you have {crop} in the field, we thought this {kind} would be useful.',
+                'Your {crop} planting came up in your records, so we paired it with this {kind}.',
+                'We noticed {crop} in your planting log and matched it to this {kind}.',
             ],
             'crop_formula_match' => [
-                'This {kind} matches the {crop} you already priced in a cost quotation.',
-                'Your {crop} quotation shows a need that this {kind} can cover.',
-                'It is tied to {crop}, the crop you included in a previous cost quotation.',
+                'We linked this {kind} to the {crop} you already priced in a cost quotation.',
+                'You costed {crop} earlier, so we checked whether this {kind} fits that plan.',
+                'We saw {crop} in your quotation and matched this {kind} to it.',
+                'Because you planned for {crop}, we brought this {kind} into view.',
+                'Your {crop} cost plan made us think this {kind} could help.',
+                'We tied this {kind} to {crop}, which you included in your input budget.',
             ],
             'harvest_history_match' => [
-                'This {kind} follows on from the {crop} you harvested before.',
-                'Your past {crop} harvest makes this {kind} relevant again.',
-                'It is connected to {crop} from your harvest history.',
+                'We remembered the {crop} you harvested before and matched this {kind} to it.',
+                'You grew {crop} in the past, so we’re showing this {kind} again.',
+                'We saw {crop} in your harvest records and paired it with this {kind}.',
+                'Your earlier {crop} harvest is why this {kind} came up.',
+                'Because you’ve harvested {crop} before, we think this {kind} may fit again.',
+                'We picked up {crop} from your harvest history and linked this {kind} to it.',
             ],
             'own_quotation_match' => [
-                'You already included this product in a cost quotation for your farm.',
-                'This is one of the products you previously priced for your inputs.',
-                'Your own quotation already lists this product, so the system keeps it in view.',
+                'We saw this product in your own cost plan.',
+                'You already priced this one, so we kept it on your list.',
+                'We noticed this product in a quotation you made, so it’s familiar to you.',
+                'Your own input budget already includes this product, and we’ve kept it handy.',
+                'We found this product in your previous cost plan and brought it back.',
+                'Because you quoted this product yourself, we thought you’d want to see it again.',
             ],
             'top_quoted' => [
-                'This {kind} appears in farmer cost quotation records.',
-                'Other farmers have included this {kind} in their input plans.',
-                'Recorded farmer quotations make this {kind} a practical reference point.',
+                'We noticed this {kind} in other farmers’ cost plans.',
+                'Other growers have priced this {kind}, so we’ve included it here.',
+                'We’ve seen this {kind} show up in farm input budgets nearby.',
+                'This {kind} came up in other cost plans we checked.',
+                'We thought you might like this {kind} because other farmers use it in their plans.',
+                'Other farmers’ quotations made us take a closer look at this {kind}.',
             ],
             default => [
-                'This {kind} has an approved rule in the farm-input library.',
-                'The system’s rule library recognises this {kind} for farm use.',
-                'This {kind} is backed by an approved application rule.',
+                'We have an application guide for this {kind}.',
+                'This {kind} is in our farm-input notes, so we can explain how it’s used.',
+                'We’ve got clear use details for this {kind}.',
+                'We checked this {kind} against our input guides and it fits farm use.',
+                'Our records include an application rule for this {kind}.',
             ],
         };
 
@@ -174,10 +220,15 @@ class RecommendationExplanationService
         $specificCrop = $crop !== 'this crop';
 
         if ($specificCrop && in_array($kind, ['seed', 'seedling'], true)) {
+            // Keep "planting window" in every variant so the farmer always sees
+            // the timing reason in plain language.
             $lines = [
-                '{crop} is a strong {season}-season choice, and this product is listed for that same planting window.',
-                'Its registered timing fits the current {season} planting window, when {crop} is usually established.',
-                'For {season}-season planting, this {kind} aligns with the {crop} you are preparing for that planting window.',
+                'We checked the {season} planting window, and it lines up with the {crop} you’re getting ready.',
+                'Your {crop} fits this {season} planting window, so we matched this {kind} to that timing.',
+                'We saw the {season} planting window and thought of the {crop} you’re preparing.',
+                'For {season} planting, this {kind} sits right in the {crop} planting window.',
+                'We compared the {season} planting window with your {crop} plan, and this {kind} fits.',
+                'This {kind} is listed for the {season} planting window, which suits {crop}.',
             ];
 
             return $this->line($product, 'season|seed', $lines, [
@@ -188,9 +239,12 @@ class RecommendationExplanationService
         }
 
         $lines = [
-            'Its application rule is set for the current {season} season.',
-            'The system lists this {kind} for {season}-season use, which matches today’s field conditions.',
-            'It carries a {season}-season application rule, so it is timely to consider now.',
+            'We listed this {kind} for {season} use, which fits the season you’re in now.',
+            'It’s {season} season, and we’ve got this {kind} noted for that time.',
+            'We matched this {kind} to the current {season} season.',
+            'This {kind} has {season}-season use notes, so we thought it was timely.',
+            'Because it’s {season} now, we brought this {kind} forward.',
+            'We checked the season and found this {kind} is used in {season} conditions.',
         ];
 
         return $this->line($product, 'season|general', $lines, [
@@ -216,14 +270,20 @@ class RecommendationExplanationService
         if (in_array('application_guidance', $reasonCodes, true) && ($method !== '' || $timing !== '')) {
             if ($method !== '' && $timing !== '') {
                 return $this->line($product, 'support|method-timing', [
-                    'Its guide recommends {method} during {timing}.',
-                    'The listed use is {method}, timed for {timing}.',
+                    'We found a guide that says {method} around {timing}.',
+                    'Our notes show {method}, best timed for {timing}.',
+                    'We spotted a use note for {method} at {timing}.',
+                    'The guide we have lists {method}, with {timing} as the timing.',
+                    'We’d use {method} when {timing} comes around.',
                 ], ['{method}' => $method, '{timing}' => $timing]);
             }
 
             return $this->line($product, 'support|method', [
-                'Its guide recommends {method}.',
-                'The listed application method is {method}.',
+                'We found a note that says {method}.',
+                'Our guide lists {method} as the way to use it.',
+                'We’ve got {method} in the use notes for this product.',
+                'We checked the guide and saw {method}.',
+                'The use note we have is {method}.',
             ], ['{method}' => $method !== '' ? $method : $timing]);
         }
 
@@ -231,34 +291,46 @@ class RecommendationExplanationService
             $stage = str_replace('_', ' ', (string) $reasonData['formula_stage']);
 
             return $this->line($product, 'support|stage', [
-                'A system rule is set for the {stage} stage.',
-                'It is registered for the {stage} stage of crop care.',
+                'We have a guide for the {stage} stage.',
+                'This one is noted for the {stage} stage, so we matched it to that step.',
+                'We saw the {stage} stage in its use notes.',
+                'Our guide points to the {stage} stage for this product.',
+                'We noted it fits the {stage} stage of crop care.',
             ], ['{stage}' => $stage]);
         }
 
         $count = (int) ($reasonData['quotation_count'] ?? 0);
         if ($leadCode !== 'top_quoted' && $count >= 2) {
             $phrase = $count === 2
-                ? 'two recorded farmer quotations'
-                : $count.' recorded farmer quotations';
+                ? 'two farm cost plans'
+                : $count.' farm cost plans';
 
             return $this->line($product, 'support|quotes', [
-                'It appears in {count}.',
-                'Farmer cost records list it in {count}.',
+                'We also saw it in {count}.',
+                'It turned up in {count} as well.',
+                'We found it in {count}, too.',
+                'Other plans we checked include it in {count}.',
+                'We noticed it in {count} besides your records.',
             ], ['{count}' => $phrase]);
         }
 
         if ($leadCode !== 'own_quotation_match' && in_array('own_quotation_match', $reasonCodes, true)) {
             return $this->line($product, 'support|own', [
-                'You already priced this product for your farm, so it is a familiar option.',
-                'Your own quotation makes it easier to compare with your previous budget.',
+                'You already priced this one for your farm, so we kept it close.',
+                'We saw it in your budget, which makes it easier to compare with your plan.',
+                'Your earlier price for this product helped us put it here.',
+                'We remembered the price you set for this one.',
+                'Because you’ve costed this product before, we kept it in view for you.',
             ], ['{kind}' => $kindLabel]);
         }
 
         if (in_array('quotation_support', $reasonCodes, true)) {
             return $this->line($product, 'support|one', [
-                'It also appears in one recorded quotation.',
-                'One recorded quotation includes this product.',
+                'We also spotted it in one farm cost plan.',
+                'One other cost plan includes it, too.',
+                'We found it in a single farm budget we checked.',
+                'It showed up once in the cost plans we looked at.',
+                'We saw it in one other grower’s plan.',
             ], []);
         }
 

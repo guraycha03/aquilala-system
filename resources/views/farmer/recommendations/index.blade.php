@@ -418,7 +418,7 @@
   </span>
   <div class="rq-how__text">
     <h2>How these are chosen</h2>
-    <p>Products are ranked using your crop records, quotations, planting records, harvest reports, the current season and the system’s product rules.</p>
+    <p>We look at your crops, quotations, planting logs and harvest reports, then match them with each product’s own use guide and the season you’re in.</p>
   </div>
   <span class="rq-how__cta">
     View reasons
@@ -482,7 +482,7 @@
 <aside id="rsrDrawer" class="rsr-drawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="rsrDrawerTitle">
   <div class="rsr-drawer-head">
     <button type="button" class="rsr-back" id="rsrBack">← Back to recommendations</button>
-    <span class="rsr-badge" id="rsrBadge">Why this was recommended</span>
+    <span class="rsr-badge" id="rsrBadge">Why we picked this for you</span>
     <button type="button" class="rsr-close" id="rsrClose" aria-label="Close sub-page">&times;</button>
   </div>
   <div class="rsr-drawer-body" id="rsrDrawerBody">
@@ -562,26 +562,26 @@
 
     function sourceLabel(source) {
       return {
-        planted: 'Your planting record',
-        quotation: 'Your quotation crop',
-        harvest: 'Your harvest history',
+        planted: 'Your planting log',
+        quotation: 'Your cost plan',
+        harvest: 'Your harvest record',
         own_quotation: 'Your own quotation',
-        quotations: 'Farmer quotations'
-      }[source] || 'Product rule library';
+        quotations: 'Other growers’ plans'
+      }[source] || 'Our farm-input guide';
     }
 
     function codeLabel(code) {
       return {
-        planted_crop_match: 'Your planting record',
-        crop_formula_match: 'Your quotation crop',
-        harvest_history_match: 'Your harvest history',
-        own_quotation_match: 'Your own quotation',
-        top_quoted: 'Farmer quotations',
-        quotation_support: 'Quotation record',
-        season_fit: 'Current season',
-        application_guidance: 'Product application guide',
-        stage_rule: 'Application stage',
-        formula_backed: 'Product rule library'
+        planted_crop_match: 'You planted this crop',
+        crop_formula_match: 'You costed this crop',
+        harvest_history_match: 'You harvested this before',
+        own_quotation_match: 'You quoted this product',
+        top_quoted: 'Other growers use it',
+        quotation_support: 'Seen in a cost plan',
+        season_fit: 'Fits this season',
+        application_guidance: 'Has a use guide',
+        stage_rule: 'Fits the crop stage',
+        formula_backed: 'In our input guide'
       }[code] || null;
     }
 
@@ -592,7 +592,7 @@
 
       hero.innerHTML = image +
         '<div>' +
-          '<p class="rsr-eyebrow">' + (mode === 'info' ? 'Product preview' : 'Rule-based match') + '</p>' +
+          '<p class="rsr-eyebrow">' + (mode === 'info' ? 'Product preview' : 'Picked for your farm') + '</p>' +
           '<h2 class="rsr-drawer-title" id="rsrDrawerTitle">' + esc(product.name) + '</h2>' +
           '<p class="rsr-hero-meta">' + esc([product.brand, product.category].filter(Boolean).join(' · ')) + '</p>' +
         '</div>';
@@ -605,27 +605,27 @@
         return '<li>' + esc(label) + '</li>';
       }).join('');
 
-      if (chips === '') chips = '<li>Rule-based match</li>';
+      if (chips === '') chips = '<li>Picked for your farm</li>';
 
-      var crop = rd.crop_label || rd.crop || 'Not crop-specific';
-      var season = rd.season_fit ? (rd.season || 'current season') : 'Not season-specific';
+      var crop = rd.crop_label || rd.crop || 'Not tied to one crop';
+      var season = rd.season_fit ? (rd.season || 'this season') : 'Not tied to one season';
 
       reasonPanel.innerHTML =
         '<div class="rsr-callout">' +
-          '<span class="rsr-callout-label">Why this was recommended</span>' +
+          '<span class="rsr-callout-label">Why we picked this for you</span>' +
           '<p>' + esc(reason.explanation) + '</p>' +
         '</div>' +
         '<div class="rsr-section">' +
-          '<h4>What the system used</h4>' +
+          '<h4>What we looked at</h4>' +
           '<div class="rsr-facts">' +
-            '<div class="rsr-fact"><span>Matched source</span><strong>' + esc(sourceLabel(rd.source)) + '</strong></div>' +
+            '<div class="rsr-fact"><span>Where it came from</span><strong>' + esc(sourceLabel(rd.source)) + '</strong></div>' +
             '<div class="rsr-fact"><span>Crop / variety</span><strong>' + esc(crop) + '</strong></div>' +
             '<div class="rsr-fact"><span>Product kind</span><strong>' + esc(rd.kind_label || 'Farm input') + '</strong></div>' +
             '<div class="rsr-fact"><span>Season fit</span><strong>' + esc(season) + '</strong></div>' +
           '</div>' +
         '</div>' +
         '<div class="rsr-section">' +
-          '<h4>Rules that matched</h4>' +
+          '<h4>Why it fits your farm</h4>' +
           '<ul class="rsr-chip-list">' + chips + '</ul>' +
         '</div>';
     }
@@ -676,11 +676,11 @@
           '</div>' +
         '</div>' +
         '<div class="rsr-section">' +
-          '<h4>Application guidance</h4>' +
+          '<h4>How to use it</h4>' +
           '<table class="rsr-table"><tbody>' + appRows + '</tbody></table>' +
         '</div>' +
         '<div class="rsr-section">' +
-          '<h4>Registered application rules</h4>' + formulaRows +
+          '<h4>Use notes we have on file</h4>' + formulaRows +
         '</div>';
     }
 
@@ -704,7 +704,7 @@
         renderReason(payload.reason);
         reasonPanel.hidden = false;
         infoPanel.hidden = true;
-        badge.textContent = 'Why this was recommended';
+        badge.textContent = 'Why we picked this for you';
       }
 
       cards.forEach(function (item) { item.classList.remove('is-selected'); });

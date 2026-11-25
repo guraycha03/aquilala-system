@@ -206,7 +206,10 @@ class ProductImageEditPageTest extends TestCase
             ->getContent();
 
         $this->assertSame(1, $this->maxFormDepth($html));
-        $this->assertStringContainsString('Add More Photos', $html);
+        $this->assertStringContainsString('Add Photos', $html);
+        $this->assertStringNotContainsString('Add More Photos', $html);
+        $this->assertStringNotContainsString('Add More Images', $html);
+        $this->assertStringContainsString('form-section-static', $html);
         $this->assertStringNotContainsString('data-aqui-confirm="Remove this image from the product?"', $html);
     }
 }
