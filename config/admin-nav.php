@@ -20,10 +20,11 @@
 | titled "Report and Request" because it now carries the planting requests
 | next to the harvest pages, so the name cannot be read as harvest-only.
 | There is no separate reporting section: expense figures stay with the
-| other harvest charts, and Quotation Demand Trends sits with Farm Supplies
-| because it describes product demand. No
-| notification items or badges are shown here — notifications live outside
-| the sidebar. Quotation terminology is preserved intentionally. The
+| other harvest charts, and View Crop Trends sits with Farm Supplies because
+| it ties crop planting, harvesting and quotations to the farm inputs stored
+| there. No notification items or badges are shown here — notifications live
+| outside the sidebar. Route names and internal quotation terminology stay
+| unchanged; only the admin-facing label is renamed. The
 | `harvest` and `settings` group keys are referenced by feature tests, so
 | they must not be renamed.
 |
@@ -93,7 +94,6 @@ return [
                 'admin.harvests.reports.generated.show',
                 'admin.harvests.reports.generated.download',
             ]],
-            ['label' => 'Estimate vs Actual Harvest', 'routes' => ['admin.harvests.compare']],
             // Moved here from Farm Supplies so the section's name holds true:
             // this dropdown lists the association's reports *and* its one
             // request page.
@@ -122,9 +122,9 @@ return [
             ['label' => 'Crop Directory', 'routes' => ['farmer.crops-directory.index']],
             ['label' => 'Product Catalog', 'routes' => ['admin.operations.catalog']],
             ['label' => 'Stores', 'routes' => ['admin.stores.index', 'admin.stores.create', 'admin.stores.edit']],
-            // Which products are being quoted, i.e. product demand in
-            // numbers — a supply-and-stores report, so it sits with them.
-            ['label' => 'Quotation Demand Trends', 'routes' => ['admin.quotations.index']],
+            // Crops being planted, harvested and quoted, with the products
+            // farmers quote still listed last for farm-input planning.
+            ['label' => 'View Crop Trends', 'routes' => ['admin.quotations.index']],
         ],
     ],
     'settings' => [

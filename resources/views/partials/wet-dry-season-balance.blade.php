@@ -18,9 +18,12 @@
   .wdb-title { font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0; }
   .wdb-sub { font-size: 12.5px; color: #879a8c; margin: 3px 0 0; }
 
-  .wdb-filter { position: relative; flex-shrink: 0; }
+  /* Keep the filter as wide as its longest label ("Overall performance").
+     Without this, choosing a short year shrinks the box and the right-anchored
+     menu slides left — on phones it went off-screen with only its tail visible. */
+  .wdb-filter { position: relative; flex-shrink: 0; min-width: 200px; max-width: 100%; }
   .wdb-filter-btn {
-    display: inline-flex; align-items: center; gap: 6px;
+    display: inline-flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%;
     font: inherit; font-size: 12px; font-weight: 900; letter-spacing: 0.04em; color: #14532d;
     padding: 6px 11px; border-radius: 9px;
     background: #ffffff; border: 1px solid rgba(20,61,35,0.14);
@@ -60,7 +63,10 @@
   .wdb-share { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .wdb-share.wet { color: #55799B; }
   .wdb-share.dry { color: #8F6B4B; }
-  .wdb-track { height: 16px; background: #f1f5f9; border-radius: 8px; overflow: hidden; margin: 6px 0 14px; }
+  /* The two fills are siblings: without flex they stack as blocks and the
+     dry half is clipped below this 16px track. Side by side keeps each share
+     in its own themed color. */
+  .wdb-track { display: flex; height: 16px; background: #f1f5f9; border-radius: 8px; overflow: hidden; margin: 6px 0 14px; }
   .wdb-fill { height: 100%; transition: width .3s ease; }
   .wdb-fill.wet { background: #A9C9DF; border-radius: 8px 0 0 8px; }
   .wdb-fill.dry { background: #E3C9AF; border-radius: 0 8px 8px 0; }
@@ -75,6 +81,7 @@
   .wdb-value { display: block; font-weight: 800; font-size: 16px; margin-top: 4px; font-variant-numeric: tabular-nums; }
   @media (max-width: 620px) {
     .wdb-head { flex-direction: column; }
+    .wdb-menu { left: 0; right: auto; }
     .wdb-grid { grid-template-columns: 1fr; }
   }
 </style>

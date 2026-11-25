@@ -20,7 +20,7 @@
             'Open audit log',
             'Schedule a meeting',
             'How do I create an event?',
-            'Show quotation demand trends',
+            'Open View Crop Trends',
             'Open planting requests',
             'Show all harvest reports',
             'Where can I manage members?',

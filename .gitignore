@@ -39,6 +39,7 @@ aquilala_key*
 
 # Local-only material — never push to GitHub, never deploy
 /Manuscript/
+/extract_pdf.py
 /demo-data/
 /.env.local-backup
 
@@ -51,6 +52,7 @@ aquilala_key*
 /*-results.txt
 /check_categories.php
 /crops-failure.txt
+/remaining-failures.txt
 /diag_fc.php
 /get(route('farmer.crops-directory.index'))
 /message_to_kilo.txt

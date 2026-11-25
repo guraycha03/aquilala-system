@@ -10,7 +10,6 @@ use App\Models\HarvestReport;
 use App\Models\ChatHistory;
 use App\Models\Member;
 use App\Services\ActivityLogger;
-use App\Services\HarvestCompareService;
 use App\Services\HarvestInsightService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -257,35 +256,6 @@ class HarvestReportController extends Controller
     }
 
     /**
-     * Farmer Estimate vs Actual — planting estimate against filed yield,
-     * for the signed-in farmer's own batches/reports only.
-     */
-    public function farmerCompare(Request $request, HarvestCompareService $compare)
-    {
-        $data = $compare->compare('farmer', Auth::id(), $request->query());
-
-        if ($request->wantsJson()) {
-            return response()->json($data);
-        }
-
-        return view('farmer.harvests.compare', $data);
-    }
-
-    /**
-     * Admin Estimate vs Actual — the whole association, with a farmer filter.
-     */
-    public function adminCompare(Request $request, HarvestCompareService $compare)
-    {
-        $data = $compare->compare('admin', null, $request->query());
-
-        if ($request->wantsJson()) {
-            return response()->json($data);
-        }
-
-        return view('admin.harvests.compare', $data);
-    }
-
-    /**
      * Answer one chat question about the harvest digest. Returns JSON so the
      * chat can run its own loading and error states without a page round trip.
      *
@@ -509,10 +479,8 @@ class HarvestReportController extends Controller
      * A report may or may not hang off a crop batch — both are first-class:
      *
      *  - With a batch: the batch dictates crop type, season and land area
-     *    (never trust those from the client), the report links back to it so
-     *    the Estimate vs Actual comparison can pair the planting estimate with
-     *    the reported yield, and the batch is marked harvested, mirroring what
-     *    the My Crops flow does.
+     *    (never trust those from the client), the report links back to it and
+     *    the batch is marked harvested, mirroring what the My Crops flow does.
      *  - Without a batch: a standalone record for a past harvest, or for a
      *    farmer who has never planted through the system. The figures filed
      *    here are taken as given, exactly like an imported record, and no

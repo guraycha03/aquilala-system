@@ -43,7 +43,6 @@ return [
         'items' => [
             ['label' => 'Harvest Reports', 'routes' => ['farmer.harvests.index']],
             ['label' => 'Submit Harvest Report', 'routes' => ['farmer.harvests.create']],
-            ['label' => 'Estimate vs Actual Harvest', 'routes' => ['farmer.harvests.compare']],
         ],
     ],
     'my-farm' => [

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Models\DecisionFormula;
 use App\Models\FarmerCrop;
+use App\Models\HarvestReport;
 use App\Models\Product;
 use App\Models\Quotation;
 use App\Models\StoreAiSummary;
@@ -13,6 +14,7 @@ use App\Services\ActivityLogger;
 use App\Services\CostQuotationEngine;
 use App\Services\StoreDemandService;
 use App\Services\CropLibraryService;
+use App\Support\CropPalette;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -1169,6 +1171,51 @@ FORMATTING RULES:
     // ────────────────────────────────────────────────────────────────
 
     /**
+     * Resolve stored crop names (including aliases and case differences) to
+     * the one canonical library name. Harvest imports, farmer reports and
+     * quotations may spell the same crop differently; without this they would
+     * appear as separate bars even though they are the same crop.
+     */
+    private function canonicalCropName(?string $name): string
+    {
+        $name = trim((string) $name);
+        if ($name === '') {
+            return 'Unspecified';
+        }
+
+        $entry = app(CropLibraryService::class)->forName($name);
+
+        return (string) ($entry['name'] ?? $name);
+    }
+
+    /**
+     * Readable variety name for a crop row. Older quotation rows may carry
+     * only the stable key, so resolve it through the shared crop library
+     * before showing it on the crop-trends page.
+     */
+    private function varietyLabel(?string $variety, ?string $varietyKey, ?string $cropName = null): ?string
+    {
+        $label = trim((string) $variety);
+        if ($label !== '') {
+            return $label;
+        }
+
+        if (! $varietyKey || $varietyKey === CropLibraryService::GENERAL_VARIETY_KEY) {
+            return null;
+        }
+
+        $option = $cropName
+            ? app(CropLibraryService::class)->varietyByKey($cropName, $varietyKey)
+            : null;
+
+        if (! empty($option['name'])) {
+            return (string) $option['name'];
+        }
+
+        return trim(ucwords(str_replace(['-', '_'], ' ', $varietyKey)));
+    }
+
+    /**
      * Aggregate product & crop demand across every estimate.
      * De-identified: products/crops only, no store or farmer identity.
      *
@@ -1176,7 +1223,7 @@ FORMATTING RULES:
      */
     private function aggregateDemand(): array
     {
-        $quotations = Quotation::with(['items.product.category'])
+        $quotations = Quotation::with(['items.product.category', 'items.product.cropTypes', 'items.product.images'])
             ->latest()
             ->get();
 
@@ -1184,18 +1231,24 @@ FORMATTING RULES:
         $cropDemand = [];
 
         foreach ($quotations as $q) {
-            $crop = $q->crop_type ?: 'Unspecified';
+            $crop = $this->canonicalCropName($q->crop_type);
             if (! isset($cropDemand[$crop])) {
                 $cropDemand[$crop] = [
                     'crop' => $crop,
                     'count' => 0,
                     'total_area' => 0.0,
                     'total_value' => 0.0,
+                    'varieties' => [],
                 ];
             }
             $cropDemand[$crop]['count'] += 1;
             $cropDemand[$crop]['total_area'] += (float) $q->land_area;
             $cropDemand[$crop]['total_value'] += (float) $q->estimated_total_cost;
+
+            $variety = $this->varietyLabel($q->variety, $q->variety_key, $crop);
+            if ($variety && ! in_array($variety, $cropDemand[$crop]['varieties'], true)) {
+                $cropDemand[$crop]['varieties'][] = $variety;
+            }
 
             foreach ($q->items as $item) {
                 if (! $item->product) {
@@ -1204,11 +1257,17 @@ FORMATTING RULES:
 
                 $pid = $item->product_id;
                 if (! isset($productDemand[$pid])) {
+                    // gallery sorts the main image first and falls back to the
+                    // local placeholder, so the ranked list never has a gap.
+                    $image = $item->product->gallery->first()?->card_url
+                        ?: asset('images/product.png');
+
                     $productDemand[$pid] = [
                         'name' => $item->product->name,
                         'display_name' => $item->product->display_name,
                         'category' => $item->product->category_display_name,
                         'unit' => $item->product->stock_unit ?? $item->product->package_unit ?? 'units',
+                        'image' => $image,
                         'quotation_ids' => [],
                         'total_qty' => 0.0,
                         'total_value' => 0.0,
@@ -1219,8 +1278,17 @@ FORMATTING RULES:
                 $productDemand[$pid]['quotation_ids'][$q->id] = true;
                 $productDemand[$pid]['total_qty'] += (float) $item->calculated_quantity;
                 $productDemand[$pid]['total_value'] += (float) $item->subtotal;
-                if ($crop && ! in_array($crop, $productDemand[$pid]['crops'], true)) {
-                    $productDemand[$pid]['crops'][] = $crop;
+                // A quoted product can also be tagged with the crops it serves,
+                // even when the farmer left the quotation's own crop blank.
+                $linkedCrops = $item->product->cropTypes->pluck('crop_type')
+                    ->prepend($crop)
+                    ->filter()
+                    ->unique();
+
+                foreach ($linkedCrops as $linkedCrop) {
+                    if (! in_array($linkedCrop, $productDemand[$pid]['crops'], true)) {
+                        $productDemand[$pid]['crops'][] = $linkedCrop;
+                    }
                 }
             }
         }
@@ -1255,7 +1323,7 @@ FORMATTING RULES:
     {
         return FarmerCrop::with('crop')
             ->get()
-            ->groupBy(fn ($batch) => $batch->crop?->name ?: 'Unspecified')
+            ->groupBy(fn ($batch) => $this->canonicalCropName($batch->crop?->name))
             ->map(function ($batches, $crop) {
                 return [
                     'crop' => $crop,
@@ -1265,6 +1333,12 @@ FORMATTING RULES:
                     'harvested' => $batches->where('growth_stage', 'harvested')->count(),
                     'farmers' => $batches->pluck('user_id')->unique()->count(),
                     'total_area' => (float) $batches->sum('land_area'),
+                    'varieties' => $batches
+                        ->map(fn ($batch) => $this->varietyLabel($batch->variety, $batch->variety_key, $crop))
+                        ->filter()
+                        ->unique()
+                        ->values()
+                        ->all(),
                 ];
             })
             ->sortByDesc('total_area')
@@ -1272,21 +1346,67 @@ FORMATTING RULES:
     }
 
     /**
-     * Join demand and planting into one ranked crop list so the table can show
-     * every crop once, with both sides of the story side by side.
+     * Harvest-report roll-up by crop. Farmer-submitted rows carry a user_id;
+     * officer-entered or imported rows only carry a member_id (or neither), so
+     * the split keeps both sources visible without exposing any identity.
+     *
+     * No year or season filter is applied — past and current harvests from
+     * both the farmer and admin sides all feed the same trend. Archived rows
+     * stay out through the model's soft-delete scope, exactly as on the
+     * Harvest Reports page, so both pages read the same live set.
      */
-    private function mergeCropViews(Collection $crop, Collection $planting): Collection
+    private function aggregateHarvests(): Collection
     {
+        return HarvestReport::query()
+            ->get(['id', 'crop_type', 'variety', 'variety_key', 'land_area', 'actual_yield_metric_tons', 'user_id', 'member_id'])
+            ->groupBy(fn ($report) => $this->canonicalCropName($report->crop_type))
+            ->map(function ($reports, $crop) {
+                return [
+                    'crop' => $crop,
+                    'reports' => $reports->count(),
+                    'farmer_reports' => $reports->filter(fn ($report) => $report->user_id !== null)->count(),
+                    'admin_reports' => $reports->filter(fn ($report) => $report->user_id === null)->count(),
+                    'harvest_area' => (float) $reports->sum('land_area'),
+                    'harvest_yield' => (float) $reports->sum('actual_yield_metric_tons'),
+                    'varieties' => $reports
+                        ->map(fn ($report) => $this->varietyLabel($report->variety, $report->variety_key, $crop))
+                        ->filter()
+                        ->unique()
+                        ->values()
+                        ->all(),
+                ];
+            })
+            ->sortByDesc('reports')
+            ->values();
+    }
+
+    /**
+     * Join quotation demand, planted batches and harvest reports into one
+     * ranked crop list so every crop appears once with all three signals.
+     */
+    private function mergeCropViews(Collection $crop, Collection $planting, Collection $harvest): Collection
+    {
+        // concat() appends by value; union() would merge by key and silently
+        // drop harvest crops whenever a quotation sat at the same position.
         return $crop->pluck('crop')
-            ->union($planting->pluck('crop'))
+            ->concat($planting->pluck('crop'))
+            ->concat($harvest->pluck('crop'))
             ->filter()
             ->unique()
-            ->map(function ($name) use ($crop, $planting) {
+            ->map(function ($name) use ($crop, $planting, $harvest) {
                 $q = $crop->firstWhere('crop', $name);
                 $p = $planting->firstWhere('crop', $name);
+                $h = $harvest->firstWhere('crop', $name);
+
+                $varieties = collect([
+                    $q['varieties'] ?? [],
+                    $p['varieties'] ?? [],
+                    $h['varieties'] ?? [],
+                ])->flatten()->filter()->unique()->sort()->values()->take(4)->all();
 
                 return [
                     'crop' => $name,
+                    'palette' => app(CropPalette::class)->colors($name),
                     'estimates' => (int) ($q['count'] ?? 0),
                     'quoted_area' => (float) ($q['total_area'] ?? 0),
                     'quoted_value' => (float) ($q['total_value'] ?? 0),
@@ -1294,15 +1414,42 @@ FORMATTING RULES:
                     'active' => (int) ($p['active'] ?? 0),
                     'farmers' => (int) ($p['farmers'] ?? 0),
                     'planted_area' => (float) ($p['total_area'] ?? 0),
+                    'harvest_reports' => (int) ($h['reports'] ?? 0),
+                    'farmer_reports' => (int) ($h['farmer_reports'] ?? 0),
+                    'admin_reports' => (int) ($h['admin_reports'] ?? 0),
+                    'harvest_area' => (float) ($h['harvest_area'] ?? 0),
+                    'harvest_yield' => (float) ($h['harvest_yield'] ?? 0),
+                    'varieties' => $varieties,
                 ];
             })
-            ->sortByDesc('estimates')
-            ->sortByDesc('planted_area')
+            ->sortByDesc('harvest_yield')
             ->values();
     }
 
     /**
-     * Admin view: product & crop demand analytics, de-identified.
+     * Shared crop trend data for the overview card and the full table page.
+     * Both pages must read the same roll-up, so the numbers never disagree.
+     *
+     * @return array{cropRows: array, cropTotal: int, varietyTotal: int, plantingTotal: int, harvestTotal: int}
+     */
+    private function cropTrendData(Collection $cropDemand): array
+    {
+        $planting = $this->aggregatePlanting();
+        $harvests = $this->aggregateHarvests();
+        $cropRows = $this->mergeCropViews($cropDemand, $planting, $harvests);
+
+        return [
+            'cropRows' => $cropRows->toArray(),
+            'cropTotal' => $cropRows->count(),
+            'varietyTotal' => $cropRows->pluck('varieties')->flatten()->filter()->unique()->count(),
+            'plantingTotal' => $planting->sum('batches'),
+            'harvestTotal' => $harvests->sum('reports'),
+        ];
+    }
+
+    /**
+     * Admin view: crop trends first (planted, harvested and quoted), with
+     * product demand kept last for farm-input planning. De-identified.
      */
     public function adminIndex()
     {
@@ -1319,27 +1466,32 @@ FORMATTING RULES:
             'totalValue' => $allQuotations->sum('estimated_total_cost'),
         ];
 
-        // Both charts plot only the top 5; the table underneath carries the rest.
+        // The chart plots only the top 5; the full list has its own page.
         $productTotal = $allProducts->count();
         $productDemand = $allProducts->take(5)->toArray();
 
-        $planting = $this->aggregatePlanting();
-        $cropRows = $this->mergeCropViews($cropDemand, $planting);
-
-        return view('admin.quotations.index', [
+        return view('admin.quotations.index', array_merge([
             'metrics' => $metrics,
             'productDemand' => $productDemand,
             'productTotal' => $productTotal,
-            'cropRows' => $cropRows->toArray(),
-            'cropTotal' => $cropRows->count(),
-            'plantingTotal' => $planting->sum('batches'),
-        ]);
+        ], $this->cropTrendData($cropDemand)));
+    }
+
+    /**
+     * Admin view: every tracked crop in one searchable table. Opened from the
+     * "View all crops" button in the Crop Trends card.
+     */
+    public function adminCrops()
+    {
+        ['crop' => $cropDemand] = $this->aggregateDemand();
+
+        return view('admin.quotations.crops', $this->cropTrendData($cropDemand));
     }
 
     /**
      * Admin view: the complete ranked product demand list behind the
-     * "Show all products" link on the Demand Trends page. The graph still only
-     * plots the top 5 — everything below it is the table.
+     * "Show all products" link on the View Crop Trends page. The graph still
+     * only plots the top 5 — everything below it is the table.
      */
     public function adminProducts()
     {

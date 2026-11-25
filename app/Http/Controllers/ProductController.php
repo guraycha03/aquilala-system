@@ -7,15 +7,19 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Quotation;
 use App\Models\User;
+use App\Helpers\SeasonHelper;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Services\ActivityLogger;
 use App\Services\CropLibraryService;
+use App\Services\ProductRecommendationService;
 use App\Support\ProductImageResizer;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -151,20 +155,48 @@ class ProductController extends Controller
     /**
      * Display the farmer-facing product recommendations page.
      */
-    public function recommendations()
+    public function recommendations(ProductRecommendationService $recommendationService)
     {
-        $products = Product::active()
-            ->with(['category.parent', 'mainImage', 'images', 'storeOwner'])
-            ->latest()
-            ->get();
+        $recommendations = $recommendationService->forFarmer(Auth::user());
 
-        $storeCount = \App\Models\User::where('role', 'store_owner')
+        // The shared card/filter components expect an Eloquent collection of
+        // plain Product models, not the recommendation wrapper rows.
+        $products = new EloquentCollection(
+            $recommendations->pluck('product')->all()
+        );
+
+        Product::markSavedState($products, Auth::user());
+
+        $currentSeason = Str::lower(SeasonHelper::getCurrentSeason());
+
+        $hasCropReason = fn (array $item): bool => (bool) array_intersect(
+            $item['reason_codes'],
+            ['crop_formula_match', 'planted_crop_match', 'harvest_history_match'],
+        );
+
+        $forYourCrops = $recommendations->filter($hasCropReason)->count();
+        $seasonalPicks = $recommendations
+            ->filter(fn (array $item): bool => in_array('season_fit', $item['reason_codes'], true))
+            ->count();
+        $topQuoted = $recommendations
+            ->filter(fn (array $item): bool => in_array('top_quoted', $item['reason_codes'], true))
+            ->count();
+
+        $storeCount = User::where('role', 'store_owner')
             ->whereNotNull('store_name')
             ->count();
 
         $facets = $this->filterFacets($products);
 
-        return view('farmer.recommendations.index', compact('products', 'storeCount') + $facets);
+        return view('farmer.recommendations.index', compact(
+            'recommendations',
+            'products',
+            'storeCount',
+            'currentSeason',
+            'forYourCrops',
+            'seasonalPicks',
+            'topQuoted',
+        ) + $facets);
     }
 
     /**

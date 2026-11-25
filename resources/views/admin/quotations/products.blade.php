@@ -74,7 +74,7 @@
 <div class="header-panel" style="margin-bottom: 14px;">
   <a href="{{ route('admin.quotations.index') }}" class="btn-ghost" style="margin-bottom: 12px;">
     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none"><polyline points="15 18 9 12 15 6"/></svg>
-    Back to Quotation Demand Trends
+    Back to View Crop Trends
   </a>
   <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">All Product Demand</h1>
   <p style="color: #606d64; font-size: 14px; margin: 0;">Every product that appears in an estimate, ranked by how often it is quoted.</p>

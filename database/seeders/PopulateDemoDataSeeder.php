@@ -500,7 +500,7 @@ class PopulateDemoDataSeeder extends Seeder
 
     /**
      * One confirmed-but-unfinished batch per farmer for 2023–2025 harvest reports,
-     * linked to the report so the Estimate vs Actual page has full history.
+     * linked to the report so historical batches stay consistent with filed yields.
      */
     private function makeHistoricalBatch(User $farmer, string $crop, int $cropId, float $land, array $yMeta, string $season, HarvestReport $report, ?int $confirmerId): void
     {

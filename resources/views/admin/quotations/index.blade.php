@@ -1,6 +1,6 @@
 @extends('layouts.sidebar')
 
-@section('title', 'Quotation Demand Trends')
+@section('title', 'View Crop Trends')
 
 @section('content')
 <style>
@@ -30,6 +30,39 @@
     font-weight: 600;
   }
   .badge-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .variety-chip { background: #f1f5f9; color: #475569; }
+  [data-theme="dark"] .variety-chip { background: #1f2937; color: #a7f3d0; }
+
+  .product-rank-list { max-height: 430px; overflow-y: auto; scrollbar-width: thin; }
+  .product-rank-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px; border-top: 1px solid #f1f5f9;
+  }
+  .product-rank-row:first-child { border-top: 0; }
+  .product-rank-index {
+    width: 22px; flex-shrink: 0; font-size: 12px; font-weight: 800; color: #94a3b8;
+  }
+  .product-rank-img {
+    width: 54px; height: 54px; flex-shrink: 0; border-radius: 10px;
+    object-fit: cover; background: #f1f5f9; border: 1px solid #e2e8f0;
+  }
+  .product-rank-main { min-width: 0; flex: 1 1 auto; }
+  .product-rank-name {
+    font-size: 14px; font-weight: 700; color: #1e2922;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .product-rank-sub { font-size: 12px; color: #64748b; margin-top: 3px; }
+  .product-rank-stats {
+    display: flex; gap: 18px; flex-shrink: 0; text-align: right;
+    font-size: 12px; color: #64748b;
+  }
+  .product-rank-stats b { display: block; font-size: 14px; color: #143d23; }
+  [data-theme="dark"] .product-rank-row { border-top-color: #334155; }
+  [data-theme="dark"] .product-rank-name { color: #d6f5e3; }
+  [data-theme="dark"] .product-rank-sub,
+  [data-theme="dark"] .product-rank-stats { color: #9fb3a6; }
+  [data-theme="dark"] .product-rank-stats b { color: #a7f3d0; }
+  [data-theme="dark"] .product-rank-img { background: #1f2937; border-color: #334155; }
   .avatar {
     width: 28px; height: 28px;
     border-radius: 50%;
@@ -48,15 +81,8 @@
   .cell-muted { color: #64748b; }
   .cap { text-transform: capitalize; }
 
-  .chart-hscroll {
-    overflow-x: auto; overflow-y: hidden;
-    padding: 20px 20px 8px;
-    scrollbar-width: thin;
-    -webkit-overflow-scrolling: touch;
-  }
-  .chart-hscroll::-webkit-scrollbar { height: 8px; }
-  .chart-hscroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
-  .chart-hscroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 999px; }
+  /* Five bars only: keep them all in view, even on a narrow laptop screen. */
+  .chart-fit { width: 100%; padding: 16px 20px 8px; overflow: hidden; }
 
   .chart-bar {
     display: flex; align-items: center; justify-content: space-between;
@@ -86,6 +112,27 @@
   }
   .btn-ghost:hover { background: #f1f5f9; }
 
+  .crop-card-header {
+    position: relative;
+    padding: 20px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .crop-card-header h2 { padding-right: 200px; }
+  .crop-card-header p {
+    padding-right: 200px;
+    margin: 6px 0 20px;
+  }
+  .crop-all-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
+  @media (max-width: 720px) {
+    .crop-card-header h2,
+    .crop-card-header p { padding-right: 0; }
+    .crop-all-btn { position: static; display: inline-flex; margin-bottom: 12px; }
+  }
+
   .seg {
     display: inline-flex; padding: 3px; gap: 2px;
     background: #f1f5f9; border-radius: 10px; flex-shrink: 0;
@@ -105,98 +152,47 @@
 </style>
 
 <div class="header-panel" style="margin-bottom: 10px;">
-  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">Quotation Demand Trends</h1>
-  <p style="color: #606d64; font-size: 14px; margin: 0;">See which products and crops farmers across the system are asking for.</p>
+  <h1 style="font-size: 24px; font-weight: 700; color: #1e2922; margin: 0 0 4px 0;">View Crop Trends</h1>
+  <p style="color: #606d64; font-size: 14px; margin: 0;">See the crops farmers are planting, harvesting and quoting &mdash; then the farm inputs those quotations call for.</p>
 </div>
 
-<!-- System-wide metrics -->
+<!-- Crop-first system-wide metrics -->
 <div class="kpi-strip">
   <div class="stat-card">
     <div>
+      <div class="stat-value">{{ $cropTotal }}</div>
+      <div class="stat-label">Crops Tracked</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ $plantingTotal }}</div>
+      <div class="stat-label">Farmer Crop Batches</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div>
+      <div class="stat-value">{{ $harvestTotal }}</div>
+      <div class="stat-label">Harvest Reports</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div>
       <div class="stat-value">{{ $metrics['total'] }}</div>
-      <div class="stat-label">Total Estimates</div>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div>
-      <div class="stat-value">{{ $metrics['this_week'] }}</div>
-      <div class="stat-label">Estimates This Week</div>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div>
-      <div class="stat-value">{{ $metrics['viewed'] }}</div>
-      <div class="stat-label">Viewed by Stores</div>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div>
-      <div class="stat-value">{{ $metrics['expired'] }}</div>
-      <div class="stat-label">Expired</div>
+      <div class="stat-label">Farmer Quotations</div>
     </div>
   </div>
 </div>
 
-<!-- Product & Crop Demand (de-identified — products/crops only) -->
 <div class="data-table-container" style="margin-bottom: 24px;">
-  <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: nowrap;">
-    <div style="min-width: 0; flex: 1 1 auto;">
-      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Product Demand</h2>
-      <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Top {{ count($productDemand) }} most-quoted products across all estimates, with their crop types.</p>
-    </div>
-    <div class="scroll-ctl">
-      @if($productTotal > count($productDemand))
-        <a href="{{ route('admin.quotations.products') }}" class="btn-ghost">
-          Show all {{ $productTotal }} products
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
-        </a>
-      @endif
-      <button type="button" class="scroll-btn" data-product-scroll="prev" aria-label="Scroll graph left">
-        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <button type="button" class="scroll-btn" data-product-scroll="next" aria-label="Scroll graph right">
-        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-    </div>
-  </div>
-  @if(count($productDemand) > 0)
-    <div class="chart-hscroll" id="productScroll">
-      <div class="chart-box" style="height: 300px;" id="productTrack">
-        <canvas id="productDemandChart"></canvas>
-      </div>
-    </div>
-    <div class="chart-bar" id="productReadout">
-      <span class="chart-hint">Hover or click a bar to see the full product name.</span>
-    </div>
-  @else
-    <div style="text-align: center; padding: 32px; color: #94a3b8;">
-      <p style="margin: 0;">No product demand data yet.</p>
-    </div>
-  @endif
-</div>
-
-  <x-table-toolbar
-      uid="admin-crops"
-      work-table="adminCropTable"
-      per-page="10"
-      noun="crops"
-      search-placeholder="Search crops…"
-      :sorts="[
-          ['key' => 'estimates', 'dir' => -1, 'type' => 'num', 'label' => 'Estimates (highest)'],
-          ['key' => 'planted_area', 'dir' => -1, 'type' => 'num', 'label' => 'Planted area (largest)'],
-          ['key' => 'crop', 'dir' => 1, 'type' => 'str', 'label' => 'Crop (A–Z)'],
-      ]"
-    />
-
-<div class="data-table-container" style="margin-bottom: 24px;">
-  <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-    <div>
-      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Crops Farmers Are Asking For</h2>
-      <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Most-quoted crop types from estimates, against what farmers have actually planned or planted.</p>
-    </div>
+  <div class="crop-card-header">
+    <a href="{{ route('admin.quotations.crops') }}" class="btn-ghost crop-all-btn">View all {{ $cropTotal }} crops &rarr;</a>
+    <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Crop Trends</h2>
+    <p style="font-size: 13px; color: #64748b;">Top {{ min(5, $cropTotal) }} crops by harvest, planting or quotations. Switch tabs to change the bars.</p>
     <div class="seg" role="tablist" aria-label="Crop view">
-      <button type="button" class="seg-btn is-active" data-crop-mode="quote" role="tab" aria-selected="true">Most Quoted</button>
+      <button type="button" class="seg-btn is-active" data-crop-mode="harvest" role="tab" aria-selected="true">Most Harvested</button>
       <button type="button" class="seg-btn" data-crop-mode="planted" role="tab" aria-selected="false">Most Planted</button>
+      <button type="button" class="seg-btn" data-crop-mode="quote" role="tab" aria-selected="false">Most Quoted</button>
     </div>
   </div>
 
@@ -206,64 +202,78 @@
       <div class="mini-value">{{ $cropTotal }}</div>
     </div>
     <div class="mini">
-      <div class="mini-label">Quoted Crops</div>
+      <div class="mini-label">Crops With Harvest Reports</div>
+      <div class="mini-value">{{ collect($cropRows)->where('harvest_reports', '>', 0)->count() }}</div>
+    </div>
+    <div class="mini">
+      <div class="mini-label">Crops Quoted</div>
       <div class="mini-value">{{ collect($cropRows)->where('estimates', '>', 0)->count() }}</div>
     </div>
     <div class="mini">
-      <div class="mini-label">Planted Crops</div>
+      <div class="mini-label">Crops Planted</div>
       <div class="mini-value">{{ collect($cropRows)->where('batches', '>', 0)->count() }}</div>
     </div>
     <div class="mini">
-      <div class="mini-label">Farmer Crop Batches</div>
-      <div class="mini-value">{{ $plantingTotal }}</div>
+      <div class="mini-label">Varieties Seen</div>
+      <div class="mini-value">{{ $varietyTotal }}</div>
     </div>
   </div>
 
   @if(count($cropRows) > 0)
-    <div class="chart-hscroll" id="cropScroll">
-      <div class="chart-box" style="height: 300px;" id="cropTrack">
+    <div class="chart-fit" id="cropScroll">
+      <div class="chart-box" style="height: 250px;" id="cropTrack">
         <canvas id="cropDemandChart"></canvas>
       </div>
     </div>
     <div class="chart-bar" id="cropReadout">
-      <span class="chart-hint" id="cropReadoutHint">Hover or click a bar to see the full breakdown.</span>
+      <span class="chart-hint" id="cropReadoutHint">Hover or click a bar for the value.</span>
     </div>
     <p style="margin: 0; padding: 0 20px 12px; font-size: 12px; color: #94a3b8;" id="cropChartNote"></p>
-    <div class="chart-scroll table-scroll">
-      <table id="adminCropTable" class="data-table">
-        <thead>
-          <tr>
-            <th>Crop</th>
-            <th class="num">Estimates</th>
-            <th class="num">Quoted Area</th>
-            <th class="num">Quoted Value</th>
-            <th class="num">Batches</th>
-            <th class="num">Active</th>
-            <th class="num">Farmers</th>
-            <th class="num">Planted Area</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($cropRows as $crop)
-            <tr data-crop="{{ strtolower($crop['crop']) }}"
-                data-estimates="{{ $crop['estimates'] }}"
-                data-planted_area="{{ $crop['planted_area'] }}">
-              <td class="cell-strong cap">{{ $crop['crop'] }}</td>
-              <td class="num">{{ $crop['estimates'] }}</td>
-              <td class="num">{{ number_format($crop['quoted_area'], 1) }} ha</td>
-              <td class="num">₱{{ number_format($crop['quoted_value'], 0) }}</td>
-              <td class="num">{{ $crop['batches'] }}</td>
-              <td class="num">{{ $crop['active'] }}</td>
-              <td class="num">{{ $crop['farmers'] }}</td>
-              <td class="num">{{ number_format($crop['planted_area'], 1) }} ha</td>
-            </tr>
-          @endforeach
-        </tbody>
-      </table>
+  @else
+    <div style="text-align: center; padding: 32px; color: #94a3b8;">
+      <p style="margin: 0;">No crop, harvest or quotation data yet.</p>
+    </div>
+  @endif
+</div>
+
+<!-- Kept last: the products behind the crop trends tell the association head
+     what free farm inputs (seed, fertilizer, plant medicines) farmers need. -->
+<div class="data-table-container" style="margin-bottom: 24px;">
+  <div style="padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+    <div style="min-width: 0; flex: 1 1 auto;">
+      <h2 style="font-size: 16px; color: #1e2922; font-weight: 700; margin: 0;">Most Quoted Products</h2>
+      <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Top {{ count($productDemand) }} most-quoted products across all quotations, with the crops they are for.</p>
+    </div>
+    @if($productTotal > count($productDemand))
+      <div class="scroll-ctl">
+        <a href="{{ route('admin.quotations.products') }}" class="btn-ghost">
+          Show all {{ $productTotal }} products
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
+        </a>
+      </div>
+    @endif
+  </div>
+  @if(count($productDemand) > 0)
+    <div class="product-rank-list">
+      @foreach($productDemand as $index => $product)
+        <div class="product-rank-row">
+          <div class="product-rank-index">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</div>
+          <img src="{{ $product['image'] }}" alt="{{ $product['display_name'] ?: $product['name'] }}" class="product-rank-img" loading="lazy">
+          <div class="product-rank-main">
+            <div class="product-rank-name">{{ $product['display_name'] ?: $product['name'] }}</div>
+            <div class="product-rank-sub">{{ $product['category'] }} &middot; Crops: {{ $product['crops'] ?: '—' }}</div>
+          </div>
+          <div class="product-rank-stats">
+            <span><b>{{ $product['quotation_count'] }}</b> quotes</span>
+            <span><b>{{ number_format($product['total_qty'], 1) }}</b> {{ $product['unit'] }}</span>
+            <span><b>₱{{ number_format($product['total_value'], 0) }}</b> value</span>
+          </div>
+        </div>
+      @endforeach
     </div>
   @else
     <div style="text-align: center; padding: 32px; color: #94a3b8;">
-      <p style="margin: 0;">No crop demand or planting data yet.</p>
+      <p style="margin: 0;">No product demand data yet.</p>
     </div>
   @endif
 </div>
@@ -273,236 +283,62 @@
   document.addEventListener('DOMContentLoaded', function () {
     if (!window.Chart) return;
 
-    var products = @js($productDemand);
     var crops = @js($cropRows);
 
     function peso(n) {
       return '₱' + Number(n || 0).toLocaleString('en-PH', { maximumFractionDigits: 0 });
     }
-    function qty(n) {
-      return Number(n || 0).toLocaleString('en-PH', { maximumFractionDigits: 2 });
-    }
-
-    var productCanvas = document.getElementById('productDemandChart');
-    var productScroll = document.getElementById('productScroll');
-    var productTrack = document.getElementById('productTrack');
-    var productReadout = document.getElementById('productReadout');
-    if (productCanvas && productScroll && productTrack && products.length) {
-      // Two-line labels run to ~18 characters, so a slot narrower than this
-      // would let neighbouring labels overlap.
-      var MIN_SLOT = 128;
-      var pinned = -1;
-      var hovered = -1;
-      var productChart = null;
-
-      // Product names carry a trailing pack size ("\u2014 50 kg") that adds nothing
-      // to a rank axis. Drop it for the tick and wrap what is left onto two
-      // lines; the untouched name stays in the tooltip, readout and table.
-      function stripPackSize(name) {
-        var s = String(name || '');
-        var i = Math.max(s.lastIndexOf('\u2014'), s.lastIndexOf('\u2013'));
-        if (i > 0) s = s.slice(0, i);
-        else if (/\s-\s/.test(s)) s = s.split(/\s-\s/)[0];
-        return s.replace(/\s+$/, '');
-      }
-      function chartLabel(name) {
-        var words = stripPackSize(name).split(' ');
-        var lines = [];
-        var line = '';
-        words.forEach(function (w) {
-          var probe = line ? line + ' ' + w : w;
-          if (line && probe.length > 16) { lines.push(line); line = w; }
-          else { line = probe; }
-        });
-        if (line) lines.push(line);
-        if (lines.length > 2) {
-          lines[1] = lines.slice(1).join(' ');
-          lines.length = 2;
-          if (lines[1].length > 16) lines[1] = lines[1].slice(0, 15) + '\u2026';
-        }
-        return lines;
-      }
-      // One name at a time: the axis keeps the short label at all times, hover
-      // reveals the full name in the tooltip, and a click pins it in the
-      // readout underneath. Nothing is drawn on top of the bar.
-      function paintProductBars() {
-        if (!productChart) return;
-        var active = hovered >= 0 ? hovered : pinned;
-        productChart.data.datasets[0].backgroundColor = products.map(function (p, i) {
-          if (i === active) return 'rgba(20, 61, 35, 1)';
-          return pinned >= 0 ? 'rgba(20, 61, 35, 0.32)' : 'rgba(20, 61, 35, 0.8)';
-        });
-        productChart.update('none');
-      }
-
-      function showProduct(idx) {
-        if (!productReadout) return;
-        if (idx < 0) {
-          productReadout.innerHTML = '<span class="chart-hint">Hover or click a bar to see the full product name.</span>';
-          return;
-        }
-        var p = products[idx];
-        productReadout.innerHTML =
-          '<span><span class="pd-name">' + p.name + '</span> &mdash; ' + p.category + '</span>' +
-          '<span class="pd-meta">' +
-            '<span>Crops: ' + (p.crops || '\u2014') + '</span>' +
-            '<span><b>' + p.quotation_count + '</b> estimate(s)</span>' +
-            '<span>' + qty(p.total_qty) + ' ' + p.unit + '</span>' +
-            '<span>' + peso(p.total_value) + '</span>' +
-          '</span>';
-      }
-
-      function syncProductScroll() {
-        document.querySelectorAll('[data-product-scroll]').forEach(function (btn) {
-          var max = productScroll.scrollWidth - productScroll.clientWidth;
-          btn.disabled = max <= 2 || (btn.dataset.productScroll === 'prev'
-            ? productScroll.scrollLeft <= 2
-            : productScroll.scrollLeft >= max - 2);
-        });
-      }
-
-      function buildProductChart() {
-        // Top 5 normally share the full card width, so the strip only starts
-        // scrolling once a slot would drop below MIN_SLOT.
-        var slot = Math.max(MIN_SLOT, Math.floor(productScroll.clientWidth / products.length));
-        productTrack.style.width = slot * products.length + 'px';
-        if (productChart) productChart.destroy();
-        if (window.aqDestroyChart) aqDestroyChart(productCanvas);
-
-        productChart = new Chart(productCanvas, {
-          type: 'bar',
-          data: {
-            labels: products.map(function (p) { return chartLabel(p.name); }),
-            datasets: [{
-              label: 'Estimates',
-              data: products.map(function (p) { return p.quotation_count; }),
-              backgroundColor: products.map(function (p, i) {
-                return i === pinned ? 'rgba(20, 61, 35, 1)' : 'rgba(20, 61, 35, 0.8)';
-              }),
-              hoverBackgroundColor: 'rgba(20, 61, 35, 1)',
-              borderRadius: 5,
-              maxBarThickness: 120,
-              categoryPercentage: 0.9,
-              barPercentage: 0.72
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { padding: { right: 6 } },
-            interaction: { mode: 'index', intersect: false },
-            onHover: function (evt, items) {
-              var next = items.length ? items[0].index : -1;
-              if (next === hovered) return;
-              hovered = next;
-              paintProductBars();
-            },
-            onClick: function (evt, items) {
-              pinned = (items.length && items[0].index !== pinned) ? items[0].index : -1;
-              hovered = -1;
-              paintProductBars();
-              showProduct(pinned);
-            },
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  title: function (items) { return products[items[0].dataIndex].name; },
-                  label: function (ctx) {
-                    var p = products[ctx.dataIndex];
-                    return [
-                      ctx.parsed.y + ' estimate(s)',
-                      'Crops: ' + (p.crops || '\u2014'),
-                      qty(p.total_qty) + ' ' + p.unit + ' \u00B7 ' + peso(p.total_value)
-                    ];
-                  }
-                }
-              }
-            },
-            scales: {
-              x: {
-                ticks: { color: '#334155', font: { weight: '600', size: 12 }, maxRotation: 0, autoSkip: false },
-                grid: { display: false },
-                border: { display: false }
-              },
-              y: {
-                beginAtZero: true,
-                ticks: { color: '#334155', font: { weight: '600', size: 12 }, precision: 0, maxTicksLimit: 5 },
-                grid: { color: 'rgba(0,0,0,0.08)' },
-                border: { display: false }
-              }
-            }
-          }
-        });
-
-        syncProductScroll();
-      }
-
-      buildProductChart();
-
-      document.querySelectorAll('[data-product-scroll]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          productScroll.scrollBy({
-            left: (btn.dataset.productScroll === 'next' ? 1 : -1) * Math.max(240, productScroll.clientWidth * 0.8),
-            behavior: 'smooth'
-          });
-        });
-      });
-      productScroll.addEventListener('scroll', syncProductScroll);
-      window.addEventListener('resize', buildProductChart);
-    }
-
     var cropCanvas = document.getElementById('cropDemandChart');
-    var cropScroll = document.getElementById('cropScroll');
-    var cropTrack = document.getElementById('cropTrack');
     var cropReadout = document.getElementById('cropReadout');
     var cropNote = document.getElementById('cropChartNote');
 
-    if (cropCanvas && cropScroll && cropTrack && crops.length) {
-      var CROP_MIN_SLOT = 128;
+    if (cropCanvas && crops.length) {
       var CROP_TOP = 5;
-      var cropMode = 'quote';
+      var cropMode = 'harvest';
       var cropPinned = -1;
       var cropHovered = -1;
       var cropChart = null;
 
-      // "Most Quoted" is demand (estimates stores requested); "Most Planted" is
-      // supply (crop batches farmers have planned or put in the ground).
+      // Three crop views: harvested volume, planted area, quoted crops.
+      // The hover card shows only the two numbers that match the active tab.
       var CROP_MODES = {
-        quote: {
-          value: 'estimates',
-          unit: 'estimate(s)',
-          color: 'rgba(2, 132, 199, 0.78)',
-          rank: function (a, b) { return b.estimates - a.estimates; },
+        harvest: {
+          value: 'harvest_yield',
+          unit: 'MT harvested',
+          note: 'harvested volume',
+          color: 'rgba(143, 168, 128, 0.72)',
+          rank: function (a, b) { return b.harvest_yield - a.harvest_yield; },
           detail: function (c) {
             return [
-              c.estimates + ' estimate(s)',
-              Number(c.quoted_area).toLocaleString('en-PH', { maximumFractionDigits: 1 }) + ' ha quoted area',
-              peso(c.quoted_value) + ' quoted value'
+              number1(c.harvest_yield) + ' MT harvested',
+              c.harvest_reports + ' reports'
             ];
-          },
-          supply: function (c) {
-            return c.batches > 0
-              ? c.batches + ' batch(es) \u00B7 ' + c.active + ' active \u00B7 ' + number1(c.planted_area) + ' ha planted'
-              : 'Not planted yet';
           }
         },
         planted: {
           value: 'planted_area',
           unit: 'ha planted',
-          color: 'rgba(22, 163, 74, 0.78)',
+          note: 'planted area',
+          color: 'rgba(112, 145, 104, 0.72)',
           rank: function (a, b) { return b.planted_area - a.planted_area; },
           detail: function (c) {
             return [
               number1(c.planted_area) + ' ha planted',
-              c.batches + ' batch(es) \u00B7 ' + c.active + ' active',
-              c.farmers + ' farmer(s)'
+              c.batches + ' crop batches'
             ];
-          },
-          supply: function (c) {
-            return c.estimates > 0
-              ? c.estimates + ' estimate(s) \u00B7 ' + peso(c.quoted_value) + ' quoted value'
-              : 'Not quoted yet';
+          }
+        },
+        quote: {
+          value: 'estimates',
+          unit: 'quotations',
+          note: 'quotation demand',
+          color: 'rgba(174, 194, 158, 0.72)',
+          rank: function (a, b) { return b.estimates - a.estimates; },
+          detail: function (c) {
+            return [
+              c.estimates + ' quotations',
+              peso(c.quoted_value) + ' quoted'
+            ];
           }
         }
       };
@@ -529,8 +365,8 @@
         return lines;
       }
 
-      // The graph only ever plots the top 5 of the current mode; the table
-      // underneath carries every crop.
+      // The graph only ever plots the top 5 of the current mode; the full
+      // table lives on its own page linked from the card header.
       function cropTop() {
         var cfg = CROP_MODES[cropMode];
         return crops.slice().sort(cfg.rank).filter(function (c) {
@@ -541,7 +377,7 @@
       function showCrop(idx, rows) {
         if (!cropReadout) return;
         if (idx < 0) {
-          cropReadout.innerHTML = '<span class="chart-hint" id="cropReadoutHint">Hover or click a bar to see the full breakdown.</span>';
+          cropReadout.innerHTML = '<span class="chart-hint" id="cropReadoutHint">Hover or click a bar for the value.</span>';
           return;
         }
         var c = rows[idx];
@@ -549,7 +385,7 @@
         cropReadout.innerHTML =
           '<span><span class="pd-name">' + c.crop + '</span></span>' +
           '<span class="pd-meta">' +
-            cfg.detail(c).concat([cfg.supply(c)]).map(function (t) { return '<span>' + t + '</span>'; }).join('') +
+            cfg.detail(c).map(function (t) { return '<span>' + t + '</span>'; }).join('') +
           '</span>';
       }
 
@@ -557,8 +393,8 @@
         if (!cropChart) return;
         var active = cropHovered >= 0 ? cropHovered : cropPinned;
         cropChart.data.datasets[0].backgroundColor = rows.map(function (c, i) {
-          if (i === active) return 'rgba(20, 61, 35, 1)';
-          return cropPinned >= 0 ? 'rgba(20, 61, 35, 0.32)' : CROP_MODES[cropMode].color;
+          if (i === active) return 'rgba(88, 120, 82, 0.92)';
+          return cropPinned >= 0 ? 'rgba(112, 145, 104, 0.58)' : CROP_MODES[cropMode].color;
         });
         cropChart.update('none');
       }
@@ -569,17 +405,20 @@
         cropPinned = -1;
         cropHovered = -1;
 
+        // One palette for the whole system: the pale Crop Directory tint as
+        // the card background and its darker same-hue ink for every line.
+        function paletteFor(ctx) {
+          var row = rows[ctx && ctx.dataIndex !== undefined ? ctx.dataIndex : 0];
+          return (row && row.palette) || { bg: '#F3F7F2', ink: '#2F6B45' };
+        }
+
         if (cropNote) {
-          cropNote.textContent = 'Graph shows the top ' + rows.length + ' of ' + crops.length +
-            ' crop(s) by ' + (cropMode === 'quote' ? 'estimates' : 'planted area') +
-            ' \u2014 all ' + crops.length + ' are listed below.';
+          cropNote.textContent = 'Top ' + rows.length + ' of ' + crops.length + ' crops by ' + cfg.note +
+            '. Open “View all ' + crops.length + ' crops” for the complete table.';
         }
         showCrop(-1);
 
         if (!rows.length) return;
-
-        var slot = Math.max(CROP_MIN_SLOT, Math.floor(cropScroll.clientWidth / rows.length));
-        cropTrack.style.width = slot * rows.length + 'px';
 
         if (cropChart) cropChart.destroy();
         if (window.aqDestroyChart) aqDestroyChart(cropCanvas);
@@ -591,11 +430,11 @@
               label: cfg.unit,
               data: rows.map(function (c) { return c[cfg.value]; }),
               backgroundColor: rows.map(function () { return cfg.color; }),
-              hoverBackgroundColor: 'rgba(20, 61, 35, 1)',
-              borderRadius: 5,
-              maxBarThickness: 120,
-              categoryPercentage: 0.9,
-              barPercentage: 0.72
+              hoverBackgroundColor: 'rgba(88, 120, 82, 0.92)',
+              borderRadius: 4,
+              maxBarThickness: 64,
+              categoryPercentage: 0.96,
+              barPercentage: 0.78
             }]
           },
           options: {
@@ -618,11 +457,20 @@
             plugins: {
               legend: { display: false },
               tooltip: {
+                backgroundColor: function (ctx) { return paletteFor(ctx).bg; },
+                titleColor: function (ctx) { return paletteFor(ctx).ink; },
+                bodyColor: function (ctx) { return paletteFor(ctx).ink; },
+                borderColor: function (ctx) { return paletteFor(ctx).ink; },
+                borderWidth: 1,
+                cornerRadius: 10,
+                padding: 12,
+                displayColors: false,
+                titleFont: { weight: '700', size: 13 },
+                bodyFont: { size: 12, weight: '500' },
                 callbacks: {
                   title: function (items) { return rows[items[0].dataIndex].crop; },
                   label: function (ctx) {
-                    return CROP_MODES[cropMode].detail(rows[ctx.dataIndex])
-                      .concat([CROP_MODES[cropMode].supply(rows[ctx.dataIndex])]);
+                    return CROP_MODES[cropMode].detail(rows[ctx.dataIndex]);
                   }
                 }
               }
@@ -638,9 +486,13 @@
                 ticks: {
                   color: '#334155', font: { weight: '600', size: 12 },
                   maxTicksLimit: 5,
-                  callback: function (v) { return cfg.value === 'planted_area' ? v + ' ha' : v; }
+                  callback: function (v) {
+                    if (cfg.value === 'planted_area') return v + ' ha';
+                    if (cfg.value === 'harvest_yield') return v + ' MT';
+                    return v;
+                  }
                 },
-                grid: { color: 'rgba(0,0,0,0.08)' },
+                grid: { color: 'rgba(148, 163, 184, 0.20)' },
                 border: { display: false }
               }
             }
@@ -663,7 +515,8 @@
         });
       });
 
-      window.addEventListener('resize', buildCropChart);
+      // Chart.js handles resize on its own; rebuilding here would reset the
+      // selected bar and flash the chart every time the window changes size.
     }
   });
 </script>

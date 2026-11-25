@@ -3,7 +3,7 @@
 @section('title', 'AI Assistant')
 
 @section('page-styles')
-  <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=18" data-turbo-track="dynamic">
+  <link rel="stylesheet" href="{{ asset('css/ai-chat.css') }}?v=32" data-turbo-track="dynamic">
 @endsection
 
 @section('content')
@@ -11,81 +11,101 @@
 @php
   $coverage = $context['coverage'] ?? ['reports' => 0, 'farmers' => 0, 'crops' => []];
   $hasData  = (int) ($coverage['reports'] ?? 0) > 0;
+
+  // The shared greeting and model badge read these; the harvest controller
+  // only supplies the digest, so resolve the display values here.
+  $myName = auth()->user()?->name ?? '';
+  $llm = app(\App\AI\AiLlmClient::class);
+  $aiProvider = $aiProvider ?? $llm->provider();
+  $aiModel = $aiModel ?? $llm->modelName();
 @endphp
 
 <style>
-  .ai-page-head { margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-  .ai-page-head h1 { font-size: 24px; font-weight: 700; color: #1e2922; margin: 0; }
-
-  .ai-grid { display: block; }
-
-  .ai-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
-  .ai-card-head { padding: 18px 20px; border-bottom: 1px solid #eef1f4; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .ai-card-title { font-size: 15px; font-weight: 700; color: #1a2b1e; margin: 0; }
-  .ai-card-sub { font-size: 12.5px; color: #879a8c; margin: 3px 0 0 0; }
-  .ai-card-body { padding: 20px; }
-
-  .ai-ask {
-    appearance: none; -webkit-appearance: none; height: 42px; padding: 0 20px;
-    font-size: 13px; font-weight: 700; border-radius: 10px; border: none;
-    background: #6d28d9; color: #fff; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 8px;
-    box-shadow: 0 4px 12px rgba(109,40,217,.25);
-    transition: all .2s ease;
+  /* The admin chat uses the same shared skin as the Farmer and Store Owner
+     chat pages. These rules only cover the admin-specific history panel and
+     the reply metadata the shared stylesheet does not define. */
+  .admin-ai-page .chat-header { gap: 8px; }
+  .admin-ai-page .admin-ai-new { margin-left: 0; }
+  /* Match the shared "New chat" button: the plain .history-btn rule is sized
+     for an icon and would wrap this text-only button onto two lines. */
+  .admin-ai-page #aiClearBtn {
+    width: auto;
+    min-width: 76px;
+    height: 38px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    vertical-align: middle;
   }
-  .ai-ask:hover:not(:disabled) { background: #5b21b6; transform: translateY(-1px); }
-  .ai-ask:disabled { opacity: .65; cursor: progress; transform: none; }
-
-  .ai-back { font-size: 13px; font-weight: 600; color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-  .ai-back:hover { color: #4A7A54; }
-
-  .ai-chat-card { display: flex; flex-direction: column; }
-  .ai-chat-log {
-    height: 440px; overflow-y: auto; padding: 20px;
-    display: flex; flex-direction: column; gap: 16px;
+  .admin-ai-page .history-wrap { margin-left: auto; }
+  .admin-ai-page .history-dropdown {
+    position: fixed;
+    top: auto;
+    right: auto;
+    max-width: calc(100vw - 24px);
   }
-  .ai-msg { display: flex; gap: 10px; }
-  .ai-msg.user { flex-direction: row-reverse; }
-  .ai-msg-avatar {
-    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 800;
+
+  .admin-ai-page .admin-ai-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--aq-sage-500, #648268);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
   }
-  .ai-msg.bot .ai-msg-avatar { background: #edf1e9; color: #648268; border: 1px solid #ddd6fe; }
-  .ai-msg.user .ai-msg-avatar { background: #edf1e9; color: #648268; border: 1px solid #d4d4d4; }
-  .ai-msg-body { max-width: 84%; min-width: 0; }
+  .admin-ai-page .admin-ai-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .admin-ai-page .admin-ai-avatar:focus-visible { outline: 2px solid var(--aq-sage-500, #648268); outline-offset: 2px; }
+
+  .admin-ai-page .admin-ai-avatar .avatar-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(35, 47, 39, 0.55);
+    color: #ffffff;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    border-radius: 50%;
+  }
+  .admin-ai-page .admin-ai-avatar .avatar-overlay svg { width: 16px; height: 16px; }
+  .admin-ai-page .admin-ai-avatar:hover .avatar-overlay,
+  .admin-ai-page .admin-ai-avatar:focus-visible .avatar-overlay,
+  .admin-ai-page .admin-ai-avatar:active .avatar-overlay { opacity: 1; }
+
+  /* Inline reply metadata and badges reuse the shared warm-sage tokens. */
   .ai-msg-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
-  .ai-msg-name { font-size: 11.5px; font-weight: 700; color: #64748b; }
-  .ai-msg-bubble {
-    font-size: 13.5px; color: #3d4a41; line-height: 1.65;
-    background: #f8fafc; border: 1px solid #eef1f4; border-radius: 12px;
-    padding: 11px 14px; overflow-wrap: anywhere;
-  }
-  .ai-msg.user .ai-msg-bubble { background: #f5f3ff; border-color: #ddd6fe; color: #4c1d95; font-weight: 600; }
-  .ai-msg-bubble p { margin: 0 0 9px; }
-  .ai-msg-bubble p:last-child { margin-bottom: 0; }
-  .ai-msg-bubble ul, .ai-msg-bubble ol { margin: 0 0 9px; padding-left: 19px; }
-  .ai-msg-bubble li { margin-bottom: 5px; }
-  .ai-msg-bubble li:last-child { margin-bottom: 0; }
-  .ai-msg-bubble strong { color: #143d23; font-weight: 700; }
-  .ai-msg.user .ai-msg-bubble strong { color: inherit; }
-  .ai-msg-bubble code { background: #eef2f7; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  .ai-msg-name { font-size: 11.5px; font-weight: 700; color: var(--aq-ink-faint, #879a8c); }
+  .ai-source-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
+  .ai-source-badge.ai { background: var(--aq-sage-50, #f1f4ee); color: var(--aq-sage-600, #4f6a56); border: 1px solid #d8e0d2; }
+  .ai-source-badge.fallback { background: #f5f1e4; color: #8a7b54; border: 1px solid #e8dfc8; }
 
-  .ai-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
-  .ai-chip {
-    appearance: none; -webkit-appearance: none; cursor: pointer;
-    background: #fff; border: 1.5px solid #e2e8f0; border-radius: 999px;
-    padding: 7px 13px; font-size: 12.5px; font-weight: 600; color: #334155;
-    font-family: inherit; text-align: left; transition: all .15s ease;
+  .ai-page-link {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+    border-radius: 999px; text-decoration: none; font-weight: 600; font-size: 13px;
+    color: #14532d; background: var(--aq-sage-50, #f1f4ee);
+    border: 1px solid var(--aq-sage-500, #648268);
+    transition: all 0.15s ease; margin: 2px 4px 2px 0;
   }
-  .ai-chip:hover { background: #f5f3ff; border-color: #c4b5fd; color: #6d28d9; }
-  .ai-chip:disabled { opacity: .5; cursor: default; }
+  .ai-page-link::before { content: '\2197'; font-size: 12px; }
+  .ai-page-link:hover { background: #e4ece0; border-color: var(--aq-sage-600, #4f6a56); transform: translateY(-1px); }
+  .ai-page-link:focus { outline: 2px solid var(--aq-sage-500, #648268); outline-offset: 2px; }
+  .ai-page-link-list li { margin-bottom: 4px; list-style: none; position: relative; padding-left: 14px; }
+  .ai-page-link-list li::before { content: '\2022'; position: absolute; left: 0; color: var(--aq-sage-500, #648268); }
 
   .ai-typing { display: inline-flex; gap: 4px; align-items: center; height: 20px; }
-  .ai-typing span { width: 7px; height: 7px; border-radius: 50%; background: #c4b5fd; animation: aiBounce 1.2s infinite ease-in-out; }
-  .ai-typing span:nth-child(2) { animation-delay: .15s; }
-  .ai-typing span:nth-child(3) { animation-delay: .3s; }
-  @keyframes aiBounce { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-5px); opacity: 1; } }
+  .ai-typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--aq-sage-500, #648268); animation: aiBounce 1.2s infinite ease-in-out; }
+  .ai-typing span:nth-child(2) { animation-delay: 0.15s; }
+  .ai-typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes aiBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.45; } 30% { transform: translateY(-5px); opacity: 1; } }
 
   .ai-msg-error {
     font-size: 13.5px; color: #b91c1c; background: #fef2f2;
@@ -93,106 +113,36 @@
     display: flex; align-items: flex-start; gap: 8px;
   }
   .ai-msg-error button {
-    background: none; border: none; padding: 0; color: #b91c1c; font-weight: 700;
-    cursor: pointer; text-decoration: underline; font-size: inherit; font-family: inherit;
+    background: none; border: none; padding: 0; color: #b91c1c;
+    font-weight: 700; cursor: pointer; text-decoration: underline;
+    font-size: inherit; font-family: inherit;
   }
 
-  .ai-chat-form { display: flex; gap: 10px; padding: 14px 20px; border-top: 1px solid #eef1f4; background: #fff; }
-  .ai-chat-input {
-    flex: 1; min-width: 0; height: 42px; padding: 0 14px;
-    border: 1.5px solid #e2e8f0; border-radius: 10px;
-    font-size: 13.5px; font-family: inherit; color: #1e293b; background: #f8fafc;
-    outline: none; transition: border-color .15s ease;
-  }
-  .ai-chat-input:focus { border-color: #c4b5fd; background: #fff; }
-  .ai-chat-input::placeholder { color: #94a3b8; }
-  .ai-chat-input:disabled { opacity: .6; }
-
-  .ai-source-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
-  .ai-source-badge.ai { background: #edf1e9; color: #648268; border: 1px solid #ddd6fe; }
-  .ai-source-badge.fallback { background: #edf1e9; color: #648268; border: 1px solid #e2e8f0; }
-
-  /* Professional, clearly identifiable page links from the AI. */
-  .ai-page-link {
-    display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
-    border-radius: 999px; text-decoration: none; font-weight: 600; font-size: 13px;
-    color: #14532d; background: #edf1e9; border: 1px solid #648268;
-    transition: all .15s ease; margin: 2px 4px 2px 0;
-  }
-  .ai-page-link::before {
-    content: '↗'; font-size: 12px;
-  }
-  .ai-page-link:hover { background: #d8f1e0; border-color: #4A7A54; transform: translateY(-1px); }
-  .ai-page-link:focus { outline: 2px solid #4A7A54; outline-offset: 2px; }
-  .ai-page-link-list li { margin-bottom: 4px; list-style: none; position: relative; padding-left: 14px; }
-  .ai-page-link-list li::before { content: '•'; position: absolute; left: 0; color: #648268; }
-
-  .basis-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px dashed #eef1f4; font-size: 13px; }
-  .basis-row:last-child { border-bottom: none; }
-  .basis-key { color: #64748b; font-weight: 500; }
-  .basis-val { color: #143d23; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
-
-  .basis-list { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-  .basis-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #eef1f4; }
-  .basis-list li:last-child { border-bottom: none; }
-  .basis-list .k { color: #334155; font-weight: 600; }
-  .basis-list .v { color: #64748b; font-variant-numeric: tabular-nums; white-space: nowrap; }
-
-  .pill { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
-  .pill.wet { background: #edf1e9; color: #648268; }
-  .pill.dry { background: #edf1e9; color: #648268; }
-
-  .empty-state { text-align: center; padding: 54px 24px; }
-  .empty-state h3 { font-size: 16px; color: #1e2922; margin: 14px 0 6px; }
-  .empty-state p { font-size: 13.5px; color: #64748b; margin: 0 auto 18px; max-width: 440px; line-height: 1.65; }
-
-  .admin-ai-page .chat-header { gap: 12px; }
-  .admin-ai-avatar {
-    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-    display: inline-flex; align-items: center; justify-content: center;
-    background: var(--aq-sage-100, #e6ebe2); color: var(--aq-sage-600, #4f6a56);
-    border: 0; padding: 0; overflow: hidden; position: relative; cursor: pointer;
-  }
-  .admin-ai-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .admin-ai-avatar-legacy { display: none; }
-  .admin-ai-new { margin-left: auto; }
-  /* Header order: New chat first (left), history last (right). The chat
-     shell clips anything that runs past its own box, so the history card is
-     positioned against the window instead — placeHistoryPanel() below sets
-     its left/top when it opens, which keeps it fully on screen. */
-  .admin-ai-page .history-wrap { margin-left: auto; }
-  .admin-ai-page .history-dropdown {
-    position: fixed;
-    top: auto; right: auto;
-    max-width: calc(100vw - 24px);
-  }
-  .admin-ai-suggestions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 16px;
-    padding-top: 14px;
-    border-top: 1px solid var(--aq-line, #e4e8de);
-  }
-  .admin-ai-suggestions::before {
-    content: 'Suggested questions';
-    flex-basis: 100%;
-    color: var(--aq-ink-faint, #879a8c);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-  }
-  .admin-ai-suggestions .chip { box-shadow: 0 1px 3px rgba(44, 53, 48, .06); }
   .ai-clarification { margin-top: 12px; }
-  .ai-clarification-title { margin: 0 0 9px; font-size: 12px; font-weight: 700; color: #64748b; }
+  .ai-clarification-title { margin: 0 0 9px; font-size: 12px; font-weight: 700; color: var(--aq-ink-faint, #879a8c); }
   .ai-clarification-options { display: grid; gap: 7px; }
-  .ai-clarification-option { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 9px; background: #fff; cursor: pointer; font-size: 12.5px; color: #334155; }
-  .ai-clarification-option:hover { border-color: #c4b5fd; background: #f5f3ff; }
-  .ai-clarification-option input { margin-top: 2px; accent-color: #6d28d9; }
+  .ai-clarification-option {
+    display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px;
+    border: 1px solid #dadfd3; border-radius: 9px; background: #fff;
+    cursor: pointer; font-size: 12.5px; color: var(--aq-ink, #2c3530);
+  }
+  .ai-clarification-option:hover { border-color: var(--aq-sage-500, #648268); background: var(--aq-sage-50, #f1f4ee); }
+  .ai-clarification-option input { margin-top: 2px; accent-color: var(--aq-sage-500, #648268); }
   .ai-clarification-custom { display: flex; gap: 7px; margin-top: 9px; }
-  .ai-clarification-custom input { flex: 1; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 8px; font: inherit; font-size: 12.5px; }
-  .ai-clarification-custom button { border: 0; border-radius: 8px; padding: 0 12px; background: #6d28d9; color: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .ai-clarification-custom input { flex: 1; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid #dadfd3; border-radius: 8px; font: inherit; font-size: 12.5px; }
+  .ai-clarification-custom button { border: 0; border-radius: 8px; padding: 0 12px; background: var(--aq-sage-500, #648268); color: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+  .basis-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px dashed var(--aq-line, #e4e8de); font-size: 13px; }
+  .basis-row:last-child { border-bottom: none; }
+  .basis-key { color: var(--aq-ink-faint, #879a8c); font-weight: 500; }
+  .basis-val { color: var(--aq-sage-700, #3f5a46); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+  .basis-list { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+  .basis-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--aq-line, #e4e8de); }
+  .basis-list li:last-child { border-bottom: none; }
+  .basis-list .k { color: var(--aq-ink, #2c3530); font-weight: 600; }
+  .basis-list .v { color: var(--aq-ink-faint, #879a8c); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pill { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 700; }
+  .pill.wet, .pill.dry { background: var(--aq-sage-50, #f1f4ee); color: var(--aq-sage-600, #4f6a56); }
 </style>
 
 @if(! $hasData)
@@ -201,12 +151,12 @@
       <div class="chat-header">
         <button type="button" class="admin-ai-avatar" id="adminAiAvatarBtn" title="Change AI avatar" aria-label="Change AI avatar">
           <img src="{{ $aiAvatar }}" alt="AI Assistant" data-ai-avatar>
+          <span class="avatar-overlay">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 0 1 2-2h1.5l1-1.5h9l1 1.5H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" /><circle cx="12" cy="13" r="3.2" /></svg>
+          </span>
         </button>
         @include('admin.harvests.partials.ai-avatar-picker')
-        <div class="admin-ai-avatar-legacy" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"/></svg>
-        </div>
-        <button id="aiClearBtn" class="chip admin-ai-new" type="button" onclick="resetChat()">New chat</button>
+        <button id="aiClearBtn" class="history-btn admin-ai-new" type="button" onclick="resetChat()">New chat</button>
         <div class="history-wrap">
           <button class="history-btn" id="adminHistoryBtn" type="button" aria-label="Chat history" title="Chat history">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -224,8 +174,9 @@
           </div>
         </div>
       </div>
-      <div class="chat-messages" id="aiChatLog" role="log" aria-live="polite">
-        <div class="message-row">
+      <div id="aiChatLog" class="chat-messages" role="log" aria-live="polite">
+        <div class="chat-greeting">Hello{{ $myName ? ', ' . $myName : '' }}!</div>
+        <div class="message-row welcome-suggestions">
           <div class="message-bubble">
             No harvest reports are available yet. Once records are added, I can explain performance, crops, seasons, costs, and the next items to verify.
           </div>
@@ -235,8 +186,11 @@
         <div class="chat-input-wrapper">
           <input id="aiChatInput" class="chat-input ai-chat-input" type="text" maxlength="500" placeholder="Ask about your association data…" autocomplete="off" aria-label="Ask about association data" />
           <button id="aiChatSend" class="send-btn" type="submit" title="Send" aria-label="Send">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
           </button>
+        </div>
+        <div class="ai-model-badge" aria-label="Current AI model">
+          Powered by {{ ucfirst($aiProvider) }}{{ $aiModel ? ' (' . $aiModel . ')' : '' }}
         </div>
       </form>
     </div>
@@ -247,12 +201,12 @@
       <div class="chat-header">
         <button type="button" class="admin-ai-avatar" id="adminAiAvatarBtn" title="Change AI avatar" aria-label="Change AI avatar">
           <img src="{{ $aiAvatar }}" alt="AI Assistant" data-ai-avatar>
+          <span class="avatar-overlay">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 0 1 2-2h1.5l1-1.5h9l1 1.5H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" /><circle cx="12" cy="13" r="3.2" /></svg>
+          </span>
         </button>
         @include('admin.harvests.partials.ai-avatar-picker')
-        <div class="admin-ai-avatar-legacy" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 15 .7 2.3L22 18l-.7 2.3L19 21l-.7-2.3L16 18l2.3-.7L19 15Z"/></svg>
-        </div>
-        <button id="aiClearBtn" class="chip admin-ai-new" type="button" onclick="resetChat()">New chat</button>
+        <button id="aiClearBtn" class="history-btn admin-ai-new" type="button" onclick="resetChat()">New chat</button>
         <div class="history-wrap">
           <button class="history-btn" id="adminHistoryBtn" type="button" aria-label="Chat history" title="Chat history">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -272,12 +226,10 @@
       </div>
 
       <div id="aiChatLog" class="chat-messages" role="log" aria-live="polite">
-        <div class="message-row">
+        <div class="chat-greeting">Hello{{ $myName ? ', ' . $myName : '' }}!</div>
+        <div class="message-row welcome-suggestions">
           <div class="message-bubble">
-            <p>Hello. I’m Aquilala’s administrative AI Assistant.</p>
-            <p>I can help you interpret association performance, harvest trends, costs, crops, seasons, and recorded activities.</p>
-            <p>Ask a question to begin. I’ll provide concise, evidence-based observations to support your review.</p>
-            <div class="admin-ai-suggestions">
+            <div class="quick-chips admin-ai-suggestions">
               <button type="button" class="chip ai-chip" onclick="askChip(this)">How did the latest season compare with the one before it?</button>
               <button type="button" class="chip ai-chip" onclick="askChip(this)">Is the wet season out-yielding the dry season?</button>
               <button type="button" class="chip ai-chip" onclick="askChip(this)">Which crops are trending up or down?</button>
@@ -290,8 +242,11 @@
         <div class="chat-input-wrapper">
           <input id="aiChatInput" class="chat-input ai-chat-input" type="text" maxlength="500" placeholder="Ask about your association data…" autocomplete="off" aria-label="Ask about association data" />
           <button id="aiChatSend" class="send-btn" type="submit" title="Send" aria-label="Send">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
           </button>
+        </div>
+        <div class="ai-model-badge" aria-label="Current AI model">
+          Powered by {{ ucfirst($aiProvider) }}{{ $aiModel ? ' (' . $aiModel . ')' : '' }}
         </div>
       </form>
     </div>

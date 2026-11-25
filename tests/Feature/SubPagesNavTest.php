@@ -44,6 +44,7 @@ class SubPagesNavTest extends TestCase
             route('admin.calendar.index'),
             route('admin.settings.interface'),
             route('admin.quotations.index'),
+            route('admin.quotations.crops'),
         ];
 
         foreach ($pages as $url) {
@@ -73,11 +74,11 @@ class SubPagesNavTest extends TestCase
             'Farming Cost Reports must not have its own sidebar entry.'
         );
 
-        // …and demand trends describe product demand, so Farm Supplies owns it.
+        // …and crop trends tie quoted farm inputs to crops, so Farm Supplies owns it.
         $operations = collect($nav['operations']['items']);
         $this->assertNotNull(
             $operations->first(fn (array $item) => ($item['routes'] ?? []) === ['admin.quotations.index']),
-            'Quotation Demand Trends belongs with Farm Supplies.'
+            'View Crop Trends belongs with Farm Supplies.'
         );
     }
 

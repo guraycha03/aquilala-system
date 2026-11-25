@@ -64,19 +64,12 @@ class FilterCollapseTest extends TestCase
     public function test_server_filter_pages_open_automatically_for_their_url_params(): void
     {
         $admin = $this->makeUser('Filter Admin', 'admin');
-        $farmer = $this->makeUser('Compare Farmer', 'farmer');
 
         $this->actingAs($admin)
             ->get(route('admin.audit.index'))
             ->assertOk()
             ->assertSee('data-fc-toggle', false)
             ->assertSee('data-fc-open-when="cat,period,user_id"', false);
-
-        $this->actingAs($farmer)
-            ->get(route('farmer.harvests.compare'))
-            ->assertOk()
-            ->assertSee('data-fc-toggle', false)
-            ->assertSee('data-fc-open-when="year,season,crop,farmer,group_by"', false);
 
         $this->actingAs($admin)
             ->get(route('admin.activity.index'))

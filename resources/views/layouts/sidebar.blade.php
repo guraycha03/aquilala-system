@@ -1265,12 +1265,6 @@
             </a>
           </li>
           <li>
-            <a href="{{ route('farmer.harvests.compare') }}" class="{{ request()->routeIs('farmer.harvests.compare') ? 'active' : '' }}">
-              <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
-              Estimate vs Harvest
-            </a>
-          </li>
-          <li>
             <a href="{{ route('farmer.calendar.index') }}" class="{{ request()->routeIs('farmer.calendar.*') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               Calendar
@@ -1487,7 +1481,7 @@
           <li>
             <a href="{{ route('admin.quotations.index') }}" class="{{ request()->is('admin/analytics*') || request()->is('admin/quotations*') ? 'active' : '' }}">
               <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              Analytics
+              View Crop Trends
             </a>
           </li>
           <li>
@@ -2477,7 +2471,6 @@
           ['Harvest Performance', 'admin.harvests.index', 'harvest reports performance'],
           ["Farmer's Harvest", 'admin.harvests.reports', 'report list records'],
           ['Generate report', 'admin.harvests.reports.generate', 'generated saved download tagalog english report'],
-          ['Estimate vs Actual Harvest', 'admin.harvests.compare', 'compare estimate actual'],
           ['Planting Requests', 'admin.plantings.index', 'planting request confirm reject'],
           ['Calendar', 'admin.calendar.index', 'calendar schedule'],
           ['Events', 'admin.calendar.events', 'association events meetings'],
@@ -2485,7 +2478,7 @@
           ['Crop Directory', 'farmer.crops-directory.index', 'crop guide reference library'],
           ['Product Catalog', 'admin.operations.catalog', 'products catalog inputs'],
           ['Stores', 'admin.stores.index', 'stores owners paperwork'],
-          ['Quotation Demand Trends', 'admin.quotations.index', 'demand quotation products'],
+          ['View Crop Trends', 'admin.quotations.index', 'crop trends planted harvested varieties quotation products demand'],
           ['General Settings', 'admin.settings.index', 'settings general subpages'],
           ['Appearance', 'admin.settings.interface', 'theme color sidebar dark light'],
           ['Season Settings', 'admin.settings.seasons', 'season settings climate'],
@@ -2510,7 +2503,6 @@
           ['Submit Harvest Report', 'farmer.harvests.create', 'submit add report'],
           ['My Crops', 'farmer.crops.index', 'crops batches'],
           ["Farmer's Harvest", 'farmer.harvests.index', 'harvest list reports'],
-          ['Estimate vs Actual Harvest', 'farmer.harvests.compare', 'compare estimate actual'],
           ['My Cost Quotations', 'farmer.quotations.index', 'quotation request cost'],
           ['Browse Supplies', 'farmer.products.browse', 'products supplies inputs'],
           ['Recommended Supplies', 'farmer.recommendations.index', 'recommendation supplies'],

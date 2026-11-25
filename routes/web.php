@@ -320,9 +320,6 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
             ->name('harvests.index')
             ->middleware('shield');
         Route::get('/harvests/create', [HarvestReportController::class, 'farmerCreate'])->name('harvests.create');
-        // Estimate vs Actual — planting estimate against filed yield.
-        Route::get('/harvests/compare', [HarvestReportController::class, 'farmerCompare'])
-            ->name('harvests.compare');
         Route::post('/harvests', [HarvestReportController::class, 'store'])->name('harvests.store');
         Route::delete('/harvests/{harvestReport}', [HarvestReportController::class, 'destroy'])->name('harvests.destroy');
 
@@ -604,6 +601,7 @@ Route::middleware(['auth', 'password.setup'])->group(function () {
             ->name('stores.documents.destroy');
 
         Route::get('/quotations', [QuotationController::class, 'adminIndex'])->name('quotations.index');
+        Route::get('/quotations/crops', [QuotationController::class, 'adminCrops'])->name('quotations.crops');
         Route::get('/quotations/products', [QuotationController::class, 'adminProducts'])->name('quotations.products');
         Route::get('/activity', [QuotationController::class, 'adminActivity'])->name('activity.index');
 
@@ -873,10 +871,6 @@ Route::get('/operations', fn () => redirect()->route('admin.operations.catalog')
             ->name('harvests.ai.history.save');
         Route::delete('/harvests/ai/histories/{chatHistory}', [HarvestReportController::class, 'destroyAdminAiHistory'])
             ->name('harvests.ai.history.destroy');
-
-        // Estimate vs Actual — planting estimate against reported yield.
-        Route::get('/harvests/compare', [HarvestReportController::class, 'adminCompare'])
-            ->name('harvests.compare');
 
         // Full harvest history — the wet-vs-dry trend as a page of its own,
         // opened from the landing page's Full view button (it used to be a
