@@ -2,8 +2,8 @@
   Shared month calendar for the association schedule.
   Pass: $year, $month, $monthLabel, $prevUrl, $nextUrl, $events
 
-  Every cell is a fixed size. Events are shown only as a colored day-number
-  pill plus dots; hovering or clicking a date opens a popover with details.
+  Every cell is a fixed size. Events are shown with a quiet dot; clicking or
+  hovering a date opens a small neutral popover with the details.
 --}}
 @php
     $todayStr   = now()->toDateString();
@@ -12,21 +12,25 @@
     $gridEnd    = $monthStart->copy()->endOfMonth()->endOfWeek();
     $byDate     = $events->groupBy(fn ($e) => $e->event_date->toDateString());
     $calTypes   = \App\Models\AssociationEvent::TYPES;
-    $calColors  = \App\Models\AssociationEvent::TYPE_COLORS;
+
+    // Unknown types fall back to the neutral tone. The class lives in the
+    // shared calendar-theme partial, so farmer and admin look identical.
+    $toneClass = fn (string $type): string => in_array($type, array_keys($calTypes), true)
+        ? 'cal-tone-'.$type
+        : 'cal-tone-other';
 
     $cells = [];
     for ($d = $gridStart->copy(); $d->lte($gridEnd); $d->addDay()) {
         $cells[] = $d->copy();
     }
 
-    // Payload for the hover/click popover, keyed by date.
     $calData = [];
     foreach ($byDate as $date => $dayEvents) {
         foreach ($dayEvents as $ev) {
             $calData[$date][] = [
                 'title'       => $ev->title,
                 'type_label'  => $ev->type_label,
-                'type_color'  => $ev->type_color,
+                'tone'        => $toneClass((string) $ev->event_type),
                 'time_label'  => $ev->time_label,
                 'location'    => $ev->location,
                 'description' => $ev->description,
@@ -36,10 +40,7 @@
 @endphp
 
 <style>
-    /* ── Page split (wide screens): today card + events panel on the left,
-       calendar alone on the right. Below 1200px everything stacks in
-       DOM order: today, calendar, events. ── */
-    .cal-split { display: grid; grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); gap: 18px; align-items: start; }
+    .cal-split { display: grid; grid-template-columns: minmax(300px, 370px) minmax(0, 1fr); gap: 18px; align-items: start; }
     .cal-split-today { grid-column: 1; grid-row: 1; min-width: 0; }
     .cal-split-events { grid-column: 1; grid-row: 2; min-width: 0; }
     .cal-split-cal { grid-column: 2; grid-row: 1 / span 2; min-width: 0; }
@@ -50,50 +51,105 @@
         .cal-split-events { grid-column: 1; grid-row: 3; }
     }
 
-    .cal-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
-
-    .cal-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid #e5e7eb; }
-    .cal-toolbar-title { font-size: 16.5px; font-weight: 800; color: #1e2922; margin: 0; }
-    .cal-nav { display: flex; gap: 8px; }
-    .cal-nav a { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; border: 1.5px solid #e2e8f0; background: #edf1e9; color: #648268; text-decoration: none; font-weight: 700; }
-    .cal-nav a:hover { background: #f0fdf4; border-color: #86efac; color: #4A7A54; }
+    .cal-card {
+        background: var(--cal-surface, #fff);
+        border: 1px solid var(--cal-line, #e7ece6);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .cal-toolbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 13px 18px; border-bottom: 1px solid var(--cal-line-soft, #f0f3ef);
+    }
+    .cal-toolbar-title { font-size: 15.5px; font-weight: 750; color: var(--cal-ink, #26342b); margin: 0; }
+    .cal-nav { display: flex; gap: 7px; }
+    .cal-nav a {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; border-radius: 8px;
+        border: 1px solid var(--cal-line, #e7ece6);
+        background: var(--cal-wash, #f8faf8);
+        color: var(--cal-muted, #748078);
+        text-decoration: none; font-weight: 700;
+    }
+    .cal-nav a:hover { background: var(--cal-accent-soft, #eef4ee); color: var(--cal-accent, #5c7f66); }
 
     .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
-    .cal-wd { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; text-align: center; padding: 10px 4px; background: #f8fafc; border-bottom: 1px solid #e5e7eb; }
+    .cal-wd {
+        font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .05em; color: var(--cal-muted, #748078);
+        text-align: center; padding: 9px 4px;
+        background: var(--cal-wash, #f8faf8);
+        border-bottom: 1px solid var(--cal-line-soft, #f0f3ef);
+    }
 
-    .cal-cell { box-sizing: border-box; height: 96px; padding: 8px 7px; overflow: hidden; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; cursor: default; }
+    .cal-cell {
+        box-sizing: border-box; height: 86px; padding: 8px 7px;
+        overflow: hidden;
+        border-bottom: 1px solid var(--cal-line-soft, #f0f3ef);
+        border-right: 1px solid var(--cal-line-soft, #f0f3ef);
+    }
     .cal-cell:nth-child(7n) { border-right: 0; }
-    .cal-cell.outside { background: #fafafa; }
-    .cal-cell.is-today { background: #f0fdf4; box-shadow: inset 0 0 0 2px #4A7A54; }
+    .cal-cell.outside { background: var(--cal-wash, #f8faf8); }
+    .cal-cell.is-today { background: var(--cal-accent-soft, #eef4ee); }
     .cal-cell.has-events { cursor: pointer; }
-    .cal-cell.has-events:hover, .cal-cell.has-events:focus-visible { background: #ecfdf5; outline: none; }
+    .cal-cell.has-events:hover,
+    .cal-cell.has-events:focus-visible { background: var(--cal-wash, #f8faf8); outline: none; }
 
-    .cal-daynum { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 5px; border-radius: 12px; font-size: 12.5px; font-weight: 700; color: #475569; background: #f1f5f9; margin-bottom: 7px; }
-    .cal-cell.outside .cal-daynum { color: #cbd5e1; }
-    .cal-cell.is-today .cal-daynum { background: #4A7A54; color: #fff; font-weight: 800; }
-    .cal-cell.has-events .cal-daynum { background: var(--ev, #334155); color: #fff; font-weight: 800; }
-    .cal-cell.outside.has-events .cal-daynum { opacity: .6; }
+    .cal-daynum {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 22px; height: 22px; padding: 0 4px;
+        border-radius: 7px; font-size: 12px; font-weight: 700;
+        color: var(--cal-ink, #26342b); margin-bottom: 7px;
+    }
+    .cal-cell.outside .cal-daynum { color: var(--cal-muted, #748078); opacity: .7; }
+    .cal-cell.is-today .cal-daynum { background: var(--cal-accent-soft, #eef4ee); color: var(--cal-accent, #5c7f66); }
 
-    .cal-dots { display: flex; align-items: center; gap: 4px; padding-left: 3px; }
-    .cal-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .cal-more { font-size: 10px; font-weight: 800; color: #94a3b8; }
+    .cal-dots { display: flex; align-items: center; gap: 5px; padding-left: 2px; }
+    .cal-dot, .cal-legend-dot, .cal-pop-dot {
+        background: var(--tone-dot, #a79b88);
+        border-radius: 50%; flex-shrink: 0;
+    }
+    .cal-dot { width: 7px; height: 7px; }
+    .cal-more { font-size: 10px; font-weight: 700; color: var(--cal-muted, #748078); }
 
-    .cal-legend { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e5e7eb; }
-    .cal-legend-item { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: #475569; background: #f1f5f9; border-radius: 20px; padding: 7px 15px; }
-    .cal-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .cal-legend {
+        display: flex; flex-wrap: wrap; gap: 8px 16px;
+        padding: 11px 18px; background: var(--cal-wash, #f8faf8);
+        border-top: 1px solid var(--cal-line-soft, #f0f3ef);
+    }
+    .cal-legend-item {
+        display: inline-flex; align-items: center; gap: 7px;
+        font-size: 12px; font-weight: 600; color: var(--cal-muted, #748078);
+    }
+    .cal-legend-dot { width: 8px; height: 8px; }
 
-    .cal-pop { position: absolute; z-index: 60; display: none; width: 300px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 14px 34px rgba(15,23,42,.18); overflow: hidden; }
-    .cal-pop-head { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #64748b; background: #f8fafc; padding: 9px 14px; border-bottom: 1px solid #e2e8f0; }
+    .cal-pop {
+        position: absolute; z-index: 60; display: none;
+        width: 290px; max-width: calc(100vw - 24px);
+        background: var(--cal-surface, #fff);
+        border: 1px solid var(--cal-line, #e7ece6);
+        border-radius: 12px;
+        box-shadow: 0 12px 28px rgba(30, 45, 35, .10);
+        overflow: hidden;
+    }
+    .cal-pop-head {
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .04em; color: var(--cal-muted, #748078);
+        background: var(--cal-wash, #f8faf8); padding: 9px 14px;
+        border-bottom: 1px solid var(--cal-line-soft, #f0f3ef);
+    }
     .cal-pop-body { max-height: 264px; overflow-y: auto; padding: 4px 14px 8px; }
-    .cal-pop-item { display: flex; gap: 9px; padding: 10px 0; border-bottom: 1px dashed #e2e8f0; }
+    .cal-pop-item {
+        display: flex; gap: 9px; padding: 10px 0;
+        border-bottom: 1px solid var(--cal-line-soft, #f0f3ef);
+    }
     .cal-pop-item:last-child { border-bottom: 0; }
-    .cal-pop-dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
-    .cal-pop-title { font-size: 13.5px; font-weight: 700; color: #0f172a; }
-    .cal-pop-meta { font-size: 12px; color: #64748b; margin-top: 1px; }
-    .cal-pop-desc { font-size: 12px; color: #475569; margin-top: 3px; }
+    .cal-pop-dot { width: 8px; height: 8px; margin-top: 5px; }
+    .cal-pop-title { font-size: 13px; font-weight: 700; color: var(--cal-ink, #26342b); }
+    .cal-pop-meta { font-size: 11.5px; color: var(--cal-muted, #748078); margin-top: 2px; }
+    .cal-pop-desc { font-size: 11.5px; color: var(--cal-muted, #748078); margin-top: 3px; line-height: 1.5; }
 </style>
 
-{{-- ── Month grid ── --}}
 <div class="cal-card">
     <div class="cal-toolbar">
         <h2 class="cal-toolbar-title">{{ $monthLabel }}</h2>
@@ -114,7 +170,6 @@
                 $isOutside = $day->format('Y-m') !== $monthStart->format('Y-m');
             @endphp
             <div class="cal-cell {{ $isOutside ? 'outside' : '' }} {{ $day->toDateString() === $todayStr ? 'is-today' : '' }} {{ $dayEvents->isNotEmpty() ? 'has-events' : '' }}"
-                 style="--ev: {{ $dayEvents->first()?->type_color ?? 'transparent' }};"
                  data-date="{{ $day->toDateString() }}"
                  data-label="{{ $day->format('l, F j, Y') }}"
                  {{ $dayEvents->isNotEmpty() ? 'tabindex=0' : '' }}>
@@ -122,7 +177,7 @@
                 @if($dayEvents->isNotEmpty())
                     <div class="cal-dots">
                         @foreach($dayEvents->take(4) as $ev)
-                            <span class="cal-dot" style="background: {{ $ev->type_color }};"></span>
+                            <span class="cal-dot {{ $toneClass((string) $ev->event_type) }}"></span>
                         @endforeach
                         @if($dayEvents->count() > 4)
                             <span class="cal-more">+{{ $dayEvents->count() - 4 }}</span>
@@ -136,7 +191,7 @@
     <div class="cal-legend">
         @foreach($calTypes as $key => $label)
             <span class="cal-legend-item">
-                <span class="cal-legend-dot" style="background: {{ $calColors[$key] }};"></span>
+                <span class="cal-legend-dot {{ $toneClass((string) $key) }}"></span>
                 {{ $label }}
             </span>
         @endforeach
@@ -176,7 +231,7 @@
             if (e.time_label) meta += ' &middot; ' + esc(e.time_label);
             if (e.location) meta += ' &middot; ' + esc(e.location);
             return '<div class="cal-pop-item">' +
-                '<span class="cal-pop-dot" style="background:' + esc(e.type_color) + '"></span>' +
+                '<span class="cal-pop-dot ' + esc(e.tone) + '"></span>' +
                 '<div><div class="cal-pop-title">' + esc(e.title) + '</div>' +
                 '<div class="cal-pop-meta">' + meta + '</div>' +
                 (e.description ? '<div class="cal-pop-desc">' + esc(e.description) + '</div>' : '') +
