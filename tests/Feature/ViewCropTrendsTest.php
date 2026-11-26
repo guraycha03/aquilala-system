@@ -123,6 +123,8 @@ class ViewCropTrendsTest extends TestCase
             ->assertSee('All Crops')
             ->assertSee('Back to View Crop Trends');
         $this->assertStringContainsString('id="adminCropTable"', $allCrops->getContent());
+        $this->assertStringContainsString('crop-table-scroll table-scroll', $allCrops->getContent());
+        $this->assertStringContainsString('.variety-list {', $allCrops->getContent());
 
         $this->actingAs($admin)
             ->get(route('admin.quotations.products'))

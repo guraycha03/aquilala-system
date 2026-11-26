@@ -19,6 +19,39 @@
   .cell-strong { font-weight: 600; color: #1e2922; }
   .cell-muted { color: #64748b; }
   .cap { text-transform: capitalize; }
+
+  /* This table has 11 columns, so it must be allowed to scroll sideways
+     instead of being squeezed into the card and clipping the right side. */
+  .crop-table-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+  .crop-table-scroll::-webkit-scrollbar { height: 9px; }
+  .crop-table-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9px; }
+
+  #adminCropTable { min-width: 1240px; table-layout: fixed; }
+  #adminCropTable th,
+  #adminCropTable td { padding: 12px 14px; }
+  #adminCropTable th:nth-child(1)  { width: 100px; }
+  #adminCropTable th:nth-child(2)  { width: 260px; }
+  #adminCropTable th:nth-child(3)  { width: 90px; }
+  #adminCropTable th:nth-child(4)  { width: 110px; }
+  #adminCropTable th:nth-child(5)  { width: 120px; }
+  #adminCropTable th:nth-child(6)  { width: 80px; }
+  #adminCropTable th:nth-child(7)  { width: 70px; }
+  #adminCropTable th:nth-child(8)  { width: 80px; }
+  #adminCropTable th:nth-child(9)  { width: 110px; }
+  #adminCropTable th:nth-child(10) { width: 130px; }
+  #adminCropTable th:nth-child(11) { width: 120px; }
+  #adminCropTable td.cap,
+  #adminCropTable .num { white-space: nowrap; }
+
+  /* 2–3 variety cards per row instead of one long vertical stack. */
+  .variety-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 232px; }
+  .variety-chip { flex: 0 0 auto; white-space: nowrap; }
 </style>
 
 <div class="header-panel" style="margin-bottom: 10px;">
@@ -45,7 +78,7 @@
   />
 
 <div class="data-table-container">
-  <div class="chart-scroll table-scroll">
+  <div class="crop-table-scroll table-scroll">
     <table id="adminCropTable" class="data-table">
       <thead>
         <tr>
@@ -72,7 +105,9 @@
             <td class="cell-strong cap">{{ $crop['crop'] }}</td>
             <td>
               @forelse($crop['varieties'] as $variety)
-                <span class="badge variety-chip">{{ $variety }}</span>
+                @if($loop->first)<div class="variety-list">@endif
+                  <span class="badge variety-chip">{{ $variety }}</span>
+                @if($loop->last)</div>@endif
               @empty
                 <span class="cell-muted">&mdash;</span>
               @endforelse
