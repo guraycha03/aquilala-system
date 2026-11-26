@@ -14,6 +14,10 @@
 
     @include('admin.harvests.generated.partials.topbar', ['activeTab' => $activeTab, 'savedReports' => $savedReports])
 
+    @if (in_array($activeTab, ['generate', 'saved'], true))
+      @include('admin.harvests.generated.partials.ai-insight-fab')
+    @endif
+
     @if (session('success'))
       <div class="ahr-alert success" role="status">{{ session('success') }}</div>
     @endif

@@ -4,11 +4,13 @@
 
 @section('content')
 
-<div class="header-panel" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 22px 26px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04);">
-  <h1 style="font-size: 24px; font-weight: 800; color: #1a2b1e; margin: 0 0 4px 0; letter-spacing: -0.02em;">Association Calendar</h1>
-  <p style="color: #5c6d61; font-size: 14px; margin: 0; line-height: 1.5; max-width: 680px;">
-    Everything happening in the association — free input releases, water scheduling, meetings and seminars. What's on today shows up above the calendar.
-  </p>
+@include('partials.calendar-theme')
+
+<div class="cal-page-head">
+  <div>
+    <h1>Association Calendar</h1>
+    <p>One shared schedule for the association — input releases, water scheduling, meetings and seminars. What's on today appears above the calendar.</p>
+  </div>
 </div>
 
 <div class="cal-split">

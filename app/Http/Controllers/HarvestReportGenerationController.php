@@ -80,12 +80,15 @@ class HarvestReportGenerationController extends Controller
         }
         $recordDir = $request->query('record_dir') === 'asc' ? 'asc' : 'desc';
 
+        $scope = $this->scopeLabel($filters);
+
         $viewData = [
             'activeTab' => $tab,
             'filters' => $filters,
             'previewContext' => $previewContext,
             'previewVisual' => $previewVisual,
-            'scope' => $this->scopeLabel($filters),
+            'scope' => $scope,
+            'previewInsight' => $this->previewInsight($previewContext, $previewVisual, $scope),
             'seasonFilter' => (string) ($filters['season'] ?? 'all'),
             'savedReports' => $savedReports,
             'options' => $this->analytics->options($allReports),
@@ -365,6 +368,32 @@ class HarvestReportGenerationController extends Controller
         return $scope === 'All recorded harvest reports'
             ? 'Harvest Report — ' . now()->format('F Y')
             : 'Harvest Report — ' . $scope;
+    }
+
+    /**
+     * Short, deterministic note for the AI Insight button on the generator
+     * tabs. It uses the same filtered context as the preview, so the wording
+     * never claims figures the officer cannot see on the page.
+     *
+     * @param  array<string, mixed>  $context
+     * @param  array<string, mixed>  $visual
+     */
+    private function previewInsight(array $context, array $visual, string $scope): string
+    {
+        $reports = (int) ($context['totals']['reports'] ?? ($visual['total_records'] ?? 0));
+        $farmers = (int) ($context['totals']['farmers'] ?? ($visual['total_farmers'] ?? 0));
+        $crops = count($context['coverage']['crops'] ?? []);
+        $yield = number_format((float) ($context['totals']['yield_tons'] ?? ($visual['total_yield_mt'] ?? 0)), 2);
+
+        if ($reports === 0) {
+            return "- Report scope: {$scope}.\n"
+                . "- Why this result: No harvest records fall within the selected scope.\n"
+                . "- What to remember: Widen the scope or encode more harvests, then generate the report again.";
+        }
+
+        return "- Report scope: {$scope}. {$reports} harvest records from {$farmers} farmers, covering {$crops} crop(s).\n"
+            . "- Why this result: These saved rows are what the preview and generated report draw from; their combined yield is {$yield} MT.\n"
+            . "- What to remember: The generated report remains the official record. This note only explains what is included in the preview.";
     }
 
     /**

@@ -83,7 +83,8 @@ class GeneratedHarvestReportTest extends TestCase
         $this->actingAs($this->otherAdmin)
             ->get(route('admin.harvests.reports.generate', ['tab' => 'saved']))
             ->assertOk()
-            ->assertSee('No Saved Harvest Reports Yet');
+            ->assertSee('No Saved Harvest Reports Yet')
+            ->assertSee('AI Insight', false);
     }
 
     public function test_generate_stays_focused_on_reporting_with_multiyear_filters(): void
@@ -102,6 +103,8 @@ class GeneratedHarvestReportTest extends TestCase
             'Harvest Report Generation',
             'Report Scope',
             'Generate report',
+            'AI Insight',
+            'id="ahr-ai-insight-open"',
         ] as $fragment) {
             $this->assertStringContainsString($fragment, $html);
         }

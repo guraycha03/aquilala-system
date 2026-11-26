@@ -374,6 +374,18 @@
     .brand-title { font-size: 17px; font-weight: 800; letter-spacing: -0.01em; display: block; margin-bottom: 1px; color: #ffffff; line-height: 1.05; }
     .brand-accent { color: var(--sb-brand-accent, var(--sb-accent, #C8F36A)); text-shadow: 0 0 14px color-mix(in srgb, var(--sb-brand-accent, var(--sb-accent, #C8F36A)) 30%, transparent); }
 
+    /* The Aquilala wordmark is also a shortcut to the signed-in dashboard. */
+    .brand-home-link,
+    .aq-mobile-header-brand { color: inherit; text-decoration: none; border-radius: 4px; }
+    .brand-home-link { display: block; }
+    .brand-home-link:hover .brand-title,
+    .aq-mobile-header-brand:hover { opacity: .85; }
+    .brand-home-link:focus-visible,
+    .aq-mobile-header-brand:focus-visible {
+      outline: 2px solid var(--sb-brand-accent, var(--sb-accent, #C8F36A));
+      outline-offset: 3px;
+    }
+
     /* Weather Widget Icon (real condition icons from public/images/weather) */
     .season-icon { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex-shrink: 0; }
     .season-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -1134,9 +1146,9 @@
       <button class="burger-btn" onclick="toggleSidebar()" aria-label="Open menu">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <div class="aq-mobile-header-brand" style="font-weight: 700; font-size: 18px; line-height: 1;">
+      <a href="{{ route('dashboard.redirect') }}" class="aq-mobile-header-brand" style="font-weight: 700; font-size: 18px; line-height: 1;" aria-label="Go to your dashboard">
         Aqui<span class="brand-accent" style="font-weight: 800;">lala</span>
-      </div>
+      </a>
     </div>
     <button id="aqMobileSearchToggle" class="aq-mobile-search-toggle" type="button" aria-label="Search pages" aria-expanded="false" title="Search pages">
       <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1145,7 +1157,9 @@
 
   <aside class="sidebar" id="sidebar">
     <div class="brand-section">
-      <span class="brand-title">Aqui<span class="brand-accent">lala</span></span>
+      <a href="{{ route('dashboard.redirect') }}" class="brand-home-link" aria-label="Go to your dashboard">
+        <span class="brand-title">Aqui<span class="brand-accent">lala</span></span>
+      </a>
       Irrigators Association, Inc.
     </div>
 
