@@ -2,28 +2,55 @@
 @php $eventTypes = \App\Models\AssociationEvent::TYPES; @endphp
 
 <style>
-    .ev-modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, .45); display: none; align-items: center; justify-content: center; z-index: 90; padding: 20px; }
+    .ev-modal-backdrop { position: fixed; inset: 0; background: rgba(30, 45, 35, .28); display: none; align-items: center; justify-content: center; z-index: 90; padding: 20px; }
     .ev-modal-backdrop.open { display: flex; }
-    .ev-modal { background: #fff; border-radius: 16px; width: 100%; max-width: 540px; max-height: 92vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,.25); }
-    .ev-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid #e5e7eb; }
-    .ev-modal-head h3 { margin: 0; font-size: 17px; font-weight: 800; color: #1e2922; }
-    .ev-modal-close { border: 0; background: transparent; font-size: 22px; line-height: 1; color: #94a3b8; cursor: pointer; }
-    .ev-modal-body { padding: 20px 22px 22px; }
-    .ev-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .ev-grid .full { grid-column: 1 / -1; }
-    .ev-field label { display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 5px; }
-    .ev-field label .req { color: #dc2626; }
-    .ev-field input, .ev-field select, .ev-field textarea {
-        width: 100%; padding: 9px 11px; border: 1.5px solid #e2e8f0; border-radius: 9px;
-        font-size: 13.5px; font-family: inherit; color: #1e2922; background: #fff; box-sizing: border-box;
+    .ev-modal {
+        background: var(--cal-surface, #fff);
+        border: 1px solid var(--cal-line, #e7ece6);
+        border-radius: 14px; width: 100%; max-width: 520px;
+        max-height: 92vh; overflow-y: auto;
+        box-shadow: 0 16px 40px rgba(30, 45, 35, .12);
     }
-    .ev-field input:focus, .ev-field select:focus, .ev-field textarea:focus { outline: none; border-color: #4A7A54; box-shadow: 0 0 0 3px rgba(74,122,84,.12); }
-    .ev-field textarea { min-height: 74px; resize: vertical; }
-    .ev-hint { font-size: 11.5px; color: #94a3b8; margin-top: 4px; }
-    .ev-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
-    .ev-save { background: #4A7A54; color: #fff; border: 0; padding: 10px 20px; border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(74,122,84,.25); }
-    .ev-cancel { background: #edf1e9; color: #648268; border: 1.5px solid #e2e8f0; padding: 10px 18px; border-radius: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
-    .ev-error { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 12.5px; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; }
+    .ev-modal-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 16px 20px; border-bottom: 1px solid var(--cal-line-soft, #f0f3ef);
+        background: var(--cal-wash, #f8faf8);
+    }
+    .ev-modal-head h3 { margin: 0; font-size: 15px; font-weight: 750; color: var(--cal-ink, #26342b); }
+    .ev-modal-close { border: 0; background: transparent; font-size: 21px; line-height: 1; color: var(--cal-muted, #748078); cursor: pointer; }
+    .ev-modal-body { padding: 18px 20px 20px; }
+    .ev-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .ev-grid .full { grid-column: 1 / -1; }
+    .ev-field label { display: block; font-size: 12px; font-weight: 700; color: var(--cal-ink, #26342b); margin-bottom: 5px; }
+    .ev-field label .req { color: #9b625c; }
+    .ev-field input, .ev-field select, .ev-field textarea {
+        width: 100%; padding: 8px 10px;
+        border: 1px solid var(--cal-line, #e7ece6); border-radius: 8px;
+        font-size: 13px; font-family: inherit;
+        color: var(--cal-ink, #26342b); background: var(--cal-surface, #fff); box-sizing: border-box;
+    }
+    .ev-field input:focus, .ev-field select:focus, .ev-field textarea:focus {
+        outline: none; border-color: var(--cal-accent, #5c7f66);
+        box-shadow: 0 0 0 2px var(--cal-accent-soft, #eef4ee);
+    }
+    .ev-field textarea { min-height: 72px; resize: vertical; }
+    .ev-hint { font-size: 11px; color: var(--cal-muted, #748078); margin-top: 4px; }
+    .ev-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 17px; }
+    .ev-save {
+        background: var(--cal-accent, #5c7f66); color: #fff; border: 1px solid var(--cal-accent, #5c7f66);
+        padding: 9px 18px; border-radius: 9px; font-size: 12.5px; font-weight: 700; cursor: pointer;
+    }
+    .ev-save:hover { background: #50705a; }
+    .ev-cancel {
+        background: var(--cal-wash, #f8faf8); color: var(--cal-muted, #748078);
+        border: 1px solid var(--cal-line, #e7ece6);
+        padding: 9px 16px; border-radius: 9px; font-size: 12.5px; font-weight: 700; cursor: pointer;
+    }
+    .ev-cancel:hover { background: var(--cal-accent-soft, #eef4ee); }
+    .ev-error {
+        background: #fbf3f2; border: 1px solid #ead9d6; color: #9b625c;
+        font-size: 12.5px; border-radius: 8px; padding: 8px 11px; margin-bottom: 13px;
+    }
 </style>
 
 <div class="ev-modal-backdrop" id="eventModal" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">

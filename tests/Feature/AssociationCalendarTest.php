@@ -84,6 +84,8 @@ class AssociationCalendarTest extends TestCase
         $response->assertOk();
         $response->assertSee('Association Calendar');
         $response->assertSee('Free Fertilizer Release');
+        $response->assertDontSee('Add Event', false);
+        $response->assertDontSee('eventModal', false);
     }
 
     public function test_store_accounts_are_locked_out_of_both_calendars(): void
@@ -111,6 +113,8 @@ class AssociationCalendarTest extends TestCase
         $response->assertSee('Past Events');
         $response->assertSee('Upcoming Seminar');
         $response->assertSee('Old Meeting');
+        $response->assertDontSee('Add Event', false);
+        $response->assertDontSee('eventModal', false);
     }
 
     public function test_todays_events_appear_in_the_today_card(): void
