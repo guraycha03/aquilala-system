@@ -51,19 +51,19 @@
           </div>
         </div>
 
-        {{-- Plain-language guide only: never part of the report paper. --}}
+        {{-- AI insight only: never part of the report paper. --}}
         <button type="button" class="ahr-ai-fab" id="ahr-ai-insight-open" aria-expanded="false" aria-controls="ahr-ai-insight-panel">
           <svg class="ahr-icon" aria-hidden="true"><use href="#ahr-i-sparkles"></use></svg>
-          Report Guide
+          AI Insight
         </button>
 
         <aside class="ahr-ai-panel" id="ahr-ai-insight-panel" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="ahr-ai-insight-title">
           <div class="ahr-ai-head">
             <div>
               <p class="ahr-ai-eyebrow">Plain-language guide</p>
-              <h2 id="ahr-ai-insight-title">Understand This Report</h2>
+              <h2 id="ahr-ai-insight-title">AI Insight</h2>
             </div>
-            <button type="button" class="ahr-ai-close" id="ahr-ai-insight-close" aria-label="Close report guide">&times;</button>
+            <button type="button" class="ahr-ai-close" id="ahr-ai-insight-close" aria-label="Close AI insight">&times;</button>
           </div>
           <div class="ahr-ai-body" id="ahr-ai-insight-body" aria-live="polite"></div>
         </aside>

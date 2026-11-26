@@ -732,8 +732,9 @@ class GeneratedHarvestReportTest extends TestCase
 
         $this->assertStringContainsString('id="ahr-ai-insight-open"', $showHtml);
         $this->assertStringContainsString('id="ahr-ai-insight-panel"', $showHtml);
-        $this->assertStringContainsString('Report Guide', $showHtml);
-        $this->assertStringContainsString('Understand This Report', $showHtml);
+        $this->assertStringContainsString('AI Insight', $showHtml);
+        $this->assertStringNotContainsString('Report Guide', $showHtml);
+        $this->assertStringContainsString('aria-label="Close AI insight"', $showHtml);
         $this->assertStringNotContainsString('Supplementary explanation', $showHtml);
         $this->assertStringContainsString(
             e(route('admin.harvests.reports.generated.insight', $saved)),
